@@ -1,0 +1,48 @@
+模块,原版功能,Swift 52 状态,宋韵版要求,原版源码依据
+书架,全部／在读／未开卷,只有全部／本机／云端筛选,同时保留阅读状态与存储位置筛选,apps/ios/src/screens/ShelfScreen.tsx
+书架,书名／作者／分类搜索,缺分类搜索,全部保留,apps/ios/src/screens/SearchScreen.tsx
+书架,最近阅读与进度,已实现基础版本,保留并接入真实数据,apps/ios/src/screens/ShelfScreen.tsx
+书架,多文件导入,已实现,保留并显示逐项结果,apps/ios/src/tingye/ReaderApplication.tsx
+书架,长按单本备份／修复／移除,缺修复与云端删除,补回所有入口和语义,apps/ios/src/tingye/ReaderApplication.tsx
+详情,简介／作者／章节／当前进度,缺独立详情页,补回书籍详情,apps/ios/src/screens/BookDetailScreen.tsx
+详情,章节选择与批量已读标记,缺失,补回按书保存的已读标记,apps/ios/src/screens/BookDetailScreen.tsx
+详情,从指定章节阅读或听书,阅读目录可跳转但缺详情入口,保留阅读和听书两个动作,apps/ios/src/screens/BookDetailScreen.tsx
+发现,从本机书架挑选／分类浏览,缺失,补回发现；不是外部网上书城,apps/ios/src/screens/DiscoverScreen.tsx
+发现,我的藏书／最近收藏／待阅读,缺失,全部保留,apps/ios/src/screens/DiscoverScreen.tsx
+阅读,沉浸式正文及工具栏显隐,工具栏常驻,补回轻点显示／隐藏,apps/ios/src/tingye/ReaderApplication.tsx
+阅读,左右翻页／跨章节／章节滑杆,缺章节滑杆,全部保留,apps/ios/src/tingye/ReaderChrome.tsx
+阅读,自动双页／始终单页,缺自动双页,补回 iPad 与横屏适配,apps/ios/src/tingye/ReadingAppearancePanel.tsx
+阅读,原书图文／自定义阅读,EPUB HTML 只做基础文字重排,恢复正文中的图片表格样式与资源链接,apps/ios/src/tingye/OriginalReader.tsx
+阅读,PDF 原页面及缩放,PDFKit 已有基础能力,保留并验证位置与朗读,apps/ios/src/tingye/OriginalReader.tsx
+阅读,修复旧纯文本副本的图片封面排版,缺失,重新导入同格式原文件并保留书籍 ID 与进度,apps/ios/src/tingye/ReaderApplication.tsx
+阅读,目录与正文定位,已实现基础版本,保留并与听读位置统一,apps/ios/src/tingye/ReaderApplication.tsx
+排版,思源宋体／霞鹜文楷／系统黑体,缺霞鹜文楷,三种阅读字体全部保留,apps/ios/src/tingye/reader-fonts.ts
+排版,字号／行距,基础设置已实现,保留实时预览且不中断音频,apps/ios/src/tingye/ReadingTypographySettings.tsx
+排版,段距／页边距／缩进／对齐,缺独立设置,全部保留,apps/ios/src/tingye/ReadingTypographySettings.tsx
+排版,七种阅读纸色,只有三种,保留宣纸／电纸书／素绢／古卷／烟雨／黛蓝／夜墨,apps/ios/src/tingye/themes.ts
+排版,电纸书模式,缺失,高对比灰阶与单页无动画,apps/ios/src/tingye/ReadingAppearancePanel.tsx
+排版,恢复默认与字体许可,缺完整设置入口,全部保留,apps/ios/src/tingye/ReadingTypographySettings.tsx
+听书,系统／GLM／MiniMax,基础服务已实现,保留三个服务独立配置,apps/ios/src/tingye/voices.ts
+听书,服务商独立密钥与 MiniMax GroupId,Keychain 已实现基础版本,保留切换与安全存储,apps/ios/src/tingye/ReaderApplication.tsx
+听书,模型列表与自定义模型 ID,只有模型文本框,补回原版模型选择,apps/ios/src/tingye/voices.ts
+听书,完整音色列表／自定义音色 ID,GLM 固定列表和 MiniMax 文本框,补回音色列表与自定义入口,apps/ios/src/tingye/voices.ts
+听书,MiniMax 刷新全部音色,缺失,补回真实列表接口,apps/ios/src/tingye/ReaderApplication.tsx
+听书,0.5～2 倍速并保留当前位置,系统调速从整句重启,补回当前词位置续读,apps/ios/src/tingye/player.ts
+听书,切换声音立即应用并保持暂停状态,保存后需要重新开始,恢复原行为,apps/ios/src/tingye/ReaderApplication.tsx
+听书,上一句／下一句／上一章／下一章,缺独立章节按钮,全部保留,apps/ios/src/tingye/ReaderChrome.tsx
+听书,点击句子从此处听,缺失,正文与播放器均可定位,apps/ios/src/tingye/ReaderApplication.tsx
+听书,正文同步高亮及跟随翻页,缺失,真实回调驱动；无精确时间戳时说明句级或估算状态,apps/ios/src/tingye/speech-progress.ts
+听书,段落预合成与音频缓存,缺失,恢复连续播放与缓存策略,apps/ios/src/tingye/audio-cache.ts
+听书,限流等待重试与错误分类,只有普通错误文字,恢复重试／切换本地声音／账户提示,apps/ios/src/tingye/tts-retry.ts
+云端,检测账号连接与语音限制,缺失,恢复无付费合成的连接检查,apps/ios/src/tingye/CloudConnection.tsx
+云端,全部上传／全部还原及结果详情,有全部上传但缺完整全部还原界面,补回数量进度部分失败缺正文提示,apps/ios/src/tingye/ReaderApplication.tsx
+云端,书籍图文排版与进度备份,已有 v2 协议基础但原版排版未保真,备份和还原不能丢资源与字段,apps/ios/src/tingye/backup-core.ts
+云端,进度同步失败重试与账号核对,功能不完整,保留队列重试和账号隔离,apps/ios/src/tingye/native-library.ts
+云端,删除本机及云端副本与进度,只有移除本机副本,增加独立明确的全部移除动作,apps/ios/src/tingye/ReaderApplication.tsx
+账户,登录／邀请码注册／恢复码找回,已实现基础版本,保留全部流程和恢复码保存确认,apps/ios/src/tingye/AccountScreen.tsx
+账户,退出／切换账号,已实现,保留本机数据和账号隔离,apps/ios/src/tingye/ReaderApplication.tsx
+我的,今日／累计时长／阅读天数／藏书数,缺失,补回真实阅读统计,apps/ios/src/screens/ProfileScreen.tsx
+我的,周／月阅读图表,缺失,补回真实历史数据；不能用示例冒充,apps/ios/src/screens/ProfileScreen.tsx
+我的,全局外观主题切换,缺失,与阅读纸色分开设置,apps/ios/src/components/ThemeSwitcher.tsx
+新增保留,书签／正文搜索／备份导出,Swift 版已有,在补回原功能时继续保留,apps/ios-native/Tingye/ReaderView.swift
+新增保留,睡眠定时／锁屏控制,Swift 版已有,在补回原功能时继续保留,apps/ios-native/Tingye/SpeechPlayer.swift

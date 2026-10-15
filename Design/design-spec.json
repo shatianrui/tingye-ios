@@ -1,0 +1,34 @@
+{
+  "figma": "https://www.figma.com/design/MsMJqdprVWg7yw0OK3CnPA",
+  "board": "3:99",
+  "icon": "3:320",
+  "screens": {
+    "shelf": "3:108",
+    "reader": "3:169",
+    "player": "3:195",
+    "account": "3:239",
+    "preferences": "3:278"
+  },
+  "colors": {
+    "paper": "#F5F0E6",
+    "surface": "#FFFDF7",
+    "ink": "#263F36",
+    "secondary": "#746F61",
+    "vermilion": "#A44936",
+    "line": "#DED6C6",
+    "wash": "#E8E7DC",
+    "gold": "#9B794B"
+  },
+  "layout": {
+    "inset": 24,
+    "gap": 16,
+    "radius": 18
+  },
+  "typography": {
+    "heading": "NotoSerifCJKsc-Regular",
+    "titleSize": 30,
+    "readerSize": 20,
+    "controls": "iOS system"
+  },
+  "icons": "Native SF Symbols; Figma previews were rendered from the same system symbol names."
+}

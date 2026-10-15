@@ -1,0 +1,1448 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=393">
+<title>听页 · 现代书店 UI 设计稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* —— 颜色：现代书店 / 出版感 —— */
+  /* Light */
+  --bg: #FAFAF7;          /* 接近宣纸的米白，比纸墨更冷 */
+  --surface: #FFFFFF;
+  --surface-2: #F2F0EA;   /* 浅卡 */
+  --line: #E5E2DA;
+  --line-strong: #C8C4B8;
+  --ink: #14110F;
+  --ink-2: #4A4640;
+  --ink-3: #8A8478;
+  --accent: #B4351B;      /* 朱砂红，封面印章、CTA */
+  --accent-2: #8B2A14;
+  --accent-soft: #F4E4DD;
+  --gold: #B58E4F;        /* 金箔，用于书签/高亮句 */
+  --gold-soft: #F0E4CD;
+
+  /* Dark */
+  --d-bg: #0E0D0B;
+  --d-surface: #1A1815;
+  --d-surface-2: #23201B;
+  --d-line: #2D2A24;
+  --d-line-strong: #443F36;
+  --d-ink: #F4EFE5;
+  --d-ink-2: #BAB1A0;
+  --d-ink-3: #76705F;
+  --d-accent: #E07A5F;
+  --d-accent-2: #C5604A;
+  --d-accent-soft: #3A1F18;
+  --d-gold: #D6B577;
+  --d-gold-soft: #2E2616;
+
+  /* —— 字号 —— */
+  --t-display: 34px;
+  --t-h1: 28px;
+  --t-h2: 22px;
+  --t-h3: 17px;
+  --t-body: 15px;
+  --t-small: 13px;
+  --t-micro: 11px;
+  --t-serif: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+  --t-sans: 'Inter', -apple-system, system-ui, 'PingFang SC', 'Helvetica Neue', sans-serif;
+
+  /* —— 间距 —— */
+  --inset: 24px;
+  --gap-1: 8px;
+  --gap-2: 12px;
+  --gap-3: 16px;
+  --gap-4: 24px;
+  --gap-5: 32px;
+  --gap-6: 48px;
+
+  /* —— 圆角 —— */
+  --r-card: 14px;
+  --r-button: 10px;
+  --r-pill: 999px;
+
+  /* —— 阴影（细微） —— */
+  --shadow-1: 0 1px 2px rgba(20,17,15,0.04), 0 1px 0 rgba(20,17,15,0.02);
+  --shadow-2: 0 4px 16px rgba(20,17,15,0.06), 0 1px 0 rgba(20,17,15,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #ECEAE3; }
+body {
+  font-family: var(--t-sans);
+  color: var(--ink);
+  background: linear-gradient(180deg, #ECEAE3 0%, #E5E2DA 100%);
+  -webkit-font-smoothing: antialiased;
+  padding: 36px 24px 80px;
+}
+
+.page-title {
+  font-family: var(--t-serif);
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.page-sub {
+  color: var(--ink-3);
+  font-size: 13px;
+  margin-bottom: 40px;
+  max-width: 760px;
+  line-height: 1.55;
+}
+
+.section-title {
+  font-family: var(--t-serif);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  margin: 56px 0 4px;
+  letter-spacing: -0.2px;
+}
+.section-sub {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.canvas-row {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.frame {
+  width: 393px;
+  border-radius: 44px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(20,17,15,0.08),
+    0 24px 60px rgba(20,17,15,0.12),
+    0 6px 12px rgba(20,17,15,0.06);
+}
+.frame.dark {
+  background: var(--d-bg);
+  color: var(--d-ink);
+}
+.frame-label {
+  position: absolute;
+  bottom: -28px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.frame > .statusbar {
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 28px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.frame.dark > .statusbar { color: var(--d-ink); }
+.status-icons { display: flex; gap: 5px; align-items: center; }
+.status-icons svg { width: 16px; height: 16px; }
+
+/* —— Tokens grid —— */
+.tokens {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-2);
+  max-width: 1200px;
+}
+.tokens h3 { font-family: var(--t-serif); font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.token-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.swatch {
+  width: 84px; height: 84px; border-radius: 10px;
+  display: flex; align-items: flex-end; padding: 8px;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.swatch.light { color: #14110F; box-shadow: inset 0 0 0 1px rgba(20,17,15,0.08); }
+.swatch.dark  { color: #F4EFE5; }
+.token-meta { font-size: 11px; color: var(--ink-3); margin-top: 4px; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<div class="page-title">听页 · 现代书店 UI 设计稿</div>
+<div class="page-sub">
+  设计方向：黑白为主 + 衬线大标题 + 高质感封面排版 + 卡片用细微阴影而非描边。<br>
+  接近 Apple Books、Readwise、Notion 阅读模式的视觉气质；保留"读"的本质。<br>
+  重点打磨：听书全流程（全屏听读页、迷你播放器、听书设置、锁屏与控制中心元数据）。
+</div>
+
+<!-- ============================ TOKENS ============================ -->
+<div class="tokens">
+  <h3>设计令牌 · Design Tokens</h3>
+
+  <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">日间（Light）</div>
+  <div class="token-row">
+    <div><div class="swatch light" style="background:#FAFAF7;">#FAFAF7<br>bg</div><div class="token-meta">主背景</div></div>
+    <div><div class="swatch light" style="background:#FFFFFF;">#FFFFFF<br>surface</div><div class="token-meta">卡片</div></div>
+    <div><div class="swatch light" style="background:#F2F0EA;">#F2F0EA<br>surface-2</div><div class="token-meta">浅卡</div></div>
+    <div><div class="swatch light" style="background:#14110F;color:#FAFAF7;">#14110F<br>ink</div><div class="token-meta">主文字</div></div>
+    <div><div class="swatch light" style="background:#4A4640;color:#FAFAF7;">#4A4640<br>ink-2</div><div class="token-meta">次文字</div></div>
+    <div><div class="swatch light" style="background:#8A8478;color:#FAFAF7;">#8A8478<br>ink-3</div><div class="token-meta">辅助</div></div>
+    <div><div class="swatch light" style="background:#B4351B;color:#FAFAF7;">#B4351B<br>accent</div><div class="token-meta">朱砂红</div></div>
+    <div><div class="swatch light" style="background:#B58E4F;color:#FAFAF7;">#B58E4F<br>gold</div><div class="token-meta">金箔</div></div>
+    <div><div class="swatch light" style="background:#E5E2DA;">#E5E2DA<br>line</div><div class="token-meta">分隔线</div></div>
+  </div>
+
+  <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;margin-top:8px;">夜间（Dark）</div>
+  <div class="token-row">
+    <div><div class="swatch dark" style="background:#0E0D0B;">#0E0D0B<br>bg</div></div>
+    <div><div class="swatch dark" style="background:#1A1815;">#1A1815<br>surface</div></div>
+    <div><div class="swatch dark" style="background:#23201B;">#23201B<br>surface-2</div></div>
+    <div><div class="swatch dark" style="background:#F4EFE5;color:#0E0D0B;">#F4EFE5<br>ink</div></div>
+    <div><div class="swatch dark" style="background:#BAB1A0;color:#0E0D0B;">#BAB1A0<br>ink-2</div></div>
+    <div><div class="swatch dark" style="background:#E07A5F;">#E07A5F<br>accent</div></div>
+    <div><div class="swatch dark" style="background:#D6B577;">#D6B577<br>gold</div></div>
+    <div><div class="swatch dark" style="background:#2D2A24;">#2D2A24<br>line</div></div>
+  </div>
+
+  <div style="font-size:12px;color:var(--ink-3);margin:14px 0 10px;">字号 / 字体</div>
+  <div class="token-row" style="flex-direction:column;gap:8px;">
+    <div style="font-family:var(--t-serif);font-weight:600;font-size:34px;letter-spacing:-0.5px;">34 / Source Serif 4 600 · 大标题</div>
+    <div style="font-family:var(--t-serif);font-weight:600;font-size:22px;letter-spacing:-0.2px;">22 / Source Serif 4 600 · 章节、卡片标题</div>
+    <div style="font-family:var(--t-sans);font-size:17px;font-weight:500;">17 / Inter 500 · 正文与按钮</div>
+    <div style="font-family:var(--t-sans);font-size:15px;">15 / Inter 400 · 正文</div>
+    <div style="font-family:var(--t-sans);font-size:13px;color:var(--ink-3);">13 / Inter 400 · 辅助</div>
+    <div style="font-family:var(--t-sans);font-size:11px;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase;">11 / Inter 500 · EYEBROW</div>
+  </div>
+
+  <div style="font-size:12px;color:var(--ink-3);margin:14px 0 10px;">间距 / 圆角</div>
+  <div class="token-row">
+    <div style="font-size:12px;color:var(--ink-2);">8 / 12 / 16 / 24 / 32 / 48</div>
+    <div style="font-size:12px;color:var(--ink-2);">卡片 14 · 按钮 10 · pill 999</div>
+    <div style="font-size:12px;color:var(--ink-2);">shadow-1 细微浮起 · shadow-2 卡片</div>
+  </div>
+</div>
+
+<!-- ============================ BOOKSHELF / SHELF ============================ -->
+<div class="section-title">书斋（书架）</div>
+<div class="section-sub">黑白为主，封面是大色块。顶部 nav-bar 显示标题与问候；续读书卡 + 网格。</div>
+
+<div class="canvas-row">
+  <!-- Frame A: Shelf Home -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding: 0 var(--inset);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:6px;">
+        <div>
+          <div style="font-family:var(--t-sans);font-size:11px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">LIBRARY</div>
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:32px;letter-spacing:-0.5px;color:var(--ink);margin-top:4px;">书斋</div>
+          <div style="font-size:13px;color:var(--ink-2);margin-top:2px;">星期四 · 今日已读 23 分钟</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div style="width:36px;height:36px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow-1);display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </div>
+          <div style="width:36px;height:36px;border-radius:999px;background:var(--ink);display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FAFAF7" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 续读卡 -->
+      <div style="margin-top:28px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:18px;display:flex;gap:16px;">
+        <div style="width:84px;height:120px;border-radius:4px;background:linear-gradient(160deg,#1E1B16 0%,#2A2520 100%);position:relative;flex-shrink:0;">
+          <div style="position:absolute;left:6px;top:8px;width:1px;height:100px;background:rgba(255,255,255,0.08);"></div>
+          <div style="position:absolute;left:14px;right:8px;bottom:10px;color:#D6B577;font-family:var(--t-serif);font-size:11px;line-height:1.3;font-weight:500;">The<br>Wuthering<br>Heights</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">CONTINUE</div>
+            <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;line-height:1.25;margin-top:4px;">呼啸山庄</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">艾米莉 · 勃朗特</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-bottom:6px;">
+              <span>第 12 / 34 章</span><span>42%</span>
+            </div>
+            <div style="height:2px;background:var(--line);border-radius:1px;position:relative;">
+              <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:var(--ink);border-radius:1px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <div style="height:36px;padding:0 16px;border-radius:var(--r-button);background:var(--ink);color:#FAFAF7;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                继续阅读
+              </div>
+              <div style="width:36px;height:36px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 筛选 chip -->
+      <div style="display:flex;gap:8px;margin-top:32px;align-items:center;">
+        <div style="height:30px;padding:0 14px;border-radius:999px;background:var(--ink);color:#FAFAF7;display:flex;align-items:center;font-size:13px;font-weight:500;">全部 · 38</div>
+        <div style="height:30px;padding:0 14px;border-radius:999px;background:transparent;color:var(--ink-2);display:flex;align-items:center;font-size:13px;">在读 · 6</div>
+        <div style="height:30px;padding:0 14px;border-radius:999px;background:transparent;color:var(--ink-2);display:flex;align-items:center;font-size:13px;">未开卷 · 32</div>
+        <div style="flex:1;"></div>
+        <div style="font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:3px;">最近阅读
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- 网格 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px 16px;margin-top:24px;padding-bottom:140px;">
+        <!-- 卡片 1 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#E5DDC8;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;">
+            <div style="position:absolute;left:6px;top:0;bottom:0;width:1px;background:rgba(0,0,0,0.06);"></div>
+            <div style="position:absolute;left:12px;right:8px;top:50%;transform:translateY(-50%);font-family:var(--t-serif);font-weight:600;font-size:13px;line-height:1.25;color:#1A1815;">人间词话</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">人间词话</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">王国维</div>
+        </div>
+        <!-- 卡片 2 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#1A1815;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;">
+            <div style="position:absolute;left:6px;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.05);"></div>
+            <div style="position:absolute;left:12px;right:8px;bottom:14px;font-family:var(--t-serif);font-weight:500;font-size:12px;line-height:1.3;color:#D6B577;">百年孤独</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">百年孤独</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">马尔克斯 · 12%</div>
+        </div>
+        <!-- 卡片 3 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#B4351B;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;">
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.18));"></div>
+            <div style="position:absolute;left:12px;right:8px;top:50%;transform:translateY(-50%);font-family:var(--t-serif);font-weight:600;font-size:13px;line-height:1.25;color:#F4E4DD;">红楼梦</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">红楼梦</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">曹雪芹 · 78%</div>
+        </div>
+        <!-- 卡片 4 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#2F4A3A;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;">
+            <div style="position:absolute;left:12px;right:8px;bottom:14px;font-family:var(--t-serif);font-weight:500;font-size:12px;line-height:1.3;color:#D6E4D9;">瓦尔登湖</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">瓦尔登湖</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">梭罗</div>
+        </div>
+        <!-- 卡片 5 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#3A3A3A;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;">
+            <div style="position:absolute;left:12px;right:8px;bottom:14px;font-family:var(--t-serif);font-weight:500;font-size:12px;line-height:1.3;color:#E5E2DA;">三体</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">三体</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">刘慈欣 · 0%</div>
+        </div>
+        <!-- 卡片 6 -->
+        <div>
+          <div style="width:100%;aspect-ratio:0.7;background:#F4E4DD;border-radius:4px;position:relative;box-shadow:var(--shadow-1);overflow:hidden;border:0.5px solid var(--line);">
+            <div style="position:absolute;left:12px;right:8px;bottom:14px;font-family:var(--t-serif);font-weight:500;font-size:12px;line-height:1.3;color:#8B2A14;">追风筝的人</div>
+          </div>
+          <div style="margin-top:10px;font-family:var(--t-serif);font-size:13px;line-height:1.3;font-weight:500;">追风筝的人</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">胡赛尼</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 迷你播放器 -->
+    <div style="position:absolute;bottom:78px;left:12px;right:12px;background:var(--surface);border-radius:14px;box-shadow:0 8px 24px rgba(20,17,15,0.12),0 2px 4px rgba(20,17,15,0.06);padding:10px 12px;display:flex;align-items:center;gap:10px;">
+      <div style="width:40px;height:40px;border-radius:4px;background:linear-gradient(160deg,#1E1B16,#2A2520);"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">呼啸山庄 · 第 12 章</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">第 124 / 296 句 · 1.2×</div>
+        <div style="height:1.5px;background:var(--line);border-radius:1px;margin-top:6px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:var(--accent);border-radius:1px;"></div>
+        </div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#FAFAF7"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(250,250,247,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/></svg>
+        <div style="font-size:10px;font-weight:500;">书斋</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M16 8l-1.5 5L9 14l5.5 1L16 8z"/></svg>
+        <div style="font-size:10px;">发现</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <div style="font-size:10px;">我</div>
+      </div>
+    </div>
+    <div class="frame-label">1 · 书架</div>
+  </div>
+</div>
+
+<!-- ============================ LISTENING PLAYER (重点) ============================ -->
+<div class="section-title">听书全屏页 · 随声听读（重点打磨）</div>
+<div class="section-sub">沉浸式深底。当前句居中放大、前后句渐隐；上方封面+章节，下方章节滑杆+控制。</div>
+
+<div class="canvas-row">
+  <!-- Frame B: Player 主屏 -->
+  <div class="frame dark">
+    <div class="statusbar">
+      <span style="color:var(--d-ink);">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+
+    <!-- 顶部栏：收起 / 标题 / ⋯ -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 6px;">
+      <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--d-ink-3);text-transform:uppercase;">NOW PLAYING</div>
+        <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;color:var(--d-ink);margin-top:2px;">第 12 章 · 呼啸山庄</div>
+      </div>
+      <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </div>
+    </div>
+
+    <!-- 顶部封面 + 信息 -->
+    <div style="padding:8px 24px 0;display:flex;gap:14px;align-items:center;">
+      <div style="width:56px;height:80px;border-radius:4px;background:linear-gradient(160deg,#1E1B16,#2A2520);position:relative;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+        <div style="position:absolute;left:5px;top:8px;width:1px;height:64px;background:rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute;left:10px;right:6px;bottom:8px;color:#D6B577;font-family:var(--t-serif);font-size:9px;line-height:1.2;font-weight:500;">Wuthering<br>Heights</div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--t-serif);font-size:18px;font-weight:600;color:var(--d-ink);">呼啸山庄</div>
+        <div style="font-size:12px;color:var(--d-ink-3);margin-top:2px;">艾米莉 · 勃朗特</div>
+        <div style="margin-top:10px;display:inline-flex;gap:6px;align-items:center;">
+          <span style="height:22px;padding:0 8px;border-radius:999px;background:rgba(244,239,229,0.08);font-size:11px;color:var(--d-ink-2);display:inline-flex;align-items:center;">青涩青年</span>
+          <span style="height:22px;padding:0 8px;border-radius:999px;background:rgba(244,239,229,0.08);font-size:11px;color:var(--d-ink-2);display:inline-flex;align-items:center;">GLM 云端</span>
+        </div>
+      </div>
+      <div style="font-family:var(--t-sans);font-size:14px;color:var(--d-gold);font-weight:600;font-feature-settings:"tnum";">1.2×</div>
+    </div>
+
+    <!-- 句子流：当前句 -->
+    <div style="margin-top:28px;padding:0 28px;display:flex;flex-direction:column;align-items:center;gap:18px;">
+      <div style="font-family:var(--t-serif);font-size:13px;color:var(--d-ink-3);font-feature-settings:"tnum";">— 124 / 296 —</div>
+
+      <!-- 前一句 -->
+      <div style="font-family:var(--t-serif);font-size:14px;color:var(--d-ink-3);line-height:1.6;text-align:center;max-width:300px;">
+        我在那天走近窗前，望见外面乌云压顶，远处的山丘正被暮色吞没。
+      </div>
+
+      <!-- 当前句：高亮 + 大字号 + 金箔下划线 -->
+      <div style="position:relative;padding:8px 0;">
+        <div style="position:absolute;left:-12px;right:-12px;top:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(214,181,119,0.12),transparent);border-radius:8px;"></div>
+        <div style="font-family:var(--t-serif);font-size:22px;color:var(--d-gold);font-weight:500;line-height:1.55;text-align:center;letter-spacing:0.2px;position:relative;">
+          「我从未爱过这个世界，<br>它对我也一样。」
+        </div>
+      </div>
+
+      <!-- 下一句 -->
+      <div style="font-family:var(--t-serif);font-size:14px;color:var(--d-ink-3);line-height:1.6;text-align:center;max-width:300px;opacity:0.7;">
+        辛德雷听到我这样说，只哼了一声便转身走进了书房，门在他身后重重合上。
+      </div>
+    </div>
+
+    <!-- 章节滑杆 -->
+    <div style="margin-top:24px;padding:0 24px;">
+      <div style="font-size:11px;color:var(--d-ink-3);letter-spacing:0.5px;">CHAPTER</div>
+      <div style="margin-top:8px;height:18px;display:flex;align-items:center;gap:8px;">
+        <div style="font-size:13px;color:var(--d-ink);">12</div>
+        <div style="flex:1;height:2px;background:rgba(244,239,229,0.16);border-radius:1px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:35%;background:var(--d-gold);border-radius:1px;"></div>
+          <div style="position:absolute;left:35%;top:-5px;width:12px;height:12px;border-radius:999px;background:var(--d-gold);transform:translateX(-50%);box-shadow:0 0 0 4px rgba(214,181,119,0.18);"></div>
+        </div>
+        <div style="font-size:13px;color:var(--d-ink);">34</div>
+      </div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">
+        <span>12:42</span><span>-3:18</span>
+      </div>
+    </div>
+
+    <!-- 控制区 -->
+    <div style="margin-top:22px;padding:0 24px;display:flex;flex-direction:column;gap:18px;">
+
+      <!-- 速 / 定时行 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;gap:6px;">
+          <div style="height:28px;padding:0 10px;border-radius:999px;background:rgba(244,239,229,0.08);font-size:12px;color:var(--d-ink);display:flex;align-items:center;font-weight:500;">0.8×</div>
+          <div style="height:28px;padding:0 10px;border-radius:999px;background:var(--d-gold);font-size:12px;color:#14110F;display:flex;align-items:center;font-weight:600;">1.2×</div>
+          <div style="height:28px;padding:0 10px;border-radius:999px;background:rgba(244,239,229,0.08);font-size:12px;color:var(--d-ink-2);display:flex;align-items:center;">1.5×</div>
+          <div style="height:28px;padding:0 10px;border-radius:999px;background:rgba(244,239,229,0.08);font-size:12px;color:var(--d-ink-2);display:flex;align-items:center;">2×</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+          <span style="font-size:12px;color:var(--d-ink);">15 分钟后停止</span>
+        </div>
+      </div>
+
+      <!-- 播放控制 -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:18px;">
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--d-ink-2);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 5l-7 7-7-7M19 12l-7 7-7-7"/></svg>
+        </div>
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--d-ink);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 4l-7 16M6 4l13 16"/></svg>
+        </div>
+        <div style="width:72px;height:72px;border-radius:999px;background:var(--d-gold);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 32px rgba(214,181,119,0.24);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#14110F"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+        </div>
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--d-ink);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 5l7 7-7 7M18 4l-13 16"/></svg>
+        </div>
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:var(--d-ink-2);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 19l7-7-7-7M18 12l-7 7-7-7"/></svg>
+        </div>
+      </div>
+
+      <!-- AirPlay / 回到原文 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:0.5px solid var(--d-line);">
+        <div style="display:flex;gap:8px;color:var(--d-ink-2);font-size:12px;align-items:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 17h14l-7-7z"/></svg>
+          AirPlay · iPhone
+        </div>
+        <div style="height:30px;padding:0 14px;border-radius:999px;background:rgba(244,239,229,0.1);font-size:12px;color:var(--d-ink);display:flex;align-items:center;">
+          回到原文 →
+        </div>
+      </div>
+
+    </div>
+    <div class="frame-label" style="color:var(--d-ink-3);">2 · 听书全屏页</div>
+  </div>
+
+  <!-- Frame C: Player 章节列表 (sheet) -->
+  <div class="frame dark">
+    <div class="statusbar">
+      <span style="color:var(--d-ink);">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--d-ink-3);text-transform:uppercase;">CHAPTERS</div>
+        <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;color:var(--d-ink);margin-top:2px;">34 章 · 呼啸山庄</div>
+      </div>
+      <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--d-ink-2);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:8px 0;overflow:hidden;">
+      <!-- 当前章高亮 -->
+      <div style="padding:14px 20px;background:rgba(214,181,119,0.08);border-left:2px solid var(--d-gold);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink);font-weight:500;">12. 夜访画眉山庄</div>
+          <div style="font-size:11px;color:var(--d-gold);font-feature-settings:"tnum";">正在听 · 42%</div>
+        </div>
+        <div style="margin-top:6px;height:1.5px;background:rgba(244,239,229,0.16);border-radius:1px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:var(--d-gold);border-radius:1px;"></div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:0.5px solid var(--d-line);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink-2);">13. 归来与拒绝</div>
+          <div style="font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">5:21</div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:0.5px solid var(--d-line);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink-2);">14. 凯瑟琳的眼泪</div>
+          <div style="font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">7:09</div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:0.5px solid var(--d-line);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink-2);">15. 虚伪的安宁</div>
+          <div style="font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">6:42</div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;opacity:0.55;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink-3);">16. 雨夜</div>
+          <div style="font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">8:14</div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;opacity:0.4;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--t-serif);font-size:16px;color:var(--d-ink-3);">17. 重逢</div>
+          <div style="font-size:11px;color:var(--d-ink-3);font-feature-settings:"tnum";">9:33</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label" style="color:var(--d-ink-3);">3 · 听书 · 章节列表</div>
+  </div>
+</div>
+
+<!-- ============================ READER (沉浸阅读) ============================ -->
+<div class="section-title">阅读页 · 沉浸阅读</div>
+<div class="section-sub">纸感背景、衬线正文；点击中部唤起工具栏（默认隐藏），底部五个等宽入口。</div>
+
+<div class="canvas-row">
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+
+    <!-- nav bar (隐藏态) -->
+    <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">第 12 章 · 夜访画眉山庄</div>
+      <div style="display:flex;gap:14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4h12v16l-6-4-6 4z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </div>
+    </div>
+
+    <!-- 正文 -->
+    <div style="padding:20px 28px;font-family:var(--t-serif);font-size:18px;line-height:1.85;color:#1E1B16;">
+      <p style="text-indent:2em;margin-bottom:16px;">
+        我在那扇半掩的窗户前站了很久，望着画眉山庄的灯火一盏一盏地熄灭。夜风从旷野里来，带着泥土与枯叶的冷意，让人不由得收紧衣襟。
+      </p>
+      <p style="text-indent:2em;margin-bottom:16px;">
+        凯瑟琳已经很久没有下楼了。她把自己关在阁楼上，整日整夜地翻看那些旧画，有时对着窗外说话，有时只是沉默。我从门缝里看过一次——她的脸比我记忆里瘦了许多。
+      </p>
+      <p style="text-indent:2em;margin-bottom:0;">
+        「我从未爱过这个世界，<mark style="background:linear-gradient(180deg,transparent 60%,rgba(214,181,119,0.45) 60%);">它对我也一样</mark>。」她上次对我这样说。我那时只觉得她是赌气。
+      </p>
+    </div>
+
+    <!-- 翻页区 -->
+    <div style="height:120px;"></div>
+
+    <!-- 底部工具栏 -->
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 14px 26px;background:linear-gradient(180deg,transparent,rgba(250,250,247,0.96) 40%);">
+      <!-- 章节滑杆 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--ink-3);font-feature-settings:"tnum";">12</div>
+        <div style="flex:1;height:2px;background:var(--line);border-radius:1px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:var(--ink);border-radius:1px;"></div>
+          <div style="position:absolute;left:42%;top:-5px;width:12px;height:12px;border-radius:999px;background:var(--ink);transform:translateX(-50%);"></div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-3);font-feature-settings:"tnum";">34</div>
+      </div>
+      <!-- 五个入口 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:14px;padding:8px 4px;box-shadow:var(--shadow-2);">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink-2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4h12v16H8zM4 4h12v16"/></svg>
+          <div style="font-size:10px;">目录</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink-2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h13M4 12h13M4 17h13"/></svg>
+          <div style="font-size:10px;">字样</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--accent);">
+          <div style="width:36px;height:36px;border-radius:999px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+          </div>
+          <div style="font-size:10px;font-weight:500;">听书</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink-2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+          <div style="font-size:10px;">定时</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink-2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12.5A9 9 0 1111.5 3 7 7 0 0021 12.5z"/></svg>
+          <div style="font-size:10px;">夜间</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">4 · 阅读页</div>
+  </div>
+
+  <!-- Frame E: 字号与字样面板 -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">字样</div>
+      <div style="font-size:13px;color:var(--ink-3);">完成</div>
+    </div>
+    <div style="padding:24px;">
+      <div style="background:var(--surface);border-radius:var(--r-card);padding:18px;box-shadow:var(--shadow-2);">
+        <div style="font-size:11px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:8px;">预览</div>
+        <div style="font-family:var(--t-serif);font-size:19px;line-height:1.6;color:var(--ink);">
+          我从未爱过这个世界，它对我也一样。
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:500;">字号</div>
+          <div style="font-size:13px;color:var(--ink-3);font-feature-settings:"tnum";">18</div>
+        </div>
+        <div style="height:4px;background:var(--line);border-radius:2px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:35%;background:var(--ink);border-radius:2px;"></div>
+          <div style="position:absolute;left:35%;top:-7px;width:18px;height:18px;border-radius:999px;background:#fff;box-shadow:0 2px 6px rgba(20,17,15,0.18),inset 0 0 0 1px var(--line);transform:translateX(-50%);"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--ink-3);">
+          <span>A</span><span>A</span>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px;">字体</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;height:54px;border-radius:10px;background:var(--surface);box-shadow:var(--shadow-2);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid var(--ink);">
+            <div style="font-family:'Source Serif 4',serif;font-size:17px;font-weight:500;">Aa</div>
+            <div style="font-size:10px;color:var(--ink-2);margin-top:2px;">思源宋</div>
+          </div>
+          <div style="flex:1;height:54px;border-radius:10px;background:var(--surface);box-shadow:var(--shadow-2);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid transparent;">
+            <div style="font-family:'Noto Serif SC',serif;font-size:17px;font-weight:500;">Aa</div>
+            <div style="font-size:10px;color:var(--ink-2);margin-top:2px;">楷体</div>
+          </div>
+          <div style="flex:1;height:54px;border-radius:10px;background:var(--surface);box-shadow:var(--shadow-2);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid transparent;">
+            <div style="font-family:Inter,sans-serif;font-size:17px;font-weight:500;">Aa</div>
+            <div style="font-size:10px;color:var(--ink-2);margin-top:2px;">黑体</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px;">纸色</div>
+        <div style="display:flex;gap:8px;">
+          <div style="width:54px;height:54px;border-radius:10px;background:#FAFAF7;box-shadow:var(--shadow-2);border:1.5px solid var(--ink);position:relative;">
+            <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:var(--ink-3);">宣纸</div>
+          </div>
+          <div style="width:54px;height:54px;border-radius:10px;background:#FFFFFF;box-shadow:var(--shadow-2);border:1px solid var(--line);position:relative;">
+            <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:var(--ink-3);">素绢</div>
+          </div>
+          <div style="width:54px;height:54px;border-radius:10px;background:#EADDBF;box-shadow:var(--shadow-2);border:1px solid var(--line);position:relative;">
+            <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:var(--ink-3);">古卷</div>
+          </div>
+          <div style="width:54px;height:54px;border-radius:10px;background:#253646;box-shadow:var(--shadow-2);position:relative;">
+            <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:#E9E8DD;">黛蓝</div>
+          </div>
+          <div style="width:54px;height:54px;border-radius:10px;background:#202622;box-shadow:var(--shadow-2);position:relative;">
+            <div style="position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:#E9E8DD;">夜墨</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">5 · 字样面板</div>
+  </div>
+</div>
+
+<!-- ============================ PROFILE / DISCOVER ============================ -->
+<div class="section-title">发现 · 我</div>
+<div class="section-sub">衬线大标题统领页面；卡片用细微阴影 + 1px 浅线作为分隔。</div>
+
+<div class="canvas-row">
+  <!-- Discover -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:8px 24px 0;">
+      <div style="font-size:11px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">DISCOVER</div>
+      <div style="font-family:var(--t-serif);font-weight:600;font-size:32px;letter-spacing:-0.5px;color:var(--ink);margin-top:4px;">发现</div>
+      <div style="font-size:13px;color:var(--ink-2);margin-top:2px;">从书架中重逢一卷好书</div>
+
+      <div style="margin-top:24px;display:flex;gap:6px;overflow:hidden;">
+        <div style="height:28px;padding:0 12px;border-radius:999px;background:var(--ink);color:#FAFAF7;font-size:12px;display:flex;align-items:center;">全部</div>
+        <div style="height:28px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink-2);font-size:12px;display:flex;align-items:center;border:0.5px solid var(--line);">古典</div>
+        <div style="height:28px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink-2);font-size:12px;display:flex;align-items:center;border:0.5px solid var(--line);">外国文学</div>
+        <div style="height:28px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink-2);font-size:12px;display:flex;align-items:center;border:0.5px solid var(--line);">诗集</div>
+        <div style="height:28px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink-2);font-size:12px;display:flex;align-items:center;border:0.5px solid var(--line);">散文</div>
+      </div>
+
+      <!-- 今日重读 -->
+      <div style="margin-top:24px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:20px;display:flex;gap:18px;">
+        <div style="width:96px;height:138px;border-radius:4px;background:linear-gradient(160deg,#B4351B,#8B2A14);position:relative;flex-shrink:0;">
+          <div style="position:absolute;left:14px;right:8px;bottom:12px;color:#F4E4DD;font-family:var(--t-serif);font-size:12px;font-weight:600;">红楼梦</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--accent);font-weight:600;">TODAY · 今日重读</div>
+            <div style="font-family:var(--t-serif);font-weight:600;font-size:20px;margin-top:4px;">红楼梦</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">曹雪芹 · 古典</div>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:10px;line-height:1.5;">满纸荒唐言，一把辛酸泪。都云作者痴，谁解其中味。</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <div style="height:34px;padding:0 14px;border-radius:999px;background:var(--ink);color:#FAFAF7;font-size:12px;font-weight:500;display:flex;align-items:center;">阅读</div>
+            <div style="height:34px;padding:0 14px;border-radius:999px;background:transparent;color:var(--ink);font-size:12px;font-weight:500;display:flex;align-items:center;border:1px solid var(--line-strong);">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+              &nbsp;听书
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 横滑 -->
+      <div style="margin-top:36px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:16px;">待阅读</div>
+          <div style="font-size:11px;color:var(--ink-3);">查看全部 →</div>
+        </div>
+        <div style="display:flex;gap:12px;overflow:hidden;">
+          <div>
+            <div style="width:96px;height:138px;background:#1A1815;border-radius:4px;position:relative;">
+              <div style="position:absolute;left:10px;right:8px;bottom:10px;color:#D6B577;font-family:var(--t-serif);font-size:11px;font-weight:500;">三体</div>
+            </div>
+            <div style="margin-top:8px;font-family:var(--t-serif);font-size:12px;width:96px;font-weight:500;">三体</div>
+            <div style="font-size:10px;color:var(--ink-3);margin-top:1px;">刘慈欣</div>
+          </div>
+          <div>
+            <div style="width:96px;height:138px;background:#E5DDC8;border-radius:4px;position:relative;">
+              <div style="position:absolute;left:10px;right:8px;bottom:10px;color:#1A1815;font-family:var(--t-serif);font-size:11px;font-weight:500;">人间词话</div>
+            </div>
+            <div style="margin-top:8px;font-family:var(--t-serif);font-size:12px;width:96px;font-weight:500;">人间词话</div>
+            <div style="font-size:10px;color:var(--ink-3);margin-top:1px;">王国维</div>
+          </div>
+          <div>
+            <div style="width:96px;height:138px;background:#3A3A3A;border-radius:4px;position:relative;">
+              <div style="position:absolute;left:10px;right:8px;bottom:10px;color:#E5E2DA;font-family:var(--t-serif);font-size:11px;font-weight:500;">战争与和平</div>
+            </div>
+            <div style="margin-top:8px;font-family:var(--t-serif);font-size:12px;width:96px;font-weight:500;">战争与和平</div>
+            <div style="font-size:10px;color:var(--ink-3);margin-top:1px;">托尔斯泰</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 我的藏书 列表 -->
+      <div style="margin-top:36px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:16px;">我的藏书 · 38</div>
+          <div style="font-size:11px;color:var(--ink-3);">排序</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);overflow:hidden;">
+          <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+            <div style="width:32px;height:44px;border-radius:3px;background:#E5DDC8;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">人间词话</div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">王国维 · 古典</div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);font-feature-settings:"tnum";">12%</div>
+          </div>
+          <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+            <div style="width:32px;height:44px;border-radius:3px;background:#1A1815;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">百年孤独</div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">马尔克斯 · 外国文学</div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);font-feature-settings:"tnum";">12%</div>
+          </div>
+          <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;">
+            <div style="width:32px;height:44px;border-radius:3px;background:#B4351B;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">红楼梦</div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">曹雪芹 · 古典</div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);font-feature-settings:"tnum";">78%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(250,250,247,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/></svg>
+        <div style="font-size:10px;">书斋</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M16 8l-1.5 5L9 14l5.5 1L16 8z"/></svg>
+        <div style="font-size:10px;font-weight:500;">发现</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <div style="font-size:10px;">我</div>
+      </div>
+    </div>
+    <div class="frame-label">6 · 发现</div>
+  </div>
+
+  <!-- Profile -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:8px 24px 0;">
+      <div style="font-size:11px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">PROFILE</div>
+      <div style="font-family:var(--t-serif);font-weight:600;font-size:32px;letter-spacing:-0.5px;color:var(--ink);margin-top:4px;">我</div>
+
+      <!-- 头像卡 -->
+      <div style="margin-top:24px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:18px;display:flex;align-items:center;gap:14px;">
+        <div style="width:48px;height:48px;border-radius:999px;background:var(--ink);color:#D6B577;display:flex;align-items:center;justify-content:center;font-family:var(--t-serif);font-size:18px;font-weight:600;">S</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--t-serif);font-size:16px;font-weight:600;">本机书架</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">38 本书 · 数据仅保存在本机</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+      </div>
+
+      <!-- 统计卡 -->
+      <div style="margin-top:20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:15px;">阅读时间</div>
+          <div style="display:flex;gap:6px;">
+            <div style="font-size:11px;color:var(--ink);font-weight:600;padding:3px 8px;border-radius:999px;background:var(--surface-2);">7 天</div>
+            <div style="font-size:11px;color:var(--ink-3);padding:3px 8px;border-radius:999px;">30 天</div>
+            <div style="font-size:11px;color:var(--ink-3);padding:3px 8px;border-radius:999px;">全部</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;height:64px;align-items:flex-end;">
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:32%;"></div>
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:58%;"></div>
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:46%;"></div>
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:72%;"></div>
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:24%;"></div>
+          <div style="flex:1;background:var(--accent);border-radius:2px;height:88%;"></div>
+          <div style="flex:1;background:var(--ink);border-radius:2px;height:40%;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--ink-3);">
+          <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span style="color:var(--accent);font-weight:600;">周六</span><span>周日</span>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:14px;padding-top:14px;border-top:0.5px solid var(--line);">
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">5<span style="font-size:11px;font-weight:400;color:var(--ink-3);">h 38m</span></div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">本周</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">48<span style="font-size:11px;font-weight:400;color:var(--ink-3);">m</span></div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">日均</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">12</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">读完章节</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设置组 -->
+      <div style="margin-top:24px;font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">阅读与听书</div>
+      <div style="margin-top:10px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);overflow:hidden;">
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+          <div style="flex:1;font-size:14px;">听书与声音</div>
+          <div style="font-size:11px;color:var(--ink-3);">系统 · 青涩青年</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M4 7h13M4 12h13M4 17h13"/></svg>
+          <div style="flex:1;font-size:14px;">字样</div>
+          <div style="font-size:11px;color:var(--ink-3);">18 · 思源宋</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/></svg>
+          <div style="flex:1;font-size:14px;">外观</div>
+          <div style="font-size:11px;color:var(--ink-3);">跟随系统</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;">数据</div>
+      <div style="margin-top:10px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);overflow:hidden;">
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M21 16V8a2 2 0 00-1-1.7l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.7l7 4a2 2 0 002 0l7-4A2 2 0 0021 7.7"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+          <div style="flex:1;font-size:14px;">iCloud 备份与还原</div>
+          <div style="font-size:11px;color:var(--accent);font-weight:600;">已开启</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <div style="flex:1;font-size:14px;">导出阅读统计</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute;bottom:0;left:0;right:0;height:78px;background:rgba(250,250,247,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/></svg>
+        <div style="font-size:10px;">书斋</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M16 8l-1.5 5L9 14l5.5 1L16 8z"/></svg>
+        <div style="font-size:10px;">发现</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <div style="font-size:10px;font-weight:500;">我</div>
+      </div>
+    </div>
+    <div class="frame-label">7 · 我</div>
+  </div>
+</div>
+
+<!-- ============================ VOICE SETTINGS ============================ -->
+<div class="section-title">听书与声音 · 设置面板</div>
+<div class="section-sub">表单为主，强调当前声音的可识别度（封面 + 名字 + 试听）。</div>
+
+<div class="canvas-row">
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">听书与声音</div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l5 5L20 7"/></svg>
+    </div>
+    <div style="padding:18px 24px 60px;">
+      <div style="font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:10px;">朗读方式</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--surface-2);border-radius:10px;padding:4px;">
+        <div style="padding:8px 4px;border-radius:7px;background:#fff;font-size:13px;font-weight:600;text-align:center;box-shadow:var(--shadow-1);">系统</div>
+        <div style="padding:8px 4px;border-radius:7px;background:transparent;font-size:13px;color:var(--ink-3);text-align:center;">智谱</div>
+        <div style="padding:8px 4px;border-radius:7px;background:transparent;font-size:13px;color:var(--ink-3);text-align:center;">MiniMax</div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.5;">系统朗读完全离线、免费。GLM 与 MiniMax 需要你自己的 API Key。</div>
+
+      <div style="margin-top:28px;font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:10px;">声音</div>
+      <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:16px;display:flex;align-items:center;gap:14px;">
+        <div style="width:48px;height:48px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="16" r="3"/><path d="M9 12v3M14 9h3"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">婷婷</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">普通话 · 女声 · 中文（简体）</div>
+        </div>
+        <div style="width:36px;height:36px;border-radius:999px;background:var(--ink);color:#FAFAF7;display:flex;align-items:center;justify-content:center;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--ink-3);">更多音色可在 iPhone「设置 → 辅助功能 → 朗读内容」下载。</div>
+
+      <div style="margin-top:28px;font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:10px;">语速</div>
+      <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-family:var(--t-serif);font-size:22px;font-weight:600;font-feature-settings:"tnum";">1.2<span style="font-size:13px;color:var(--ink-3);font-weight:400;">×</span></div>
+          <div style="font-size:11px;color:var(--ink-3);">慢 · 普通 · 快</div>
+        </div>
+        <div style="height:3px;background:var(--line);border-radius:2px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:55%;background:var(--ink);border-radius:2px;"></div>
+          <div style="position:absolute;left:55%;top:-7px;width:17px;height:17px;border-radius:999px;background:#fff;box-shadow:0 2px 6px rgba(20,17,15,0.18);border:0.5px solid var(--line);transform:translateX(-50%);"></div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">8 · 听书与声音</div>
+  </div>
+
+  <!-- iCloud Backup -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">iCloud 备份</div>
+      <div style="font-size:13px;color:var(--ink-3);">关闭</div>
+    </div>
+
+    <div style="padding:24px;">
+      <!-- 状态卡 -->
+      <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:20px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:999px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--accent);"><path d="M21 16V8a2 2 0 00-1-1.7l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.7l7 4a2 2 0 002 0l7-4A2 2 0 0021 7.7"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-size:15px;font-weight:600;">已开启</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">最近 10 分钟内上传了 12 本</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:0.5px solid var(--line);">
+          <div style="display:flex;justify-content:space-between;font-size:12px;">
+            <span style="color:var(--ink-3);">上次备份</span>
+            <span>刚刚 · 2.4 GB</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px;">
+            <span style="color:var(--ink-3);">上次同步进度</span>
+            <span>5 分钟前</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px;">
+            <span style="color:var(--ink-3);">已用空间</span>
+            <span style="font-feature-settings:"tnum";">2.4 / 5 GB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作 -->
+      <div style="margin-top:20px;display:flex;gap:8px;">
+        <div style="flex:1;height:48px;border-radius:var(--r-button);background:var(--ink);color:#FAFAF7;font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          立即备份
+        </div>
+        <div style="flex:1;height:48px;border-radius:var(--r-button);background:var(--surface);color:var(--ink);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;border:1px solid var(--line-strong);box-shadow:var(--shadow-1);">从备份还原</div>
+      </div>
+
+      <!-- 阶段清单 -->
+      <div style="margin-top:32px;font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:12px;">最近一次备份</div>
+      <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);overflow:hidden;">
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--ink);"><path d="M5 12l5 5L20 7"/></svg>
+          <div style="flex:1;font-size:13px;">连接 iCloud Drive</div>
+          <div style="font-size:11px;color:var(--ink-3);">1.2s</div>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--ink);"><path d="M5 12l5 5L20 7"/></svg>
+          <div style="flex:1;font-size:13px;">读取本机书籍 · 38 / 38</div>
+          <div style="font-size:11px;color:var(--ink-3);">12.4s</div>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--ink);"><path d="M5 12l5 5L20 7"/></svg>
+          <div style="flex:1;font-size:13px;">写入 iCloud Drive</div>
+          <div style="font-size:11px;color:var(--accent);font-weight:500;">正在上传…</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">9 · iCloud 备份</div>
+  </div>
+</div>
+
+<!-- ============================ BOOK DETAIL ============================ -->
+<div class="section-title">书籍详情 · 章节管理</div>
+<div class="section-sub">大封面居中，衬线大标题，正文区与按钮组形成清晰的视觉节奏。</div>
+
+<div class="canvas-row">
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div></div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </div>
+    <div style="padding:24px 24px 60px;">
+      <!-- 封面 -->
+      <div style="display:flex;justify-content:center;">
+        <div style="width:140px;height:200px;border-radius:6px;background:linear-gradient(160deg,#B4351B,#8B2A14);position:relative;box-shadow:0 16px 40px rgba(139,42,20,0.18),var(--shadow-2);">
+          <div style="position:absolute;left:8px;top:14px;width:1.5px;height:170px;background:rgba(255,255,255,0.1);"></div>
+          <div style="position:absolute;left:20px;right:14px;top:50%;transform:translateY(-50%);">
+            <div style="font-family:var(--t-serif);color:#F4E4DD;font-size:18px;font-weight:600;line-height:1.2;">红楼梦</div>
+            <div style="font-family:var(--t-serif);color:#F4E4DD;font-size:11px;margin-top:6px;opacity:0.7;">曹雪芹 · 著</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <div style="font-family:var(--t-serif);font-weight:600;font-size:24px;letter-spacing:-0.3px;">红楼梦</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:4px;">曹雪芹 · 古典 · EPUB</div>
+      </div>
+
+      <!-- 数据 -->
+      <div style="margin-top:20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:18px;display:flex;align-items:center;">
+        <div style="flex:1;text-align:center;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">78%</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">已读</div>
+        </div>
+        <div style="width:0.5px;height:36px;background:var(--line);"></div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">26 / 34</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">章节</div>
+        </div>
+        <div style="width:0.5px;height:36px;background:var(--line);"></div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-family:var(--t-serif);font-weight:600;font-size:18px;">本机</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">存储</div>
+        </div>
+      </div>
+
+      <!-- 操作 -->
+      <div style="margin-top:16px;display:flex;gap:8px;">
+        <div style="flex:1.4;height:46px;border-radius:var(--r-button);background:var(--ink);color:#FAFAF7;font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          继续阅读
+        </div>
+        <div style="flex:1;height:46px;border-radius:var(--r-button);background:var(--surface);color:var(--ink);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-strong);box-shadow:var(--shadow-1);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+          听书
+        </div>
+      </div>
+
+      <!-- 简介 -->
+      <div style="margin-top:28px;">
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--ink-3);text-transform:uppercase;margin-bottom:8px;">简介</div>
+        <div style="font-family:var(--t-serif);font-size:15px;line-height:1.75;color:var(--ink-2);">
+          《红楼梦》是中国古代章回体长篇小说，作者曹雪芹。作品以贾、史、王、史四大家族的兴衰为背景，以贾宝玉与林黛玉、薛宝钗的爱情悲剧为主线，描绘了闺阁佳人的人生百态，展现了真正的人性美和悲剧美。
+        </div>
+      </div>
+
+      <!-- 章节管理入口 -->
+      <div style="margin-top:20px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);">
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M8 4h12v16H8zM4 4h12v16"/></svg>
+          <div style="flex:1;font-size:14px;">目录与章节管理</div>
+          <div style="font-size:12px;color:var(--ink-3);">34 章</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <div style="flex:1;font-size:14px;">导出听页备份</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div style="padding:14px 18px;display:flex;align-items:center;gap:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-2);"><path d="M3 7l3-3 3 3M6 4v14M15 17l3 3 3-3M18 20V6"/></svg>
+          <div style="flex:1;font-size:14px;">修复原书图文</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">10 · 书籍详情</div>
+  </div>
+
+  <!-- 章节管理 -->
+  <div class="frame">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+        <svg viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="20" height="14" rx="2"/><rect x="3" y="3" width="14" height="10" rx="1" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div style="padding:6px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+      <div style="font-family:var(--t-serif);font-size:15px;font-weight:500;">目录 · 34 章</div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    </div>
+
+    <div style="padding:14px 24px 0;display:flex;gap:8px;">
+      <div style="height:30px;padding:0 12px;border-radius:999px;background:var(--ink);color:#FAFAF7;font-size:12px;font-weight:500;display:flex;align-items:center;">已选 3</div>
+      <div style="height:30px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink);font-size:12px;display:flex;align-items:center;border:1px solid var(--line-strong);">标记已读</div>
+      <div style="height:30px;padding:0 12px;border-radius:999px;background:transparent;color:var(--ink);font-size:12px;display:flex;align-items:center;border:1px solid var(--line-strong);">标记未读</div>
+    </div>
+
+    <div style="padding:18px 16px 60px;background:var(--bg);">
+      <div style="background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);overflow:hidden;">
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink);"><circle cx="12" cy="12" r="9"/></svg>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">11. 黛玉葬花</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">已读 · 2488 字</div>
+          </div>
+          <div style="width:30px;height:30px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--ink);"><circle cx="12" cy="12" r="9"/></svg>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">12. 宝钗扑蝶</div>
+            <div style="font-size:11px;color:var(--accent);margin-top:1px;">未读 · 1964 字</div>
+          </div>
+          <div style="width:30px;height:30px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--line);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink);"><circle cx="12" cy="12" r="9"/></svg>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-size:14px;font-weight:500;">13. 宝玉悟禅</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">未读 · 2156 字</div>
+          </div>
+          <div style="width:30px;height:30px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink-3);"><circle cx="12" cy="12" r="9"/></svg>
+          <div style="flex:1;">
+            <div style="font-family:var(--t-serif);font-size:14px;color:var(--ink-3);">14. 共读西厢</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">未读 · 2032 字</div>
+          </div>
+          <div style="width:30px;height:30px;border-radius:999px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-label">11 · 章节管理</div>
+  </div>
+</div>
+
+<!-- ============================ LOCK SCREEN ============================ -->
+<div class="section-title">锁屏与控制中心 · 元数据（iOS Now Playing）</div>
+<div class="section-sub">通过 MPNowPlayingInfoCenter 与 Remote Command Center，把锁屏和控制中心的播放体验拉满。</div>
+
+<div class="canvas-row">
+  <!-- 锁屏 -->
+  <div style="width:393px;border-radius:24px;background:linear-gradient(160deg,#1a2533 0%,#0e0d0b 100%);position:relative;overflow:hidden;color:#F4EFE5;box-shadow:0 24px 60px rgba(20,17,15,0.18);">
+    <div style="height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 8px;font-size:14px;font-weight:600;">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6h2v6h3V9h2v3h3V6h2L8 2z"/></svg>
+      </div>
+    </div>
+    <div style="padding:0 28px;display:flex;flex-direction:column;align-items:center;margin-top:20px;">
+      <div style="font-size:11px;letter-spacing:1.5px;color:rgba(244,239,229,0.5);text-transform:uppercase;">SATURDAY, OCT 10</div>
+      <div style="font-family:var(--t-serif);font-weight:300;font-size:74px;margin-top:6px;letter-spacing:-2px;">9:41</div>
+    </div>
+    <div style="position:absolute;left:24px;right:24px;bottom:36px;background:rgba(0,0,0,0.4);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:48px;height:48px;border-radius:4px;background:linear-gradient(160deg,#1E1B16,#2A2520);flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">我从未爱过这个世界</div>
+        <div style="font-size:11px;color:rgba(244,239,229,0.6);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">呼啸山庄 · 艾米莉 · 勃朗特</div>
+        <div style="height:1.5px;background:rgba(244,239,229,0.18);border-radius:1px;margin-top:8px;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:42%;background:#FAFAF7;border-radius:1px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;color:#FAFAF7;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16zM6 5h2v14H6z"/></svg>
+        <div style="width:40px;height:40px;border-radius:999px;background:#FAFAF7;color:#14110F;display:flex;align-items:center;justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+        </div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4zM16 5h2v14h-2z"/></svg>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:11px;color:rgba(244,239,229,0.5);letter-spacing:0.4px;text-transform:uppercase;">12 · 锁屏 Now Playing</div>
+  </div>
+
+  <!-- 控制中心 -->
+  <div style="width:393px;border-radius:24px;background:linear-gradient(180deg,rgba(40,40,40,0.78),rgba(20,20,20,0.85));backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);position:relative;overflow:hidden;color:#fff;padding:36px 16px;box-shadow:0 24px 60px rgba(20,17,15,0.18);">
+    <div style="height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 12px 8px;font-size:14px;font-weight:600;color:#fff;">
+      <span>9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zM5 8h2v5H5zM8 5h2v8H8zM11 2h2v11h-2z"/></svg>
+      </div>
+    </div>
+
+    <!-- 模块区 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+      <div style="grid-column:span 2;background:rgba(255,255,255,0.14);border-radius:14px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;font-weight:600;">Now Playing</div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+          <div style="width:36px;height:36px;border-radius:4px;background:linear-gradient(160deg,#1E1B16,#2A2520);"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">我从未爱过这个世界</div>
+            <div style="font-size:10px;opacity:0.7;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">呼啸山庄</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16z"/></svg>
+          <div style="width:32px;height:32px;border-radius:999px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="3.5" height="14" rx="1"/><rect x="13" y="5" width="3.5" height="14" rx="1"/></svg>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:11px;color:rgba(244,239,229,0.5);letter-spacing:0.4px;text-transform:uppercase;">13 · 控制中心 Now Playing</div>
+  </div>
+</div>
+
+<!-- ============================ TYPOGRAPHY ============================ -->
+<div class="section-title">字体与组件 · 规范</div>
+<div class="section-sub">思源宋体 4 + Inter + 思源宋 SC；衬线管标题/卡片/正文（必要时），无衬线管控件/数字。</div>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px;">
+  <div style="background:#fff;border-radius:14px;padding:20px 24px;box-shadow:var(--shadow-2);min-width:340px;">
+    <div style="font-family:var(--t-serif);font-weight:600;font-size:42px;letter-spacing:-1px;line-height:1;">Aa</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:6px;">Source Serif 4 / 思源宋体 SC</div>
+    <div style="font-family:var(--t-sans);font-weight:600;font-size:42px;letter-spacing:-1px;line-height:1;margin-top:14px;">Aa</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:6px;">Inter / 系统</div>
+  </div>
+
+  <div style="background:#fff;border-radius:14px;padding:20px 24px;box-shadow:var(--shadow-2);min-width:340px;flex:1;">
+    <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Buttons</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div style="height:46px;padding:0 22px;border-radius:var(--r-button);background:var(--ink);color:#FAFAF7;font-size:14px;font-weight:500;display:flex;align-items:center;">主按钮</div>
+      <div style="height:46px;padding:0 22px;border-radius:var(--r-button);background:var(--surface);color:var(--ink);font-size:14px;font-weight:500;display:flex;align-items:center;border:1px solid var(--line-strong);box-shadow:var(--shadow-1);">次按钮</div>
+      <div style="height:46px;padding:0 22px;border-radius:var(--r-button);background:var(--accent);color:#FAFAF7;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        强调（朱砂）
+      </div>
+      <div style="height:36px;padding:0 14px;border-radius:999px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:500;display:flex;align-items:center;">Chip</div>
+    </div>
+
+    <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:1.5px;margin:18px 0 12px;">Cards</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div style="width:140px;height:90px;background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow-2);padding:14px;font-family:var(--t-serif);font-size:13px;font-weight:500;">浮起卡片</div>
+      <div style="width:140px;height:90px;background:var(--surface);border-radius:var(--r-card);border:0.5px solid var(--line);padding:14px;font-family:var(--t-serif);font-size:13px;font-weight:500;">描边卡片</div>
+      <div style="width:140px;height:90px;background:var(--ink);color:#F4EFE5;border-radius:var(--r-card);padding:14px;font-family:var(--t-serif);font-size:13px;font-weight:500;">深底卡片</div>
+    </div>
+  </div>
+</div>
+
+<div style="background:#fff;border-radius:14px;padding:24px;box-shadow:var(--shadow-2);margin-bottom:48px;">
+  <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">设计原则</div>
+  <ol style="padding-left:18px;line-height:1.9;font-size:13px;color:var(--ink-2);">
+    <li><b style="color:var(--ink);">黑白为主，单一朱砂红强调</b> · 主色只用于关键 CTA、当前选中态、CTA 边框强调；其他一切让位给文字层级。</li>
+    <li><b style="color:var(--ink);">金箔只用一处</b> · 听书当前句的"在朗读"指示、迷你播放器进度，避免滥用。</li>
+    <li><b style="color:var(--ink);">细微阴影代替描边</b> · shadow-1/2 取代 1px line，只在分组时保留极浅分隔线。</li>
+    <li><b style="color:var(--ink);">封面就是大色块</b> · 书架和发现页的视觉重心是封面，UI 不要去抢封面戏。</li>
+    <li><b style="color:var(--ink);">衬线大标题统领页面</b> · 屏幕级标题一律思源宋 32/28；卡片标题思源宋 17/500；正文 15 思源宋；控件 13 Inter。</li>
+    <li><b style="color:var(--ink);">EYEBROW 用 11px 大写小字间距 1.5px</b> · Section 顶部 + nav 标题。构成"印刷感"。</li>
+    <li><b style="color:var(--ink);">可点区域不小于 44pt</b> · Chip/Pill 视觉小但点击热区更大。</li>
+    <li><b style="color:var(--ink);">动效节制</b> · 进场用 easeOut 200ms；切换不放大缩小。</li>
+  </ol>
+</div>
+
+</body>
+</html>

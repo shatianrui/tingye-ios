@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 UI 重设计</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ivory:#FAF9F5; --paper:#F0EEE6; --line:#E3DFD3; --ink:#141413; --ink2:#5E5D59; --ink3:#6F6E68;
+  --clay:#D97757; --clay-deep:#B85A3C; --clay-soft:#F5DCCD; --board:#E9E6DC;
+  --serif:'Noto Serif SC','Songti SC',serif; --sans:'Noto Sans SC','PingFang SC',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--board);color:var(--ink);font-family:var(--sans)}
+button{font:inherit;color:inherit;cursor:pointer;padding:0}
+.wrap{max-width:1760px;margin:0 auto;padding:56px 16px 80px}
+.head{max-width:900px;margin:0 0 40px}
+.head h1{font-family:var(--serif);font-weight:600;font-size:40px;margin:0 0 10px;letter-spacing:.02em}
+.head p{margin:0;color:var(--ink2);line-height:1.8;font-size:15px}
+.row{display:flex;flex-wrap:wrap;gap:48px 40px;align-items:flex-start}
+.cap{font-size:13px;color:var(--ink2);margin:0 0 12px;letter-spacing:.04em}
+.phone{width:390px;height:844px;background:var(--ivory);border-radius:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 1px #D6D2C4;position:relative}
+.icon-btn{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center}
+.icon-btn.dark{border:0;background:var(--ink)}
+.icon-btn.ghost{border:0;background:transparent}
+.serif{font-family:var(--serif)}
+.muted{color:var(--ink3)}
+.chip{height:34px;padding:0 14px;border-radius:17px;border:1px solid var(--line);background:transparent;font-size:14px;color:#3D3D3A}
+.chip.on{border:0;background:var(--ink);color:var(--ivory)}
+.cover{border-radius:6px;padding:10px;display:flex;flex-direction:column;justify-content:space-between}
+.bar{height:4px;border-radius:2px;background:#DEDAD0;overflow:hidden}.bar>i{display:block;height:4px;background:var(--clay)}
+nav.tabs{height:84px;flex:none;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding:8px 24px 24px}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--ink3);font-size:11px}
+nav.tabs a[aria-current]{color:var(--ink);font-weight:500}
+.reading p{margin:0 0 14px;text-indent:2em}
+mark{background:var(--clay-soft);color:inherit;border-radius:3px;padding:1px 0;box-shadow:0 2px 0 var(--clay)}
+.icon-tile{border-radius:22.4%;overflow:hidden;display:block}
+@media (max-width:440px){.phone{width:100%;border-radius:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="head">
+<h1>听页 · 暖纸、衬线、赤陶</h1>
+<p>象牙白纸面、近黑墨色、唯一的赤陶强调色；标题用宋体衬线，正文与界面用黑体。去掉阴影与渐变，靠留白和细线分层。朗读当前句用浅赤陶底加一道下划线，与强调色同源。</p>
+</div>
+
+<div class="row">
+
+<!-- 书斋 -->
+<section>
+<p class="cap">01 · 书斋</p>
+<div class="phone">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px;padding:64px 20px 0">
+<div style="display:flex;align-items:flex-end;justify-content:space-between">
+<div><div class="muted" style="font-size:13px;letter-spacing:.08em;margin-bottom:4px">听一卷书，歇一歇眼</div>
+<h2 class="serif" style="margin:0;font-weight:600;font-size:34px;line-height:1.2;letter-spacing:.02em">书斋</h2></div>
+<div style="display:flex;gap:8px">
+<button class="icon-btn" aria-label="搜索书籍"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+<button class="icon-btn dark" aria-label="导入书籍"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAF9F5" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div></div>
+
+<div style="background:var(--paper);border-radius:20px;padding:18px;display:flex;gap:16px">
+<div class="cover" style="width:92px;height:128px;flex:none;background:#E6D3C4;padding:12px 10px">
+<div class="serif" style="font-weight:700;font-size:22px;color:#3D2A20">故乡</div>
+<div style="width:18px;height:2px;background:var(--clay-deep)"></div>
+<div style="font-size:10px;color:#5B463A">鲁迅</div></div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:12px;font-weight:500;color:var(--clay-deep);letter-spacing:.06em">继续听</div>
+<div class="serif" style="font-weight:600;font-size:20px">故乡</div>
+<div style="font-size:13px;color:var(--ink2)">鲁迅 · 第 1 / 3 章 · 归乡</div></div>
+<div style="display:flex;align-items:center;gap:12px">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="bar"><i style="width:42%"></i></div><div class="muted" style="font-size:12px">已听 42%</div></div>
+<button class="icon-btn dark" style="width:48px;height:48px;border-radius:24px" aria-label="继续听《故乡》"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="#FAF9F5"/></svg></button>
+</div></div></div>
+
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;gap:6px" role="group" aria-label="筛选">
+<button class="chip on" aria-pressed="true">全部</button><button class="chip" aria-pressed="false">在读</button><button class="chip" aria-pressed="false">已读</button></div>
+<button style="height:34px;border:0;background:transparent;font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:4px">最近阅读<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5E5D59" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px 14px">
+<div><div class="cover" style="aspect-ratio:3/4;background:#DCE3D6"><div class="serif" style="font-weight:700;font-size:26px;color:#2C3A2A">春</div><div style="font-size:10px;color:#4A5847">朱自清</div></div>
+<div style="font-size:14px;font-weight:500;margin-top:8px">春</div><div class="muted" style="font-size:12px">1 章 · 已读完</div></div>
+<div><div class="cover" style="aspect-ratio:3/4;background:#D7DCE4"><div class="serif" style="font-weight:700;font-size:19px;color:#263044">飞鸟集</div><div style="font-size:10px;color:#485267">泰戈尔</div></div>
+<div style="font-size:14px;font-weight:500;margin-top:8px">飞鸟集</div><div class="muted" style="font-size:12px">1 章 · 18%</div></div>
+<div><div class="cover" style="aspect-ratio:3/4;background:var(--ink)"><div class="serif" style="font-weight:600;font-size:14px;line-height:1.3;color:var(--ivory)">克劳德代码实战</div><div style="width:16px;height:2px;background:var(--clay)"></div></div>
+<div style="font-size:14px;font-weight:500;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">克劳德代码实战</div><div class="muted" style="font-size:12px">19 章 · 37%</div></div>
+<button aria-label="导入书籍" style="aspect-ratio:3/4;border-radius:6px;border:1.5px dashed #CFCABB;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink2);font-size:12px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5E5D59" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>导入书籍</button>
+</div></div></div>
+<nav class="tabs" aria-label="主导航">
+<a href="#" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h4.5v13H4zM10 5.5h4.5v13H10z"/><path d="M16 6.2l3.4-.9 3 12.2-3.4.9z"/></svg>书斋</a>
+<a href="#"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6F6E68" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>发现</a>
+<a href="#"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6F6E68" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="9" r="3.8"/><path d="M5 19.5c1.4-3.2 4-4.7 7-4.7s5.6 1.5 7 4.7"/></svg>我</a>
+</nav>
+</div>
+</section>
+
+<!-- 阅读 -->
+<section>
+<p class="cap">02 · 阅读 · 跟读高亮</p>
+<div class="phone">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:52px 8px 0">
+<button class="icon-btn ghost" aria-label="返回书斋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+<div style="text-align:center"><div class="serif" style="font-size:15px;font-weight:600">故乡</div><div class="muted" style="font-size:11px">第 1 章 · 归乡</div></div>
+<div style="display:flex">
+<button class="icon-btn ghost" aria-label="字样与排版"><span class="serif" style="font-size:17px">A</span><span style="font-size:12px">a</span></button>
+<button class="icon-btn ghost" aria-label="添加书签"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 4h11v16l-5.5-4-5.5 4z"/></svg></button>
+</div></div>
+<div class="reading serif" style="flex:1;padding:28px 28px 0;font-size:19px;line-height:1.95;overflow:hidden">
+<h3 style="margin:0 0 22px;font-size:26px;font-weight:600;letter-spacing:.04em">归乡</h3>
+<p>我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。</p>
+<p><mark>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响。</mark>从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。</p>
+<p>我的心禁不住悲凉起来了。</p>
+</div>
+<div style="padding:0 16px 34px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;font-size:11px;padding:0 4px" class="muted"><span>第 1 / 3 章</span><span>12%</span></div>
+<div style="background:var(--ink);color:var(--ivory);border-radius:28px;height:60px;display:flex;align-items:center;gap:12px;padding:0 8px 0 20px">
+<svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true"><g fill="#D97757"><rect x="0" y="6" width="2.4" height="4" rx="1.2"/><rect x="5" y="3" width="2.4" height="10" rx="1.2"/><rect x="10" y="0" width="2.4" height="16" rx="1.2"/><rect x="15" y="4" width="2.4" height="8" rx="1.2"/><rect x="19.6" y="6.5" width="2.4" height="3" rx="1.2"/></g></svg>
+<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">正在朗读</div><div style="font-size:11px;color:#B8B6AD">默认中文声音 · 1.0×</div></div>
+<button aria-label="回到朗读处" style="height:44px;padding:0 12px;border:0;border-radius:22px;background:transparent;color:#E8E6DC;font-size:12px">回到朗读处</button>
+<button aria-label="暂停" style="width:44px;height:44px;border-radius:22px;border:0;background:var(--ivory);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="#141413"/><rect x="14" y="5" width="4" height="14" rx="1" fill="#141413"/></svg></button>
+</div></div>
+</div>
+</section>
+
+<!-- 听读 -->
+<section>
+<p class="cap">03 · 听读</p>
+<div class="phone" style="background:var(--paper)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:52px 8px 0">
+<button class="icon-btn ghost" aria-label="收起听读"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></button>
+<div class="muted" style="font-size:12px;letter-spacing:.08em">正在听</div>
+<button class="icon-btn ghost" aria-label="章节列表"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".6" fill="#141413"/><circle cx="4" cy="12" r=".6" fill="#141413"/><circle cx="4" cy="18" r=".6" fill="#141413"/></svg></button>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 32px 0;gap:28px">
+<div class="cover" style="width:220px;height:293px;background:#E6D3C4;padding:22px 20px;border-radius:10px">
+<div class="serif" style="font-weight:700;font-size:44px;color:#3D2A20;line-height:1.1">故乡</div>
+<div style="width:32px;height:3px;background:var(--clay-deep)"></div>
+<div style="font-size:14px;color:#5B463A">鲁迅</div></div>
+<div style="text-align:center"><div class="serif" style="font-size:24px;font-weight:600">故乡</div><div style="font-size:14px;color:var(--ink2);margin-top:4px">鲁迅 · 第 1 / 3 章 · 归乡</div></div>
+<div class="serif" style="font-size:17px;line-height:1.8;text-align:center;color:#3D3D3A;min-height:92px">“时候既然是深冬；渐近故乡时，天气又阴晦了。”</div>
+<div style="width:100%"><div class="bar" style="height:4px"><i style="width:12%"></i></div>
+<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:8px" class="muted"><span>本章 12%</span><span>全书 4%</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+<button class="icon-btn ghost" aria-label="上一章"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12l-8.5-6z" fill="#141413"/><rect x="5.5" y="6" width="2" height="12" rx="1" fill="#141413"/></svg></button>
+<button class="icon-btn ghost" aria-label="上一句"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6"/></svg></button>
+<button aria-label="暂停" style="width:76px;height:76px;border-radius:38px;border:0;background:var(--ink);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="#FAF9F5"/><rect x="14" y="5" width="4" height="14" rx="1" fill="#FAF9F5"/></svg></button>
+<button class="icon-btn ghost" aria-label="下一句"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l5 5-5 5"/><path d="M20 12H10a6 6 0 0 0-6 6"/></svg></button>
+<button class="icon-btn ghost" aria-label="下一章"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12l8.5-6z" fill="#141413"/><rect x="16.5" y="6" width="2" height="12" rx="1" fill="#141413"/></svg></button>
+</div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);padding:16px 24px 40px;border-top:1px solid var(--line)">
+<button style="height:52px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:15px;font-weight:600">1.0×</span><span class="muted" style="font-size:11px">语速</span></button>
+<button style="height:52px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:15px;font-weight:500">默认中文</span><span class="muted" style="font-size:11px">声音</span></button>
+<button style="height:52px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141413" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M6 17H4.5A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5H18"/><path d="M12 14l5 6H7z" fill="#141413"/></svg><span class="muted" style="font-size:11px">AirPlay</span></button>
+</div>
+</div>
+</section>
+
+<!-- 桌面图标 -->
+<section>
+<p class="cap">04 · 桌面图标</p>
+<div style="width:390px;display:flex;flex-direction:column;gap:20px">
+<div style="background:var(--ivory);border-radius:28px;padding:36px;display:flex;justify-content:center">
+<svg class="icon-tile" width="240" height="240" viewBox="0 0 1024 1024" role="img" aria-label="听页图标：赤陶底，象牙色翻开的书页，书脊上方两道声波"><rect width="1024" height="1024" fill="#D97757"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#FAF9F5"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#FAF9F5"/><path d="M50 41.5 V74.5" stroke="#D97757" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/></g></svg>
+</div>
+<div style="background:var(--ivory);border-radius:28px;padding:28px;display:flex;align-items:flex-end;justify-content:space-around">
+<div style="text-align:center"><svg class="icon-tile" width="120" height="120" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#D97757"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#FAF9F5"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#FAF9F5"/><path d="M50 41.5 V74.5" stroke="#D97757" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/></g></svg><div class="muted" style="font-size:11px;margin-top:6px">主屏 · 60pt</div></div>
+<div style="text-align:center"><svg class="icon-tile" width="80" height="80" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#D97757"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#FAF9F5"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#FAF9F5"/><path d="M50 41.5 V74.5" stroke="#D97757" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/></g></svg><div class="muted" style="font-size:11px;margin-top:6px">设置 · 29pt</div></div>
+<div style="text-align:center"><svg class="icon-tile" width="40" height="40" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#D97757"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#FAF9F5"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#FAF9F5"/><path d="M50 41.5 V74.5" stroke="#D97757" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#FAF9F5" stroke-width="4.6" stroke-linecap="round"/></g></svg><div class="muted" style="font-size:11px;margin-top:6px">通知 · 20pt</div></div>
+</div>
+<div style="background:#1C1B19;border-radius:28px;padding:28px;display:flex;align-items:center;justify-content:space-around">
+<div style="text-align:center">
+<svg class="icon-tile" width="120" height="120" viewBox="0 0 1024 1024" role="img" aria-label="深色模式图标"><rect width="1024" height="1024" fill="#262420"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#E08D70"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#E08D70"/><path d="M50 41.5 V74.5" stroke="#262420" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#E08D70" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#E08D70" stroke-width="4.6" stroke-linecap="round"/></g></svg>
+<div style="font-size:11px;margin-top:6px;color:#B8B6AD">深色</div></div>
+<div style="text-align:center">
+<svg class="icon-tile" width="120" height="120" viewBox="0 0 1024 1024" role="img" aria-label="着色模式图标"><rect width="1024" height="1024" fill="#000"/><g transform="translate(512 540) scale(9.2) translate(-50 -46)"><path d="M50 76 C40 70 27 69 15 72 L15 36 C27 33 40 34 50 40 Z" fill="#9A9A9A"/><path d="M50 76 C60 70 73 69 85 72 L85 36 C73 33 60 34 50 40 Z" fill="#9A9A9A"/><path d="M50 41.5 V74.5" stroke="#000" stroke-width="2.4" stroke-linecap="round"/><path d="M42.5 29 A9.5 9.5 0 0 1 57.5 29" fill="none" stroke="#9A9A9A" stroke-width="4.6" stroke-linecap="round"/><path d="M35.5 22 A18 18 0 0 1 64.5 22" fill="none" stroke="#9A9A9A" stroke-width="4.6" stroke-linecap="round"/></g></svg>
+<div style="font-size:11px;margin-top:6px;color:#B8B6AD">着色</div></div>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+</body>
+</html>

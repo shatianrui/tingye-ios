@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 一页</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   听页 v7「一页」设计令牌
+   原则：原生为骨 · 读听一体 · 一色到底
+   ============================================================ */
+:root {
+  --bg:        #F5F4F0;
+  --surface:   #FFFFFF;
+  --surface-2: #ECEAE5;
+  --ink:       #1C1B19;
+  --ink-2:     #5B5953;
+  --ink-3:     #9A978F;
+  --line:      rgba(28,27,25,.09);
+  --accent:      #2F4C7D;  /* 靛蓝：唯一强调色（CTA / 选中 / 朗读） */
+  --accent-soft: #E4EAF3;
+  --accent-wash: rgba(47,76,125,.13);
+  --on-accent:   #FFFFFF;
+  --danger:    #C2402F;
+  --glass:     rgba(255,255,255,.66);
+  --glass-line: rgba(255,255,255,.85);
+  --glass-shadow: 0 10px 30px rgba(20,20,18,.13), 0 1px 3px rgba(20,20,18,.08);
+
+  --serif: 'Noto Serif SC', 'Songti SC', serif;
+  --kai: 'LXGW WenKai TC', 'Kaiti SC', serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
+
+  /* 文档页（非手机）配色 */
+  --doc-bg: #E9E7E1;
+  --doc-ink: #1C1B19;
+  --doc-ink-2: #5B5953;
+  --doc-card: #F7F6F2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --doc-bg: #151514; --doc-ink: #EEEDE8; --doc-ink-2: #A9A69E; --doc-card: #1F1F1D;
+  }
+}
+:root[data-theme="dark"] { --doc-bg: #151514; --doc-ink: #EEEDE8; --doc-ink-2: #A9A69E; --doc-card: #1F1F1D; }
+
+/* 手机深色：.dark 作用于单个 .phone */
+.dark {
+  --bg:        #0F0F0E;
+  --surface:   #1C1C1A;
+  --surface-2: #2A2927;
+  --ink:       #F2F1EC;
+  --ink-2:     #B5B2AA;
+  --ink-3:     #77746C;
+  --line:      rgba(255,255,255,.09);
+  --accent:      #9DB4E0;
+  --accent-soft: #1E2A3F;
+  --accent-wash: rgba(157,180,224,.18);
+  --on-accent:   #0F1626;
+  --glass:     rgba(44,44,42,.58);
+  --glass-line: rgba(255,255,255,.12);
+  --glass-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--doc-bg);
+  color: var(--doc-ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  padding: 48px 16px 120px;
+}
+.wrap { max-width: 1760px; margin: 0 auto; }
+.doc { max-width: 880px; }
+h1.title { font-family: var(--serif); font-weight: 700; font-size: 44px; letter-spacing: -1px; line-height: 1.1; }
+.kicker { font-size: 12px; letter-spacing: 2px; color: var(--doc-ink-2); text-transform: uppercase; margin-bottom: 14px; }
+.lede { font-size: 17px; line-height: 1.7; color: var(--doc-ink-2); margin-top: 18px; max-width: 760px; }
+h2.sec { font-family: var(--serif); font-size: 26px; font-weight: 600; margin: 88px 0 6px; letter-spacing: -.3px; }
+.sec-sub { color: var(--doc-ink-2); font-size: 14px; line-height: 1.6; max-width: 780px; margin-bottom: 28px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 28px; }
+.note { background: var(--doc-card); border-radius: 18px; padding: 20px 22px; }
+.note b { display: block; font-size: 15px; margin-bottom: 8px; }
+.note p { font-size: 13.5px; line-height: 1.65; color: var(--doc-ink-2); }
+.note .num { font-family: var(--serif); font-size: 13px; color: #2F4C7D; font-weight: 700; margin-bottom: 6px; display:block }
+.theme-toggle { position: fixed; top: 16px; right: 16px; z-index: 50; border: 0; background: var(--doc-card); color: var(--doc-ink); font: 500 13px var(--sans); padding: 9px 14px; border-radius: 99px; box-shadow: 0 2px 10px rgba(0,0,0,.1); cursor: pointer; }
+
+/* 令牌展示 */
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.sw { width: 132px; }
+.sw i { display: block; height: 64px; border-radius: 14px; border: 1px solid rgba(0,0,0,.06); }
+.sw span { display: block; font-size: 12px; margin-top: 7px; font-weight: 600; }
+.sw em { display: block; font-style: normal; font-size: 11px; color: var(--doc-ink-2); font-family: ui-monospace, Menlo, monospace; }
+.type-row { display: flex; align-items: baseline; gap: 18px; padding: 12px 0; border-bottom: 1px solid rgba(128,128,128,.18); }
+.type-row code { width: 170px; flex: none; font-size: 11px; color: var(--doc-ink-2); font-family: ui-monospace, Menlo, monospace; }
+
+/* 画布 */
+.canvas { display: flex; gap: 36px; overflow-x: auto; padding: 8px 4px 28px; scroll-snap-type: x proximity; }
+.shot { flex: none; scroll-snap-align: start; }
+.shot .cap { margin-top: 16px; max-width: 393px; }
+.shot .cap b { font-size: 14px; display: block; }
+.shot .cap p { font-size: 12.5px; color: var(--doc-ink-2); line-height: 1.6; margin-top: 4px; }
+
+/* ===================== 手机 ===================== */
+.phone {
+  width: 393px; height: 852px; border-radius: 56px; overflow: hidden; position: relative;
+  background: var(--bg); color: var(--ink);
+  box-shadow: 0 0 0 11px #1a1a1a, 0 0 0 12px #3a3a3a, 0 30px 70px rgba(0,0,0,.28);
+  margin: 12px;
+  font-family: var(--sans);
+}
+.status { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 46px; font-weight: 600; font-size: 16px; z-index: 30; color: var(--ink); }
+.status .r { display: flex; gap: 6px; align-items: center; }
+.status.light { color: #fff; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 124px; height: 36px; background: #000; border-radius: 20px; z-index: 31; }
+.home { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 136px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; z-index: 40; }
+.scroll { position: absolute; inset: 0; overflow: hidden; padding: 54px 0 0; }
+.pad { padding: 0 20px; }
+svg.i { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+svg.i.s { width: 17px; height: 17px; }
+svg.i.xs { width: 13px; height: 13px; stroke-width: 2; }
+svg.i.l { width: 28px; height: 28px; }
+svg.f { fill: currentColor; stroke: none; }
+
+/* 玻璃 */
+.glass { background: var(--glass); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); border: .5px solid var(--glass-line); box-shadow: var(--glass-shadow); }
+
+/* 大标题导航 */
+.nav { display: flex; justify-content: flex-end; gap: 10px; padding: 6px 16px 0; height: 50px; align-items: center; }
+.nav .btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--ink); }
+.nav .btn.wide { width: auto; padding: 0 16px; border-radius: 22px; font-size: 15px; font-weight: 500; }
+.large-title { font-size: 34px; font-weight: 700; letter-spacing: -.6px; padding: 0 20px; line-height: 1.15; }
+.subtitle { font-size: 14px; color: var(--ink-3); padding: 3px 20px 0; }
+
+/* 页签栏（iOS 26 液态玻璃） */
+.tabbar { position: absolute; left: 20px; right: 20px; bottom: 24px; height: 62px; border-radius: 31px; display: flex; align-items: center; padding: 4px; z-index: 20; }
+.tab { flex: 1; height: 54px; border-radius: 27px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10px; font-weight: 600; color: var(--ink); }
+.tab.on { background: rgba(120,120,120,.14); color: var(--accent); }
+.dark .tab.on { background: rgba(255,255,255,.1); }
+.tab svg { width: 24px; height: 24px; }
+.accessory { position: absolute; left: 20px; right: 20px; bottom: 96px; height: 52px; border-radius: 26px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 8px; z-index: 20; }
+.accessory .t { flex: 1; min-width: 0; }
+.accessory .t b { font-size: 13px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.accessory .t span { font-size: 11px; color: var(--ink-3); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ibtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--ink); flex: none; }
+
+/* 封面 */
+.cover { position: relative; border-radius: 5px 7px 7px 5px; overflow: hidden; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 10% 11%; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 6px 16px rgba(0,0,0,.12); flex: none; }
+.cover::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5%; background: linear-gradient(90deg, rgba(0,0,0,.18), rgba(255,255,255,.06) 60%, transparent); }
+.cover .ct { font-family: var(--serif); font-weight: 600; line-height: 1.15; letter-spacing: .5px; position: relative; }
+.cover .ca { font-size: .6em; opacity: .75; position: relative; font-family: var(--sans); }
+.cover .seal { position: absolute; right: 10%; bottom: 9%; width: 16%; aspect-ratio: 1; border: 1px solid currentColor; opacity: .5; border-radius: 2px; }
+.c-green  { background: #2F4A3A; }
+.c-blue   { background: #253646; }
+.c-ochre  { background: #B58E4F; }
+.c-red    { background: #B4351B; }
+.c-purple { background: #7A6F92; }
+.c-cream  { background: #E5DDC8; color: #3A3226; }
+.c-ink    { background: #1A1815; color: #D6B577; }
+.c-gray   { background: #4A4A47; }
+.prog { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+
+/* 按钮 */
+.btn-p { height: 46px; border-radius: 23px; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 22px; }
+.btn-s { height: 46px; border-radius: 23px; background: var(--surface-2); color: var(--ink); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 20px; }
+.btn-c { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+
+/* 卡 / 列表 */
+.card { background: var(--surface); border-radius: 22px; }
+.group { background: var(--surface); border-radius: 22px; margin: 0 16px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 16px; font-size: 16px; position: relative; }
+.row + .row::before { content: ""; position: absolute; top: 0; left: 52px; right: 0; height: .5px; background: var(--line); }
+.row.noicon + .row.noicon::before { left: 16px; }
+.row .ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; }
+.row .ico svg { width: 17px; height: 17px; }
+.row .v { margin-left: auto; color: var(--ink-3); font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.row .chev { color: var(--ink-3); opacity: .6; width: 13px; height: 13px; }
+.ghead { font-size: 13px; color: var(--ink-3); padding: 22px 32px 7px; }
+.gfoot { font-size: 12.5px; color: var(--ink-3); padding: 7px 32px 0; line-height: 1.5; }
+.seg { display: flex; background: var(--surface-2); border-radius: 10px; padding: 2px; height: 34px; }
+.seg span { flex: 1; display: grid; place-items: center; font-size: 13px; font-weight: 500; border-radius: 8px; color: var(--ink); }
+.seg span.on { background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.1); font-weight: 600; }
+.dark .seg span.on { background: #4a4946; }
+.chip { height: 34px; padding: 0 14px; border-radius: 17px; background: var(--surface); font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--ink); }
+.chip.on { background: var(--ink); color: var(--bg); }
+.chip em { font-style: normal; color: var(--ink-3); font-weight: 400; }
+.chip.on em { color: inherit; opacity: .6; }
+.search { height: 38px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; gap: 7px; padding: 0 10px; color: var(--ink-3); font-size: 16px; }
+.h3 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 4px; }
+.h3 .chev { width: 15px; height: 15px; color: var(--ink-3); stroke-width: 2.4; }
+.toggle { width: 51px; height: 31px; border-radius: 16px; background: #34C759; position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; right: 2px; top: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
+.toggle.off { background: var(--surface-2); }
+.toggle.off::after { right: auto; left: 2px; }
+
+/* 阅读页 */
+.paper { --pbg: #F4EFE3; --pfg: #2A2620; --pfg2: #8C8475; }
+.paper.mist { --pbg: #E6EEE4; --pfg: #223326; --pfg2: #6E7F70; }
+.paper.night { --pbg: #141413; --pfg: #D9D5CB; --pfg2: #6F6C64; }
+.reader { background: var(--pbg); color: var(--pfg); }
+.reader .home { background: var(--pfg); }
+.reader .status { color: var(--pfg); }
+.rhead { position: absolute; top: 58px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--pfg2); letter-spacing: .5px; }
+.rbody { position: absolute; top: 92px; left: 28px; right: 28px; font-family: var(--serif); font-size: 19px; line-height: 1.88; text-align: justify; }
+.rbody p { text-indent: 2em; margin-bottom: .62em; }
+.rbody h4 { font-family: var(--serif); font-size: 24px; font-weight: 600; margin: 18px 0 22px; text-indent: 0; letter-spacing: 1px; }
+.rfoot { position: absolute; bottom: 30px; left: 28px; right: 28px; display: flex; justify-content: space-between; font-size: 11.5px; color: var(--pfg2); font-variant-numeric: tabular-nums; }
+.hl { background: linear-gradient(transparent 8%, var(--accent-wash) 8%); box-shadow: inset 0 -2px 0 var(--accent); border-radius: 3px; padding: 1px 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.word { background: var(--accent); color: var(--on-accent); border-radius: 3px; padding: 0 1px; }
+.dim { opacity: .2; }
+
+.rtop { position: absolute; top: 54px; left: 12px; right: 12px; height: 52px; display: flex; align-items: center; gap: 6px; z-index: 10; }
+.rtop .pill { height: 48px; border-radius: 24px; display: flex; align-items: center; padding: 0 4px; }
+.rtop .mid { flex: 1; text-align: center; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rtop .mid small { display: block; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.rbar { position: absolute; left: 12px; right: 12px; bottom: 28px; display: flex; gap: 8px; align-items: center; z-index: 10; }
+.rbar .main { flex: 1; height: 60px; border-radius: 30px; display: flex; align-items: center; padding: 0 6px; gap: 2px; }
+.slider { flex: 1; height: 4px; border-radius: 2px; background: rgba(128,128,128,.25); position: relative; margin: 0 6px; }
+.slider i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--ink); }
+.slider b { position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.25); transform: translate(-50%, -50%); }
+.listen-fab { width: 60px; height: 60px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: 0 8px 22px rgba(47,76,125,.35); flex: none; }
+
+/* 听条（边读边听） */
+.strip { position: absolute; left: 12px; right: 12px; bottom: 28px; height: 64px; border-radius: 32px; z-index: 12; display: flex; align-items: center; gap: 2px; padding: 0 8px 0 10px; overflow: hidden; }
+.strip .bar { position: absolute; left: 22px; right: 22px; top: 0; height: 2.5px; border-radius: 2px; background: rgba(128,128,128,.2); }
+.strip .bar i { display: block; height: 100%; width: 38%; background: var(--accent); border-radius: 2px; }
+.strip .meta { flex: 1; min-width: 0; padding-left: 4px; }
+.strip .meta b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip .ibtn { width: 36px; height: 40px; }
+.strip .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.strip .pp { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+.rate { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 0 8px; height: 32px; border-radius: 16px; display: grid; place-items: center; background: rgba(128,128,128,.14); }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: rgba(128,128,128,.4); margin: 0 auto; }
+.return-pill { position: absolute; left: 50%; transform: translateX(-50%); bottom: 104px; height: 36px; border-radius: 18px; padding: 0 14px; font-size: 13px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 6px; z-index: 12; white-space: nowrap; }
+
+/* sheet */
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-radius: 34px 34px 0 0; z-index: 25; box-shadow: 0 -8px 40px rgba(0,0,0,.18); padding-top: 7px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 6px; }
+.sheet-head b { font-size: 17px; font-weight: 600; }
+.round { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); }
+.round svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.18); z-index: 24; }
+
+/* 听书展开 */
+.player { color: #F4F1EA; }
+.player .bgc { position: absolute; inset: 0; background: radial-gradient(120% 60% at 50% 0%, #3E6150 0%, #1E2D25 45%, #0E1411 100%); }
+.player .status { color: #fff; }
+.player .home { background: #fff; }
+.sentences { font-family: var(--serif); text-align: left; }
+.sentences .prev, .sentences .next { font-size: 16px; line-height: 1.7; color: rgba(244,241,234,.38); }
+.sentences .cur { font-size: 23px; line-height: 1.62; font-weight: 500; color: #fff; margin: 16px 0; }
+.sentences .cur .w { background: rgba(255,255,255,.92); color: #1E2D25; border-radius: 4px; padding: 0 2px; }
+.pslider { height: 6px; border-radius: 3px; background: rgba(255,255,255,.18); position: relative; }
+.pslider i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: #fff; }
+.ptime { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,.55); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.transport { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+.transport .big { width: 78px; height: 78px; border-radius: 50%; background: #fff; color: #1E2D25; display: grid; place-items: center; }
+.rates { display: flex; gap: 6px; justify-content: center; }
+.rates span { height: 30px; min-width: 50px; padding: 0 10px; border-radius: 15px; display: grid; place-items: center; font-size: 13px; font-weight: 600; background: rgba(255,255,255,.1); color: rgba(255,255,255,.8); font-variant-numeric: tabular-nums; }
+.rates span.on { background: #fff; color: #1E2D25; }
+.pfoot { display: flex; justify-content: space-between; padding: 0 22px; }
+.pfoot .it { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,.7); width: 70px; }
+.pfoot .it svg { width: 22px; height: 22px; }
+
+/* 统计图 */
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; padding: 0 2px; }
+.bars div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.bars i { width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: var(--ink); opacity: .85; display: block; }
+.bars i.today { background: var(--accent); opacity: 1; }
+.bars span { font-size: 11px; color: var(--ink-3); }
+.kv { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
+.kv b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.kv span { font-size: 11px; color: var(--ink-3); }
+
+/* 映射表 */
+table.map { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--doc-card); border-radius: 18px; overflow: hidden; }
+table.map th, table.map td { text-align: left; padding: 11px 16px; border-bottom: 1px solid rgba(128,128,128,.15); vertical-align: top; line-height: 1.55; }
+table.map th { font-size: 12px; color: var(--doc-ink-2); font-weight: 600; }
+table.map td:first-child { color: var(--doc-ink-2); width: 32%; }
+table.map tr:last-child td { border-bottom: 0; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(47,76,125,.12); color: #2F4C7D; font-weight: 600; margin-left: 6px; }
+[data-theme="dark"] .tag { color: #9DB4E0; }
+ol.plan { padding-left: 22px; font-size: 14px; line-height: 1.8; color: var(--doc-ink-2); }
+ol.plan b { color: var(--doc-ink); }
+code.k { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: rgba(128,128,128,.14); padding: 1px 5px; border-radius: 4px; }
+
+/* IA 图 */
+.ia { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 0; align-items: center; background: var(--doc-card); border-radius: 22px; padding: 28px; }
+.ia h4 { font-size: 13px; color: var(--doc-ink-2); font-weight: 600; margin-bottom: 14px; }
+.ia .box { border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 8px; background: rgba(128,128,128,.1); line-height: 1.5; }
+.ia .box small { display: block; color: var(--doc-ink-2); font-size: 12px; }
+.ia .box.new { background: rgba(47,76,125,.12); }
+.ia .arrow { text-align: center; font-size: 28px; color: var(--doc-ink-2); }
+@media (max-width: 720px) { .ia { grid-template-columns: 1fr; } .ia .arrow { transform: rotate(90deg); margin: 8px 0; } h1.title { font-size: 34px; } }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()">切换文档明暗</button>
+
+<!-- 图标 sprite -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+    <symbol id="i-shelf" viewBox="0 0 24 24"><rect x="3.5" y="4" width="4" height="16" rx="1"/><rect x="9" y="4" width="4" height="16" rx="1"/><path d="M15.2 5.2l3.6-1 3 15.4-3.6 1z"/></symbol>
+    <symbol id="i-me" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.3-3.6 4.1-5.4 7.5-5.4s6.2 1.8 7.5 5.4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 4.8v14.4c0 .8.9 1.3 1.6.9l11.2-7.2c.6-.4.6-1.3 0-1.7L9.1 3.9c-.7-.4-1.6.1-1.6.9z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5.5v13L9 12z"/><rect x="5.5" y="5.5" width="2.6" height="13" rx="1"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5.5v13l9-6.5z"/><rect x="15.9" y="5.5" width="2.6" height="13" rx="1"/></symbol>
+    <symbol id="i-back-s" viewBox="0 0 24 24"><path d="M11.5 6L5.5 12l6 6M18.5 6l-6 6 6 6"/></symbol>
+    <symbol id="i-fwd-s" viewBox="0 0 24 24"><path d="M12.5 6l6 6-6 6M5.5 6l6 6-6 6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
+    <symbol id="i-chev-u" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r=".9"/><circle cx="4.8" cy="12" r=".9"/><circle cx="4.8" cy="17.5" r=".9"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol>
+    <symbol id="i-aa" viewBox="0 0 24 24"><path d="M3 18l5-12 5 12M4.8 14h6.4M14.5 18l3.5-8.5 3.5 8.5M15.6 15.3h4.8"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 011 1v16l-6-4-6 4v-16a1 1 0 011-1z"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+    <symbol id="i-toc" viewBox="0 0 24 24"><path d="M8.5 6.5H20M8.5 12H20M8.5 17.5H20M4 6.5h.6M4 12h.6M4 17.5h.6"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 019.5 4.5a8 8 0 1010 10z"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+    <symbol id="i-voice" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></symbol>
+    <symbol id="i-airplay" viewBox="0 0 24 24"><path d="M6 17H4.5a1.5 1.5 0 01-1.5-1.5v-10A1.5 1.5 0 014.5 4h15A1.5 1.5 0 0121 5.5v10a1.5 1.5 0 01-1.5 1.5H18"/><path d="M12 14l5 6H7z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 00.6-7.95A6 6 0 006.4 9.1 4.7 4.7 0 007 18.5z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4M6 11H5v9.5h14V11h-1"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5"/></symbol>
+    <symbol id="i-repair" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 015 5l-9 9-3.5-.5-.5-3.5 9-9"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/></symbol>
+    <symbol id="i-paint" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0012 3.5z" fill="currentColor"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><path d="M5 17c0-4 1.5-7 5-9M14 17c0-4 1.5-7 5-9"/></symbol>
+    <symbol id="i-sig" viewBox="0 0 24 24"><path d="M3 18h1M8 18h1M13 18h1M18 18h1" /><rect x="3" y="13" width="2.4" height="5" rx=".6" fill="currentColor"/><rect x="8" y="10" width="2.4" height="8" rx=".6" fill="currentColor"/><rect x="13" y="7" width="2.4" height="11" rx=".6" fill="currentColor"/><rect x="18" y="4" width="2.4" height="14" rx=".6" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<!-- ============================ 封面 ============================ -->
+<div class="doc">
+  <div class="kicker">听页 · v7 全量重设计 · 2026-10-13 · 设计预览（未改代码）</div>
+  <h1 class="title">一页：读与听，在同一页</h1>
+  <p class="lede">
+    「听页」的独特之处是<b>边读边听</b>。但现在读和听被拆成了三个地方：阅读全屏页、听书全屏页、迷你播放器，它们之间要来回跳转。界面也是自己画的（页签栏、工具栏都是自定义组件），和系统新的液态玻璃格格不入。这一版从结构上重做：<b>听书变成阅读页的一种状态，不再是另一个页面</b>；外壳全部改用原生组件；整套界面只用一种强调色。
+  </p>
+</div>
+
+<div class="grid3 doc">
+  <div class="note"><span class="num">问题 01</span><b>读、听分家</b><p>阅读页底部三层工具栏 + 「听读模式」全屏页 + 迷你播放器。用户在读的时候点「听」，会被带离正文。</p></div>
+  <div class="note"><span class="num">问题 02</span><b>「发现」和「书斋」重复</b><p>「发现」只能推荐书架里已有的书（约定不做网络书城），内容和书斋高度重合，用户很难说清两个页签有什么区别。</p></div>
+  <div class="note"><span class="num">问题 03</span><b>自定义外壳与系统打架</b><p>自绘的悬浮页签栏、卡片阴影、按钮样式无法自动获得 iOS 26+ 的液态玻璃、动态字体和无障碍行为，每次换风格都要全部重画。</p></div>
+  <div class="note"><span class="num">问题 04</span><b>强调色规则太多</b><p>六轮改版下来叠了主色 + 金箔「只用于朗读」+ 朱砂「只用于 CTA」这样的规则，代码里留下大量兼容别名，文档和实际实现已经不一致。</p></div>
+</div>
+
+<h2 class="sec">三条原则</h2>
+<div class="grid3 doc" style="margin-top:12px">
+  <div class="note"><span class="num">原生为骨</span><b>外壳交给系统</b><p>系统 <code class="k">TabView</code>、大标题导航、<code class="k">.toolbar</code>、可分档 sheet、<code class="k">Form</code>。iOS 26+ 自动获得液态玻璃，iOS 17–25 用同形状的材质模糊兜底。个性只放在书里：封面、衬线正文、朗读高亮。</p></div>
+  <div class="note"><span class="num">读听一体</span><b>听书是阅读页的一种状态</b><p>阅读页底部有一颗「听」键。点下后底栏变成「听条」，正文原地高亮跟读；上滑听条展开成完整播放器（sheet），下滑回到正文，始终是同一本书的同一页。</p></div>
+  <div class="note"><span class="num">一色到底</span><b>只有一种强调色：靛蓝</b><p>主按钮、选中态、进度、朗读高亮都用同一个靛蓝 <code class="k">#2F4C7D</code>。没有「金箔只用于什么」「朱砂只用于什么」这类规则。封面保留自己的颜色，界面本身保持中性。</p></div>
+</div>
+
+<!-- ============================ IA ============================ -->
+<h2 class="sec">信息架构</h2>
+<p class="sec-sub">页签仍是三个，但每个页签的职责更清楚了：「今日」负责今天要做什么，「书架」负责我有哪些书，「我」负责统计和设置。原「发现」的每一项功能都有新位置，详见文末的功能映射表。</p>
+<div class="ia">
+  <div>
+    <h4>现在（v6 现代书店 / 明澈）</h4>
+    <div class="box">书斋<small>续读卡 · 筛选 · 排序 · 三列网格 · 导入</small></div>
+    <div class="box">发现<small>今日重读 · 分类 · 待阅读 / 最近收藏 · 藏书列表</small></div>
+    <div class="box">我<small>阅读时长图表 · 设置三组</small></div>
+    <div class="box">阅读页（全屏）<small>顶栏 + 底部三层：状态 / 章节滑杆 / 听书胶囊 + 五入口卡</small></div>
+    <div class="box">听书全屏页（sheet）+ 迷你播放器</div>
+  </div>
+  <div class="arrow">→</div>
+  <div>
+    <h4>v7「一页」</h4>
+    <div class="box new">今日<small>继续（读 / 听）· 今日时长 · 今日一句（原「今日重读」）· 待阅读 · 最近添加</small></div>
+    <div class="box new">书架<small>搜索 · 状态 + 分类筛选 · 排序 · 网格 / 列表切换 · 导入</small></div>
+    <div class="box new">我<small>统计 · 阅读与听书 · 数据 · 关于（原生 Form）</small></div>
+    <div class="box new">一页（阅读页）<small>三种状态：沉浸 → 工具栏（一层玻璃栏）→ 听条 ⇅ 展开播放器</small></div>
+    <div class="box new">页签栏附件<small>iOS 26 <code class="k">tabViewBottomAccessory</code> 承载正在听</small></div>
+  </div>
+</div>
+
+<!-- ============================ 令牌 ============================ -->
+<h2 class="sec">设计令牌</h2>
+<p class="sec-sub">令牌数量从现在的 30 多个（含兼容别名）精简为 12 个语义色。深色是同一色系的暖黑，靛蓝在深色下提亮以保证 4.5:1 的对比度。</p>
+<div class="swatches">
+  <div class="sw"><i style="background:#F5F4F0"></i><span>bg</span><em>#F5F4F0 / #0F0F0E</em></div>
+  <div class="sw"><i style="background:#FFFFFF"></i><span>surface</span><em>#FFFFFF / #1C1C1A</em></div>
+  <div class="sw"><i style="background:#ECEAE5"></i><span>surface-2</span><em>#ECEAE5 / #2A2927</em></div>
+  <div class="sw"><i style="background:#1C1B19"></i><span>ink</span><em>#1C1B19 / #F2F1EC</em></div>
+  <div class="sw"><i style="background:#5B5953"></i><span>ink-2</span><em>#5B5953 / #B5B2AA</em></div>
+  <div class="sw"><i style="background:#9A978F"></i><span>ink-3</span><em>#9A978F / #77746C</em></div>
+  <div class="sw"><i style="background:#2F4C7D"></i><span>accent 靛蓝</span><em>#2F4C7D / #9DB4E0</em></div>
+  <div class="sw"><i style="background:#E4EAF3"></i><span>accent-soft</span><em>#E4EAF3 / #1E2A3F</em></div>
+  <div class="sw"><i style="background:rgba(47,76,125,.13)"></i><span>朗读高亮底</span><em>accent 13%</em></div>
+  <div class="sw"><i style="background:#C2402F"></i><span>danger</span><em>systemRed 近似</em></div>
+</div>
+<p class="sec-sub" style="margin-top:22px">封面色板保持不变（书的个性）：</p>
+<div class="swatches">
+  <div class="sw"><i class="c-green"></i><span>green</span></div>
+  <div class="sw"><i class="c-blue"></i><span>blue</span></div>
+  <div class="sw"><i class="c-ochre"></i><span>ochre</span></div>
+  <div class="sw"><i class="c-red"></i><span>red</span></div>
+  <div class="sw"><i class="c-purple"></i><span>purple</span></div>
+  <div class="sw"><i class="c-cream"></i><span>cream</span></div>
+  <div class="sw"><i class="c-ink"></i><span>ink</span></div>
+</div>
+<div class="doc" style="margin-top:30px">
+  <div class="type-row"><code>largeTitle · SF 34 Bold</code><span style="font-size:34px;font-weight:700;letter-spacing:-.6px">今日</span></div>
+  <div class="type-row"><code>title3 · SF 20 Bold</code><span style="font-size:20px;font-weight:700">待阅读</span></div>
+  <div class="type-row"><code>bookTitle · 思源宋 22/600</code><span style="font-family:var(--serif);font-size:22px;font-weight:600">故乡</span></div>
+  <div class="type-row"><code>reading · 思源宋 19 / 行高 1.88</code><span style="font-family:var(--serif);font-size:19px">其实地上本没有路，走的人多了，也便成了路。</span></div>
+  <div class="type-row"><code>body · SF 16</code><span style="font-size:16px">界面文字、控件一律系统字体，支持动态字体</span></div>
+  <div class="type-row"><code>caption · SF 12 · 数字等宽</code><span style="font-size:12px;color:var(--doc-ink-2);font-variant-numeric:tabular-nums">第 2 / 3 章 · 36% · 12:04</span></div>
+</div>
+<p class="sec-sub" style="margin-top:22px">形状：内容卡 22pt 圆角，不加阴影，靠底色差区分层次；悬浮控件（页签栏、阅读工具栏、听条）统一用玻璃胶囊；按钮全部做成胶囊形；最小点击区 44pt。阴影只用在封面和玻璃上。</p>
+
+<!-- ============================ 屏幕：主页签 ============================ -->
+<h2 class="sec">主页签</h2>
+<p class="sec-sub">横向滚动查看。所有手机画面都按 iPhone 17（393 × 852pt）绘制。</p>
+<div class="canvas">
+
+  <!-- 今日 -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav"><div class="btn glass"><svg class="i"><use href="#i-me"/></svg></div></div>
+        <div class="large-title">今日</div>
+        <div class="subtitle">10 月 13 日 星期二</div>
+
+        <!-- 继续卡：封面色渐变 -->
+        <div class="pad" style="margin-top:16px">
+          <div style="border-radius:26px;overflow:hidden;position:relative;background:linear-gradient(160deg,#3E6150 0%,#2F4A3A 55%,#22372B 100%);color:#fff;padding:20px">
+            <div style="display:flex;gap:16px">
+              <div class="cover c-green" style="width:92px;height:132px;font-size:17px;box-shadow:0 10px 26px rgba(0,0,0,.35)"><div class="ct">故<br>乡</div><div class="ca">鲁迅</div><div class="seal"></div></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:12px;font-weight:600;opacity:.7;letter-spacing:.3px">继续 · 2 小时前</div>
+                <div style="font-family:var(--serif);font-size:24px;font-weight:600;margin-top:6px">故乡</div>
+                <div style="font-size:13px;opacity:.7;margin-top:2px">鲁迅 · 第 2 章 少年闰土</div>
+                <div style="margin-top:auto">
+                  <div style="display:flex;justify-content:space-between;font-size:11.5px;opacity:.75;margin-bottom:6px;font-variant-numeric:tabular-nums"><span>第 2 / 3 章</span><span>36%</span></div>
+                  <div style="height:4px;border-radius:2px;background:rgba(255,255,255,.22)"><i style="display:block;width:36%;height:100%;background:#fff;border-radius:2px"></i></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px">
+              <div class="btn-p" style="flex:1;background:#fff;color:#22372B">继续阅读</div>
+              <div class="btn-p" style="background:rgba(255,255,255,.18);color:#fff;padding:0 18px"><svg class="i s f"><use href="#i-play"/></svg>听</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 今日时长 -->
+        <div class="pad" style="margin-top:14px">
+          <div class="card" style="padding:16px 18px;display:flex;align-items:center;gap:16px">
+            <div style="flex:none">
+              <div style="font-size:12px;color:var(--ink-3)">今日已读</div>
+              <div style="font-size:28px;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums">23<span style="font-size:14px;font-weight:500;color:var(--ink-3)"> 分钟</span></div>
+            </div>
+            <div style="flex:1;display:flex;align-items:flex-end;gap:7px;height:44px;justify-content:flex-end">
+              <i style="width:14px;height:40%;background:var(--ink);opacity:.8;border-radius:4px"></i>
+              <i style="width:14px;height:70%;background:var(--ink);opacity:.8;border-radius:4px"></i>
+              <i style="width:14px;height:20%;background:var(--ink);opacity:.8;border-radius:4px"></i>
+              <i style="width:14px;height:8%;background:var(--surface-2);border-radius:4px"></i>
+              <i style="width:14px;height:85%;background:var(--ink);opacity:.8;border-radius:4px"></i>
+              <i style="width:14px;height:55%;background:var(--ink);opacity:.8;border-radius:4px"></i>
+              <i style="width:14px;height:48%;background:var(--accent);border-radius:4px"></i>
+            </div>
+            <svg class="i s" style="color:var(--ink-3)"><use href="#i-chev"/></svg>
+          </div>
+        </div>
+
+        <!-- 今日一句 -->
+        <div class="pad" style="margin-top:26px"><div class="h3">今日一句</div></div>
+        <div class="pad" style="margin-top:10px">
+          <div class="card" style="padding:20px 20px 18px">
+            <div style="font-family:var(--serif);font-size:19px;line-height:1.7;font-weight:500">“其实地上本没有路，走的人多了，也便成了路。”</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+              <div class="cover c-green" style="width:26px;height:36px;font-size:7px;padding:3px"><div class="ct">故乡</div></div>
+              <div style="flex:1;font-size:12.5px;color:var(--ink-3)">《故乡》第 3 章 · 希望</div>
+              <div style="font-size:14px;font-weight:600;color:var(--accent)">从这句读</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 待阅读 -->
+        <div class="pad" style="margin-top:26px;display:flex;justify-content:space-between;align-items:center"><div class="h3">待阅读 <svg class="i chev"><use href="#i-chev"/></svg></div></div>
+        <div style="display:flex;gap:14px;padding:12px 20px 0;overflow:hidden">
+          <div><div class="cover c-blue" style="width:96px;height:138px;font-size:15px"><div class="ct">春</div><div class="ca">朱自清</div></div><div style="font-family:var(--serif);font-size:13px;font-weight:500;margin-top:8px">春</div></div>
+          <div><div class="cover c-ochre" style="width:96px;height:138px;font-size:13px"><div class="ct">飞鸟集</div><div class="ca">泰戈尔</div></div><div style="font-family:var(--serif);font-size:13px;font-weight:500;margin-top:8px">飞鸟集</div></div>
+          <div><div class="cover c-purple" style="width:96px;height:138px;font-size:13px"><div class="ct">边城</div><div class="ca">沈从文</div></div><div style="font-family:var(--serif);font-size:13px;font-weight:500;margin-top:8px">边城</div></div>
+          <div><div class="cover c-ink" style="width:96px;height:138px;font-size:13px"><div class="ct">呐喊</div><div class="ca">鲁迅</div></div></div>
+        </div>
+      </div>
+
+      <!-- 正在听：页签栏附件 -->
+      <div class="accessory glass">
+        <div class="cover c-green" style="width:30px;height:40px;font-size:7px;padding:4px;border-radius:4px"><div class="ct">故乡</div></div>
+        <div class="t"><b>故乡 · 少年闰土</b><span>第 12 / 31 句 · 系统声音 1.2×</span></div>
+        <div class="ibtn"><svg class="i f"><use href="#i-pause"/></svg></div>
+        <div class="ibtn"><svg class="i f s"><use href="#i-next"/></svg></div>
+      </div>
+      <div class="tabbar glass">
+        <div class="tab on"><svg class="i"><use href="#i-today"/></svg>今日</div>
+        <div class="tab"><svg class="i"><use href="#i-shelf"/></svg>书架</div>
+        <div class="tab"><svg class="i"><use href="#i-me"/></svg>我</div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>今日</b><p>打开 App 首先看到的是「继续」：卡片底色取自封面颜色，读和听两个入口并列。今日时长条可以点进「我」查看完整统计。「今日一句」取代「今日重读」：每天从书架里挑一本，摘出其中一句，点「从这句读」直接跳到原文位置。正在听的书显示在页签栏上方的附件里。</p></div>
+  </div>
+
+  <!-- 书架 -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav">
+          <div class="glass" style="height:44px;border-radius:22px;display:flex;align-items:center;padding:0 4px">
+            <div class="ibtn"><svg class="i"><use href="#i-grid"/></svg></div>
+            <div class="ibtn"><svg class="i"><use href="#i-sort"/></svg></div>
+          </div>
+          <div class="btn glass" style="background:var(--accent);color:var(--on-accent);border:0"><svg class="i"><use href="#i-plus"/></svg></div>
+        </div>
+        <div class="large-title">书架</div>
+        <div class="pad" style="margin-top:12px"><div class="search"><svg class="i s"><use href="#i-search"/></svg>书名、作者、分类</div></div>
+        <div style="display:flex;gap:8px;padding:14px 20px 0;overflow:hidden">
+          <span class="chip on">全部 <em>12</em></span>
+          <span class="chip">在读 <em>4</em></span>
+          <span class="chip">未开卷 <em>8</em></span>
+          <span class="chip">小说</span>
+          <span class="chip">散文</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:18px 20px 0;font-size:13px;color:var(--ink-3)"><span>12 本 · 最近阅读</span><span>本机 11 · iCloud 1</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px 16px;padding:14px 20px 0">
+          <div><div class="cover c-green" style="width:100%;aspect-ratio:.7;font-size:15px"><div class="ct">故乡</div><div class="ca">鲁迅</div><div class="seal"></div></div><div class="prog" style="margin-top:8px"><i style="width:36%"></i></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">故乡</div><div style="font-size:11.5px;color:var(--ink-3)">鲁迅 · 36%</div></div>
+          <div><div class="cover c-red" style="width:100%;aspect-ratio:.7;font-size:15px"><div class="ct">朝花夕拾</div><div class="ca">鲁迅</div></div><div class="prog" style="margin-top:8px"><i style="width:72%"></i></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">朝花夕拾</div><div style="font-size:11.5px;color:var(--ink-3)">鲁迅 · 72%</div></div>
+          <div><div class="cover c-cream" style="width:100%;aspect-ratio:.7;font-size:15px"><div class="ct">围城</div><div class="ca">钱锺书</div></div><div class="prog" style="margin-top:8px"><i style="width:12%"></i></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">围城</div><div style="font-size:11.5px;color:var(--ink-3)">钱锺书 · 12%</div></div>
+          <div><div class="cover c-blue" style="width:100%;aspect-ratio:.7;font-size:15px"><div class="ct">春</div><div class="ca">朱自清</div></div><div style="height:3px;margin-top:8px"></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">春</div><div style="font-size:11.5px;color:var(--ink-3)">朱自清 · 未开卷</div></div>
+          <div><div class="cover c-ochre" style="width:100%;aspect-ratio:.7;font-size:15px"><div class="ct">飞鸟集</div><div class="ca">泰戈尔</div></div><div style="height:3px;margin-top:8px"></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">飞鸟集</div><div style="font-size:11.5px;color:var(--ink-3)">泰戈尔 · 未开卷</div></div>
+          <div><div class="cover c-gray" style="width:100%;aspect-ratio:.7;font-size:15px;opacity:.9"><div class="ct">人间词话</div><div class="ca">王国维</div><div style="position:absolute;right:6px;top:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.35);display:grid;place-items:center"><svg class="i xs"><use href="#i-cloud"/></svg></div></div><div style="height:3px;margin-top:8px"></div><div style="font-family:var(--serif);font-size:13.5px;font-weight:500;margin-top:7px">人间词话</div><div style="font-size:11.5px;color:var(--ink-3)">王国维 · iCloud</div></div>
+        </div>
+      </div>
+      <div class="tabbar glass">
+        <div class="tab"><svg class="i"><use href="#i-today"/></svg>今日</div>
+        <div class="tab on"><svg class="i"><use href="#i-shelf"/></svg>书架</div>
+        <div class="tab"><svg class="i"><use href="#i-me"/></svg>我</div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>书架</b><p>系统大标题配原生搜索。状态筛选（全部 / 在读 / 未开卷）和分类（原「发现」的分类）合并成一排横向滚动的胶囊。右上角依次是网格 / 列表切换（列表视图即原「我的藏书」）、排序菜单和导入。阅读进度条移到封面下方，不再压在封面上。长按封面弹出菜单：阅读、听、详情、导出、移除。</p></div>
+  </div>
+
+  <!-- 详情 -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status light"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll" style="padding-top:0">
+        <div style="height:400px;background:linear-gradient(180deg,#2F4A3A 0%,#3E6150 60%,var(--bg) 100%);position:relative">
+          <div style="position:absolute;top:58px;left:16px;right:16px;display:flex;justify-content:space-between">
+            <div class="ibtn glass" style="width:44px;height:44px;color:#fff;background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.25)"><svg class="i"><use href="#i-chev-l"/></svg></div>
+            <div class="ibtn glass" style="width:44px;height:44px;color:#fff;background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.25)"><svg class="i"><use href="#i-more"/></svg></div>
+          </div>
+          <div style="position:absolute;top:120px;left:50%;transform:translateX(-50%)">
+            <div class="cover c-green" style="width:150px;height:214px;font-size:26px;box-shadow:0 22px 50px rgba(0,0,0,.4)"><div class="ct">故<br>乡</div><div class="ca">鲁迅</div><div class="seal"></div></div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:-30px;position:relative">
+          <div style="font-family:var(--serif);font-size:26px;font-weight:600">故乡</div>
+          <div style="font-size:14px;color:var(--ink-3);margin-top:4px">鲁迅 · 小说 · EPUB</div>
+        </div>
+        <div class="pad" style="display:flex;gap:10px;margin-top:18px">
+          <div class="btn-p" style="flex:1">继续阅读</div>
+          <div class="btn-s" style="flex:1"><svg class="i s f"><use href="#i-play"/></svg>听书</div>
+        </div>
+        <div class="pad" style="margin-top:14px">
+          <div class="card" style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;padding:14px 0">
+            <div><b style="font-size:18px;font-variant-numeric:tabular-nums">36%</b><div style="font-size:11px;color:var(--ink-3)">已读</div></div>
+            <div style="border-left:.5px solid var(--line);border-right:.5px solid var(--line)"><b style="font-size:18px;font-variant-numeric:tabular-nums">2 / 3</b><div style="font-size:11px;color:var(--ink-3)">章节</div></div>
+            <div><b style="font-size:18px">本机</b><div style="font-size:11px;color:var(--ink-3)">存储</div></div>
+          </div>
+        </div>
+        <div class="ghead">简介</div>
+        <div class="pad"><div style="font-family:var(--serif);font-size:15px;line-height:1.75;color:var(--ink-2)">我冒了严寒，回到相隔二千余里，别了二十余年的故乡去……</div></div>
+        <div class="ghead">管理</div>
+        <div class="group">
+          <div class="row"><div class="ico" style="background:#2F4C7D"><svg class="i"><use href="#i-toc"/></svg></div>目录与章节<span class="v">3 章 <svg class="i chev"><use href="#i-chev"/></svg></span></div>
+          <div class="row"><div class="ico" style="background:#8A6A3C"><svg class="i"><use href="#i-repair"/></svg></div>修复原书图文 / 封面<span class="v"><svg class="i chev"><use href="#i-chev"/></svg></span></div>
+        </div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>书籍详情</b><p>页面顶部用封面色铺一层渐变，导航栏是透明玻璃。主操作只有两个：继续阅读和听书，下面是一行进度数据。「管理」改成原生分组列表：目录与章节、修复原书图文、导出听页备份、移除书籍（删除仍提供「仅本机」和「本机 + iCloud」两个选项，文案不变）。</p></div>
+  </div>
+
+  <!-- 我 -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav"></div>
+        <div class="large-title">我</div>
+        <div class="subtitle">本机书架 · 12 本 · 数据只保存在这台设备和你的 iCloud</div>
+        <div class="pad" style="margin-top:16px">
+          <div class="card" style="padding:16px">
+            <div class="seg"><span class="on">7 天</span><span>30 天</span><span>全部</span></div>
+            <div class="bars" style="margin-top:18px">
+              <div><i style="height:40%"></i><span>三</span></div>
+              <div><i style="height:70%"></i><span>四</span></div>
+              <div><i style="height:20%"></i><span>五</span></div>
+              <div><i style="height:4%;opacity:.25"></i><span>六</span></div>
+              <div><i style="height:85%"></i><span>日</span></div>
+              <div><i style="height:55%"></i><span>一</span></div>
+              <div><i class="today" style="height:48%"></i><span style="color:var(--accent);font-weight:600">今</span></div>
+            </div>
+            <div class="kv" style="margin-top:18px">
+              <div><b>23</b><span>今日分钟</span></div>
+              <div><b>1,286</b><span>累计分钟</span></div>
+              <div><b>41</b><span>阅读天数</span></div>
+              <div><b>31</b><span>日均分钟</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="ghead">阅读与听书</div>
+        <div class="group">
+          <div class="row"><div class="ico" style="background:#2F4C7D"><svg class="i"><use href="#i-aa"/></svg></div>字样与排版<span class="v"><svg class="i chev"><use href="#i-chev"/></svg></span></div>
+          <div class="row"><div class="ico" style="background:#5856D6"><svg class="i"><use href="#i-wave"/></svg></div>听书与声音<span class="v">系统声音 <svg class="i chev"><use href="#i-chev"/></svg></span></div>
+          <div class="row"><div class="ico" style="background:#636366"><svg class="i"><use href="#i-paint"/></svg></div>外观<span class="v">跟随系统 <svg class="i chev"><use href="#i-chev"/></svg></span></div>
+        </div>
+        <div class="ghead">数据</div>
+        <div class="group">
+          <div class="row"><div class="ico" style="background:#0A84FF"><svg class="i"><use href="#i-cloud"/></svg></div>iCloud 备份与同步<span class="v">已开启 <svg class="i chev"><use href="#i-chev"/></svg></span></div>
+          <div class="row"><div class="ico" style="background:#34A853"><svg class="i"><use href="#i-share"/></svg></div>导出阅读数据<span class="v">JSON</span></div>
+          <div class="row"><div class="ico" style="background:#8E8E93"><svg class="i"><use href="#i-trash"/></svg></div>清除缓存</div>
+        </div>
+      </div>
+      <div class="tabbar glass">
+        <div class="tab"><svg class="i"><use href="#i-today"/></svg>今日</div>
+        <div class="tab"><svg class="i"><use href="#i-shelf"/></svg>书架</div>
+        <div class="tab on"><svg class="i"><use href="#i-me"/></svg>我</div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>我</b><p>统计卡沿用 Swift Charts 柱状图，今天的柱子用靛蓝标出。下面的设置是原生 <code class="k">Form</code>，配系统风格的彩色小图标，分「阅读与听书」「数据」「关于」三组，与现在的入口一一对应。「关于」组（版本、开源字体许可、隐私政策）在下方，需要滚动查看。</p></div>
+  </div>
+</div>
+
+<!-- ============================ 一页：阅读 ⇄ 听 ============================ -->
+<h2 class="sec">一页：读与听的四种状态</h2>
+<p class="sec-sub">同一个页面、同一份正文，只是底栏在变化。从左到右是一次完整的使用过程：沉浸阅读 → 轻点中间唤出工具栏 → 点「听」→ 上滑听条展开播放器。</p>
+<div class="canvas">
+
+  <!-- A 沉浸 -->
+  <div class="shot">
+    <div class="phone reader paper">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead">少年闰土</div>
+      <div class="rbody">
+        <p>这时候，我的脑里忽然闪出一幅神异的图画来：深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜，其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去，那猹却将身一扭，反从他的胯下逃走了。</p>
+        <p>这少年便是闰土。我认识他时，也不过十多岁，离现在将有三十年了；那时我的父亲还在世，家景也好，我正是一个少爷。那一年，我家是一件大祭祀的值年。这祭祀，说是三十多年才能轮到一回，所以很郑重；正月里供祖像，供品很多，祭器很讲究，拜的人也很多，祭器也很要防偷去。</p>
+        <p>我家只有一个忙月，他便对父亲说，可以叫他的儿子闰土来管祭器的。</p>
+      </div>
+      <div class="rfoot"><span>第 2 章</span><span>12 / 31 · 36%</span></div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>① 沉浸</b><p>屏幕上只有正文。页面顶部是章节名，底部是页码和进度。轻点左右两侧翻页，轻点中间唤出工具栏，长按某一句从这句开始听，这些操作都保留。</p></div>
+  </div>
+
+  <!-- B 工具栏 -->
+  <div class="shot">
+    <div class="phone reader paper">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead" style="opacity:0">少年闰土</div>
+      <div class="rbody">
+        <p>这时候，我的脑里忽然闪出一幅神异的图画来：深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜，其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去，那猹却将身一扭，反从他的胯下逃走了。</p>
+        <p>这少年便是闰土。我认识他时，也不过十多岁，离现在将有三十年了；那时我的父亲还在世，家景也好，我正是一个少爷。那一年，我家是一件大祭祀的值年。这祭祀，说是三十多年才能轮到一回，所以很郑重；正月里供祖像，供品很多，祭器很讲究，拜的人也很多，祭器也很要防偷去。</p>
+        <p>我家只有一个忙月，他便对父亲说，可以叫他的儿子闰土来管祭器的。</p>
+      </div>
+      <div class="rtop">
+        <div class="pill glass"><div class="ibtn"><svg class="i"><use href="#i-chev-l"/></svg></div></div>
+        <div class="mid">少年闰土<small>第 2 / 3 章</small></div>
+        <div class="pill glass">
+          <div class="ibtn"><svg class="i"><use href="#i-bookmark"/></svg></div>
+          <div class="ibtn"><svg class="i"><use href="#i-aa"/></svg></div>
+          <div class="ibtn"><svg class="i"><use href="#i-more"/></svg></div>
+        </div>
+      </div>
+      <div class="rbar">
+        <div class="main glass">
+          <div class="ibtn"><svg class="i"><use href="#i-toc"/></svg></div>
+          <div class="ibtn" style="width:32px;color:var(--ink-3)"><svg class="i s"><use href="#i-chev-l"/></svg></div>
+          <div class="slider"><i style="width:48%"></i><b style="left:48%"></b></div>
+          <div class="ibtn" style="width:32px;color:var(--ink-3)"><svg class="i s"><use href="#i-chev"/></svg></div>
+          <div class="ibtn"><svg class="i"><use href="#i-moon"/></svg></div>
+        </div>
+        <div class="listen-fab"><svg class="i l"><use href="#i-wave"/></svg></div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>② 工具栏</b><p>原来底部的三层工具栏 + 五个入口，合并成<b>一条玻璃栏</b>：目录 · 上一章 / 章节滑杆 / 下一章 · 夜间。右侧单独放一颗靛蓝的「听」键。顶栏只保留返回、书签、Aa（字样）和 ⋯（原书图文、导出备份）。「声音」和「定时」只跟听书有关，所以挪到了听条里。工具栏仍然浮在正文上方，不会触发重新分页。</p></div>
+  </div>
+
+  <!-- C 听条 -->
+  <div class="shot">
+    <div class="phone reader paper">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead">少年闰土</div>
+      <div class="rbody">
+        <p>这时候，我的脑里忽然闪出一幅神异的图画来：深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜，其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去，那猹却将身一扭，反从他的胯下逃走了。</p>
+        <p><span class="hl">这少年便是<span class="word">闰土</span>。</span>我认识他时，也不过十多岁，离现在将有三十年了；那时我的父亲还在世，家景也好，我正是一个少爷。那一年，我家是一件大祭祀的值年。这祭祀，说是三十多年才能轮到一回，所以很郑重；正月里供祖像，供品很多，祭器很讲究，拜的人也很多，祭器也很要防偷去。</p>
+        <p>我家只有一个忙月，他便对父亲说，可以叫他的儿子闰土来管祭器的。</p>
+      </div>
+      <div class="strip glass">
+        <div class="bar"><i></i></div>
+        <div class="pp"><svg class="i f"><use href="#i-pause"/></svg></div>
+        <div class="meta"><b>第 12 / 31 句</b><span>系统声音 · 逐词</span></div>
+        <div class="ibtn"><svg class="i"><use href="#i-back-s"/></svg></div>
+        <div class="ibtn"><svg class="i"><use href="#i-fwd-s"/></svg></div>
+        <div class="rate">1.2×</div>
+        <div class="ibtn"><svg class="i"><use href="#i-timer"/></svg></div>
+        <div class="ibtn" style="width:28px;color:var(--ink-3)"><svg class="i s"><use href="#i-chev-u"/></svg></div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>③ 边读边听：听条</b><p>点「听」以后正文原地高亮：当前句铺一层靛蓝浅底并加下划线，当前词反白（系统声音逐词，云朗读有时间戳时逐词，否则只显示句级，并在听条上注明「句级」或「估算」）。听条常驻底部，包括暂停、上一句 / 下一句、语速、定时；即使隐藏工具栏，听条也一直显示。翻页自动跟随朗读。</p></div>
+  </div>
+
+  <!-- C2 跑开了 -->
+  <div class="shot">
+    <div class="phone reader paper">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead">希望</div>
+      <div class="rbody">
+        <h4>希望</h4>
+        <p>我在朦胧中，眼前展开一片海边碧绿的沙地来，上面深蓝的天空中挂着一轮金黄的圆月。</p>
+        <p>我想：希望是本无所谓有，无所谓无的。这正如地上的路；其实地上本没有路，走的人多了，也便成了路。</p>
+      </div>
+      <div class="return-pill glass"><svg class="i s"><use href="#i-wave"/></svg>回到朗读处 · 第 2 章</div>
+      <div class="strip glass">
+        <div class="bar"><i></i></div>
+        <div class="pp"><svg class="i f"><use href="#i-pause"/></svg></div>
+        <div class="meta"><b>第 2 章 · 12 句</b><span>朗读在别处</span></div>
+        <div class="ibtn"><svg class="i"><use href="#i-back-s"/></svg></div>
+        <div class="ibtn"><svg class="i"><use href="#i-fwd-s"/></svg></div>
+        <div class="rate">1.2×</div>
+        <div class="ibtn"><svg class="i"><use href="#i-timer"/></svg></div>
+        <div class="ibtn" style="width:28px;color:var(--ink-3)"><svg class="i s"><use href="#i-chev-u"/></svg></div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>③′ 手动翻到别处</b><p>边听边往后翻时，停止自动跟随，听条上方浮出「回到朗读处」。听条显示朗读的实际位置，避免以为听的就是眼前这一页。对应现有的 <code class="k">following</code> 状态。</p></div>
+  </div>
+
+  <!-- D 展开播放器 -->
+  <div class="shot">
+    <div class="phone player">
+      <div class="bgc"></div>
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div style="position:absolute;inset:54px 0 0;padding:8px 24px 0;display:flex;flex-direction:column">
+        <div class="grabber" style="background:rgba(255,255,255,.35)"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:18px">
+          <div class="cover c-green" style="width:46px;height:64px;font-size:10px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><div class="ct">故乡</div></div>
+          <div style="flex:1">
+            <div style="font-family:var(--serif);font-size:18px;font-weight:600">故乡</div>
+            <div style="font-size:13px;opacity:.6">第 2 章 · 少年闰土</div>
+          </div>
+          <div class="ibtn" style="color:#fff;background:rgba(255,255,255,.1)"><svg class="i"><use href="#i-more"/></svg></div>
+        </div>
+        <div class="sentences" style="margin-top:44px">
+          <div class="prev">……那猹却将身一扭，反从他的胯下逃走了。</div>
+          <div class="cur">这少年便是<span class="w">闰土</span>。我认识他时，也不过十多岁，离现在将有三十年了；</div>
+          <div class="next">那时我的父亲还在世，家景也好，我正是一个少爷。</div>
+        </div>
+        <div style="margin-top:auto">
+          <div class="pslider"><i style="width:38%"></i></div>
+          <div class="ptime"><span>第 12 / 31 句</span><span>本章约剩 4 分钟</span></div>
+          <div class="transport" style="margin-top:26px">
+            <div class="ibtn" style="color:#fff;opacity:.7"><svg class="i"><use href="#i-prev"/></svg></div>
+            <div class="ibtn" style="color:#fff;width:52px;height:52px"><svg class="i l"><use href="#i-back-s"/></svg></div>
+            <div class="big"><svg class="i l f"><use href="#i-pause"/></svg></div>
+            <div class="ibtn" style="color:#fff;width:52px;height:52px"><svg class="i l"><use href="#i-fwd-s"/></svg></div>
+            <div class="ibtn" style="color:#fff;opacity:.7"><svg class="i"><use href="#i-next"/></svg></div>
+          </div>
+          <div class="rates" style="margin-top:28px"><span>0.8×</span><span>1.0×</span><span class="on">1.2×</span><span>1.5×</span><span>2.0×</span></div>
+          <div class="pfoot" style="margin:30px -24px 44px">
+            <div class="it"><svg class="i"><use href="#i-airplay"/></svg>AirPlay</div>
+            <div class="it"><svg class="i"><use href="#i-timer"/></svg>15 分钟</div>
+            <div class="it"><svg class="i"><use href="#i-voice"/></svg>系统声音</div>
+            <div class="it"><svg class="i"><use href="#i-toc"/></svg>章节</div>
+          </div>
+        </div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>④ 展开播放器</b><p>上滑听条，或点迷你播放器，展开成全高 sheet。背景色<b>取自这本书的封面颜色</b>（这里是绿色封面），所以每本书的播放器颜色都不一样。中间是句子流：上一句 / 当前句 / 下一句，当前词反白。底部依次是：句进度、上一章 / 上一句 / 播放 / 下一句 / 下一章、语速、AirPlay、定时、声音、章节列表。下滑收起后回到这一页正文。</p></div>
+  </div>
+</div>
+
+<!-- ============================ 面板 ============================ -->
+<h2 class="sec">面板与设置</h2>
+<p class="sec-sub">所有面板都用原生 sheet，并支持分档：半高时还能看到正文，改设置可以立刻看到效果。</p>
+<div class="canvas">
+
+  <!-- 字样 -->
+  <div class="shot">
+    <div class="phone reader paper mist">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead">少年闰土</div>
+      <div class="rbody" style="font-size:21px">
+        <p>这时候，我的脑里忽然闪出一幅神异的图画来：深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜……</p>
+      </div>
+      <div class="sheet" style="height:470px">
+        <div class="grabber"></div>
+        <div class="sheet-head"><b>字样</b><div class="round"><svg class="i"><use href="#i-close"/></svg></div></div>
+        <div style="padding:6px 16px 0">
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:10px 14px">
+            <span style="font-size:14px;font-family:var(--serif)">A</span>
+            <div class="slider" style="margin:0"><i style="width:55%;background:var(--accent)"></i><b style="left:55%"></b></div>
+            <span style="font-size:22px;font-family:var(--serif)">A</span>
+            <span style="font-size:13px;color:var(--ink-3);width:22px;text-align:right;font-variant-numeric:tabular-nums">21</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+            <div class="card" style="padding:12px 0;text-align:center;box-shadow:inset 0 0 0 2px var(--accent)"><div style="font-family:var(--serif);font-size:20px">宋</div><div style="font-size:11px;color:var(--ink-3)">思源宋体</div></div>
+            <div class="card" style="padding:12px 0;text-align:center"><div style="font-family:var(--kai);font-size:20px">楷</div><div style="font-size:11px;color:var(--ink-3)">霞鹜文楷</div></div>
+            <div class="card" style="padding:12px 0;text-align:center"><div style="font-size:20px">黑</div><div style="font-size:11px;color:var(--ink-3)">系统</div></div>
+          </div>
+          <div style="font-size:13px;color:var(--ink-3);margin:16px 4px 8px">纸色 · 竹青</div>
+          <div style="display:flex;justify-content:space-between;padding:0 2px">
+            <span style="width:40px;height:40px;border-radius:50%;background:#F4EFE3;border:1px solid rgba(0,0,0,.1)"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#E6EEE4;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#EADDBF"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#EFEFEF;border:1px solid rgba(0,0,0,.08)"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#FFFFFF;border:1px solid rgba(0,0,0,.1)"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#253646"></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:#141413"></span>
+          </div>
+          <div class="seg" style="margin-top:18px"><span class="on">左右翻页</span><span>上下滚动</span></div>
+          <div class="card" style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;font-size:15px">更多排版<span style="color:var(--ink-3);font-size:13px;display:flex;align-items:center;gap:4px">行距 · 段距 · 边距 · 缩进 <svg class="i chev" style="width:12px;height:12px"><use href="#i-chev"/></svg></span></div>
+        </div>
+      </div>
+      <div class="home" style="background:var(--ink)"></div>
+    </div>
+    <div class="cap"><b>字样（半高 sheet）</b><p>常用设置放在第一屏：字号、三种字体、七种纸色（宣纸、竹青、古卷、电纸书、素绢、黛蓝、夜墨）、翻页方式。不常用的项目收进「更多排版」，在全高档展开：行距、段距、边距、首行缩进、两端对齐、宽屏双页、原书图文、恢复默认。正文在上半屏实时预览。</p></div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="shot">
+    <div class="phone reader paper">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scrim"></div>
+      <div class="sheet" style="top:64px">
+        <div class="grabber"></div>
+        <div class="sheet-head"><div class="round" style="opacity:0"></div><b>故乡</b><div class="round"><svg class="i"><use href="#i-close"/></svg></div></div>
+        <div style="padding:4px 16px 0">
+          <div class="search"><svg class="i s"><use href="#i-search"/></svg>搜索章节与全文</div>
+          <div class="seg" style="margin-top:12px"><span class="on">章节</span><span>书签 3</span><span>插图</span></div>
+        </div>
+        <div class="group" style="margin-top:14px">
+          <div class="row noicon" style="color:var(--ink-3)"><span style="width:22px;font-variant-numeric:tabular-nums;font-size:14px">1</span><span style="font-family:var(--serif)">归乡</span><span class="v" style="font-size:13px">已读</span></div>
+          <div class="row noicon" style="box-shadow:inset 3px 0 0 var(--accent)"><span style="width:22px;font-variant-numeric:tabular-nums;font-size:14px;color:var(--accent);font-weight:600">2</span><span style="font-family:var(--serif);font-weight:600">少年闰土</span><span class="v" style="font-size:13px;color:var(--accent);font-weight:600"><svg class="i xs"><use href="#i-wave"/></svg>在读 · 36%</span></div>
+          <div class="row noicon"><span style="width:22px;font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink-3)">3</span><span style="font-family:var(--serif)">希望</span></div>
+        </div>
+        <div class="ghead">搜索结果示意 · “闰土”</div>
+        <div class="group">
+          <div class="row noicon" style="flex-direction:column;align-items:flex-start;justify-content:center;padding:12px 16px;gap:4px"><span style="font-size:12px;color:var(--ink-3)">第 2 章 · 少年闰土</span><span style="font-family:var(--serif);font-size:15px;line-height:1.5">这少年便是<b style="background:var(--accent-wash);color:var(--accent)">闰土</b>。我认识他时，也不过十多岁……</span></div>
+          <div class="row noicon" style="flex-direction:column;align-items:flex-start;justify-content:center;padding:12px 16px;gap:4px"><span style="font-size:12px;color:var(--ink-3)">第 2 章 · 少年闰土</span><span style="font-family:var(--serif);font-size:15px;line-height:1.5">……可以叫他的儿子<b style="background:var(--accent-wash);color:var(--accent)">闰土</b>来管祭器的。</span></div>
+        </div>
+      </div>
+      <div class="home" style="background:var(--ink)"></div>
+    </div>
+    <div class="cap"><b>目录</b><p>章节、书签、插图三段切换，继续保留原生搜索（章节名 + 全文），命中词用靛蓝浅底标出。当前章左侧有一条靛蓝竖线，并标明「在读 · 36%」；正在朗读的章节额外显示声波图标。</p></div>
+  </div>
+
+  <!-- 听书与声音 -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav" style="justify-content:space-between">
+          <div class="btn glass"><svg class="i"><use href="#i-chev-l"/></svg></div>
+          <div class="btn wide glass" style="color:var(--accent);font-weight:600">保存</div>
+        </div>
+        <div class="large-title" style="font-size:30px">听书与声音</div>
+        <div class="pad" style="margin-top:16px"><div class="seg"><span class="on">系统</span><span>智谱 GLM</span><span>MiniMax</span></div></div>
+        <div class="gfoot" style="padding-top:8px">系统声音完全离线，逐词高亮。云朗读需要你自己的 API Key，直连服务商。</div>
+        <div class="ghead">声音</div>
+        <div class="group">
+          <div class="row noicon">系统声音<span class="v">婷婷 · zh-CN <svg class="i chev"><use href="#i-chev-d"/></svg></span></div>
+          <div class="row noicon" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;padding:12px 16px">
+            <div style="display:flex;justify-content:space-between"><span>语速</span><span style="color:var(--ink-3);font-variant-numeric:tabular-nums">1.2×</span></div>
+            <div class="slider" style="margin:6px 0"><i style="width:40%;background:var(--accent)"></i><b style="left:40%"></b></div>
+          </div>
+          <div class="row noicon" style="color:var(--accent);font-weight:500"><svg class="i s f"><use href="#i-play"/></svg>试听当前配置</div>
+        </div>
+        <div class="ghead">云端配置 · MiniMax</div>
+        <div class="group" style="opacity:.55">
+          <div class="row noicon">API Key<span class="v">••••••••••</span></div>
+          <div class="row noicon">Group ID<span class="v">选填</span></div>
+          <div class="row noicon">模型<span class="v">speech-02-hd <svg class="i chev"><use href="#i-chev-d"/></svg></span></div>
+        </div>
+        <div class="gfoot"><svg class="i xs" style="vertical-align:-2px"><use href="#i-lock"/></svg> 密钥只保存在本机钥匙串，不会上传到听页或 iCloud。</div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>听书与声音</b><p>原生 Form。顶部用分段控件选择朗读方式；云端配置只在选中 GLM / MiniMax 时才可以编辑（图中半透明表示当前选的是系统声音，云端项暂不可用）。「试听当前配置」、刷新音色、自定义模型 ID 都保留。</p></div>
+  </div>
+
+  <!-- iCloud -->
+  <div class="shot">
+    <div class="phone">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav" style="justify-content:flex-start"><div class="btn glass"><svg class="i"><use href="#i-chev-l"/></svg></div></div>
+        <div class="large-title" style="font-size:30px">iCloud</div>
+        <div class="pad" style="margin-top:16px">
+          <div class="card" style="padding:18px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:44px;height:44px;border-radius:12px;background:#0A84FF;color:#fff;display:grid;place-items:center"><svg class="i"><use href="#i-cloud"/></svg></div>
+              <div style="flex:1"><b style="font-size:16px">正在备份</b><div style="font-size:12.5px;color:var(--ink-3)">可以离开此页，进度会保留</div></div>
+              <span style="font-size:15px;color:var(--accent);font-weight:600">取消</span>
+            </div>
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;font-size:14px">
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center"><svg class="i xs"><use href="#i-check"/></svg></span>连接 iCloud Drive</div>
+              <div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center"><i style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></i></span><b style="font-weight:600">读取本机书籍</b><span style="margin-left:auto;color:var(--ink-3);font-variant-numeric:tabular-nums">8 / 12</span></div>
+                <div class="prog" style="margin:8px 0 0 32px;height:4px"><i style="width:66%"></i></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;color:var(--ink-3)"><span style="width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)"></span>写入 iCloud Drive</div>
+            </div>
+          </div>
+        </div>
+        <div class="ghead">进度同步</div>
+        <div class="group">
+          <div class="row noicon">在设备间同步阅读位置<span class="v"><span class="toggle"></span></span></div>
+          <div class="row noicon">状态<span class="v" style="color:#34A853">● 已开启</span></div>
+          <div class="row noicon">最近本机提交<span class="v">2 分钟前</span></div>
+          <div class="row noicon">最近收到更新<span class="v">今天 08:12 · 应用 3</span></div>
+        </div>
+        <div class="ghead">快照</div>
+        <div class="group">
+          <div class="row noicon" style="color:var(--accent);font-weight:500">立即备份</div>
+          <div class="row noicon" style="color:var(--accent);font-weight:500">从最新快照还原…</div>
+        </div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>iCloud 备份与同步</b><p>备份 / 还原的阶段清单和现在一致，样式改成原生分组：能计数的步骤显示进度条，连接、写入这类不可计数的步骤只转圈，不显示百分比。下方是进度同步开关和四项状态。文案沿用现有措辞，不夸大「已上传」的含义。</p></div>
+  </div>
+</div>
+
+<!-- ============================ 深色 ============================ -->
+<h2 class="sec">深色</h2>
+<p class="sec-sub">界面深色是同一色系的暖黑。玻璃在深色下更通透；阅读页的「夜墨」纸色与界面深色各自独立，也可以选择让它跟随系统外观。</p>
+<div class="canvas">
+  <div class="shot">
+    <div class="phone dark">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="scroll">
+        <div class="nav"><div class="btn glass"><svg class="i"><use href="#i-me"/></svg></div></div>
+        <div class="large-title">今日</div>
+        <div class="subtitle">10 月 13 日 星期二</div>
+        <div class="pad" style="margin-top:16px">
+          <div style="border-radius:26px;overflow:hidden;background:linear-gradient(160deg,#B4351B 0%,#8A2814 60%,#5E1C0F 100%);color:#fff;padding:20px">
+            <div style="display:flex;gap:16px">
+              <div class="cover c-red" style="width:92px;height:132px;font-size:15px;box-shadow:0 10px 26px rgba(0,0,0,.4)"><div class="ct">朝花<br>夕拾</div><div class="ca">鲁迅</div></div>
+              <div style="flex:1;display:flex;flex-direction:column">
+                <div style="font-size:12px;font-weight:600;opacity:.7">继续 · 昨天</div>
+                <div style="font-family:var(--serif);font-size:24px;font-weight:600;margin-top:6px">朝花夕拾</div>
+                <div style="font-size:13px;opacity:.7;margin-top:2px">鲁迅 · 从百草园到三味书屋</div>
+                <div style="margin-top:auto"><div style="display:flex;justify-content:space-between;font-size:11.5px;opacity:.75;margin-bottom:6px"><span>第 7 / 10 章</span><span>72%</span></div><div style="height:4px;border-radius:2px;background:rgba(255,255,255,.22)"><i style="display:block;width:72%;height:100%;background:#fff;border-radius:2px"></i></div></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px"><div class="btn-p" style="flex:1;background:#fff;color:#5E1C0F">继续阅读</div><div class="btn-p" style="background:rgba(255,255,255,.18);color:#fff;padding:0 18px"><svg class="i s f"><use href="#i-play"/></svg>听</div></div>
+          </div>
+        </div>
+        <div class="pad" style="margin-top:14px"><div class="card" style="padding:16px 18px;display:flex;align-items:center;gap:16px"><div><div style="font-size:12px;color:var(--ink-3)">今日已读</div><div style="font-size:28px;font-weight:700">0<span style="font-size:14px;font-weight:500;color:var(--ink-3)"> 分钟</span></div></div><div style="flex:1;font-size:13px;color:var(--ink-2);text-align:right">翻开一页，<br>今天就开始了</div></div></div>
+        <div class="pad" style="margin-top:26px"><div class="h3">待阅读 <svg class="i chev"><use href="#i-chev"/></svg></div></div>
+        <div style="display:flex;gap:14px;padding:12px 20px 0;overflow:hidden">
+          <div class="cover c-blue" style="width:96px;height:138px;font-size:15px"><div class="ct">春</div><div class="ca">朱自清</div></div>
+          <div class="cover c-ochre" style="width:96px;height:138px;font-size:13px"><div class="ct">飞鸟集</div><div class="ca">泰戈尔</div></div>
+          <div class="cover c-cream" style="width:96px;height:138px;font-size:13px"><div class="ct">围城</div><div class="ca">钱锺书</div></div>
+          <div class="cover c-ink" style="width:96px;height:138px;font-size:13px"><div class="ct">呐喊</div></div>
+        </div>
+      </div>
+      <div class="tabbar glass">
+        <div class="tab on"><svg class="i"><use href="#i-today"/></svg>今日</div>
+        <div class="tab"><svg class="i"><use href="#i-shelf"/></svg>书架</div>
+        <div class="tab"><svg class="i"><use href="#i-me"/></svg>我</div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>今日 · 深色 · 没有正在听的书</b><p>没有正在听的书时，页签栏附件自动隐藏。今日时长为 0 时显示一句鼓励文案，不出现空图表。继续卡跟着这本书的封面变成朱红色。</p></div>
+  </div>
+
+  <div class="shot">
+    <div class="phone reader paper night dark">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span class="r">●●● ▮</span></div>
+      <div class="rhead">少年闰土</div>
+      <div class="rbody">
+        <p>这时候，我的脑里忽然闪出一幅神异的图画来：深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜，其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去，那猹却将身一扭，反从他的胯下逃走了。</p>
+        <p>这少年便是闰土。<span class="hl">我认识他时，也不过十多岁，离现在将有<span class="word">三十年</span>了；</span>那时我的父亲还在世，家景也好，我正是一个少爷。那一年，我家是一件大祭祀的值年。这祭祀，说是三十多年才能轮到一回，所以很郑重；正月里供祖像，供品很多，祭器很讲究，拜的人也很多，祭器也很要防偷去。</p>
+      </div>
+      <div class="strip glass">
+        <div class="bar"><i style="width:42%"></i></div>
+        <div class="pp"><svg class="i f"><use href="#i-pause"/></svg></div>
+        <div class="meta"><b>第 13 / 31 句</b><span>MiniMax · 时间戳逐词</span></div>
+        <div class="ibtn"><svg class="i"><use href="#i-back-s"/></svg></div>
+        <div class="ibtn"><svg class="i"><use href="#i-fwd-s"/></svg></div>
+        <div class="rate">1.0×</div>
+        <div class="ibtn" style="color:var(--accent)"><svg class="i"><use href="#i-timer"/></svg></div>
+        <div class="ibtn" style="width:28px;color:var(--ink-3)"><svg class="i s"><use href="#i-chev-u"/></svg></div>
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="cap"><b>夜墨 · 云朗读</b><p>深色下的靛蓝提亮成 <code class="k">#9DB4E0</code>，高亮底在夜墨纸上依然清楚。听条注明「MiniMax · 时间戳逐词」；没有时间戳时会改成「句级」，绝不把估算冒充成逐词。定时开启后，定时图标点亮为靛蓝。</p></div>
+  </div>
+
+  <!-- 图标 -->
+  <div class="shot">
+    <div style="width:417px;height:876px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px">
+      <svg width="220" height="220" viewBox="0 0 1024 1024" style="border-radius:50px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+        <defs>
+          <linearGradient id="ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A5B92"/><stop offset="1" stop-color="#22385E"/></linearGradient>
+        </defs>
+        <rect width="1024" height="1024" fill="url(#ig)"/>
+        <!-- 左页 -->
+        <path d="M512 300 C 430 250, 300 240, 220 262 L 220 742 C 300 720, 430 730, 512 780 Z" fill="#F5F4F0"/>
+        <!-- 右页化为声波 -->
+        <g fill="#F5F4F0">
+          <rect x="560" y="420" width="44" height="200" rx="22"/>
+          <rect x="640" y="340" width="44" height="360" rx="22"/>
+          <rect x="720" y="400" width="44" height="240" rx="22" opacity=".8"/>
+          <rect x="800" y="460" width="44" height="120" rx="22" opacity=".55"/>
+        </g>
+        <path d="M290 380 h150 M290 450 h150 M290 520 h150 M290 590 h110" stroke="#2F4C7D" stroke-width="22" stroke-linecap="round" opacity=".35"/>
+      </svg>
+      <div style="display:flex;gap:18px;align-items:center">
+        <svg width="76" height="76" viewBox="0 0 1024 1024" style="border-radius:17px"><rect width="1024" height="1024" fill="#141413"/><path d="M512 300 C 430 250, 300 240, 220 262 L 220 742 C 300 720, 430 730, 512 780 Z" fill="#9DB4E0"/><g fill="#9DB4E0"><rect x="560" y="420" width="44" height="200" rx="22"/><rect x="640" y="340" width="44" height="360" rx="22"/><rect x="720" y="400" width="44" height="240" rx="22" opacity=".8"/><rect x="800" y="460" width="44" height="120" rx="22" opacity=".55"/></g></svg>
+        <svg width="76" height="76" viewBox="0 0 1024 1024" style="border-radius:17px"><rect width="1024" height="1024" fill="#2a2a2a"/><path d="M512 300 C 430 250, 300 240, 220 262 L 220 742 C 300 720, 430 730, 512 780 Z" fill="#DADADA"/><g fill="#DADADA"><rect x="560" y="420" width="44" height="200" rx="22"/><rect x="640" y="340" width="44" height="360" rx="22"/><rect x="720" y="400" width="44" height="240" rx="22" opacity=".8"/><rect x="800" y="460" width="44" height="120" rx="22" opacity=".55"/></g></svg>
+      </div>
+    </div>
+    <div class="cap"><b>App 图标：一页成声</b><p>靛蓝底，左边是一页书，右边的书页化成四道声波，图形本身就是「读听一体」。图标同时提供 iOS 26 要求的深色版和着色版（灰阶）。完成后会新增 <code class="k">Design/render-app-icon-v7.swift</code>。</p></div>
+  </div>
+</div>
+
+<!-- ============================ 映射 ============================ -->
+<h2 class="sec">功能映射：一项都不丢</h2>
+<p class="sec-sub">按 <code class="k">migration-contract.txt</code> 的要求，现有入口逐项对应到新位置。底层的数据模型、导入、分页、朗读引擎、iCloud 协议都不改动。</p>
+<table class="map doc" style="max-width:1100px">
+  <tr><th>现在</th><th>v7「一页」</th></tr>
+  <tr><td>书斋 · 续读卡（继续阅读 / 听书）</td><td>今日 · 继续卡（封面色底）<span class="tag">位置变化</span></td></tr>
+  <tr><td>书斋 · 网格、筛选（全部 / 在读 / 未开卷）、排序、搜索、导入、长按菜单</td><td>书架（原样保留，增加列表视图与分类筛选）</td></tr>
+  <tr><td>发现 · 今日重读</td><td>今日 · 今日一句（同一套每日轮换逻辑，额外摘出一句，可直接跳到原文位置）<span class="tag">增强</span></td></tr>
+  <tr><td>发现 · 分类胶囊</td><td>书架 · 筛选胶囊排（和状态筛选并排）</td></tr>
+  <tr><td>发现 · 待阅读 / 最近收藏横排</td><td>今日 · 待阅读 / 最近添加横排</td></tr>
+  <tr><td>发现 · 我的藏书列表（含分类、百分比）</td><td>书架 · 列表视图</td></tr>
+  <tr><td>发现 · 搜索</td><td>书架 · 搜索（书名 / 作者 / 分类）</td></tr>
+  <tr><td>书籍详情 · 阅读 / 听书 / 统计 / 简介 / 章节管理 / 修复 / 导出 / 删除两种</td><td>书籍详情（同样的功能，换成封面色头图 + 原生分组列表）</td></tr>
+  <tr><td>我 · 阅读时长（7 天 / 30 天 / 全部，四项数字）</td><td>我 · 统计卡（不变）；今日页另有时长条摘要</td></tr>
+  <tr><td>我 · 设置三组、版本、字体许可、隐私政策</td><td>我（原生 Form，同样三组）</td></tr>
+  <tr><td>自绘悬浮页签栏 + 迷你播放器</td><td>系统 TabView + <code class="k">tabViewBottomAccessory</code>（iOS 26+）；iOS 17–25 显示同样形状的材质胶囊<span class="tag">原生化</span></td></tr>
+  <tr><td>阅读页 · 底部三层：朗读状态 / 章节滑杆 / 听书胶囊与步进</td><td>工具栏：一条玻璃栏（目录 · 章节滑杆 · 夜间）+「听」键；朗读状态移到听条里</td></tr>
+  <tr><td>阅读页 · 五入口卡：目录、字样、声音、定时、夜间</td><td>目录、夜间 → 玻璃栏；字样 → 顶栏 Aa；声音、定时 → 听条和展开播放器</td></tr>
+  <tr><td>阅读页 ⋯：听读模式、原书图文、导出备份</td><td>⋯：原书图文、导出备份；「听读模式」由上滑听条代替<span class="tag">交互变化</span></td></tr>
+  <tr><td>长按正文从此处开始听 · 回到朗读处 · 自动跟随翻页 · 错误重试</td><td>全部保留；「回到朗读处」浮在听条上方，错误和重试显示在听条里</td></tr>
+  <tr><td>上一页 / 下一页 · 上一句 / 下一句（步进）</td><td>翻页：轻点左右两侧（不变）；听的时候：听条上的句步进</td></tr>
+  <tr><td>听书全屏页（恒定深底 + 金箔）</td><td>展开播放器：背景取封面色，统一用靛蓝 / 白色体系，取消金箔<span class="tag">视觉变化</span></td></tr>
+  <tr><td>目录 sheet（章节 / 书签 / 插图 + 全文搜索）</td><td>同样功能，换新样式</td></tr>
+  <tr><td>字样页（字号、字体、纸色、翻页、双页、版式、原书图文、恢复默认）</td><td>半高 sheet 放常用项，「更多排版」放其余项，项目一个不少</td></tr>
+  <tr><td>听书与声音（三种方式、音色、语速、Key、Group ID、模型、试听、刷新音色）</td><td>同样功能，换成原生 Form 和分段控件</td></tr>
+  <tr><td>iCloud 备份与还原（阶段清单、上传状态、进度同步四项状态）</td><td>同样功能，换成原生分组</td></tr>
+  <tr><td>灵动岛 / 锁屏实时活动（TingyeWidgets）</td><td>配色改为靛蓝，结构不变</td></tr>
+</table>
+
+<!-- ============================ 实施 ============================ -->
+<h2 class="sec">确认后的实施计划</h2>
+<div class="doc">
+<ol class="plan">
+  <li><b>令牌重写</b>：<code class="k">Theme.swift</code> 收敛为 12 个语义色，加上间距、圆角和玻璃修饰器 <code class="k">.glassSurface()</code>（iOS 26 用 <code class="k">glassEffect</code>，旧系统用 <code class="k">.regularMaterial</code>）。删除兼容别名，逐个修复调用点。</li>
+  <li><b>外壳原生化</b>：<code class="k">TingyeApp.swift</code> 换成系统 <code class="k">TabView</code>（今日 / 书架 / 我）和底部附件形式的迷你播放器；保留现有 alert、busy 浮条和 <code class="k">-uireview</code> 走查入口，并补上新场景 <code class="k">today</code>。</li>
+  <li><b>今日 / 书架</b>：新建 <code class="k">TodayView.swift</code>（吸收 DiscoverView 的逻辑）；在 <code class="k">ShelfView</code> 加入分类筛选和列表视图；DiscoverView 删除。</li>
+  <li><b>一页</b>：<code class="k">ReaderView</code> 的 bottomPanel 拆成「玻璃工具栏」和「听条」两个组件；听条上滑展开 PlayerView（重新设计，背景取封面色）。分页、高亮绘制、跟随逻辑不改。</li>
+  <li><b>面板</b>：字样、目录、声音、iCloud、详情、我，逐页换装成原生 Form / sheet 分档。</li>
+  <li><b>图标与小组件</b>：新增 <code class="k">render-app-icon-v7.swift</code>，生成明 / 暗 / 着色三套图标；Live Activity 调色板同步换成靛蓝。</li>
+  <li><b>验证</b>：先跑完 44 项单元测试；再用模拟器 <code class="k">-uireview</code> 逐屏截图，对照本稿检查明暗两套；最后更新 README 的「设计」一节。按约定，<b>版本号等你确认 UI 后再改</b>。</li>
+</ol>
+</div>
+
+</div>
+<script>
+function toggleTheme(){
+  const r=document.documentElement;
+  const cur=r.getAttribute('data-theme')|| (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  r.setAttribute('data-theme', cur==='dark'?'light':'dark');
+}
+</script>
+</body>
+</html>

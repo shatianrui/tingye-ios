@@ -1,0 +1,40 @@
+<svg preserveAspectRatio="xMidYMid meet" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 纸墨 · 听页
+       设计:深墨底 + 白色双页书 + 主色装订线 + 右上声波。
+       与 App 内「纸墨远山青」主题一致:无装饰、单一主色、几何克制。 -->
+  <rect width="1024" height="1024" fill="#1A1A1A"/>
+
+  <!-- 装订线(主色 远山青)居中 -->
+  <rect x="510" y="312" width="4" height="400" fill="#3D5A52"/>
+
+  <!-- 左页(白色) -->
+  <rect x="332" y="312" width="178" height="400" rx="10" fill="#F8F7F2"/>
+  <!-- 右页(白色) -->
+  <rect x="514" y="312" width="178" height="400" rx="10" fill="#F8F7F2"/>
+
+  <!-- 文字行:左页四条细横线 -->
+  <g fill="#1A1A1A" opacity="0.18">
+    <rect x="356" y="372" width="130" height="3" rx="1.5"/>
+    <rect x="356" y="424" width="116" height="3" rx="1.5"/>
+    <rect x="356" y="476" width="142" height="3" rx="1.5"/>
+    <rect x="356" y="528" width="96" height="3" rx="1.5"/>
+    <rect x="356" y="580" width="124" height="3" rx="1.5"/>
+    <rect x="356" y="632" width="106" height="3" rx="1.5"/>
+  </g>
+  <!-- 文字行:右页四条细横线 -->
+  <g fill="#1A1A1A" opacity="0.18">
+    <rect x="538" y="372" width="130" height="3" rx="1.5"/>
+    <rect x="538" y="424" width="100" height="3" rx="1.5"/>
+    <rect x="538" y="476" width="142" height="3" rx="1.5"/>
+    <rect x="538" y="528" width="118" height="3" rx="1.5"/>
+    <rect x="538" y="580" width="130" height="3" rx="1.5"/>
+    <rect x="538" y="632" width="84" height="3" rx="1.5"/>
+  </g>
+
+  <!-- 声波:右上方三道递增弧,表示「听」 -->
+  <g fill="none" stroke="#3D5A52" stroke-width="14" stroke-linecap="round">
+    <path d="M 770 188 A 30 30 0 0 1 770 248" opacity="0.55"/>
+    <path d="M 808 168 A 50 50 0 0 1 808 268" opacity="0.8"/>
+    <path d="M 846 148 A 70 70 0 0 1 846 288"/>
+  </g>
+</svg>
