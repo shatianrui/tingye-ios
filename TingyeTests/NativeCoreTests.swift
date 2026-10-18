@@ -350,6 +350,20 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertThrowsError(try store.read(found.url, owner: "guest"))
     }
 
+    /// 当前账号（guest）目录里的旧快照不能遮住其他账号目录中更新的备份。
+    func testICloudLatestSnapshotPrefersNewestAcrossOwners() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let store = ICloudBackupStore(root: base.appendingPathComponent("cloud"))
+        let book = Book(id: "b", title: "书", format: "TXT", chapters: [Chapter(title: "正文", text: "内容。")])
+        let item = ICloudArchive.Item(packet: .init(book: book, progress: .init(chapter: 0, position: 0, updatedAt: 1)), bookmarks: [])
+        _ = try store.save(ICloudArchive(owner: "guest", createdAt: Date(timeIntervalSince1970: 1_000), books: [item]))
+        let newer = try store.save(ICloudArchive(owner: "account", createdAt: Date(timeIntervalSince1970: 2_000), books: [item]))
+        let found = try XCTUnwrap(store.latestSnapshotAcrossOwners())
+        XCTAssertEqual(found.owner, "account")
+        XCTAssertEqual(found.url, newer)
+    }
+
     /// 删除书籍时从快照中移除该书：含其他书的快照被改写，只含该书的快照被删除。
     func testICloudRemoveBookRewritesSnapshotsAndDeletesEmptyOnes() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

@@ -434,13 +434,9 @@ extension AppModel {
             let store = try await Task.detached(priority: .utility) { try ICloudBackupStore.connected() }.value
             try Task.checkCancellation()
             step(id, .finding, detail: "在 iCloud Drive「听页/Backups」中查找最新快照。")
-            // 新设备可能以 guest 运行，而旧备份在登录账号目录下：当前账号没有快照时扫描全部账号目录。
-            var sourceOwner = captured
-            var latest = try await Task.detached(priority: .utility) { try store.snapshots(owner: captured).first }.value
-            if latest == nil, let across = try await Task.detached(priority: .utility) { try store.latestSnapshotAcrossOwners() }.value {
-                sourceOwner = across.owner; latest = across.url
-            }
-            guard let url = latest else {
+            // 设备可能以 guest 运行，而其他设备在登录账号目录下备份：始终取全部账号目录中最新的一份，
+            // 避免当前账号目录里的旧快照遮住其他目录中更新的备份。
+            guard let (sourceOwner, url) = try await Task.detached(priority: .utility, operation: { try store.latestSnapshotAcrossOwners() }).value else {
                 throw ReaderError.message("当前书架没有 iCloud 备份。如刚换设备，iCloud Drive 可能尚未同步完文件列表，请稍后重试。")
             }
             try Task.checkCancellation()
