@@ -4,9 +4,6 @@ import MediaPlayer
 import Combine
 import UIKit
 import SwiftUI
-#if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
-import ActivityKit
-#endif
 
 enum SpeechAudioSession {
     static func activate() throws {
@@ -252,16 +249,6 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             Task { @MainActor in self?.seek(toEstimatedTime: time) }
             return .success
         }
-        #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
-        // 锁屏与灵动岛实时活动上的按钮
-        PlaybackRemote.handler = { [weak self] action in
-            switch action {
-            case .toggle: self?.toggle()
-            case .next: self?.skip(1)
-            case .previous: self?.skip(-1)
-            }
-        }
-        #endif
         observers.append(NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
             let type = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt).flatMap(AVAudioSession.InterruptionType.init(rawValue:))
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0).contains(.shouldResume)
@@ -312,7 +299,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         playing = false; buffering = false; error = nil; book = nil; sentences = []; chapterList = []; wordRange = nil; speechFinished = false; spokenOffset = 0; resumeAfterInterruption = false
         clockTask?.cancel(); prefetchTask?.cancel(); cloudWords = []; audioCache = [:]; cacheOrder = []
         inflight.values.forEach { $0.cancel() }; inflight = [:]
-        setSleep(minutes: 0); MPNowPlayingInfoCenter.default().nowPlayingInfo = nil; liveActivity.end()
+        setSleep(minutes: 0); MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
     func skip(_ delta: Int) { seek(position + delta) }
@@ -557,11 +544,10 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             if flag { self.skip(1) } else { self.pause(); self.error = "音频播放中断，请重试。" }
         }
     }
-    // MARK: - 锁屏 / 控制中心「正在播放」与实时活动
+    // MARK: - 锁屏 / 控制中心「正在播放」
 
     private var artwork: (id: String, value: MPMediaItemArtwork)?
     private var lengths: (chapter: Int, count: Int, prefix: [Int])?
-    private let liveActivity = ListeningActivityController()
     /// 朗读没有真实时长：按每秒约 4.5 字（随语速缩放）估算，供锁屏进度条显示与拖动。
     private var charactersPerSecond: Double { 4.5 * Double(max(0.5, options.rate)) }
     /// 本章各句起点的累计字数（末项为全章字数），换章时重算。
@@ -615,71 +601,5 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             MPNowPlayingInfoPropertyChapterNumber: chapter,
             MPNowPlayingInfoPropertyChapterCount: chapterList.count
         ]
-        liveActivity.update(book: book, chapterTitle: chapterTitle, sentence: currentText, chapter: chapter, chapterCount: chapterList.count,
-                            progress: total > 0 ? spoken / total : 0, playing: playing)
     }
-}
-
-/// 锁屏与灵动岛的听书实时活动：开始听书时创建，随换句 / 暂停更新（节流），结束听书时关闭。
-@MainActor
-final class ListeningActivityController {
-    #if canImport(ActivityKit) && !targetEnvironment(macCatalyst)
-    private var activity: Activity<ListeningAttributes>?
-    private var pushed: ListeningAttributes.ContentState?
-    private var pending: ListeningAttributes.ContentState?
-    private var lastPush = Date.distantPast
-    private var flush: Task<Void, Never>?
-    init() {
-        // 上次运行遗留的活动（例如被系统结束进程）先关闭，避免锁屏上停着过期的卡片。
-        for stale in Activity<ListeningAttributes>.activities { Task { await stale.end(nil, dismissalPolicy: .immediate) } }
-    }
-    func update(book: Book, chapterTitle: String, sentence: String, chapter: Int, chapterCount: Int, progress: Double, playing: Bool) {
-        let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines)
-        let state = ListeningAttributes.ContentState(chapterTitle: String(chapterTitle.prefix(40)), sentence: String(trimmed.prefix(90)),
-                                                     chapter: chapter, chapterCount: chapterCount, progress: min(1, max(0, progress)), playing: playing)
-        if let activity, activity.attributes.bookID == book.id, activity.activityState == .active {
-            guard state != pushed else { return }
-            // 播放 / 暂停立即推送；换句至多每 1.5 秒一次（系统对更新频率有预算），最后一次总会补上。
-            let wait = 1.5 - Date().timeIntervalSince(lastPush)
-            if state.playing == pushed?.playing && wait > 0 {
-                pending = state
-                if flush == nil {
-                    flush = Task { [weak self] in
-                        try? await Task.sleep(for: .seconds(wait))
-                        guard let self, let state = self.pending else { return }
-                        self.flush = nil; self.pending = nil; self.push(state)
-                    }
-                }
-                return
-            }
-            push(state); return
-        }
-        // 只在开始听书时创建（App 在前台）；暂停状态不新建，避免锁屏堆积卡片。
-        guard playing, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        end()
-        let attributes = ListeningAttributes(bookID: book.id, title: book.title, author: book.author, coverHex: Self.hex(book.color))
-        activity = try? Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil), pushType: nil)
-        pushed = state; lastPush = Date()
-    }
-    func end() {
-        flush?.cancel(); flush = nil; pending = nil; pushed = nil
-        guard let activity else { return }
-        self.activity = nil
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
-    }
-    private func push(_ state: ListeningAttributes.ContentState) {
-        flush?.cancel(); flush = nil; pending = nil
-        guard let activity else { return }
-        pushed = state; lastPush = Date()
-        Task { await activity.update(.init(state: state, staleDate: nil)) }
-    }
-    private static func hex(_ color: String) -> String {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(Theme.coverColor(color)).getRed(&r, green: &g, blue: &b, alpha: &a)
-        return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
-    }
-    #else
-    func update(book: Book, chapterTitle: String, sentence: String, chapter: Int, chapterCount: Int, progress: Double, playing: Bool) {}
-    func end() {}
-    #endif
 }

@@ -1,6 +1,17 @@
 # 听页 · 原生 iOS
 
-## 当前版本：刊 · 杂志编辑风重设计（1.17.0 · 97，2026-10-15）
+## 当前版本：播放器修正（1.17.0 · 98，2026-10-18）
+
+在 1.17.0（97）「刊」设计上的修正版，不改视觉与数据格式。
+
+- **播放器长句**：当前句较长时会被底部控制区挡住。现在换句、换章时自动把当前句滚进视野——放得下时停在上方约四分之一处，比可见区还高的长句贴顶从句首显示。
+- **锁屏只保留系统播放控件**：锁屏上原有系统「正在播放」和 App 自己的听书实时活动两张卡片，内容重复。现在去掉实时活动（连同 `TingyeWidgets` 小组件扩展与 `NSSupportsLiveActivities`），播放 / 暂停 / 上一句 / 下一句 / 拖动进度仍由系统「正在播放」提供；灵动岛不再显示正在读的句子。
+
+验证：iOS 模拟器与 Mac Catalyst Debug 构建（未签名）通过；本次未运行自动化测试，未在模拟器或真机上实测长句滚动与锁屏效果。
+
+发布：1.17.0（98）于 2026-10-18 完成 iOS 与 Mac Catalyst Release 归档（`build/Tingye-98.xcarchive`、`build/Tingye-98-mac.xcarchive`，均不含小组件扩展）并上传 App Store Connect。iOS `Tingye.ipa` 与 macOS `Tingye.pkg` 均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-98.log`、`build/upload-98-mac.log`）；上传时状态为处理中，尚未确认 TestFlight 可安装状态。
+
+## 历史：刊 · 杂志编辑风重设计（1.17.0 · 97，2026-10-15）
 
 **全盘重设计：在 Figma 中完成设计，再同步到 SwiftUI。** 设计稿：[听页 · 刊 Editorial 重设计](https://www.figma.com/design/FgvYsZ5rngrFacCcveI5lQ)（基础组件、9 个日间页面、5 个夜间页面、App 图标），设计说明见 `Design/v14-editorial/DESIGN.md`，模拟器走查截图见 `Design/v14-editorial/previews/`。数据格式、服务商连接与导入能力不变；上一版（墨夜）源码备份在 `build/v13-swift-backup-Tingye/`。
 

@@ -13,6 +13,9 @@ struct PlayerView: View {
     @State private var settings = false
     @State private var chaptersSheet = false
     @State private var endingListening = false
+    /// 句子流可见高度与当前句高度：长句会被底部控制区挡住，换句时据此把当前句滚进视野。
+    @State private var viewportHeight: CGFloat = 0
+    @State private var currentHeight: CGFloat = 0
 
     private var content: Color { Theme.ink }
     private var secondary: Color { Theme.ink2 }
@@ -24,19 +27,26 @@ struct PlayerView: View {
             if let book = player.book {
                 VStack(spacing: 0) {
                     hero(book)
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            sentenceStream
-                            if let error = player.error { errorNotice(error) }
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                sentenceStream
+                                if let error = player.error { errorNotice(error) }
+                            }
+                            .padding(.horizontal, Theme.inset)
+                            .padding(.top, 22)
+                            .padding(.bottom, 24)
+                            .frame(maxWidth: 600, alignment: .leading)
+                            .frame(maxWidth: .infinity)
                         }
-                        .padding(.horizontal, Theme.inset)
-                        .padding(.top, 22)
-                        .padding(.bottom, 24)
-                        .frame(maxWidth: 600, alignment: .leading)
-                        .frame(maxWidth: .infinity)
+                        .scrollIndicators(.hidden)
+                        .scrollBounceBehavior(.basedOnSize)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { viewportHeight = $0 }
+                        .onAppear { revealCurrent(proxy, animated: false) }
+                        .onChange(of: player.position) { revealCurrent(proxy) }
+                        .onChange(of: player.chapter) { revealCurrent(proxy) }
+                        .onChange(of: currentHeight) { revealCurrent(proxy) }
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollBounceBehavior(.basedOnSize)
                     controls
                 }
             } else { emptyState }
@@ -163,13 +173,17 @@ struct PlayerView: View {
                 }
             }
             if let sentence = player.currentSentence {
-                Text(sentence.text)
-                    .font(Theme.serifBold(25, relativeTo: .title2)).lineSpacing(9)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .markerHighlight()
-                    .id(player.position)
-                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
-                    .accessibilityLabel("当前句：\(sentence.text)")
+                VStack(spacing: 0) {
+                    Text(sentence.text)
+                        .font(Theme.serifBold(25, relativeTo: .title2)).lineSpacing(9)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .markerHighlight()
+                        .id(player.position)
+                        .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                        .accessibilityLabel("当前句：\(sentence.text)")
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { currentHeight = $0 }
+                .id(Self.currentSentenceID)
             } else {
                 Text(player.book?.chapters.first?.text ?? "暂无内容")
                     .font(Theme.serif(19, relativeTo: .title3)).lineSpacing(6).lineLimit(4)
@@ -182,6 +196,17 @@ struct PlayerView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
         .animation(.easeOut(duration: 0.3), value: player.position)
+    }
+
+    private static let currentSentenceID = "player.currentSentence"
+
+    /// 把当前句滚进视野：放得下时停在上方约四分之一处（上一句仍露出一截）；
+    /// 比可见区还高的长句贴顶显示，从句首读起。内容本就放得下时 ScrollView 不会移动。
+    private func revealCurrent(_ proxy: ScrollViewProxy, animated: Bool = true) {
+        let fits = viewportHeight <= 0 || currentHeight <= viewportHeight - 24
+        let anchor = fits ? UnitPoint(x: 0.5, y: 0.25) : .top
+        if animated { withAnimation(.easeOut(duration: 0.3)) { proxy.scrollTo(Self.currentSentenceID, anchor: anchor) } }
+        else { proxy.scrollTo(Self.currentSentenceID, anchor: anchor) }
     }
 
     private func lyricLine(_ text: String, offset: Int, opacity: Double) -> some View {

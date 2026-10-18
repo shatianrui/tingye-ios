@@ -58,8 +58,6 @@
 	<string>用面容 ID 解锁听页，或打开隐藏的书籍。</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>WiFi 传书时，同一网络里的电脑或手机需要连接到这台设备来上传书籍。</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.com.shatianrui.wereader</key>

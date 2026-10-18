@@ -22,11 +22,6 @@
 		4F6F92C0AC6DD7A98EEB6A04 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */; };
 		66E47CFD1A5399FEAB44C89B /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2255049BA084F3A2D5C0E5 /* AppModel.swift */; };
 		6CCE301D81B87AD017307182 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 647CED483FA5348BFBF0EF62 /* PlayerView.swift */; };
-		7A1100000000000000000001 /* ListeningActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1100000000000000000000 /* ListeningActivity.swift */; };
-		7A1100000000000000000002 /* ListeningActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1100000000000000000000 /* ListeningActivity.swift */; };
-		7A1100000000000000000004 /* TingyeWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1100000000000000000003 /* TingyeWidgetsBundle.swift */; };
-		7A1100000000000000000006 /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1100000000000000000005 /* ListeningLiveActivity.swift */; };
-		7A1100000000000000000009 /* TingyeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7A1100000000000000000008 /* TingyeWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		80A03BC742198658BDD57AD6 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33C867C8C5F27D5ADC91367E /* ReaderView.swift */; };
 		84F6F8D1F3CC8CDFF9B4456A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 247E674DABAB45B90D02083D /* Foundation.framework */; };
 		9A1E4BE9766DB9555739262F /* OriginalBookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514724C29B5880159ED55305 /* OriginalBookView.swift */; };
@@ -52,13 +47,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		7A1100000000000000000013 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 10A97ADF49E2D26FD1505CC9 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 7A110000000000000000000B;
-			remoteInfo = TingyeWidgets;
-		};
 		BED34B5CAA71C81C7AA6C5FD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 10A97ADF49E2D26FD1505CC9 /* Project object */;
@@ -67,20 +55,6 @@
 			remoteInfo = Tingye;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		7A1100000000000000000014 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				7A1100000000000000000009 /* TingyeWidgets.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechPlayer.swift; sourceTree = "<group>"; };
@@ -99,11 +73,6 @@
 		647CED483FA5348BFBF0EF62 /* PlayerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		6AF95B5E4D9E43527996555A /* TingyeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TingyeApp.swift; sourceTree = "<group>"; };
 		77B7B44EE7FAEF491B3B2936 /* Sources.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Sources.swift; sourceTree = "<group>"; };
-		7A1100000000000000000000 /* ListeningActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivity.swift; sourceTree = "<group>"; };
-		7A1100000000000000000003 /* TingyeWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TingyeWidgetsBundle.swift; sourceTree = "<group>"; };
-		7A1100000000000000000005 /* ListeningLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningLiveActivity.swift; sourceTree = "<group>"; };
-		7A1100000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		7A1100000000000000000008 /* TingyeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TingyeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A96F10061380F5BBA4FB87B /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeCoreTests.swift; sourceTree = "<group>"; };
 		7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -134,13 +103,6 @@
 			files = (
 				84F6F8D1F3CC8CDFF9B4456A /* Foundation.framework in Frameworks */,
 				C6445530EE283916136190B5 /* ZIPFoundation in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		7A110000000000000000000D /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,7 +167,6 @@
 				162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */,
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
 				6AF95B5E4D9E43527996555A /* TingyeApp.swift */,
-				7A1100000000000000000000 /* ListeningActivity.swift */,
 				1BE9C5E15EF178E3AF247624 /* Resources */,
 			);
 			path = Tingye;
@@ -225,19 +186,8 @@
 			children = (
 				C7D54437CCEED905AA440076 /* Tingye.app */,
 				311DDC45B3489BB0BC48AFCA /* TingyeTests.xctest */,
-				7A1100000000000000000008 /* TingyeWidgets.appex */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		7A110000000000000000000A /* TingyeWidgets */ = {
-			isa = PBXGroup;
-			children = (
-				7A1100000000000000000003 /* TingyeWidgetsBundle.swift */,
-				7A1100000000000000000005 /* ListeningLiveActivity.swift */,
-				7A1100000000000000000007 /* Info.plist */,
-			);
-			path = TingyeWidgets;
 			sourceTree = "<group>";
 		};
 		FA6120EED3D69A48F319F93A /* Frameworks */ = {
@@ -255,30 +205,12 @@
 				FA6120EED3D69A48F319F93A /* Frameworks */,
 				4E6D9B56FF896618EDC26C6D /* Tingye */,
 				5D763E0B084300393DBF327E /* TingyeTests */,
-				7A110000000000000000000A /* TingyeWidgets */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		7A110000000000000000000B /* TingyeWidgets */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 7A110000000000000000000F /* Build configuration list for PBXNativeTarget "TingyeWidgets" */;
-			buildPhases = (
-				7A110000000000000000000C /* Sources */,
-				7A110000000000000000000D /* Frameworks */,
-				7A110000000000000000000E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = TingyeWidgets;
-			productName = TingyeWidgets;
-			productReference = 7A1100000000000000000008 /* TingyeWidgets.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		BDA364D597CBA7FB8BDE187E /* TingyeTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DD79E0CA9EDCD96EA6608F8E /* Build configuration list for PBXNativeTarget "TingyeTests" */;
@@ -304,12 +236,10 @@
 				698A5243868A7FBF6109C7FE /* Sources */,
 				1B0B5866ED010573055D58CF /* Frameworks */,
 				54D7B399EB660ECB54A0DD0C /* Resources */,
-				7A1100000000000000000014 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				7A1100000000000000000012 /* PBXTargetDependency */,
 			);
 			name = Tingye;
 			packageProductDependencies = (
@@ -346,7 +276,6 @@
 			targets = (
 				FFDBCF53D93E8B52BC7CEE14 /* Tingye */,
 				BDA364D597CBA7FB8BDE187E /* TingyeTests */,
-				7A110000000000000000000B /* TingyeWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -373,13 +302,6 @@
 				4F6F92C0AC6DD7A98EEB6A04 /* PrivacyInfo.xcprivacy in Resources */,
 				3A3585E4BA3A02D48C9CF7FB /* ZIPFoundation-LICENSE.txt in Resources */,
 				C55BE1C7BCD4A86B59B1F27D /* samples.json in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		7A110000000000000000000E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -421,17 +343,6 @@
 				3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */,
 				D92714EFB66508E9A82461EA /* Theme.swift in Sources */,
 				15CAE64644780454A9F20606 /* TingyeApp.swift in Sources */,
-				7A1100000000000000000001 /* ListeningActivity.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		7A110000000000000000000C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				7A1100000000000000000004 /* TingyeWidgetsBundle.swift in Sources */,
-				7A1100000000000000000006 /* ListeningLiveActivity.swift in Sources */,
-				7A1100000000000000000002 /* ListeningActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -444,12 +355,6 @@
 			target = FFDBCF53D93E8B52BC7CEE14 /* Tingye */;
 			targetProxy = BED34B5CAA71C81C7AA6C5FD /* PBXContainerItemProxy */;
 		};
-		7A1100000000000000000012 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			platformFilter = ios;
-			target = 7A110000000000000000000B /* TingyeWidgets */;
-			targetProxy = 7A1100000000000000000013 /* PBXContainerItemProxy */;
-		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -459,7 +364,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -544,7 +449,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -572,7 +477,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -642,65 +547,6 @@
 			};
 			name = Release;
 		};
-		7A1100000000000000000010 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
-				DEVELOPMENT_TEAM = H22S27JV83;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TingyeWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "听页";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.widgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		7A1100000000000000000011 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
-				DEVELOPMENT_TEAM = H22S27JV83;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TingyeWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "听页";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.widgets;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		BFD5CF7DF03ADF31D481CC2B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -710,7 +556,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -739,15 +585,6 @@
 			buildConfigurations = (
 				58D47966A168D5D41152E83A /* Debug */,
 				78C9A07523F3D93B2C9494B6 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		7A110000000000000000000F /* Build configuration list for PBXNativeTarget "TingyeWidgets" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				7A1100000000000000000011 /* Release */,
-				7A1100000000000000000010 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
