@@ -11,6 +11,8 @@
 
 发布：1.17.0（98）于 2026-10-18 完成 iOS 与 Mac Catalyst Release 归档（`build/Tingye-98.xcarchive`、`build/Tingye-98-mac.xcarchive`，均不含小组件扩展）并上传 App Store Connect。iOS `Tingye.ipa` 与 macOS `Tingye.pkg` 均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-98.log`、`build/upload-98-mac.log`）；上传时状态为处理中，尚未确认 TestFlight 可安装状态。
 
+**1.17.0（99，仅 Mac Catalyst，2026-10-18）**：修复「查找并查看最新备份」只看当前账号目录的问题。Mac 以 guest 运行时，guest 目录中 10/10 的旧快照（5 本）会遮住 iPhone 在登录账号目录下的新备份（9 本）；现在始终在 `Backups/` 下全部账号目录中取最新一份。新增单元测试，核心测试 32 / 32 通过。Mac Catalyst Release 归档 `build/Tingye-99-mac.xcarchive` 已上传 App Store Connect，`Tingye.pkg` 收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-99-mac.log`）；上传时状态为处理中，尚未确认 TestFlight 可安装状态。本构建未上传 iOS。
+
 ## 历史：刊 · 杂志编辑风重设计（1.17.0 · 97，2026-10-15）
 
 **全盘重设计：在 Figma 中完成设计，再同步到 SwiftUI。** 设计稿：[听页 · 刊 Editorial 重设计](https://www.figma.com/design/FgvYsZ5rngrFacCcveI5lQ)（基础组件、9 个日间页面、5 个夜间页面、App 图标），设计说明见 `Design/v14-editorial/DESIGN.md`，模拟器走查截图见 `Design/v14-editorial/previews/`。数据格式、服务商连接与导入能力不变；上一版（墨夜）源码备份在 `build/v13-swift-backup-Tingye/`。
