@@ -4,7 +4,7 @@ import SwiftUI
 /// 显示在统计页的「日」视图。
 struct DailyQuoteCard: View {
     @EnvironmentObject var model: AppModel
-    /// 区块编号（刊版首页的第几栏）。
+    /// 兼容历史调用；专注版不显示装饰编号。
     var number: String? = nil
     @State private var quote: DailyQuote?
 
@@ -20,7 +20,7 @@ struct DailyQuoteCard: View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
                 SectionTitle(text: "今日一句", number: number)
-                ThemeIcon(symbol: Icon.quote, size: 30, weight: .black)
+                ThemeIcon(symbol: Icon.quote, size: 22, weight: .regular)
                     .foregroundStyle(Theme.accent)
                     .accessibilityHidden(true)
                 Group {
@@ -30,10 +30,10 @@ struct DailyQuoteCard: View {
                         Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
                     }
                 }
-                .font(Theme.serifSemibold(22, relativeTo: .title3))
+                .font(.body)
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
-                .markerHighlight()
+                .foregroundStyle(Theme.ink)
                 Text("—— " + sourceLine(entry))
                     .font(.caption)
                     .foregroundStyle(Theme.ink2)

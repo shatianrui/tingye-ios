@@ -556,10 +556,10 @@ private extension UIColor {
         getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(format: "#%02x%02x%02x", Int((min(max(r, 0), 1) * 255).rounded()), Int((min(max(g, 0), 1) * 255).rounded()), Int((min(max(b, 0), 1) * 255).rounded()))
     }
-    /// 高亮色带（金箔下划线）用的半透明 CSS 色
+    /// 柔和跟读底色，与原生分页 / 连续滚动的低饱和高亮一致。
     var cssRgbaHalf: String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         getRed(&r, green: &g, blue: &b, alpha: &a)
-        return "rgba(\(Int((min(max(r, 0), 1) * 255).rounded())), \(Int((min(max(g, 0), 1) * 255).rounded())), \(Int((min(max(b, 0), 1) * 255).rounded())), 0.55)"
+        return "rgba(\(Int((min(max(r, 0), 1) * 255).rounded())), \(Int((min(max(g, 0), 1) * 255).rounded())), \(Int((min(max(b, 0), 1) * 255).rounded())), 0.18)"
     }
 }

@@ -1,16 +1,18 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 刊版书架：只管找书与整理。页头「书架」+ 整理 / 信号红「＋」，3pt 刊头线，描边搜索框，下划线分段，色块封面网格。
+/// 专注版书架：轻量搜索与筛选，真实封面优先；保留用户选择的网格 / 列表。
 struct ShelfView: View {
     /// 当前所在分组；nil 为书库根目录
     var group: String? = nil
     @EnvironmentObject var model: AppModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var query = ""
     @State private var filter = "全部"
     @State private var category: String?
     @State private var importing = false
     @State private var showingSources = false
+    @State private var showingImportResults = false
     @State private var searching = false
     @FocusState private var searchFocused: Bool
     @State private var editing = false
@@ -22,13 +24,15 @@ struct ShelfView: View {
     @State private var renaming: String?
     @State private var renameText = ""
     @State private var removing = false
-    @AppStorage("shelf.layout") private var layout = "grid"
+    @AppStorage("shelf.layout") private var layout = "list"
     @AppStorage("shelf.kind") private var kind = "books"
     #if DEBUG
     @State private var reviewDetail: String?
     #endif
 
     private var isRoot: Bool { group == nil }
+    private var useList: Bool { layout == "list" || typeSize.isAccessibilitySize }
+    private var adaptiveRow: AnyLayout { typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 10)) }
     private var searchText: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var visibleKindEntries: [ShelfEntry] {
         model.visibleEntries.filter { kind == "comics" ? $0.isComic : !$0.isComic }
@@ -78,7 +82,7 @@ struct ShelfView: View {
         .navigationDestination(item: $reviewDetail) { id in BookDetailView(entryID: id) }
         .task {
             if ["shelf", "shelf-list", "shelf-edit"].contains(UIReview.screen) { kind = "books" }
-            if ["shelf", "shelf-edit"].contains(UIReview.screen) { layout = "grid" }
+            if ["shelf-grid", "shelf-edit"].contains(UIReview.screen) { layout = "grid" }
             if UIReview.screen == "shelf-list" { layout = "list" }
             if UIReview.screen == "shelf-edit" { editing = true }
             if UIReview.screen == "shelf-comics" { kind = "comics" }
@@ -94,7 +98,6 @@ struct ShelfView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if isRoot { shelfHeader }
-                if isRoot { InkRule(height: Theme.ruleHeavy).padding(.top, 14) }
                 if !editing {
                     if searching { shelfSearchBar.padding(.top, 18) }
                     else { searchEntry.padding(.top, isRoot ? 18 : 0) }
@@ -111,15 +114,7 @@ struct ShelfView: View {
                 if sorted.isEmpty && folders.isEmpty {
                     emptyState
                 } else {
-                    if layout == "list" { bookList.padding(.top, 12) } else { bookGrid.padding(.top, 8) }
-                }
-                if isRoot {
-                    Text("EPUB · TXT · PDF · MOBI · AZW3 · CBZ · 听页备份")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(Theme.ink3)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 36)
+                    if useList { bookList.padding(.top, 12) } else { bookGrid.padding(.top, 8) }
                 }
             }
             .padding(.horizontal, Theme.inset)
@@ -143,6 +138,7 @@ struct ShelfView: View {
         .animation(Theme.smoothSpring, value: editing)
         .bookImporter(isPresented: $importing)
         .sheet(isPresented: $showingSources) { ImportHubView().environmentObject(model).tint(Theme.accent) }
+        .sheet(isPresented: $showingImportResults) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
     }
 
     private var shelfWithMoveSheet: some View {
@@ -214,7 +210,12 @@ struct ShelfView: View {
             searching = false
         }
         .onChange(of: sorted.map(\.id)) { _, ids in selection.formIntersection(Set(ids)) }
-        .onChange(of: model.tab) { _, tab in if tab != 1 { finishEditing(); searching = false } }
+        .onChange(of: model.tab) { _, tab in
+            if tab != 1 { finishEditing(); searching = false }
+            else { consumeSearchRequest() }
+        }
+        .onAppear(perform: consumeSearchRequest)
+        .onChange(of: model.shelfSearchRequested) { _, _ in consumeSearchRequest() }
     }
 
     private var showingRename: Binding<Bool> {
@@ -242,13 +243,21 @@ struct ShelfView: View {
     }
 
     private var shelfHeader: some View {
-        HStack(alignment: .center, spacing: 10) {
+        adaptiveRow {
             PageMasthead(title: "书架", subtitle: shelfSubtitle)
             if !editing {
-                CircleIconButton(systemName: Icon.organize, label: "整理书库", action: beginEditing)
+                HStack(spacing: 10) {
+                    Button(action: beginEditing) {
+                        Text("整理").font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
+                            .background(Theme.surface2, in: Capsule())
+                    }
+                    .buttonStyle(.plain).foregroundStyle(Theme.ink)
                     .disabled(visibleKindEntries.isEmpty)
+                    .accessibilityLabel("整理书库")
                     .accessibilityIdentifier("shelf.organize")
-                addBooksMenu
+                    addBooksMenu
+                }.fixedSize(horizontal: true, vertical: false)
             }
         }
     }
@@ -257,11 +266,14 @@ struct ShelfView: View {
         Menu {
             Button { importing = true } label: { Label("从文件导入", systemImage: Icon.importFile) }
             Button { searching = false; showingSources = true } label: { Label("更多导入方式", systemImage: Icon.discover) }
+            if model.importReport != nil {
+                Button { showingImportResults = true } label: { Label("最近导入结果", systemImage: Icon.list) }
+            }
         } label: {
-            ThemeIcon(symbol: Icon.add, size: 22, weight: .bold)
-                .foregroundStyle(Theme.onAccent)
+            ThemeIcon(symbol: Icon.add, size: 22, weight: .medium)
+                .foregroundStyle(Theme.accent)
                 .frame(width: 44, height: 44)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .background(Theme.accentSoft, in: Circle())
                 .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")
@@ -281,7 +293,7 @@ struct ShelfView: View {
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 46)
-            .overlay(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.ink, lineWidth: 1.5))
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -290,11 +302,13 @@ struct ShelfView: View {
     }
 
     private var kindSelector: some View {
-        HStack(alignment: .bottom, spacing: 22) {
-            kindButton("书籍", value: "books")
-            kindButton("漫画", value: "comics")
-            Spacer(minLength: 8)
-            viewOptions.padding(.bottom, 4)
+        adaptiveRow {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
+                VStack(alignment: .leading, spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
+            }
+            if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
+            viewOptions
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -306,20 +320,12 @@ struct ShelfView: View {
             Haptics.selection()
             withAnimation(Theme.pressSpring) { kind = value; category = nil }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 5) {
-                    Text(title)
-                    Text("\(count)").monospacedDigit()
-                }
-                .font(.system(size: selected ? 20 : 16, weight: selected ? .bold : .medium))
-                .foregroundStyle(selected ? Theme.ink : Theme.ink3)
-                Rectangle().fill(Theme.accent).frame(height: 3).opacity(selected ? 1 : 0)
-            }
-            .fixedSize()
-            .frame(minHeight: 44, alignment: .bottom)
-            .contentShape(Rectangle())
+            HStack(spacing: 5) {
+                Text(title)
+                Text("\(count)").monospacedDigit()
+            }.fixedSize(horizontal: true, vertical: false)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChipPillStyle(selected: selected))
         .accessibilityLabel("\(title)，\(count) 本")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -328,7 +334,7 @@ struct ShelfView: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(editing ? "选择要整理的书" : (!searchText.isEmpty ? "搜索结果" : (hasFilters ? "筛选结果" : (model.sortOrder == "added" ? "最近加入" : "全部藏书"))))
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(Theme.ink)
                     .accessibilityAddTraits(.isHeader)
                 if editing || hasFilters || !searchText.isEmpty {
@@ -406,15 +412,16 @@ struct ShelfView: View {
             }
         } label: {
             HStack(spacing: 4) {
+                Image(systemName: Icon.sort).accessibilityHidden(true)
                 Text(sortLabel)
-                Image(systemName: Icon.disclosure).font(.system(size: 11, weight: .bold))
+                Image(systemName: Icon.collapse).font(.caption.weight(.bold)).accessibilityHidden(true)
             }
-            .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(Theme.ink)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Theme.ink2)
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
-        .accessibilityLabel("查看选项，筛选、排序和显示方式")
+        .accessibilityLabel("排序：\(sortLabel)，筛选和显示方式")
         .accessibilityIdentifier("shelf.view-options")
     }
 
@@ -477,7 +484,7 @@ struct ShelfView: View {
                 .padding(.leading, 14)
                 .padding(.trailing, query.isEmpty ? 14 : 0)
                 .frame(minHeight: 46)
-                .overlay(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.ink, lineWidth: 1.5))
+                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 Button("取消", action: cancelSearch)
                     .font(.subheadline)
                     .frame(minWidth: 44, minHeight: 44)
@@ -488,6 +495,12 @@ struct ShelfView: View {
         }
         .frame(maxWidth: .infinity)
         .onAppear { searchFocused = true }
+    }
+
+    private func consumeSearchRequest() {
+        guard isRoot, model.tab == 1, model.shelfSearchRequested else { return }
+        model.shelfSearchRequested = false
+        startSearch()
     }
 
     private func startSearch() {
@@ -520,7 +533,7 @@ struct ShelfView: View {
             ContentUnavailableView {
                 Label("从第一本书开始", systemImage: Icon.shelf)
             } description: {
-                Text("导入一本喜欢的书，让这里成为你的私人书房。也可在「＋」导入面板中使用 WiFi 传书、WebDAV 或 OPDS。")
+                Text("支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份。在「＋」中也可使用 WiFi 传书、WebDAV 或 OPDS。")
             } actions: {
                 Button("导入书籍") { importing = true }
                     .buttonStyle(PrimaryButtonStyle(height: 44))
@@ -570,8 +583,8 @@ struct ShelfView: View {
             .buttonStyle(PressButtonStyle())
             .accessibilityLabel("\(selection.contains(entry.id) ? "取消选择" : "选择")《\(entry.title)》")
             .accessibilityAddTraits(selection.contains(entry.id) ? .isSelected : [])
-        } else if layout == "list" {
-            HStack(spacing: 0) {
+        } else if useList {
+            adaptiveRow {
                 readingButton(entry, label: label)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 detailLink(entry).padding(.trailing, 10)
@@ -601,16 +614,17 @@ struct ShelfView: View {
     private func detailLink(_ entry: ShelfEntry) -> some View {
         NavigationLink { BookDetailView(entryID: entry.id) } label: {
             HStack(spacing: 6) {
-                if layout != "list" {
+                if !useList {
                     Text(entry.local ? (entry.started ? entry.percentText : "未读") : "iCloud")
                         .font(Theme.kicker).tracking(1)
                         .monospacedDigit()
                         .foregroundStyle(entry.started && entry.local ? Theme.accent : Theme.ink3)
                     Spacer(minLength: 0)
                 }
-                Image(systemName: Icon.info).font(.system(size: layout == "list" ? 17 : 13)).foregroundStyle(Theme.ink3)
+                Text("详情").font(.caption).foregroundStyle(Theme.ink2)
+                Image(systemName: Icon.disclosure).font(.caption2).foregroundStyle(Theme.ink3)
             }
-            .frame(minWidth: 36, minHeight: 36)
+            .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -650,7 +664,7 @@ struct ShelfView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.accent)
                 Text(String(path.split(separator: "/").last ?? ""))
-                    .font(Theme.serifSemibold(14, relativeTo: .subheadline))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
             }
@@ -697,7 +711,7 @@ struct ShelfView: View {
                     }
                 }
             Text(entry.title)
-                .font(Theme.serifSemibold(14, relativeTo: .subheadline))
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .padding(.top, 8)
@@ -720,7 +734,7 @@ struct ShelfView: View {
                                 .frame(width: 44)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(String(path.split(separator: "/").last ?? ""))
-                                    .font(Theme.serifSemibold(16, relativeTo: .body))
+                                    .font(.body.weight(.medium))
                                     .foregroundStyle(Theme.ink)
                                 Text("\(booksInCurrentKind(path).count) 本书")
                                     .font(.caption)
@@ -743,13 +757,13 @@ struct ShelfView: View {
                         BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 44)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
-                                .font(Theme.serifSemibold(16, relativeTo: .body))
+                                .font(.body.weight(.medium))
                                 .foregroundStyle(Theme.ink)
-                                .lineLimit(1)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                             Text(row.author + " · " + model.category(row))
-                                .font(.system(size: 12))
+                                .font(.caption)
                                 .foregroundStyle(Theme.ink3)
-                                .lineLimit(1)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                             if row.started && row.local {
                                 ProgressBar(value: row.readFraction, height: 3)
                                     .frame(maxWidth: 120)
@@ -758,7 +772,7 @@ struct ShelfView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Text(row.local ? (row.started ? row.percentText : "未读") : "iCloud")
-                            .font(row.started ? Theme.display(22) : .system(size: 12))
+                            .font(.caption.weight(.semibold))
                             .monospacedDigit()
                             .foregroundStyle(row.started ? Theme.accent : Theme.ink3)
                     }
@@ -834,7 +848,7 @@ struct ShelfView: View {
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .overlay(RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(destructive ? Theme.danger : Theme.ink, lineWidth: 1.2))
+            .background(destructive ? Theme.danger.opacity(0.09) : Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -867,7 +881,7 @@ struct ShelfView: View {
         if ids.allSatisfy({ id in model.entries.first { $0.id == id }?.isHidden == hiding }) {
             finishEditing()
             if hiding && !model.hiddenUnlocked {
-                model.message = "已隐藏 \(ids.count) 本书。可在书库的排序菜单或「设置」中验证身份后显示。"
+                model.notify("已隐藏 \(ids.count) 本书。可在书架排序菜单或设置中验证身份后显示。")
             }
         }
     }
@@ -963,10 +977,7 @@ private struct BookImportModifier: ViewModifier {
         content.fileImporter(isPresented: $isPresented, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
             switch result {
             case .success(let urls):
-                model.run("正在导入书籍") {
-                    try await model.importFiles(urls)
-                    model.message = "已导入 \(urls.count) 个文件。"
-                }
+                model.beginImport(urls)
             case .failure(let error):
                 model.message = error.localizedDescription
             }
@@ -976,6 +987,50 @@ private struct BookImportModifier: ViewModifier {
 
 extension View {
     func bookImporter(isPresented: Binding<Bool>) -> some View { modifier(BookImportModifier(isPresented: isPresented)) }
+}
+
+/// 最近一批导入的逐项结果。失败文件重新选择，避免复用已经失效的安全作用域 URL。
+struct ImportResultsView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var importing = false
+    var body: some View {
+        List {
+            if let report = model.importReport {
+                Section {
+                    Text(report.summary).font(.headline)
+                    if !report.finished { ProgressView(value: Double(report.completed), total: Double(max(1, report.items.count))) }
+                }
+                Section("文件") {
+                    ForEach(report.items) { item in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(item.name).font(.body)
+                            switch item.state {
+                            case .waiting: Label("等待导入", systemImage: Icon.duration).foregroundStyle(Theme.ink2)
+                            case .importing: HStack { ProgressView(); Text("正在解析并保存") }
+                            case .imported: Label("已导入", systemImage: Icon.checkmark).foregroundStyle(Theme.ink2)
+                            case .failed(let reason):
+                                Label("导入失败", systemImage: Icon.warning).foregroundStyle(Theme.danger)
+                                Text(reason).foregroundStyle(Theme.ink2)
+                            }
+                        }.font(.caption).padding(.vertical, 4).accessibilityElement(children: .combine)
+                    }
+                }
+                if report.finished {
+                    Section {
+                        Button(report.failures > 0 ? "重新选择失败文件" : "继续导入文件") { importing = true }
+                            .frame(minHeight: 44).disabled(model.busy)
+                    } footer: {
+                        Text(report.failures > 0 ? "已成功导入的书不会回滚。请检查失败原因，仅重新选择失败的文件；远程下载失败可返回书源重试。" : "文件已保存到本机书架。可关闭此页继续阅读。")
+                    }
+                }
+            } else { Text("暂无导入记录") }
+        }
+        .scrollContentBackground(.hidden).paperBackground()
+        .navigationTitle("导入结果").navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+        .bookImporter(isPresented: $importing)
+    }
 }
 
 struct ExportedBook: Identifiable { let id = UUID(); let url: URL }

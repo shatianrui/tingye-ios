@@ -136,6 +136,9 @@ struct ShelfEntry: Codable, Identifiable, Sendable {
     var highlights: [Highlight]?
     /// 加入书库的时间（毫秒），用于排序；旧书为 nil
     var addedAt: Double?
+    /// 上次主动使用的方式，只存本机目录，不改变跨端进度协议。
+    var lastActivity: ReadingActivity?
+    var hasListened: Bool?
     /// 缓存书籍简介，避免打开详情页时为了读简介反序列化上百 MB 的整书 JSON
     var intro: String?
     init(book: Book, progress: ReadingProgress = .init()) {
@@ -151,6 +154,50 @@ struct ShelfEntry: Codable, Identifiable, Sendable {
     var notes: [Highlight] { highlights ?? [] }
     /// 漫画：CBZ / 图片压缩包导入的书，在书库「漫画」页显示，以图片翻页阅读
     var isComic: Bool { format.uppercased() == "CBZ" }
+}
+
+enum ReadingActivity: String, Codable, Sendable { case reading, listening }
+
+/// 首页动作语义与样式共用，避免只有文案跟随行为、主次按钮却不变。
+struct ResumeActions: Equatable {
+    let started: Bool
+    let lastActivity: ReadingActivity
+    let hasListened: Bool
+    let playing: Bool
+    var prefersListening: Bool { playing || lastActivity == .listening }
+    var readingTitle: String { started ? "继续阅读" : "开始阅读" }
+    var listeningTitle: String { playing ? "暂停朗读" : hasListened ? "继续听" : started ? "听这本书" : "开始听书" }
+}
+
+struct AppNotice: Identifiable {
+    let id = UUID()
+    let text: String
+    var importResults = false
+}
+
+/// 导入只报告实际完成的文件；不持有临时 URL 或超出授权期限的文件访问权限。
+struct ImportItem: Identifiable {
+    enum State: Equatable {
+        case waiting, importing, imported(String), failed(String)
+        var finished: Bool {
+            switch self { case .imported, .failed: true; default: false }
+        }
+    }
+    let id = UUID()
+    let name: String
+    var state: State = .waiting
+}
+struct ImportReport: Identifiable {
+    let id = UUID()
+    var items: [ImportItem]
+    var completed: Int { items.filter { $0.state.finished }.count }
+    var successes: Int { items.filter { if case .imported = $0.state { true } else { false } }.count }
+    var failures: Int { items.filter { if case .failed = $0.state { true } else { false } }.count }
+    var finished: Bool { !items.isEmpty && completed == items.count }
+    var summary: String {
+        if !finished { return "正在导入 \(completed) / \(items.count) 个文件" }
+        return failures == 0 ? "已导入 \(successes) 个文件" : "已导入 \(successes) 个，\(failures) 个失败"
+    }
 }
 
 /// 一段划线：从 `start` 句到 `end` 句（含），可附笔记。

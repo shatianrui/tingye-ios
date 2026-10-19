@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">听页图标提案 01 · 星球上的小王子</title>
+  <desc id="desc">暖纸色背景，金发、长围巾、绿色外套的少年，捧着一本书站在小星球上。</desc>
+  <defs>
+    <radialGradient id="bg" cx="40%" cy="32%" r="85%"><stop stop-color="#FFFCF3"/><stop offset="1" stop-color="#EDE5D6"/></radialGradient>
+    <linearGradient id="world" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#D4D7DC"/><stop offset=".55" stop-color="#B5B8C4"/><stop offset="1" stop-color="#9493AA"/></linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8AA68B"/><stop offset="1" stop-color="#547862"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F2D184"/><stop offset="1" stop-color="#D6A958"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" seed="14" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+    <clipPath id="globeClip"><circle cx="510" cy="777" r="159"/></clipPath>
+    <g id="star"><path d="M0-21C3-5 5-3 21 0 5 3 3 5 0 21-3 5-5 3-21 0-5-3-3-5 0-21Z"/></g>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <ellipse cx="511" cy="928" rx="140" ry="14" fill="#8A7E74" opacity=".13" filter="url(#shadow)"/>
+  <g fill="#CBA66B">
+    <use href="#star" transform="translate(253 269) scale(1.05) rotate(12)"/>
+    <use href="#star" transform="translate(771 261) scale(.65)"/>
+    <use href="#star" transform="translate(756 568) scale(.8) rotate(7)"/>
+    <use href="#star" transform="translate(252 664) scale(.5)"/>
+    <circle cx="328" cy="167" r="5"/><circle cx="687" cy="172" r="5"/><circle cx="215" cy="465" r="4"/><circle cx="823" cy="449" r="5"/>
+  </g>
+  <!-- Small planet, with quiet contours instead of a high-detail landscape. -->
+  <circle cx="510" cy="777" r="159" fill="url(#world)"/>
+  <g clip-path="url(#globeClip)">
+    <path d="M354 742C420 668 576 653 668 728L682 633 374 590Z" fill="#E3E3DD" opacity=".7"/>
+    <path d="M350 754C424 733 450 755 493 802S586 865 662 848" fill="none" stroke="#EAE7DE" stroke-width="5" opacity=".5"/>
+    <path d="M404 870C464 840 529 870 555 938" fill="none" stroke="#7C7C96" stroke-width="4" opacity=".28"/>
+    <ellipse cx="412" cy="775" rx="22" ry="13" transform="rotate(-27 412 775)" fill="#8F92A7" opacity=".33"/>
+    <ellipse cx="586" cy="832" rx="30" ry="15" transform="rotate(25 586 832)" fill="#9190A8" opacity=".3"/>
+    <ellipse cx="549" cy="705" rx="79" ry="11" fill="#747D82" opacity=".22" filter="url(#shadow)"/>
+  </g>
+  <!-- Scarf tail: the principal identifying silhouette after the golden hair. -->
+  <path d="M549 403C615 409 639 352 704 346 755 342 781 364 820 346L807 384 824 407C769 431 748 395 708 400 654 406 629 460 554 440Z" fill="url(#gold)"/>
+  <path d="M599 420C651 412 661 369 711 369 754 369 773 389 808 374" fill="none" stroke="#F9E4AD" stroke-width="5" opacity=".65"/>
+  <!-- Boots and slim trousers, kept broad enough to survive small sizes. -->
+  <path d="M451 558L493 562 489 652 448 649Z" fill="#617E68"/>
+  <path d="M507 557L549 553 557 650 520 657Z" fill="#6F8B70"/>
+  <path d="M448 637L489 640 486 670C469 681 431 677 428 668 429 654 444 653 448 637Z" fill="#75695F"/>
+  <path d="M518 642L555 638C557 653 570 654 577 668 562 681 531 679 519 670Z" fill="#75695F"/>
+  <!-- Coat, collar and a narrow golden lining. -->
+  <path d="M446 396C417 417 403 475 398 561L435 576 449 551 448 591C472 604 524 609 558 586L555 550 576 563 596 545C586 470 573 419 547 401Z" fill="url(#coat)"/>
+  <path d="M504 443L511 590" stroke="#D8BA76" stroke-width="7" stroke-linecap="round"/>
+  <path d="M447 398L490 430 469 454 437 418Z" fill="#A9B89A"/>
+  <path d="M547 400L510 433 531 456 558 423Z" fill="#A9B89A"/>
+  <path d="M470 369L524 366 531 410C514 432 488 428 471 412Z" fill="#EECDA5"/>
+  <!-- Face, with a less literal, newly drawn portrait. -->
+  <path d="M412 283C414 240 454 218 506 225 565 232 586 270 574 321 568 361 539 392 498 394 456 395 420 366 412 324Z" fill="#F5DDBB"/>
+  <ellipse cx="412" cy="320" rx="11" ry="18" fill="#EBCBA9"/>
+  <ellipse cx="572" cy="319" rx="11" ry="18" fill="#EBCBA9"/>
+  <path d="M409 309C396 276 407 251 422 234L401 232 433 208 421 188 455 194 475 172 488 192C515 177 537 183 554 203L578 198 573 222 596 242 578 260 581 286 561 307 550 264C532 275 511 259 501 246 491 267 475 275 458 265 451 286 434 292 420 286L418 315Z" fill="url(#gold)"/>
+  <path d="M441 230C461 223 477 204 479 193M500 215C522 207 540 214 549 231M429 262C442 253 446 243 445 230" fill="none" stroke="#C4994F" stroke-width="4" stroke-linecap="round" opacity=".4"/>
+  <path d="M453 321Q461 315 469 321M520 321Q529 315 537 321" fill="none" stroke="#796453" stroke-width="4" stroke-linecap="round"/>
+  <path d="M494 330L490 342 497 344M480 359Q495 367 510 356" fill="none" stroke="#B58B70" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="446" cy="344" rx="12" ry="6" fill="#DCA391" opacity=".35"/><ellipse cx="547" cy="344" rx="12" ry="6" fill="#DCA391" opacity=".35"/>
+  <path d="M454 392Q495 412 540 391L549 413Q501 439 454 416Z" fill="url(#gold)"/>
+  <path d="M468 420C471 452 455 477 444 490L469 498C496 476 503 452 499 426Z" fill="#E0B665"/>
+  <!-- An open book, held naturally in front of the coat. -->
+  <path d="M408 476Q457 461 496 483 538 460 579 478L570 552Q529 538 496 560 462 538 418 549Z" fill="#756982"/>
+  <path d="M416 472Q458 465 495 487L495 548Q461 529 425 539Z" fill="#FAF2DF"/>
+  <path d="M501 488Q539 464 572 474L563 540Q529 532 501 548Z" fill="#EFE6D3"/>
+  <path d="M495 490L499 551" stroke="#D1C3AA" stroke-width="3"/>
+  <path d="M435 493Q457 491 477 502M434 508Q456 506 477 518M521 503Q541 494 555 496M521 519Q539 511 552 513" fill="none" stroke="#C4B69D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M404 501C390 501 388 516 397 526L417 535 424 518Z" fill="#F2D6B1"/>
+  <path d="M573 500C589 496 595 510 586 522L568 535 560 518Z" fill="#F2D6B1"/>
+  <rect width="1024" height="1024" filter="url(#grain)" opacity=".065" style="mix-blend-mode:multiply"/>
+</svg>

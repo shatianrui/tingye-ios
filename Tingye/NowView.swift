@@ -1,78 +1,48 @@
 import SwiftUI
 
-/// 今日：刊版首页。刊头（期号与日期）→ 01 封面故事（正在听 / 上次读到）→ 02 今日 → 03 最近在读 → 04 今日一句 → 05 还没开卷。
-/// 设计稿：Figma「02 页面 · 日间 / 01 今日 Today」。
+/// 方案 B：无框续读区、最近在读列表、轻量阅读习惯。读听语义沿用实际使用记录。
 struct NowView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     @ObservedObject var player: SpeechPlayer
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @State private var importing = false
     @State private var showingSources = false
     @State private var detail: String?
 
-    /// 封面故事：正在听的书优先，其次是最近读过的书，再其次是第一本本机书。
     private var focus: ShelfEntry? {
-        if let id = player.book?.id, let entry = model.visibleEntries.first(where: { $0.id == id }) { return entry }
+        if player.playing, let id = player.book?.id, let entry = model.visibleEntries.first(where: { $0.id == id }) { return entry }
         return model.visibleEntries.filter { $0.started && !$0.isComic }.max { $0.progress.updatedAt < $1.progress.updatedAt }
             ?? model.visibleEntries.first { $0.local && !$0.isComic }
     }
     private var recent: [ShelfEntry] {
-        Array(model.visibleEntries
-            .filter { $0.started && $0.id != focus?.id }
-            .sorted { $0.progress.updatedAt > $1.progress.updatedAt }
-            .prefix(12))
+        Array(model.visibleEntries.filter { $0.started && $0.id != focus?.id }
+            .sorted { $0.progress.updatedAt > $1.progress.updatedAt }.prefix(3))
     }
     private var unopened: [ShelfEntry] {
-        Array(model.visibleEntries
-            .filter { !$0.started && $0.id != focus?.id }
-            .sorted { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }
-            .prefix(12))
+        Array(model.visibleEntries.filter { !$0.started && $0.id != focus?.id }
+            .sorted { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }.prefix(3))
     }
     private var todayMinutes: Int { Int((model.readingSeconds[AppModel.dayKey(Date())] ?? 0) / 60) }
-    /// 连续阅读天数：今天还没读时从昨天往前数，不打断连续记录。
-    private var streak: Int {
-        let calendar = Calendar.current
-        var day = Date()
-        if (model.readingSeconds[AppModel.dayKey(day)] ?? 0) < 60 {
-            day = calendar.date(byAdding: .day, value: -1, to: day) ?? day
-        }
-        var count = 0
-        while (model.readingSeconds[AppModel.dayKey(day)] ?? 0) >= 60, count < 3650 {
-            count += 1
-            day = calendar.date(byAdding: .day, value: -1, to: day) ?? day
-        }
-        return count
+    private var week: [Date] {
+        (-6...0).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: Date()) }
     }
-    private var greeting: String {
-        switch Calendar.current.component(.hour, from: Date()) {
-        case 0..<5: "夜深了"
-        case 5..<11: "早上好"
-        case 11..<14: "中午好"
-        case 14..<18: "下午好"
-        default: "晚上好"
-        }
-    }
-    /// 期号：一年中的第几天，像日报的期数。
-    private var issue: String {
-        let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
-        return "NO. \(day)"
+    private var actionLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 12))
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
+            VStack(alignment: .leading, spacing: 28) {
                 masthead
-                if let focus { coverStory(focus) } else { welcome }
-                if focus != nil { todayStrip }
-                if !recent.isEmpty { coverRow("03", "最近在读", recent) }
-                DailyQuoteCard(number: "04")
-                if !unopened.isEmpty { coverRow("05", "还没开卷", unopened) }
+                if let focus { continueSection(focus) } else { welcome }
+                if !recent.isEmpty { bookRows("最近在读", recent) }
+                if focus != nil { readingWeek }
+                if !unopened.isEmpty { bookRows("待读清单", unopened) }
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.top, 8)
-            .padding(.bottom, 32)
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
+            .padding(.top, 12).padding(.bottom, 32)
+            .frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
         .paperBackground()
         .toolbar(.hidden, for: .navigationBar)
@@ -83,95 +53,67 @@ struct NowView: View {
         .sheet(isPresented: $showingSources) { ImportHubView().environmentObject(model).tint(Theme.accent) }
     }
 
-    // MARK: 刊头
-
     private var masthead: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("听页").font(Theme.headline(20)).foregroundStyle(Theme.ink)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("听页").scaledFont(26, weight: .semibold, relativeTo: .title)
+                    .foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
-                (Text(issue + " · ") + Text(Date(), format: .dateTime.year().month(.twoDigits).day(.twoDigits)) + Text(" · ") + Text(Date(), format: .dateTime.weekday(.wide)))
-                    .font(Theme.kicker).tracking(1.2)
-                    .foregroundStyle(Theme.ink3)
-                    .monospacedDigit()
+                CircleIconButton(systemName: Icon.search, label: "搜索书架") {
+                    model.shelfSearchRequested = true
+                    model.tab = 1
+                }.accessibilityIdentifier("now.search")
             }
-            InkRule(height: Theme.ruleHeavy)
-            Text("\(greeting)，\n今天读什么？")
-                .font(Theme.headline(38))
-                .lineSpacing(2)
-                .foregroundStyle(Theme.ink)
-                .accessibilityAddTraits(.isHeader)
+            Text("为自己留一点安静。")
+                .font(.subheadline).foregroundStyle(Theme.ink3)
         }
-        .padding(.top, 8)
     }
 
-    // MARK: 01 封面故事
-
-    private func coverStory(_ entry: ShelfEntry) -> some View {
+    private func continueSection(_ entry: ShelfEntry) -> some View {
         let current = player.book?.id == entry.id
-        let listening = current && player.playing
-        let fraction = current ? player.progress : entry.readFraction
-        return VStack(alignment: .leading, spacing: 16) {
-            SectionTitle(text: "封面故事", number: "01")
-            HStack(alignment: .bottom, spacing: 18) {
-                Button { Haptics.light(); model.open(entry) } label: {
-                    BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 140)
+        let actions = model.resumeActions(for: entry)
+        let fraction = current && actions.prefersListening ? player.progress : entry.readFraction
+        let chapter = current && actions.prefersListening ? player.chapter : entry.progress.chapter
+        return VStack(alignment: .leading, spacing: 18) {
+            Text(actions.playing ? "正在听" : actions.prefersListening ? "上次听到这里" : actions.started ? "正在阅读" : "从这本开始")
+                .font(.caption).foregroundStyle(Theme.ink3)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 22) {
+                if !typeSize.isAccessibilitySize {
+                    BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 100)
+                        .accessibilityHidden(true)
                 }
-                .buttonStyle(PressButtonStyle())
-                .accessibilityLabel("打开《\(entry.title)》")
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 5) {
-                        if listening {
-                            Image(systemName: Icon.listening).symbolEffect(.variableColor.iterative, isActive: true)
-                        }
-                        Text(listening ? "正在听" : current ? "听到一半" : entry.started ? "上次读到" : "从这本开始")
-                    }
-                    .font(Theme.kicker).tracking(1)
-                    .foregroundStyle(Theme.accent)
-                    Text(entry.title)
-                        .font(Theme.serifBold(30, relativeTo: .title))
-                        .foregroundStyle(Theme.ink)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.7)
-                    Text([entry.author, current ? player.chapterTitle : ""].filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(.caption)
-                        .foregroundStyle(Theme.ink2)
-                        .lineLimit(1)
-                    HStack(alignment: .firstTextBaseline, spacing: 1) {
-                        Text("\(Int((fraction * 100).rounded()))")
-                            .font(Theme.display(88))
-                            .foregroundStyle(Theme.ink)
-                            .contentTransition(.numericText())
-                        Text("%").font(Theme.display(30)).foregroundStyle(Theme.ink)
-                    }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(current ? "本章已听 \(Int(fraction * 100))%" : "已读 \(entry.percentText)")
-                    Text(current ? "第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章 · 本章" : "第 \(entry.progress.chapter + 1) / \(max(1, entry.chapterCount)) 章")
-                        .font(.caption)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.ink3)
+                VStack(alignment: .leading, spacing: 9) {
+                    Text(entry.title).font(.title2.weight(.medium))
+                        .foregroundStyle(Theme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 3)
+                    Text(entry.author).font(.caption).foregroundStyle(Theme.ink3)
+                    Text("第 \(chapter + 1) / \(max(1, entry.chapterCount)) 章")
+                        .font(.caption).foregroundStyle(Theme.ink2).monospacedDigit().padding(.top, 8)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            ProgressBar(value: fraction, height: 4)
-            HStack(spacing: 10) {
-                Button {
-                    Haptics.light()
-                    if current { player.toggle() } else { model.listen(entry.id) }
-                } label: {
-                    Label(listening ? "暂停" : "继续听", systemImage: Icon.playback(listening))
+            HStack(spacing: 12) {
+                ProgressBar(value: fraction, height: 2).accessibilityHidden(true)
+                Text("\(current && actions.prefersListening ? "本章" : "全书") \(Int((fraction * 100).rounded()))%")
+                    .font(.caption2).foregroundStyle(Theme.ink3).monospacedDigit()
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            actionLayout {
+                if actions.prefersListening {
+                    listenButton(entry, title: actions.listeningTitle).buttonStyle(PrimaryButtonStyle())
+                    if typeSize.isAccessibilitySize {
+                        readButton(entry, title: actions.readingTitle).buttonStyle(SecondaryButtonStyle())
+                    } else {
+                        readButton(entry, title: actions.readingTitle, compact: true).buttonStyle(.plain)
+                    }
+                } else {
+                    readButton(entry, title: actions.readingTitle).buttonStyle(PrimaryButtonStyle())
+                    if typeSize.isAccessibilitySize {
+                        listenButton(entry, title: actions.listeningTitle).buttonStyle(SecondaryButtonStyle())
+                    } else {
+                        listenButton(entry, title: actions.listeningTitle, compact: true).buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(PrimaryButtonStyle(fill: Theme.accent, foreground: Theme.onAccent))
-                .accessibilityLabel(listening ? "暂停朗读" : "听《\(entry.title)》")
-                .accessibilityIdentifier("now.listen")
-                Button { Haptics.light(); model.open(entry) } label: {
-                    Text(entry.started ? "继续阅读" : "开始阅读")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .accessibilityIdentifier("continue.reading")
-                .accessibilityLabel("\(entry.started ? "继续阅读" : "开始阅读")《\(entry.title)》，已读 \(entry.percentText)")
             }
         }
         .contextMenu {
@@ -180,132 +122,111 @@ struct NowView: View {
         }
     }
 
-    // MARK: 02 今日
-
-    private var todayStrip: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeader("02", "今日", link: "足迹") { model.tab = 2 }
-            Button { Haptics.selection(); model.tab = 2 } label: {
-                HStack(alignment: .top, spacing: 0) {
-                    stat("\(todayMinutes)", unit: "分钟", label: "今日")
-                    stat("\(min(999, Int(Double(todayMinutes) / Double(max(1, goalMinutes)) * 100)))", unit: "%", label: "目标 \(goalMinutes) 分钟", divider: true)
-                    stat("\(streak)", unit: "天", label: "连续", divider: true)
-                }
-                .fixedSize(horizontal: false, vertical: true)
-            }
-            .buttonStyle(PressButtonStyle(scale: 0.98))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("今日 \(todayMinutes) 分钟，目标 \(goalMinutes) 分钟，连续 \(streak) 天。轻点查看足迹")
-        }
-    }
-
-    private func stat(_ value: String, unit: String, label: String, divider: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(value)
-                    .font(Theme.display(52))
-                    .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                Text(unit).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.ink2)
-            }
-            Text(label).font(Theme.kicker).tracking(0.8).foregroundStyle(Theme.ink3).lineLimit(1)
-        }
-        .padding(.leading, divider ? 14 : 0)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .overlay(alignment: .leading) { if divider { Rectangle().fill(Theme.line).frame(width: 1) } }
-    }
-
-    // MARK: 横排封面
-
-    private func sectionHeader(_ number: String, _ title: String, link: String?, action: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            InkRule()
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(number).font(Theme.kicker).tracking(1.2).foregroundStyle(Theme.accent)
-                Text(title).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
-                Spacer()
-                if let link {
-                    Button(action: action) {
-                        Text(link + " →").font(.footnote.weight(.medium)).foregroundStyle(Theme.ink2).frame(minHeight: 44)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private func coverRow(_ number: String, _ title: String, _ rows: [ShelfEntry]) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeader(number, title, link: "书架") { model.tab = 1 }
-            ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: 14) {
-                    ForEach(rows) { entry in coverTile(entry) }
-                }
-                .padding(.horizontal, Theme.inset)
-            }
-            .scrollIndicators(.hidden)
-            .padding(.horizontal, -Theme.inset)
-        }
-    }
-
-    private func coverTile(_ entry: ShelfEntry) -> some View {
+    private func readButton(_ entry: ShelfEntry, title: String, compact: Bool = false) -> some View {
         Button { Haptics.light(); model.open(entry) } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 108)
-                    .overlay(alignment: .bottomTrailing) {
-                        if player.book?.id == entry.id && player.playing {
-                            Image(systemName: Icon.listening)
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Theme.onMarker)
-                                .frame(width: 24, height: 24)
-                                .background(Theme.marker)
-                                .padding(6)
-                        }
-                    }
-                Text(entry.title)
-                    .font(Theme.serifSemibold(14, relativeTo: .subheadline))
-                    .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
-                if entry.started {
-                    ProgressBar(value: entry.readFraction, height: 3)
-                } else {
-                    Text(entry.author.isEmpty ? model.category(entry) : entry.author)
-                        .font(.caption)
-                        .foregroundStyle(Theme.ink3)
-                        .lineLimit(1)
-                }
-            }
-            .frame(width: 108, alignment: .leading)
+            if compact { alternateIcon(Icon.read) }
+            else { HStack(spacing: 8) { Text(title); ThemeIcon(symbol: Icon.disclosure, size: 16) } }
         }
-        .buttonStyle(PressButtonStyle())
-        .accessibilityLabel("\(entry.started ? "继续阅读" : "开始阅读")《\(entry.title)》，\(entry.percentText)")
-        .contextMenu {
-            Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
-            if !entry.isComic {
-                Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }
-            }
-            Button { detail = entry.id } label: { Label("书籍详情", systemImage: Icon.info) }
+        .accessibilityIdentifier("continue.reading")
+        .accessibilityLabel("\(title)《\(entry.title)》")
+    }
+    private func listenButton(_ entry: ShelfEntry, title: String, compact: Bool = false) -> some View {
+        Button {
+            Haptics.light()
+            if player.book?.id == entry.id && player.playing { player.pause() }
+            else { model.listen(entry.id) }
+        } label: {
+            if compact { alternateIcon(player.playing && player.book?.id == entry.id ? Icon.playback(true) : Icon.listen) }
+            else { Label(title, systemImage: Icon.playback(player.book?.id == entry.id && player.playing)) }
         }
+        .accessibilityIdentifier("now.listen")
+        .accessibilityLabel("\(title)《\(entry.title)》")
+    }
+    private func alternateIcon(_ symbol: String) -> some View {
+        ThemeIcon(symbol: symbol, size: 24)
+            .foregroundStyle(Theme.accent).frame(width: 48, height: 48)
+            .background(Theme.accentSoft, in: Circle()).contentShape(Circle())
     }
 
-    // MARK: 空书架
+    private var readingWeek: some View {
+        Button { Haptics.selection(); model.tab = 2 } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                RowDivider()
+                ViewThatFits(in: .horizontal) {
+                    HStack { Text("与书相伴的一周"); Spacer(); Text("今天 \(todayMinutes) 分钟") }
+                    VStack(alignment: .leading, spacing: 6) { Text("与书相伴的一周"); Text("今天 \(todayMinutes) 分钟") }
+                }
+                .font(.caption).foregroundStyle(Theme.ink3)
+                HStack {
+                    ForEach(week, id: \.self) { date in
+                        let read = (model.readingSeconds[AppModel.dayKey(date)] ?? 0) >= 60
+                        let today = Calendar.current.isDateInToday(date)
+                        VStack(spacing: 7) {
+                            ZStack {
+                                Circle().fill(read ? Theme.accent : Theme.surface2)
+                                if read { ThemeIcon(symbol: Icon.checkmark, size: 12).foregroundStyle(Theme.onAccent) }
+                                else if today { Circle().strokeBorder(Theme.accent, lineWidth: 1) }
+                            }.frame(width: 24, height: 24)
+                            Text(["日", "一", "二", "三", "四", "五", "六"][Calendar.current.component(.weekday, from: date) - 1])
+                                .font(.caption2).foregroundStyle(Theme.ink3)
+                        }.frame(maxWidth: .infinity)
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("过去七天有 \(week.filter { (model.readingSeconds[AppModel.dayKey($0)] ?? 0) >= 60 }.count) 天阅读，今日 \(todayMinutes) 分钟，目标 \(goalMinutes) 分钟。查看足迹")
+    }
+
+    private func bookRows(_ title: String, _ rows: [ShelfEntry]) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button { model.tab = 1 } label: {
+                    HStack(spacing: 2) { Text("书架"); ThemeIcon(symbol: Icon.disclosure, size: 14) }
+                        .font(.caption).foregroundStyle(Theme.ink3).frame(minWidth: 44, minHeight: 44)
+                }.buttonStyle(.plain)
+            }
+            ForEach(rows) { entry in
+                if entry.id != rows.first?.id { RowDivider(inset: typeSize.isAccessibilitySize ? 0 : 56) }
+                Button { Haptics.light(); model.open(entry) } label: {
+                    HStack(spacing: 14) {
+                        if !typeSize.isAccessibilitySize {
+                            BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 42)
+                                .accessibilityHidden(true)
+                        }
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                            Text(entry.author + (entry.started ? " · 已读 \(entry.percentText)" : ""))
+                                .font(.caption).foregroundStyle(Theme.ink3)
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                        ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
+                    }
+                    .padding(.vertical, 10).frame(minHeight: 72).contentShape(Rectangle())
+                }
+                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .accessibilityLabel("\(entry.started ? "继续阅读" : "开始阅读")《\(entry.title)》，\(entry.percentText)")
+                .contextMenu {
+                    Button { model.open(entry) } label: { Label("阅读", systemImage: Icon.read) }
+                    if !entry.isComic { Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) } }
+                    Button { detail = entry.id } label: { Label("书籍详情", systemImage: Icon.info) }
+                }
+            }
+        }
+    }
 
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionTitle(text: "创刊号", number: "01")
-            Text("从一本书开始。")
-                .font(Theme.serifBold(30, relativeTo: .title))
-                .foregroundStyle(Theme.ink)
+            Text("从一本书开始。").font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
             Text("导入 EPUB、TXT、PDF 或 MOBI，可以读，也可以合上眼睛听。")
-                .font(.subheadline)
-                .foregroundStyle(Theme.ink2)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 10) {
-                Button("导入书籍") { importing = true }.buttonStyle(PrimaryButtonStyle(fill: Theme.accent, foreground: Theme.onAccent))
+                .font(.subheadline).foregroundStyle(Theme.ink2)
+            actionLayout {
+                Button("导入书籍") { importing = true }.buttonStyle(PrimaryButtonStyle())
                 Button("更多方式") { showingSources = true }.buttonStyle(SecondaryButtonStyle())
             }
-            .padding(.top, 4)
         }
     }
 }

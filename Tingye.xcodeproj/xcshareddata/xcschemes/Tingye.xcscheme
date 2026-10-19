@@ -47,6 +47,13 @@
                ReferencedContainer = "container:Tingye.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference skipped = "NO" parallelizable = "NO">
+            <BuildableReference BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D35100000000000000000006"
+               BuildableName = "TingyeUITests.xctest" BlueprintName = "TingyeUITests"
+               ReferencedContainer = "container:Tingye.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">听页图标提案 03 · 星夜与玫瑰</title>
+  <desc id="desc">深蓝紫星空，小王子坐在自己的星球上读书，身旁是一朵被玻璃罩保护的玫瑰。</desc>
+  <defs>
+    <radialGradient id="night" cx="48%" cy="43%" r="76%"><stop stop-color="#3F4663"/><stop offset=".6" stop-color="#2B304A"/><stop offset="1" stop-color="#20243B"/></radialGradient>
+    <radialGradient id="planet" cx="30%" cy="14%" r="95%"><stop stop-color="#DDDACB"/><stop offset=".45" stop-color="#B7B8B7"/><stop offset="1" stop-color="#767E96"/></radialGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F5D992"/><stop offset="1" stop-color="#D4AC62"/></linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#91AA91"/><stop offset="1" stop-color="#547563"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="7" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <clipPath id="planetClip"><circle cx="514" cy="816" r="240"/></clipPath>
+    <g id="star"><path d="M0-23C3-5 5-3 23 0 5 3 3 5 0 23-3 5-5 3-23 0-5-3-3-5 0-23Z"/></g>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#night)"/>
+  <g fill="#EAD59D">
+    <use href="#star" transform="translate(694 227) scale(1.1) rotate(8)"/>
+    <use href="#star" transform="translate(222 306) scale(.7)"/>
+    <use href="#star" transform="translate(817 456) scale(.65) rotate(12)"/>
+    <use href="#star" transform="translate(203 694) scale(.45)"/>
+    <circle cx="509" cy="155" r="5"/><circle cx="290" cy="183" r="4"/><circle cx="784" cy="319" r="4"/><circle cx="650" cy="371" r="4"/><circle cx="233" cy="530" r="4"/>
+  </g>
+  <path d="M629 192L654 178" stroke="#EAD59D" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+  <!-- Moonlike planet, intentionally extending below the frame. -->
+  <circle cx="514" cy="816" r="240" fill="url(#planet)"/>
+  <g clip-path="url(#planetClip)">
+    <path d="M269 760C375 687 558 725 760 824L788 581 316 501Z" fill="#EEE9D5" opacity=".24"/>
+    <path d="M278 811C381 783 437 819 498 873S626 924 754 906" fill="none" stroke="#E8E2D0" stroke-width="5" opacity=".35"/>
+    <path d="M291 935C380 893 413 959 483 1000" fill="none" stroke="#737F92" stroke-width="4" opacity=".35"/>
+    <ellipse cx="371" cy="801" rx="36" ry="19" transform="rotate(-22 371 801)" fill="#959EA6" opacity=".38"/>
+    <ellipse cx="613" cy="888" rx="43" ry="22" transform="rotate(18 613 888)" fill="#8994A4" opacity=".32"/>
+    <ellipse cx="487" cy="700" rx="99" ry="18" fill="#526174" opacity=".25" filter="url(#soft)"/>
+  </g>
+  <!-- The rose and its bell jar are secondary, not a logo inside the logo. -->
+  <ellipse cx="687" cy="674" rx="67" ry="12" fill="#7D8888" opacity=".35"/>
+  <path d="M631 668L631 556C631 524 654 500 687 500 720 500 743 524 743 556L743 668Z" fill="#ECF2DB" fill-opacity=".08" stroke="#E5DEB9" stroke-width="4" stroke-opacity=".7"/>
+  <path d="M643 559C643 533 657 516 678 513" fill="none" stroke="#FFF4D2" stroke-width="5" stroke-linecap="round" opacity=".5"/>
+  <path d="M683 661C690 632 682 605 687 580" fill="none" stroke="#567963" stroke-width="5" stroke-linecap="round"/>
+  <path d="M686 625C667 628 658 616 659 605 678 604 687 612 686 625ZM685 642C701 643 714 632 715 620 698 617 688 627 685 642Z" fill="#739075"/>
+  <path d="M668 565C659 551 666 537 679 539 686 526 701 529 706 540 723 543 721 561 709 572 698 585 678 584 668 565Z" fill="#C78688"/>
+  <path d="M670 550C687 543 705 547 708 563 691 569 676 564 670 550Z" fill="#E7A49F"/>
+  <path d="M678 540Q695 537 702 548M680 568Q691 573 705 566" fill="none" stroke="#A76576" stroke-width="3" stroke-linecap="round"/>
+  <path d="M677 579L688 585 702 577" fill="none" stroke="#587A65" stroke-width="5" stroke-linecap="round"/>
+  <path d="M625 670Q685 681 750 669" fill="none" stroke="#D9D2B4" stroke-width="5" stroke-linecap="round"/>
+  <!-- Swept scarf and seated figure. -->
+  <path d="M409 446C353 437 342 408 298 414 266 419 244 441 213 436L229 463 215 489C254 496 275 467 304 466 339 465 360 490 409 485Z" fill="url(#hair)"/>
+  <path d="M238 464C269 464 278 439 308 441 340 442 358 467 383 465" fill="none" stroke="#F8E3B0" stroke-width="5" opacity=".55"/>
+  <path d="M422 584C452 585 493 601 517 628L542 692 512 708 472 646 420 632Z" fill="#547563"/>
+  <path d="M461 584C499 587 536 614 551 643L577 734 543 743 511 666 468 652Z" fill="#739176"/>
+  <path d="M510 694L542 683 556 713C548 725 522 728 505 719Z" fill="#756D69"/>
+  <path d="M542 729L577 720 590 742 613 755C620 762 612 772 601 773L549 768Z" fill="#756D69"/>
+  <path d="M400 445C370 464 359 514 358 551 358 590 382 627 422 635L482 623 491 600C452 584 449 564 456 537L487 558 509 536C478 491 462 468 443 455Z" fill="url(#coat)"/>
+  <path d="M374 515C374 552 383 579 412 599" fill="none" stroke="#B2BC96" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  <path d="M413 414L450 412 455 460 415 470Z" fill="#E4C49C"/>
+  <!-- Profile: a fresh pose and face rather than reproducing the original cover. -->
+  <path d="M365 329C370 287 404 265 446 273 490 282 501 312 496 341L511 370 496 381C498 412 482 441 456 449 416 450 384 427 375 397Z" fill="#F3DAB2"/>
+  <ellipse cx="375" cy="370" rx="12" ry="17" fill="#E5C29B"/>
+  <path d="M365 379C345 354 343 326 354 303L339 284 365 271 358 247 391 251 406 228 429 246 458 227 470 252 497 252 492 276 515 296 497 320C469 327 453 310 445 299 432 326 409 330 394 319 389 342 383 354 377 358L378 383Z" fill="url(#hair)"/>
+  <path d="M373 298C387 293 400 278 403 265M428 279C443 267 459 272 468 282" fill="none" stroke="#BC9651" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+  <path d="M463 365Q475 370 481 362" fill="none" stroke="#76654F" stroke-width="4" stroke-linecap="round"/>
+  <path d="M475 404Q484 408 489 400" fill="none" stroke="#B38D70" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="455" cy="389" rx="14" ry="7" fill="#D59785" opacity=".3"/>
+  <path d="M395 445C414 451 434 453 457 442L469 464C446 486 415 485 394 471Z" fill="#E6C37D"/>
+  <path d="M417 477C408 500 411 521 421 541L443 533C435 517 436 496 445 479Z" fill="#D7B16B"/>
+  <!-- A book on his lap links the story motif back to a reading application. -->
+  <path d="M427 550Q466 535 504 556 542 534 582 546L570 607Q535 599 503 619 469 601 434 610Z" fill="#79728B"/>
+  <path d="M432 544Q468 538 501 560L501 607Q471 592 440 599Z" fill="#FFF4DC"/>
+  <path d="M507 560Q543 540 576 543L565 599Q533 592 507 608Z" fill="#E4DDCC"/>
+  <path d="M450 562Q472 563 485 571M450 577Q470 578 484 584M523 573Q544 563 561 565" fill="none" stroke="#BDB198" stroke-width="3" stroke-linecap="round"/>
+  <path d="M424 565C409 565 404 578 417 588L437 593 443 579Z" fill="#EBCDA5"/>
+  <path d="M575 566C589 565 593 576 583 586L568 594 560 581Z" fill="#EBCDA5"/>
+  <rect width="1024" height="1024" filter="url(#grain)" opacity=".045" style="mix-blend-mode:soft-light"/>
+</svg>

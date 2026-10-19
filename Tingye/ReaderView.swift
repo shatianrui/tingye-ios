@@ -81,6 +81,9 @@ private struct UncheckedBox<T>: @unchecked Sendable { let value: T }
 
 struct ReaderView: View {
     @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var measuredStripHeight: CGFloat = 64
     @Environment(\.colorScheme) private var colorScheme
     let book: Book
     @ObservedObject var player: SpeechPlayer
@@ -106,7 +109,7 @@ struct ReaderView: View {
     @State private var noteTarget: Highlight?
     @AppStorage("reader.fontSize") private var fontSize = 19.0
     @AppStorage("reader.lineSpacing") private var lineSpacing = 11.0
-    @AppStorage("reader.font") private var font = "serif"
+    @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.paragraphSpacing") private var paragraphSpacing = 15.0
@@ -128,9 +131,9 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
-    /// 阅读页的操作强调色：信号红（深纸用亮红）；荧光黄只留给朗读高亮。
-    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xFF5A3C) : Color(hex: 0xE63A1E) }
-    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x141311) : .white }
+    /// 阅读页按实际纸色选择深浅紫，固定浅纸不会误用夜间浅色控件。
+    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xC9B5DF) : Color(hex: 0x756184) }
+    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x211B2C) : .white }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
     private var sentences: [Sentence] { document.sentences(chapter) }
@@ -152,7 +155,7 @@ struct ReaderView: View {
     }
 
     /// 听条占用的高度：正在听时正文底部让出这块，高亮句不会被听条盖住（只在开始 / 结束听书时重新分页一次）。
-    private let stripReserve: CGFloat = 76
+    private var stripReserve: CGFloat { max(76, measuredStripHeight + 12) }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -229,7 +232,10 @@ struct ReaderView: View {
                 else { model.addHighlight(book.id, next) }
             }
         }
+        .feedbackOverlay()
+        .respectReducedMotion()
         .onAppear {
+            model.recordActivity(active && player.playing ? .listening : .reading, for: book.id)
             let progress = entry?.progress ?? .init()
             chapter = min(max(0, progress.chapter), chapters.count - 1); sentencePosition = progress.position
             jumpRevision += 1
@@ -279,22 +285,22 @@ struct ReaderView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Text(book.title)
-                    .font(Theme.serif(11.5, relativeTo: .caption))
+                    .font(.caption2)
                     .lineLimit(1)
-                    .foregroundStyle(prefs.secondary.opacity(0.85))
+                    .foregroundStyle(prefs.secondary)
                 Text("·")
                     .foregroundStyle(prefs.secondary.opacity(0.5))
                 Text(current.title)
-                    .font(Theme.serif(11.5, relativeTo: .caption))
+                    .font(.caption2)
                     .lineLimit(1)
                     .foregroundStyle(prefs.secondary)
                 Spacer()
                 if active && player.playing {
                     HStack(spacing: 4) {
                         Image(systemName: Icon.listening)
-                            .symbolEffect(.variableColor.iterative, isActive: true)
+                            .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
                         Text("正在朗读")
-                            .font(Theme.serif(10.5, relativeTo: .caption2))
+                            .font(.caption2)
                     }
                     .foregroundStyle(readerAccent)
                     .accessibilityLabel("正在朗读")
@@ -364,9 +370,11 @@ struct ReaderView: View {
                 Text(pageLabel)
             }
             .monospacedDigit()
-            .font(.system(size: 11))
-            .foregroundStyle(prefs.secondary.opacity(0.85))
-            .frame(height: 26)
+            .font(.caption2)
+            .foregroundStyle(prefs.secondary)
+            .frame(minHeight: 26)
+            .opacity(chrome ? 0 : 1)
+            .accessibilityHidden(chrome)
         }
         .padding(.horizontal, margin)
         .padding(.bottom, active ? stripReserve : 0)
@@ -484,6 +492,7 @@ struct ReaderView: View {
     private var listeningStrip: some View {
         listeningControls
             .readerPaperPanel(paper: prefs.background, ink: prefs.foreground, radius: 8)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
     }
 
     /// 听条内容：单独作为听条显示，或在工具层打开时并入章节栏。
@@ -491,7 +500,7 @@ struct ReaderView: View {
         HStack(spacing: 12) {
             Button { togglePlayback() } label: {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(readerAccent)
+                    Circle().fill(readerAccent)
                     if player.buffering { ProgressView().tint(readerOnAccent) }
                     else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(readerOnAccent) }
                 }
@@ -503,9 +512,10 @@ struct ReaderView: View {
             Button { sheet = .focus } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(player.buffering ? "正在准备声音…" : (player.playing ? "边读边听" : "朗读已暂停"))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                     Text(player.error ?? "第 \(player.chapter + 1) 章 · \(player.rate.rateText)× · \(player.timingLabel)")
-                        .font(.system(size: 11)).foregroundStyle(player.error == nil ? prefs.secondary : Theme.danger).lineLimit(1)
+                        .font(.caption).foregroundStyle(player.error == nil ? prefs.secondary : Theme.danger)
+                        .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                 }
                 .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading).contentShape(Rectangle())
             }
@@ -514,15 +524,18 @@ struct ReaderView: View {
                 Button("重试") { player.resume() }.font(.system(size: 12, weight: .semibold)).frame(minWidth: 44, minHeight: 44)
             } else {
                 Button { sheet = .focus } label: {
-                    Label("听书页", systemImage: Icon.openExternal)
-                        .font(.system(size: 12, weight: .semibold)).frame(minHeight: 44)
+                    if typeSize.isAccessibilitySize {
+                        ThemeIcon(symbol: Icon.openExternal).frame(width: 44, height: 44)
+                    } else {
+                        Label("听书页", systemImage: Icon.openExternal).font(.caption.weight(.semibold)).frame(minHeight: 44)
+                    }
                 }
                 .accessibilityLabel("进入听书页")
                 .accessibilityIdentifier("reader.expandPlayer")
             }
         }
         .foregroundStyle(prefs.foreground)
-        .padding(.horizontal, 12).frame(height: 64)
+        .padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 64)
         .overlay(alignment: .top) {
             ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 2.5)
                 .padding(.horizontal, 22).accessibilityHidden(true)
@@ -560,7 +573,7 @@ struct ReaderView: View {
         let overlap = NSIntersectionRange(sentence, range)
         guard overlap.length > 0 else { return page }
         // 分页模式按行画「靛蓝浅底 + 下划线」（CoreTextPageView），滚动模式整句铺软底
-        return SpeechHighlight.apply(to: page, sentence: NSRange(location: overlap.location - range.location, length: overlap.length), color: prefs.highlightBand.withAlphaComponent(isDarkPaper ? 0.3 : 0.62))
+        return SpeechHighlight.apply(to: page, sentence: NSRange(location: overlap.location - range.location, length: overlap.length), color: prefs.highlightBand.withAlphaComponent(isDarkPaper ? 0.18 : 0.16))
     }
     private func rebuild(size: CGSize) async {
         let double = automaticDouble && paper != "eink" && size.width > 650 && !scrolling
@@ -735,7 +748,7 @@ final class CoreTextPageView: UIView {
                 // 划线：浅底 / 直线 / 波浪线
                 if let mark { ReaderMark.draw(mark, in: context, box: CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: ascent + descent + 2)) }
                 guard let color = speech else { continue }
-                // 朗读高亮：荧光笔浅底由 CTFrameDraw 按背景色属性铺满行高，这里在行底补一道下划线（浅纸墨色、深纸荧光黄）
+                // 浅紫底由 CTFrameDraw 按背景色属性铺满行高，行底补一道与纸色适配的跟读线。
                 context.setFillColor(color.cgColor.alpha > 0.45 ? UIColor(hex: 0x111111).cgColor : color.withAlphaComponent(0.9).cgColor)
                 context.fill(CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: 2))
             }
@@ -911,7 +924,7 @@ struct ContentsView: View {
         ScrollViewReader { proxy in
             List {
                 VStack(alignment: .leading, spacing: 7) {
-                    Text(book.title).font(Theme.serifSemibold(24, relativeTo: .title2)).foregroundStyle(Theme.ink)
+                    Text(book.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 阅读到第 \(currentChapter + 1) 章")
                         .font(.system(size: 12)).foregroundStyle(Theme.ink3)
                 }
@@ -941,7 +954,7 @@ struct ContentsView: View {
                             Button { jump(bookmark.chapter, bookmark.position) } label: {
                                 VStack(alignment: .leading, spacing: 7) {
                                     Text(chapters.indices.contains(bookmark.chapter) ? chapters[bookmark.chapter].title : "第 \(bookmark.chapter + 1) 章")
-                                        .font(Theme.serif(16)).foregroundStyle(Theme.ink)
+                                        .font(.body).foregroundStyle(Theme.ink)
                                     Text(bookmark.excerpt).font(.caption).lineLimit(3).foregroundStyle(Theme.ink2)
                                     Label("回到此处", systemImage: Icon.jumpHere)
                                         .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent)
@@ -1014,7 +1027,7 @@ struct ContentsView: View {
             HStack(spacing: 12) {
                 Text("\(index + 1)").font(.system(size: 13, weight: index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink3).frame(minWidth: 26, alignment: .leading)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(chapter.title).font(Theme.serif(16).weight(index == currentChapter ? .semibold : .regular)).foregroundStyle(Theme.ink)
+                    Text(chapter.title).font(.body.weight(index == currentChapter ? .semibold : .regular)).foregroundStyle(Theme.ink)
                     if let snippet, !snippet.isEmpty { Text(snippet).font(.caption).lineLimit(2).foregroundStyle(Theme.ink2) }
                 }
                 Spacer()
@@ -1113,7 +1126,7 @@ struct ReadingPreferencesView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
-    @AppStorage("reader.font") private var font = "serif"
+    @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
     @AppStorage("reader.scrolling") private var scrolling = false
     private let mainPapers: [ReaderPaper] = [.paper, .white, .mist, .ancient, .night]
@@ -1276,7 +1289,7 @@ struct ReadingPreferencesView: View {
 private struct MoreTypographyView: View {
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
-    @AppStorage("reader.font") private var font = "serif"
+    @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.paragraphSpacing") private var paragraph = 15.0
@@ -1333,7 +1346,7 @@ private struct MoreTypographyView: View {
             Section {
                 Button("恢复护眼默认排版") {
                     size = 19; spacing = 11; paragraph = 15; margin = 24; indent = true; justified = true
-                    font = "serif"; paper = "paper"; doublePage = true; scrolling = false; original = false
+                    font = "system"; paper = "paper"; doublePage = true; scrolling = false; original = false
                     letterSpacing = 0; convert = "none"
                 }
                 .frame(maxWidth: .infinity)
@@ -1356,10 +1369,11 @@ private struct MoreTypographyView: View {
 }
 
 private extension View {
-    /// 阅读页悬浮面板：与纸同色的实底 + 1.5pt 墨线框，像夹在书页上的一张卡片。
+    /// 工具条保持实际纸色，用轻投影与细边界分层，不遮蔽正文。
     func readerPaperPanel(paper: Color, ink: Color, radius: CGFloat) -> some View {
-        self
-            .background(paper, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(ink, lineWidth: 1.5))
+        let shape = RoundedRectangle(cornerRadius: max(16, radius), style: .continuous)
+        return self
+            .background { shape.fill(paper).shadow(color: .black.opacity(0.08), radius: 12, y: 3) }
+            .overlay(shape.strokeBorder(ink.opacity(0.1), lineWidth: 0.5))
     }
 }

@@ -5,6 +5,16 @@ import Combine
 import UIKit
 import SwiftUI
 
+enum SpeechEstimate {
+    /// 与锁屏一致的保守字速估算；不是已合成音频的准确时长。
+    static func remainingLabel(characters: Int, rate: Double) -> String {
+        guard characters > 0 else { return "本章暂无剩余文字" }
+        let speed = rate.isFinite ? min(2, max(0.5, rate)) : 1
+        let seconds = Double(characters) / (4.5 * speed)
+        return seconds < 60 ? "本章约剩不到 1 分钟" : "本章约剩 \(Int(ceil(seconds / 60))) 分钟"
+    }
+}
+
 enum SpeechAudioSession {
     static func activate() throws {
         let session = AVAudioSession.sharedInstance()
@@ -89,6 +99,9 @@ struct VoiceOptions {
     var maleVoice = ""
     var femaleVoice = ""
     static func load() -> VoiceOptions {
+        #if DEBUG
+        if UIReview.isolated { return VoiceOptions(provider: "system", model: "", voice: "", rate: 1, key: "", groupID: "") }
+        #endif
         migrateLegacy()
         let d = UserDefaults.standard
         let provider = d.string(forKey: "voice.provider") ?? "system"
@@ -279,6 +292,12 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     var progress: Double { sentences.isEmpty ? 0 : Double(position) / Double(max(1, sentences.count - 1)) }
     var chapterTitle: String { chapterList.indices.contains(chapter) ? chapterList[chapter].title : "" }
     var chapterCount: Int { chapterList.count }
+    /// 按句首估算，当前句播放期间不伪造秒级倒计时；拖动时预览目标位置的剩余时长。
+    func estimatedRemainingLabel(from position: Int) -> String {
+        let prefix = prefixLengths
+        let start = min(max(0, position), max(0, prefix.count - 1))
+        return SpeechEstimate.remainingLabel(characters: max(0, (prefix.last ?? 0) - prefix[start]), rate: rate)
+    }
 
     /// 当前朗读方式的展示标签
     var providerLabel: String {
@@ -760,7 +779,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             context.fill(CGRect(origin: .zero, size: size))
             let glyph = String(book.title.prefix(1)) as NSString
             let font = UIFont(name: Theme.serifName, size: 260) ?? .systemFont(ofSize: 260, weight: .semibold)
-            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor(Theme.ink).resolvedColor(with: traits)]
+            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor(Theme.coverForeground(book.color)).resolvedColor(with: traits)]
             let bounds = glyph.size(withAttributes: attributes)
             glyph.draw(at: CGPoint(x: (size.width - bounds.width) / 2, y: (size.height - bounds.height) / 2), withAttributes: attributes)
         }

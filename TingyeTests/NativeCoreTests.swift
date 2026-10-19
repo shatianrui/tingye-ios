@@ -5,6 +5,133 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
+    @MainActor func testFocusTextContrastInBothAppearances() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
+                (Theme.accent, Theme.bg), (Theme.onAccent, Theme.accent), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
+                (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface)]
+            for (text, background) in pairs {
+                XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5)
+            }
+        }
+    }
+
+    @MainActor func testFocusReadingPapersHaveReadableTextInBothAppearances() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            for paper in ReaderPaper.allCases {
+                let prefs = ReaderPreferences(paper: paper.rawValue)
+                let background = UIColor(prefs.background).resolvedColor(with: traits)
+                for text in [prefs.foreground, prefs.secondary] {
+                    XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: background), 4.5, paper.rawValue)
+                }
+            }
+        }
+    }
+
+    func testFocusDefaultFontDoesNotReplaceExplicitReaderChoices() {
+        XCTAssertEqual(ReaderPreferences().font, "system")
+        let saved = ReaderPreferences(font: "serif", paper: "ancient")
+        XCTAssertEqual(saved.font, "serif")
+        XCTAssertEqual(saved.kind, .ancient)
+        XCTAssertEqual(ReaderPreferences(font: "custom:MyFont").font, "custom:MyFont")
+    }
+
+    @MainActor func testEveryCoverAndImageBackdropHasReadableSmallText() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            for name in ["green", "red", "vermilion", "purple", "blue", "ink", "gold", "cream", "unknown"] {
+                let foreground = UIColor(Theme.coverForeground(name)).resolvedColor(with: traits)
+                XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: Theme.coverUIColor(name).resolvedColor(with: traits)), 4.5, name)
+            }
+        }
+        for color in [UIColor.white, .yellow, .green, .red, .black, UIColor(hex: 0xFAF0E8)] {
+            XCTAssertGreaterThanOrEqual(color.backgroundForWhiteText.contrastRatio(with: .white), 4.5)
+        }
+    }
+
+    func testResumeActionTitlesAndPriorityFollowActualUse() {
+        let fresh = ResumeActions(started: false, lastActivity: .reading, hasListened: false, playing: false)
+        XCTAssertEqual(fresh.readingTitle, "开始阅读"); XCTAssertEqual(fresh.listeningTitle, "开始听书")
+        XCTAssertFalse(fresh.prefersListening)
+        let read = ResumeActions(started: true, lastActivity: .reading, hasListened: false, playing: false)
+        XCTAssertEqual(read.readingTitle, "继续阅读"); XCTAssertEqual(read.listeningTitle, "听这本书")
+        let heard = ResumeActions(started: true, lastActivity: .listening, hasListened: true, playing: false)
+        XCTAssertTrue(heard.prefersListening); XCTAssertEqual(heard.listeningTitle, "继续听")
+        let playing = ResumeActions(started: true, lastActivity: .reading, hasListened: true, playing: true)
+        XCTAssertTrue(playing.prefersListening); XCTAssertEqual(playing.listeningTitle, "暂停朗读")
+    }
+
+    func testOldCatalogDefaultsToReadingAndKeepsOptionalActivity() throws {
+        let book = Book(id: "activity-test", title: "行为", format: "TXT", chapters: [.init(title: "正文", text: "一。二。")])
+        var row = ShelfEntry(book: book)
+        let old = try JSONDecoder().decode(ShelfEntry.self, from: Integrity.encoder().encode(row))
+        XCTAssertNil(old.lastActivity); XCTAssertNil(old.hasListened)
+        row.lastActivity = .listening; row.hasListened = true
+        let restored = try JSONDecoder().decode(ShelfEntry.self, from: Integrity.encoder().encode(row))
+        XCTAssertEqual(restored.lastActivity, .listening); XCTAssertEqual(restored.hasListened, true)
+    }
+
+    func testRemainingListeningTimeIsExplicitlyEstimatedAndRateAware() {
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 270, rate: 1), "本章约剩 1 分钟")
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 540, rate: 1), "本章约剩 2 分钟")
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 540, rate: 2), "本章约剩 1 分钟")
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 1, rate: 1), "本章约剩不到 1 分钟")
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 0, rate: 1), "本章暂无剩余文字")
+        XCTAssertEqual(SpeechEstimate.remainingLabel(characters: 270, rate: .nan), "本章约剩 1 分钟")
+    }
+
+    @MainActor func testLastActivityPersistsWithoutChangingReadingPosition() async throws {
+        try await withDesignModel { model, disk, _ in
+            let book = Book(id: "mode", title: "方式", format: "TXT", chapters: [.init(title: "正文", text: "一。二。")])
+            try await model.add(book)
+            let original = try XCTUnwrap(model.entries.first).progress
+            model.recordActivity(.listening, for: book.id)
+            XCTAssertTrue(model.resumeActions(for: model.entries[0]).prefersListening)
+            model.open(model.entries[0])
+            XCTAssertFalse(model.resumeActions(for: model.entries[0]).prefersListening)
+            XCTAssertEqual(model.resumeActions(for: model.entries[0]).listeningTitle, "继续听")
+            model.flushPendingSaves()
+            let saved = try XCTUnwrap(disk.catalog().first)
+            XCTAssertEqual(saved.lastActivity, .reading); XCTAssertEqual(saved.hasListened, true)
+            XCTAssertEqual(saved.progress, original)
+        }
+    }
+
+    @MainActor func testPartialImportsHavePerFileResultsAndDoNotShowSuccessAlerts() async throws {
+        try await withDesignModel { model, _, base in
+            let good = base.appendingPathComponent("好书.txt"), bad = base.appendingPathComponent("损坏.json")
+            try Data("可以读这本书。下一句。".utf8).write(to: good)
+            try Data("broken".utf8).write(to: bad)
+            try await model.importWithFeedback([good, bad])
+            let report = try XCTUnwrap(model.importReport)
+            XCTAssertTrue(report.finished); XCTAssertEqual(report.successes, 1); XCTAssertEqual(report.failures, 1)
+            XCTAssertEqual(report.completed, 2); XCTAssertEqual(report.items.map(\.name), ["好书.txt", "损坏.json"])
+            if case .failed(let reason) = report.items[1].state { XCTAssertTrue(reason.contains("损坏")) }
+            else { XCTFail("失败文件必须保留可读的原因") }
+            XCTAssertEqual(model.entries.count, 1); XCTAssertNil(model.message)
+            XCTAssertEqual(model.notice?.importResults, true)
+            XCTAssertTrue(model.notice?.text.contains("1 个失败") == true)
+            try await model.importWithFeedback([good])
+            XCTAssertEqual(model.importReport?.successes, 1); XCTAssertEqual(model.importReport?.failures, 0)
+            XCTAssertNil(model.message)
+        }
+    }
+
+    @MainActor private func withDesignModel(_ action: (AppModel, LibraryDisk, URL) async throws -> Void) async throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "tests.design." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { try? FileManager.default.removeItem(at: base); defaults.removePersistentDomain(forName: suite) }
+        defaults.set(false, forKey: ProgressSync.enabledKey)
+        let disk = try LibraryDisk(owner: "design-test", base: base)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
+        do { try await action(model, disk, base) }
+        catch { _ = try? await model.beginLibraryRestore(); throw error }
+        _ = try await model.beginLibraryRestore()
+    }
+
     func testSpokenAudioSessionActivatesAndReactivatesAfterDeactivation() throws {
         let session = AVAudioSession.sharedInstance()
         defer { try? session.setActive(false, options: .notifyOthersOnDeactivation) }

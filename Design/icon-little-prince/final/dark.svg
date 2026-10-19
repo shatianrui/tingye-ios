@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">听页图标提案 02 · 抱书的小王子</title>
+  <desc id="desc">浅鼠尾草绿背景，金发少年系着金色围巾，低头读一本灰紫色封皮的书。</desc>
+  <defs>
+    <radialGradient id="bg" cx="45%" cy="30%" r="90%"><stop stop-color="#35423D"/><stop offset="1" stop-color="#1D2825"/></radialGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#E3C582"/><stop offset="1" stop-color="#C49C55"/></linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#EEDDC1"/><stop offset="1" stop-color="#DEC29D"/></linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8CA38C"/><stop offset="1" stop-color="#607F69"/></linearGradient>
+    <linearGradient id="pages" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#E8E0D0"/><stop offset="1" stop-color="#CBC0AD"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="13"/></filter>
+    <g id="star"><path d="M0-24C4-6 6-4 24 0 6 4 4 6 0 24-4 6-6 4-24 0-6-4-4-6 0-24Z"/></g>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="513" cy="448" r="281" fill="#526050" opacity=".32"/>
+  <g fill="#C7B282"><use href="#star" transform="translate(230 357) rotate(10)"/><use href="#star" transform="translate(799 276) scale(.75) rotate(-6)"/><circle cx="730" cy="166" r="5"/><circle cx="198" cy="555" r="5"/></g>
+  <ellipse cx="515" cy="909" rx="226" ry="15" fill="#101815" opacity=".14" filter="url(#soft)"/>
+  <!-- Soft coat and a scarf carried off to the right. -->
+  <path d="M598 590C676 570 710 605 765 580 803 563 819 535 841 514L854 557 884 566C858 621 816 652 767 649 699 645 671 616 616 644Z" fill="#E1BD77"/>
+  <path d="M655 612C726 608 736 640 793 608 817 594 831 576 842 562" fill="none" stroke="#F4DDA9" stroke-width="6" opacity=".6"/>
+  <path d="M401 575C316 586 278 640 262 719L246 853C301 908 714 922 779 858L767 716C753 637 711 596 618 579Z" fill="url(#coat)"/>
+  <path d="M383 582L503 654 437 690 361 614Z" fill="#A3B396"/>
+  <path d="M624 582L523 653 587 692 660 616Z" fill="#A3B396"/>
+  <path d="M482 544L554 542 568 609Q515 649 473 607Z" fill="#EAC8A0"/>
+  <!-- Generous portrait scale is deliberate: this option is for home-screen legibility. -->
+  <ellipse cx="350" cy="439" rx="23" ry="34" fill="#EDCEAA"/>
+  <ellipse cx="679" cy="435" rx="23" ry="33" fill="#EDCEAA"/>
+  <path d="M350 362C352 279 420 230 514 237 617 239 674 297 679 379L672 454C665 526 605 583 519 592 434 587 374 545 360 471Z" fill="url(#skin)"/>
+  <!-- A newly drawn, tousled golden hair silhouette, not a cropped book-cover image. -->
+  <path d="M348 427C327 398 318 369 332 336L310 318 339 292 321 270 363 259 355 225 400 232 425 194 452 215 490 174 510 209C548 185 583 190 601 214L634 204 643 234 680 240 677 270 710 296 691 326 698 358 675 415 660 427 652 362C617 374 593 351 581 325 564 360 522 371 498 337 473 376 439 384 414 361 400 397 377 403 361 393L361 431Z" fill="url(#hair)"/>
+  <path d="M366 313C397 304 418 282 421 251M445 290C467 268 486 241 489 216M525 275C552 249 584 253 603 275M606 303C627 299 646 310 654 326" fill="none" stroke="#B58F4C" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+  <path d="M383 331C400 330 413 319 420 305M464 310C475 303 485 292 491 280M532 302C545 294 561 294 570 301" fill="none" stroke="#F7DF9F" stroke-width="7" stroke-linecap="round" opacity=".6"/>
+  <!-- Eyes look down at the page; minimal detail remains gentle at small sizes. -->
+  <path d="M416 452Q436 469 456 452M565 452Q585 469 605 451" fill="none" stroke="#6C6353" stroke-width="6" stroke-linecap="round"/>
+  <path d="M511 469Q500 488 509 491L519 491M493 526Q511 537 533 525" fill="none" stroke="#B38D72" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="404" cy="485" rx="24" ry="11" fill="#D59687" opacity=".26"/><ellipse cx="618" cy="483" rx="24" ry="11" fill="#D59687" opacity=".26"/>
+  <!-- Collar and one relaxed scarf end. -->
+  <path d="M435 575C478 606 542 609 592 577L611 610C565 651 479 652 423 612Z" fill="#E2BD73"/>
+  <path d="M443 607C472 630 509 629 545 623" fill="none" stroke="#F9DF9F" stroke-width="6" stroke-linecap="round"/>
+  <path d="M474 632C467 673 438 688 417 712L455 733C493 716 522 677 520 641Z" fill="#CFA65E"/>
+  <!-- Book silhouette and hands, no typography inside the app icon. -->
+  <path d="M238 711Q380 667 510 724 653 665 794 714L774 889Q640 856 512 915 380 858 255 885Z" fill="#A292AF"/>
+  <path d="M251 703Q381 674 509 730L508 896Q383 846 266 875Z" fill="url(#pages)"/>
+  <path d="M517 731Q648 674 783 706L762 875Q640 845 517 896Z" fill="#DAD0BD"/>
+  <path d="M512 737L513 899" stroke="#AD9F87" stroke-width="5"/>
+  <path d="M288 735Q384 716 470 754M290 761Q385 746 470 779M293 789Q384 773 466 806M296 816Q365 808 415 823" fill="none" stroke="#A39782" stroke-width="5" stroke-linecap="round"/>
+  <path d="M557 803Q647 775 742 793M558 831Q640 804 737 820" fill="none" stroke="#A99A82" stroke-width="5" stroke-linecap="round"/>
+  <use href="#star" transform="translate(654 752) scale(.85)" fill="#C5A46A"/>
+  <path d="M244 759C218 748 208 770 221 787L258 806 273 778Z" fill="#E5CAA7"/>
+  <path d="M787 758C813 747 826 770 811 788L773 806 758 778Z" fill="#E5CAA7"/>
+  <path d="M588 868L588 905 609 893 628 900 625 857" fill="#B6807D"/>
+  <rect width="1024" height="1024" filter="url(#grain)" opacity=".06" style="mix-blend-mode:multiply"/>
+</svg>

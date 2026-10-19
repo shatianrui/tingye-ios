@@ -3,7 +3,15 @@ import AVKit
 
 @main
 struct TingyeApp: App {
-    @StateObject private var model = AppModel()
+    @StateObject private var model: AppModel = {
+        #if DEBUG
+        if UIReview.isolated {
+            do { return try UIReview.makeFixture()! }
+            catch { fatalError("UI fixture could not be created: \(error)") }
+        }
+        #endif
+        return AppModel()
+    }()
     init() {
         FontLibrary.registerAll()
         let navigation = UINavigationBarAppearance()
@@ -22,14 +30,14 @@ struct TingyeApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                #if DEBUG
+                .modifier(UIReviewAppearance())
+                #endif
                 .environmentObject(model)
                 .tint(Theme.accent)
                 .background(WindowAppearance(style: UIUserInterfaceStyle(appearance: appearanceMode)))
                 .onOpenURL { url in
-                    model.run("正在导入书籍") {
-                        try await model.importFiles([url])
-                        model.message = "已导入《\(url.deletingPathExtension().lastPathComponent)》。"
-                    }
+                    model.beginImport([url])
                 }
         }
     }
@@ -40,6 +48,70 @@ struct TingyeApp: App {
 /// 场景：now / shelf / shelf-list / shelf-edit / sources[-wifi|-webdav]（经书库导入面板）/ stats / profile / detail / chapters / appearance / backup /
 /// reader[-nochrome|-contents|-preferences|-voice|-listen] / player[-chapters|-voice] / miniplayer。
 enum UIReview {
+    static var isolated: Bool { ProcessInfo.processInfo.arguments.contains("-ui-fixture") }
+    static var showcase: Bool { isolated && ProcessInfo.processInfo.arguments.contains("-ui-showcase") }
+    /// UI 回归只写临时书库，不修改用户书籍，也不连接云语音 / iCloud。
+    @MainActor static func makeFixture() throws -> AppModel? {
+        guard isolated else { return nil }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ui-review-" + UUID().uuidString)
+        let disk = try LibraryDisk(owner: "fixture", base: root)
+        let text = (1...12).map { "第\($0)句，" + String(repeating: "安静读书，", count: 22) + "这一段结束。" }.joined()
+        let first = Book(id: "ui-long", title: "一本用来检查长标题和阅读体验的书", author: "测试作者", format: "TXT", chapters: [.init(title: "第一章：长句与听书进度", text: text), .init(title: "第二章", text: text)])
+        let second = Book(id: "ui-recent", title: "最近在读", format: "TXT", chapters: [.init(title: "正文", text: "另一段阅读。")])
+        let books = showcase ? showcaseBooks() : [first, second]
+        guard !books.isEmpty else { throw ReaderError.message("预览示例未加载。") }
+        for book in books { try disk.write(book) }
+        let rows = books.enumerated().map { index, book in
+            var row = ShelfEntry(book: book, progress: .init(chapter: 0, position: showcase ? (index == 0 ? 4 : 1) : (index == 0 ? 1 : 0), updatedAt: Double(books.count - index) * 100))
+            row.lastActivity = .reading
+            return row
+        }
+        try disk.saveCatalog(rows)
+        let defaults = UserDefaults(suiteName: "ui-review.offline")!
+        defaults.set(false, forKey: ProgressSync.enabledKey)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(defaults: defaults, account: { false }))
+        if showcase {
+            // 仅用于截图的演示记录；正常书库与发布构建不会生成这些数据。
+            for offset in 0..<7 {
+                let end = Calendar.current.date(byAdding: .day, value: -offset, to: Date())!
+                let seconds = Double([18, 26, 12, 22, 0, 31, 16][offset] * 60)
+                model.readingSeconds[AppModel.dayKey(end)] = seconds
+                if seconds > 0 {
+                    model.sessions.append(.init(bookID: books[0].id, title: books[0].title, start: end.addingTimeInterval(-seconds), end: end, seconds: seconds, listening: offset % 3 == 1))
+                }
+            }
+        }
+        return model
+    }
+    /// 使用项目已有的公版节选与本地绘制的示意书封；不从网络取图，也不改写 Samples。
+    @MainActor private static func showcaseBooks() -> [Book] {
+        Samples.books.enumerated().map { index, source in
+            var book = source
+            let renderer = UIGraphicsImageRenderer(size: CGSize(width: 240, height: 344))
+            let image = renderer.image { context in
+                let palettes: [(UInt32, UInt32, UInt32)] = [(0x294C5A, 0x8DAAA3, 0xC4B58E), (0xDFE7D6, 0x91AF9B, 0x527A70), (0xE4D8C2, 0x91A7AD, 0x496C7B)]
+                let palette = palettes[index % palettes.count]
+                UIColor(hex: palette.0).setFill(); context.fill(CGRect(x: 0, y: 0, width: 240, height: 344))
+                UIColor(hex: index == 0 ? 0xE6CA8F : 0xF6EFCE).setFill()
+                UIBezierPath(ovalIn: CGRect(x: 139, y: 133, width: 63, height: 63)).fill()
+                for layer in 0..<2 {
+                    UIColor(hex: layer == 0 ? palette.1 : palette.2).setFill()
+                    let y = CGFloat(225 + layer * 38)
+                    let path = UIBezierPath()
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addCurve(to: CGPoint(x: 240, y: y - 8), controlPoint1: CGPoint(x: 90, y: y - 70), controlPoint2: CGPoint(x: 150, y: y + 58))
+                    path.addLine(to: CGPoint(x: 240, y: 344)); path.addLine(to: CGPoint(x: 0, y: 344)); path.close(); path.fill()
+                }
+                let foreground = UIColor(hex: index == 0 ? 0xF4EEDB : 0x304B4F)
+                (book.title as NSString).draw(in: CGRect(x: 28, y: 36, width: 190, height: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 31, weight: .medium), .foregroundColor: foreground, .kern: 4])
+                (book.author as NSString).draw(at: CGPoint(x: 30, y: 91), withAttributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: foreground])
+                ("听页 · 示例节选" as NSString).draw(at: CGPoint(x: 27, y: 315), withAttributes: [.font: UIFont.systemFont(ofSize: 11), .foregroundColor: UIColor.white])
+            }
+            if let data = image.pngData() { book.fields["cover"] = .string("data:image/png;base64," + data.base64EncodedString()) }
+            return book
+        }
+    }
+
     static let screen: String? = {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "-uireview"), args.count > i + 1 else { return nil }
@@ -54,7 +126,7 @@ enum UIReview {
 }
 #endif
 
-/// 外壳：四个独立导航栈（今日 / 书架 / 足迹 / 设置）；底部是纸底实色页签栏（顶部墨线），迷你播放器常驻其上。
+/// 四个独立导航栈；轻量页签栏与可选的迷你播放器。
 struct RootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -81,15 +153,13 @@ struct RootView: View {
         .disabled(model.restoringLibrary)
         .paperBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
-        .modifier(AppLockGate())
-        .accessibilityLabel("听页主界面")
         .onChange(of: model.tab) { _, _ in Haptics.selection() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 model.refreshProgressSync()
             } else {
                 model.flushPendingSaves()
-                if phase == .background { model.hiddenUnlocked = false }
+                if phase == .background { model.hiddenUnlocked = false; model.notice = nil }
             }
         }
         .task {
@@ -121,20 +191,12 @@ struct RootView: View {
             PlayerView(player: model.player)
                 .environmentObject(model)
         }
-        .alert("听页提示", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
-            Button("知道了", role: .cancel) { model.message = nil }
+        .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
+            Button("关闭", role: .cancel) { model.message = nil }
         } message: { Text(model.message ?? "") }
-        .overlay(alignment: .top) {
-            if model.busy {
-                HStack(spacing: 10) { ProgressView(); Text(model.activity).font(.footnote).lineLimit(1) }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .glassSurface(in: Capsule())
-                    .padding(.top, 6)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .accessibilityElement(children: .combine)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: model.busy)
+        .feedbackOverlay()
+        .modifier(AppLockGate())
+        .respectReducedMotion()
     }
 
     /// 每个页签一个导航栈，切换页签时各自的栈状态保留。
@@ -147,6 +209,19 @@ struct RootView: View {
     private func driveUIReview() {
         guard let screen = UIReview.screen else { return }
         if screen == "now" { model.tab = 0; return }
+        if screen == "import-results", UIReview.isolated {
+            model.tab = 1
+            model.run("正在导入书籍") {
+                let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: folder) }
+                let good = folder.appendingPathComponent("成功示例.txt"), bad = folder.appendingPathComponent("失败示例.json")
+                try Data("导入成功的文字。".utf8).write(to: good)
+                try Data("broken".utf8).write(to: bad)
+                try await model.importWithFeedback([good, bad])
+            }
+            return
+        }
         if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { model.tab = 1; return }
         if screen.hasPrefix("stats") { model.tab = 2; return }
         if ["profile", "appearance", "backup"].contains(screen) { model.tab = 3; return }
@@ -168,13 +243,27 @@ struct RootView: View {
         } else if screen == "miniplayer" {
             model.run("正在打开") { [model] in model.startListening(try model.book(entry.id), showPlayer: false) }
         } else if screen.hasPrefix("player") {
-            model.run("正在打开") { [model] in model.startListening(try model.book(entry.id)) }
+            model.run("正在打开") { [model] in
+                model.startListening(try model.book(entry.id))
+                if UIReview.isolated { model.player.pause() }
+            }
         }
     }
     #endif
 }
 
-/// 四个固定目的地与常驻的迷你播放器；各页签保留自己的导航栈。纸底实色栏，顶部 1.5pt 墨线。
+#if DEBUG
+private struct UIReviewAppearance: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .transaction {
+                if ProcessInfo.processInfo.arguments.contains("-ui-reduce-motion") { $0.animation = nil; $0.disablesAnimations = true }
+            }
+    }
+}
+#endif
+
+/// 保留各页签导航状态，选中态只用字重和柔和紫色，不再添加粗短横。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -193,17 +282,17 @@ private struct LibraryNavigationBar: View {
                     let selected = model.tab == index
                     Button { model.tab = index } label: {
                         VStack(spacing: 4) {
-                            ThemeIcon(symbol: items[index].1, size: 24, weight: selected ? .semibold : .regular)
-                            Text(items[index].0).font(.system(size: 10, weight: selected ? .bold : .medium))
-                            Rectangle().fill(Theme.accent).frame(width: 16, height: 3).opacity(selected ? 1 : 0)
+                            ThemeIcon(symbol: items[index].1, size: 24, weight: selected ? .medium : .regular)
+                            Text(items[index].0).font(.caption2.weight(selected ? .semibold : .regular)).fixedSize(horizontal: false, vertical: true)
                         }
-                        .foregroundStyle(selected ? Theme.ink : Theme.ink3)
+                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 54)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.92))
                     .accessibilityAddTraits(selected ? .isSelected : [])
                     .accessibilityLabel(items[index].0)
+                    .accessibilityIdentifier("navigation.tab.\(index)")
                 }
             }
             .frame(maxWidth: 560)
@@ -243,26 +332,28 @@ extension UIUserInterfaceStyle {
 
 // MARK: - 迷你播放器（底部导航上方）
 
-/// 迷你播放器：墨底实色条（夜间反白），封面色块缩略图、书名与章节、播放 / 下一句，底边荧光黄进度线。
+/// 迷你播放器：浅灰紫表面、细进度线；不再用整块墨色争夺页面注意力。
 struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var layout: AnyLayout { typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4)) }
     var body: some View {
         if let book = player.book {
             VStack(spacing: 0) {
-                HStack(spacing: 4) {
+                layout {
                     Button { model.showingPlayer = true } label: {
                         HStack(spacing: 12) {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 34)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(Theme.serifSemibold(15, relativeTo: .subheadline))
-                                    .foregroundStyle(Theme.onInk)
-                                    .lineLimit(1)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Theme.ink)
+                                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
-                                    .font(.system(size: 11))
+                                    .font(.caption)
                                     .monospacedDigit()
-                                    .foregroundStyle(player.error == nil ? Theme.onInk.opacity(0.65) : Theme.accent)
+                                    .foregroundStyle(Theme.ink3)
                                     .lineLimit(1)
                             }
                             Spacer(minLength: 0)
@@ -272,15 +363,16 @@ struct MiniPlayer: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("打开播放器：\(book.title)")
 
+                    HStack(spacing: 4) {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.onInk)
+                                ProgressView().controlSize(.small).tint(Theme.accent)
                             } else {
                                 ThemeIcon(symbol: Icon.playback(player.playing), size: 26)
                             }
                         }
-                        .foregroundStyle(Theme.onInk)
+                        .foregroundStyle(Theme.ink)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                     }
@@ -289,8 +381,8 @@ struct MiniPlayer: View {
 
                     Button { Haptics.light(); player.skip(1) } label: {
                         ThemeIcon(symbol: Icon.nextSentence, size: 22)
-                            .foregroundStyle(Theme.onInk)
-                            .frame(width: 40, height: 44)
+                            .foregroundStyle(Theme.ink2)
+                            .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -303,20 +395,21 @@ struct MiniPlayer: View {
                         Button { player.stop() } label: { Label("结束听书", systemImage: Icon.stopListening) }
                     } label: {
                         ThemeIcon(symbol: Icon.more, size: 20)
-                            .foregroundStyle(Theme.onInk.opacity(0.7))
-                            .frame(width: 34, height: 44)
+                            .foregroundStyle(Theme.ink3)
+                            .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("听书更多操作")
+                    }
                 }
                 .padding(.leading, 8)
                 .padding(.trailing, 4)
                 .padding(.vertical, 7)
-                ProgressBar(value: player.progress, track: Theme.onInk.opacity(0.15), tint: Theme.marker, height: 3)
+                ProgressBar(value: player.progress, tint: Theme.accent, height: 2)
                     .accessibilityHidden(true)
             }
-            .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         }
     }
@@ -325,6 +418,49 @@ struct MiniPlayer: View {
         if player.buffering { return "正在合成语音…" }
         return "\(player.playing ? "正在听" : "已暂停") · \(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)"
     }
+}
+
+/// 不阻断操作的成功反馈；导入失败在逐项结果页处理，删除/覆盖仍保留原确认流程。
+private struct FeedbackOverlay: ViewModifier {
+    @EnvironmentObject private var model: AppModel
+    @State private var showingResults = false
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .top, spacing: 0) {
+            if let notice = model.notice {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Text(notice.text).font(.subheadline).foregroundStyle(Theme.ink)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
+                        Button { model.notice = nil } label: {
+                            ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)
+                        }.accessibilityLabel("关闭提示")
+                    }
+                    if notice.importResults {
+                        Button("查看逐项结果") { model.notice = nil; showingResults = true }
+                            .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                            .accessibilityIdentifier("import.results")
+                    }
+                }
+                .padding(.horizontal, 16)
+                .frame(maxWidth: 760).frame(maxWidth: .infinity)
+                .background(Theme.surface)
+                .overlay(alignment: .bottom) { RowDivider() }
+            } else if model.busy {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text(model.activity).font(.footnote).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12).frame(maxWidth: .infinity).background(Theme.surface)
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .sheet(isPresented: $showingResults) {
+            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent)
+        }
+    }
+}
+extension View {
+    func feedbackOverlay() -> some View { modifier(FeedbackOverlay()) }
 }
 
 /// 系统 AirPlay 路由选择按钮

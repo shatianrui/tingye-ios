@@ -118,6 +118,11 @@ struct SourcesView: View {
                     Capsule().fill(Theme.accent).frame(width: 3).padding(.vertical, 18)
                 }
 
+                if let report = model.importReport {
+                    NavigationLink { ImportResultsView() } label: {
+                        SourceActionRow(icon: Icon.importFile, title: "最近导入结果", subtitle: report.summary)
+                    }.buttonStyle(.plain)
+                }
                 sourceSectionTitle("本地文件")
                 VStack(spacing: 12) {
                     Button { importing = true } label: {
@@ -229,6 +234,8 @@ struct ImportHubView: View {
                 }
         }
         .tint(Theme.accent)
+        .feedbackOverlay()
+        .respectReducedMotion()
     }
 }
 
@@ -339,8 +346,7 @@ extension AppModel {
             if (fileName as NSString).pathExtension.isEmpty, let suggested = response.suggestedFilename { fileName = suggested }
             let target = folder.appendingPathComponent(fileName)
             try FileManager.default.moveItem(at: temp, to: target)
-            try await importFiles([target])
-            message = "已导入《\((fileName as NSString).deletingPathExtension)》。"
+            try await importWithFeedback([target])
         }
     }
 }

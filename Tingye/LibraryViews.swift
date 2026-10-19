@@ -9,6 +9,7 @@ struct BookDetailView: View {
     let entryID: String
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var repair = false
     @State private var removal = false
     @State private var export: ExportedBook?
@@ -93,48 +94,39 @@ struct BookDetailView: View {
 
     // MARK: 书籍信息
 
-    /// 封面色块刊头：眉题、宋体大书名、墨线与三个大数字（设计稿「03 书籍详情」）。
+    /// 真实书封与完整书名，不再把封面颜色放大成整页刊头。
     private func hero(_ entry: ShelfEntry) -> some View {
-        let fg = model.covers[entry.id] == nil ? Theme.coverForeground(entry.color) : Color.white
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .bottom, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text([entry.author.isEmpty ? "佚名" : entry.author, model.category(entry), entry.format].joined(separator: " · "))
-                        .font(Theme.kicker).tracking(1.2)
-                        .opacity(0.85)
-                        .lineLimit(1)
-                    Text(entry.title)
-                        .font(Theme.serifBold(52, relativeTo: .largeTitle))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.5)
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(alignment: .center, spacing: 24) {
+                if !typeSize.isAccessibilitySize {
+                    BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 108)
+                        .accessibilityHidden(true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if model.covers[entry.id] != nil {
-                    BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 72)
-                }
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(entry.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
+                    Text(model.category(entry) + " · " + entry.format).font(.caption).foregroundStyle(Theme.ink3)
+                }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            Rectangle().fill(fg).frame(height: 2)
-            HStack(alignment: .top, spacing: 0) {
+            detailLayout {
                 fact(entry.local ? (entry.started ? "\(Int((entry.readFraction * 100).rounded()))" : "0") : "—", unit: "%", label: entry.local ? "已读" : "iCloud 藏书")
                 fact("\(max(1, entry.chapterCount))", unit: "章", label: "篇幅")
                 fact("\(entry.progress.chapter + 1)", unit: "章", label: "读到")
             }
+            ProgressBar(value: entry.readFraction, height: 2)
         }
-        .foregroundStyle(fg)
-        .padding(.horizontal, Theme.inset)
-        .padding(.top, 20)
-        .padding(.bottom, 24)
+        .padding(.horizontal, Theme.inset).padding(.vertical, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background { CoverBackdrop(color: entry.color, image: model.covers[entry.id]) }
     }
 
+    private var detailLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+    }
     private func fact(_ value: String, unit: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text(value).font(Theme.display(48)).monospacedDigit()
-                Text(unit).font(.system(size: 14, weight: .medium))
-            }
-            Text(label).font(Theme.kicker).tracking(0.8).opacity(0.85)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(value + " " + unit).font(.subheadline.weight(.medium)).monospacedDigit().foregroundStyle(Theme.ink)
+            Text(label).font(.caption).foregroundStyle(Theme.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -146,7 +138,7 @@ struct BookDetailView: View {
             NavigationLink { ICloudBackupView() } label: { Text("从备份恢复书籍") }
                 .buttonStyle(PrimaryButtonStyle(height: 48))
         } else {
-            HStack(spacing: 12) {
+            detailLayout {
                 Button { Haptics.light(); model.open(entry) } label: {
                     Text(entry.started ? "继续阅读" : "开始阅读")
                 }
@@ -156,7 +148,7 @@ struct BookDetailView: View {
                         Text(model.player.book?.id == entryID && model.player.playing ? "正在听" : "听书")
                     }
                     .buttonStyle(SecondaryButtonStyle(height: 48))
-                    .frame(width: 118)
+                    .frame(width: typeSize.isAccessibilitySize ? nil : 118)
                 }
             }
         }
@@ -169,7 +161,7 @@ struct BookDetailView: View {
             Button { showingIntro = true } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
-                        .font(Theme.serif(15))
+                        .font(.subheadline)
                         .lineSpacing(6)
                         .foregroundStyle(Theme.ink2)
                         .lineLimit(3)
@@ -188,7 +180,7 @@ struct BookDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionTitle(text: "关于这本书", rule: false)
             Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
-                .font(Theme.serif(15))
+                .font(.body)
                 .lineSpacing(7)
                 .foregroundStyle(Theme.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -304,7 +296,7 @@ struct ChapterManagerView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(book.title).font(Theme.serifSemibold(24, relativeTo: .title2)).foregroundStyle(Theme.ink)
+                    Text(book.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
                         .font(.caption).foregroundStyle(Theme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")
@@ -385,7 +377,7 @@ struct ChapterManagerView: View {
                             .frame(width: 28)
                     }
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(chapter.title).font(Theme.serif(15).weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
+                        Text(chapter.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
                         Text("\(read.contains(index) ? "已读" : "未读") · 共 \(chapter.text.count) 字")
                             .font(.caption).foregroundStyle(read.contains(index) ? Theme.accent : Theme.ink3)
                     }
@@ -647,7 +639,7 @@ struct ProfileView: View {
         let temp = FileManager.default.temporaryDirectory
         for url in (try? FileManager.default.contentsOfDirectory(at: temp, includingPropertiesForKeys: nil)) ?? [] { try? FileManager.default.removeItem(at: url) }
         CloudSpeech.clearDiskCache()
-        model.clearIndexCache(); model.message = "已清除封面、语音缓存与临时文件。"
+        model.clearIndexCache(); model.notify("已清除封面、语音缓存与临时文件。")
     }
 }
 
@@ -661,17 +653,17 @@ struct AppearanceView: View {
             VStack(alignment: .leading, spacing: 26) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("让界面，合你的光。")
-                        .font(Theme.serifSemibold(26, relativeTo: .title2))
+                        .font(.title2.weight(.medium))
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("纸白与墨黑，日夜同一套刊版。")
+                    Text("浅灰紫与柔和夜色，日夜都保持安静。")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.ink3)
                 }
                 VStack(spacing: 12) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "纸白底、墨黑字、信号红点睛")
-                    appearanceOption("dark", title: "夜间", subtitle: "墨底纸色字，色块封面照旧")
+                    appearanceOption("light", title: "日间", subtitle: "浅灰紫底色，深色文字与轻量留白")
+                    appearanceOption("dark", title: "夜间", subtitle: "柔和深灰底，降低明暗刺激")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.system(size: 12))
@@ -720,14 +712,14 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x141311) : Color(hex: 0xF3F0E8)
-        let foreground = dark ? Color(hex: 0xF3F0E8) : Color(hex: 0x111111)
+        let background = dark ? Color(hex: 0x191820) : Color(hex: 0xFAF9FD)
+        let foreground = dark ? Color(hex: 0xF0EDF5) : Color(hex: 0x292633)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
                 Circle().fill(foreground.opacity(0.55)).frame(width: 4, height: 4)
                 Capsule().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0x1FA971)).frame(height: 25)
+            RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xD4CDDF)).frame(height: 25)
                 .overlay(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 1).fill(Color(hex: 0xFFFFFF)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
@@ -740,8 +732,8 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x141311)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.system(size: 12)).foregroundStyle(Color(hex: 0xFFE24A)) }
+                Rectangle().fill(Color(hex: 0x191820)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.system(size: 12)).foregroundStyle(Color(hex: 0xC9B5DF)) }
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

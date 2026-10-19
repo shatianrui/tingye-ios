@@ -449,7 +449,7 @@ struct AllNotesView: View {
                     } header: {
                         HStack(spacing: 8) {
                             BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 24)
-                            Text(entry.title).font(Theme.serifSemibold(14)).foregroundStyle(Theme.ink).textCase(nil)
+                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
                             SealBadge(text: "\(notes.count) 条", color: Theme.gold, background: Theme.goldSoft)
                             Spacer()
                             ShareLink(item: Self.markdown(entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }

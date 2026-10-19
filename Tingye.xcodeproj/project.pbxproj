@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D35100000000000000000001 /* DesignFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35100000000000000000002 /* DesignFlowTests.swift */; };
 		024057961DF149AE0FF80644 /* LibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A0B9E7ABBE47DD31FBEDC72 /* LibraryViews.swift */; };
 		03EAA6CEB910BB6DF821D3CA /* Sources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B7B44EE7FAEF491B3B2936 /* Sources.swift */; };
 		043B7FD64AE74DC422E15ABB /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD5D1B5C73437708973CAC2 /* Models.swift */; };
@@ -47,6 +48,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D35100000000000000000003 = {isa = PBXContainerItemProxy; containerPortal = 10A97ADF49E2D26FD1505CC9; proxyType = 1; remoteGlobalIDString = FFDBCF53D93E8B52BC7CEE14; remoteInfo = Tingye; };
 		BED34B5CAA71C81C7AA6C5FD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 10A97ADF49E2D26FD1505CC9 /* Project object */;
@@ -57,6 +59,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D35100000000000000000002 /* DesignFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignFlowTests.swift; sourceTree = "<group>"; };
+		D35100000000000000000004 /* TingyeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = TingyeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechPlayer.swift; sourceTree = "<group>"; };
 		16CECC27AA836CF92CEA7F18 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		19276B899D183EF8BB8323BF /* Noto-OFL.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Noto-OFL.txt"; sourceTree = "<group>"; };
@@ -117,6 +121,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D35100000000000000000005 /* TingyeUITests */ = {isa = PBXGroup; children = (D35100000000000000000002,); path = TingyeUITests; sourceTree = "<group>"; };
 		1BE9C5E15EF178E3AF247624 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -186,6 +191,7 @@
 			children = (
 				C7D54437CCEED905AA440076 /* Tingye.app */,
 				311DDC45B3489BB0BC48AFCA /* TingyeTests.xctest */,
+				D35100000000000000000004 /* TingyeUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -205,12 +211,24 @@
 				FA6120EED3D69A48F319F93A /* Frameworks */,
 				4E6D9B56FF896618EDC26C6D /* Tingye */,
 				5D763E0B084300393DBF327E /* TingyeTests */,
+				D35100000000000000000005 /* TingyeUITests */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		D35100000000000000000006 /* TingyeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D35100000000000000000007;
+			buildPhases = (D35100000000000000000008,);
+			buildRules = ();
+			dependencies = (D35100000000000000000009,);
+			name = TingyeUITests;
+			productName = TingyeUITests;
+			productReference = D35100000000000000000004;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		BDA364D597CBA7FB8BDE187E /* TingyeTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DD79E0CA9EDCD96EA6608F8E /* Build configuration list for PBXNativeTarget "TingyeTests" */;
@@ -276,6 +294,7 @@
 			targets = (
 				FFDBCF53D93E8B52BC7CEE14 /* Tingye */,
 				BDA364D597CBA7FB8BDE187E /* TingyeTests */,
+				D35100000000000000000006 /* TingyeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -308,6 +327,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		D35100000000000000000008 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D35100000000000000000001,); runOnlyForDeploymentPostprocessing = 0; };
 		0C7F1C24286C715927027D05 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -349,6 +369,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D35100000000000000000009 = {isa = PBXTargetDependency; target = FFDBCF53D93E8B52BC7CEE14; targetProxy = D35100000000000000000003; };
 		5F0B29FCCCB540A54FD91787 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = Tingye;
@@ -358,18 +379,50 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		D35100000000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H22S27JV83;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tingye;
+			};
+			name = Debug;
+		};
+		D35100000000000000000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H22S27JV83;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Tingye;
+			};
+			name = Release;
+		};
 		50AFB4F6B35E8806FB02BC82 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 105;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.17.0;
+				MARKETING_VERSION = 1.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.tests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -449,7 +502,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 105;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -460,7 +513,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.17.0;
+				MARKETING_VERSION = 1.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = YES;
@@ -477,12 +530,12 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 105;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.17.0;
+				MARKETING_VERSION = 1.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader.tests;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -556,7 +609,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 105;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -567,7 +620,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.17.0;
+				MARKETING_VERSION = 1.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shatianrui.wereader;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = YES;
@@ -580,6 +633,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		D35100000000000000000007 = {isa = XCConfigurationList; buildConfigurations = (D35100000000000000000010, D35100000000000000000011,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		261CAAF983D60E5E44AFDC2A /* Build configuration list for PBXProject "Tingye" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

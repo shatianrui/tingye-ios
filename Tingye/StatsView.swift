@@ -11,7 +11,11 @@ struct StatsView: View {
     @State private var editingGoal = false
     @State private var goalDraft = 30
     @State private var export: ExportedBook?
-    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 44
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var summaryLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 14))
+    }
 
     enum Period: String, CaseIterable, Identifiable {
         case day = "日", week = "周", month = "月", year = "年", all = "全部"
@@ -56,16 +60,13 @@ struct StatsView: View {
                     .accessibilityLabel("更多阅读数据操作")
                 }
                 .font(.subheadline).foregroundStyle(Theme.ink2)
-                InkRule(height: Theme.ruleHeavy).padding(.top, -6)
                 HStack(spacing: 0) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
-                            VStack(spacing: 6) {
-                                Text(item.rawValue).font(.system(size: period == item ? 20 : 16, weight: period == item ? .bold : .medium))
-                                    .foregroundStyle(period == item ? Theme.ink : Theme.ink3)
-                                Rectangle().fill(Theme.accent).frame(width: 26, height: 3).opacity(period == item ? 1 : 0)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 50, alignment: .bottom)
+                            Text(item.rawValue).font(.subheadline.weight(period == item ? .semibold : .regular))
+                                .foregroundStyle(period == item ? Theme.accent : Theme.ink3)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(period == item ? Theme.accentSoft : .clear, in: Capsule())
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -109,18 +110,18 @@ struct StatsView: View {
                 .font(Theme.kicker).tracking(1.2).foregroundStyle(Theme.ink3)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(Self.durationNumber(totalSeconds))
-                    .font(Theme.display(durationSize * 2)).monospacedDigit()
+                    .font(Theme.display(durationSize)).monospacedDigit()
                     .minimumScaleFactor(0.5).lineLimit(1)
-                Text(Self.durationUnit(totalSeconds)).font(Theme.display(30)).foregroundStyle(Theme.ink2)
+                Text(Self.durationUnit(totalSeconds)).font(.body).foregroundStyle(Theme.ink2)
             }
             .foregroundStyle(Theme.ink).accessibilityElement(children: .combine)
-            HStack(spacing: 14) {
+            summaryLayout {
                 Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Rectangle().fill(Theme.ink).frame(width: 9, height: 9) }
                     .foregroundStyle(Theme.ink)
                 Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Rectangle().fill(Theme.accent).frame(width: 9, height: 9) }
                     .foregroundStyle(Theme.accent)
             }
-            .font(.system(size: 14, weight: .medium))
+            .font(.subheadline)
             .labelStyle(TightLabelStyle())
             if unclassified >= 60 {
                 Text("另有 \(Int(unclassified / 60)) 分钟旧版记录未区分阅读与听书")
@@ -202,7 +203,7 @@ struct StatsView: View {
                 .font(.caption)
                 .foregroundStyle(Theme.ink2)
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text("\(value)").font(Theme.display(40)).monospacedDigit().foregroundStyle(Theme.ink)
+                Text("\(value)").scaledFont(28, weight: .medium, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
                 Text(unit).font(.caption).foregroundStyle(Theme.ink3)
             }
         }
@@ -220,7 +221,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title: "每日目标", number: "02")
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(Int(today / 60))").font(Theme.display(52)).monospacedDigit()
+                    Text("\(Int(today / 60))").scaledFont(30, weight: .medium, relativeTo: .title2).monospacedDigit()
                     Text("/ \(goalMinutes) 分钟").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink2)
                     Spacer(minLength: 4)
                     Text(fraction >= 1 ? "已完成 ✓" : "还差 \(remaining) 分钟")

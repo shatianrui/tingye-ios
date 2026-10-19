@@ -19,10 +19,17 @@ extension ShelfEntry {
 @MainActor
 final class AppModel: ObservableObject {
     @Published var entries: [ShelfEntry] = []
+    /// 需要处理的错误；普通成功使用 notice，不再要求点确认。
     @Published var message: String?
+    @Published var notice: AppNotice?
+    @Published private(set) var importReport: ImportReport?
+    private var noticeTask: Task<Void, Never>?
+    private var listeningObserver: AnyCancellable?
     @Published var busy = false
     @Published var activity = ""
     @Published var tab = 0
+    /// 首页搜索交给书架处理，沿用同一套跨分组搜索，不建立第二份查询状态。
+    @Published var shelfSearchRequested = false
     /// 书架排序方式:recent 最近阅读 / title 书名 / author 作者 / added 添加时间
     @Published var sortOrder = "recent"
     @Published var selectedBook: Book?
@@ -82,6 +89,11 @@ final class AppModel: ObservableObject {
                 self?.flushPendingSaves()
                 self?.pullProgress()
             }
+        listeningObserver = player.$playing.removeDuplicates().filter { $0 }
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in
+                guard let self, self.player.playing, let id = self.player.book?.id else { return }
+                self.recordActivity(.listening, for: id)
+            }
         pullProgress()
     }
     func loadLibrary() throws {
@@ -117,8 +129,36 @@ final class AppModel: ObservableObject {
         loadSessions()
         indexLibrary()
     }
+    func notify(_ text: String, importResults: Bool = false) {
+        noticeTask?.cancel()
+        let next = AppNotice(text: text, importResults: importResults)
+        notice = next
+        if UIAccessibility.isVoiceOverRunning { UIAccessibility.post(notification: .announcement, argument: text) }
+        // VoiceOver 用户自行关闭，避免来不及读完或操作。
+        guard !UIAccessibility.isVoiceOverRunning else { return }
+        noticeTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(8)) } catch { return }
+            if self?.notice?.id == next.id { self?.notice = nil }
+        }
+    }
+    func recordActivity(_ activity: ReadingActivity, for id: String) {
+        guard !restoringLibrary, let index = entries.firstIndex(where: { $0.id == id }) else { return }
+        guard entries[index].lastActivity != activity || (activity == .listening && entries[index].hasListened != true) else { return }
+        entries[index].lastActivity = activity
+        if activity == .listening { entries[index].hasListened = true }
+        scheduleCatalogSave()
+    }
+    func resumeActions(for entry: ShelfEntry) -> ResumeActions {
+        let history = sessions.filter { $0.bookID == entry.id }
+        let latest = history.max { $0.end < $1.end }
+        let current = player.book?.id == entry.id
+        return ResumeActions(started: entry.started || entry.lastActivity != nil,
+                             lastActivity: entry.lastActivity ?? (latest?.listening == true ? .listening : .reading),
+                             hasListened: current || entry.hasListened == true || history.contains(where: \.listening),
+                             playing: current && player.playing)
+    }
     func run(_ title: String, operation: @escaping @MainActor () async throws -> Void) {
-        guard !busy else { return }
+        guard !busy else { notify("请等待当前操作完成后重试。"); return }
         busy = true; activity = title
         Task { defer { busy = false; activity = "" }; do { try await operation() } catch is CancellationError {} catch { message = error.localizedDescription } }
     }
@@ -135,6 +175,7 @@ final class AppModel: ObservableObject {
         guard !restoringLibrary else { return }
         openTask?.cancel()
         if let cached = cache[entry.id] {
+            recordActivity(.reading, for: entry.id)
             selectedBook = cached
             return
         }
@@ -146,6 +187,7 @@ final class AppModel: ObservableObject {
             do {
                 let loaded = try await self.loadBook(entry.id)
                 try Task.checkCancellation()
+                self.recordActivity(.reading, for: entry.id)
                 self.selectedBook = loaded
             } catch is CancellationError {} catch {
                 self.message = error.localizedDescription
@@ -333,24 +375,46 @@ final class AppModel: ObservableObject {
             try removeLocal(id)
             var text = "已删除《\(entry.title)》的本机副本与 iCloud 备份"
             if result.rewritten + result.deleted > 0 { text += "（改写 \(result.rewritten) 份快照、删除 \(result.deleted) 份空快照）" }
-            message = text + "。"
+            notify(text + "。")
         }
     }
     private func checkOwner(_ captured: String) throws {
         guard owner == captured else { throw ReaderError.message("书库已变化，请重新操作。") }
     }
+    func beginImport(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        run("正在导入书籍") { [self] in try await importWithFeedback(urls) }
+    }
+    /// 可恢复的单项失败留在结果列表，其他文件继续，不弹出一串警告。
+    func importWithFeedback(_ urls: [URL]) async throws {
+        let previous = importReport?.id
+        do { try await importFiles(urls) }
+        catch {
+            guard let report = importReport, report.id != previous, report.finished else { throw error }
+        }
+        if let report = importReport { notify(report.summary, importResults: true) }
+    }
     func importFiles(_ urls: [URL]) async throws {
         try requireWritableLibrary()
+        guard !urls.isEmpty else { return }
+        guard importReport?.finished != false else { throw ReaderError.message("已有导入任务，请等待完成后重试。") }
+        importReport = ImportReport(items: urls.map { ImportItem(name: $0.lastPathComponent) })
         // 解析中的导入也属于写入事务，防止旧文件在还原完成后才继续提交。
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
         let captured = owner
         var failures: [String] = []
-        for url in urls {
+        for (index, url) in urls.enumerated() {
+            importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
                 let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.read(url) }.value
                 try checkOwner(captured); try await add(imported.book, progress: imported.progress)
-            } catch { failures.append(url.lastPathComponent + "：" + error.localizedDescription) }
+                importReport?.items[index].state = .imported(imported.book.id)
+            } catch {
+                let reason = error is DecodingError ? "文件内容无法解析，可能已损坏或不是有效的听页备份。请重新下载原文件后再导入。" : error.localizedDescription
+                importReport?.items[index].state = .failed(reason)
+                failures.append(url.lastPathComponent + "：" + reason)
+            }
         }
         if !failures.isEmpty { throw ReaderError.message(failures.joined(separator: "\n")) }
     }
@@ -358,6 +422,7 @@ final class AppModel: ObservableObject {
         guard !restoringLibrary else { return }
         guard book.fields["comic"]?.bool != true else { message = "漫画没有可以朗读的文字。"; return }
         let progress = entries.first(where: { $0.id == book.id })?.progress ?? .init()
+        recordActivity(.listening, for: book.id)
         player.start(book: book, chapter: progress.chapter, position: progress.position)
         showingPlayer = showPlayer
     }
@@ -415,7 +480,7 @@ final class AppModel: ObservableObject {
             try disk?.saveCatalog(next); entries = next
         }
         if player.book?.id == id { player.stop() }
-        message = "原书图文与封面已修复，书籍标识、书签和阅读进度已保留。"
+        notify("原书图文与封面已修复，书籍标识、书签和阅读进度已保留。")
     }
     /// 阅读页关闭（已保存最终位置）后，合并阅读期间被搁置的远端进度。
     func readerClosed(_ id: String) {

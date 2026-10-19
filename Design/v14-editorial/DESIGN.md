@@ -1,4 +1,6 @@
-# 听页 · 刊（Editorial）全盘重设计
+# 听页 · 刊（Editorial）原始设计基线 · 构建 97
+
+> 历史文档：初版 Figma 与 `previews/` 属于构建 97。此后先进行了 [可用性修订](USABILITY.md)，用户又明确选定了 [B「极简·专注」](../v15-focus/DESIGN.md)。当前实现以方案 B 与 SwiftUI 源码为准，以下颜色、粗线、字体和截图不代表当前 UI。
 
 - 设计稿：Figma「听页 · 刊 Editorial 重设计」 https://www.figma.com/design/FgvYsZ5rngrFacCcveI5lQ
   - `00 封面 · 说明`：方向与原则
@@ -63,5 +65,5 @@
 - `Tingye/PlayerView.swift`：播放器
 - `Tingye/ReaderView.swift`：阅读页工具卡与朗读高亮
 - `Tingye/StatsView.swift`：足迹
-- `TingyeWidgets/ListeningLiveActivity.swift`：锁屏实时活动与灵动岛（墨底、信号红按钮、荧光黄进度）
+- 锁屏：构建 98 起已移除 `TingyeWidgets` 与自定义实时活动；当前仅使用 `SpeechPlayer.swift` 中的系统「正在播放」。
 - 上一版（墨夜）源码备份：`build/v13-swift-backup-Tingye/`
