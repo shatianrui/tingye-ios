@@ -12,6 +12,10 @@ enum MobiReader {
         let count = Int(u16(bytes, 76))
         guard count > 1, 78 + count * 8 <= bytes.count else { throw ReaderError.message("MOBI 记录表损坏。") }
         let offsets = (0..<count).map { Int(u32(bytes, 78 + $0 * 8)) } + [bytes.count]
+        guard offsets[0] >= 78 + count * 8,
+              zip(offsets, offsets.dropFirst()).allSatisfy({ $0 <= $1 && $1 <= bytes.count }) else {
+            throw ReaderError.message("MOBI 记录表损坏。")
+        }
         func record(_ i: Int) -> ArraySlice<UInt8> {
             guard i >= 0, i < count, offsets[i] <= offsets[i + 1], offsets[i + 1] <= bytes.count else { return [] }
             return bytes[offsets[i]..<offsets[i + 1]]
@@ -21,6 +25,7 @@ enum MobiReader {
         guard r0.count >= 16 else { throw ReaderError.message("MOBI 文件头不完整。") }
         let compression = u16(r0, 0)
         let textRecords = Int(u16(r0, 8))
+        guard textRecords > 0, textRecords < count else { throw ReaderError.message("MOBI 正文记录损坏。") }
         guard u16(r0, 12) == 0 else { throw ReaderError.message("这本书有 DRM 加密，无法导入。") }
 
         let gbEncoding = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
@@ -38,6 +43,9 @@ enum MobiReader {
             if headerLength >= 0xE4, r0.count >= 0xF4 { extraFlags = u16(r0, 0xF2) }
             if compression == 17480 {
                 let start = Int(u32(r0, 0x70)), total = Int(u32(r0, 0x74))
+                guard start > textRecords, start < count, total > 0, total <= count - start else {
+                    throw ReaderError.message("MOBI 的 HUFF 压缩表损坏。")
+                }
                 huffRecords = (start..<start + total).map(record)
             }
             // EXTH：作者 100、书名 503、封面 201（相对首图的序号）
@@ -65,13 +73,13 @@ enum MobiReader {
         // 正文：第 1…textRecords 条记录，去掉尾部附加数据后解压
         let huff = compression == 17480 ? try HuffCDIC(huffRecords) : nil
         var raw = Data()
-        for i in 1...max(1, textRecords) {
+        for i in 1...textRecords {
             var chunk = Array(record(i))
             chunk.removeLast(min(chunk.count, trailingSize(chunk, flags: extraFlags)))
             switch compression {
             case 1: raw.append(contentsOf: chunk)
             case 2: raw.append(contentsOf: palmDOC(chunk))
-            case 17480: raw.append(contentsOf: try huff!.unpack(chunk))
+            case 17480: raw.append(contentsOf: try huff!.unpack(chunk, limit: HuffCDIC.maximumBytes - raw.count))
             default: throw ReaderError.message("不支持这种 MOBI 压缩方式（\(compression)）。")
             }
             guard raw.count <= 60 * 1024 * 1024 else { throw ReaderError.message("MOBI 正文过大。") }
@@ -91,7 +99,7 @@ enum MobiReader {
         // 没有分页标记的单篇长文按标题 / 字数再拆
         if chapters.count == 1, let only = chapters.first, only.text.count > 30_000 { chapters = BookImporter.splitText(only.text, title: title) }
         guard !chapters.isEmpty else { throw ReaderError.message("MOBI 中没有找到可阅读的文字。") }
-        if chapters.count > 3000 { chapters = Array(chapters.prefix(3000)) }
+        guard chapters.count <= 3000 else { throw ReaderError.message("书籍超过 3000 章 / 分页片段，请拆分后导入。") }
 
         var extras: [String: JSONValue] = ["category": .string("其他")]
         if firstImage > 0, let coverIndex {
@@ -108,13 +116,13 @@ enum MobiReader {
     // MARK: 工具
 
     static func u16<C: RandomAccessCollection>(_ b: C, _ i: Int) -> UInt16 where C.Element == UInt8, C.Index == Int {
+        guard i >= 0, i <= b.count - 2 else { return 0 }
         let s = b.startIndex + i
-        guard s + 1 < b.endIndex else { return 0 }
         return UInt16(b[s]) << 8 | UInt16(b[s + 1])
     }
     static func u32<C: RandomAccessCollection>(_ b: C, _ i: Int) -> UInt32 where C.Element == UInt8, C.Index == Int {
+        guard i >= 0, i <= b.count - 4 else { return 0 }
         let s = b.startIndex + i
-        guard s + 3 < b.endIndex else { return 0 }
         return UInt32(b[s]) << 24 | UInt32(b[s + 1]) << 16 | UInt32(b[s + 2]) << 8 | UInt32(b[s + 3])
     }
 
@@ -175,16 +183,18 @@ enum MobiReader {
 
 /// HUFF/CDIC 解压（亚马逊工具生成的 MOBI 常用），算法与 calibre 的 HuffReader 相同。
 final class HuffCDIC {
+    static let maximumBytes = 60 * 1024 * 1024
     private var dict1: [(length: Int, term: Bool, max: UInt64)] = []
     private var minCode: [UInt64] = []
     private var maxCode: [UInt64] = []
     private var dictionary: [(bytes: [UInt8], done: Bool)?] = []
+    private var dictionaryBytes = 0
     private var depth = 0
 
     init(_ records: [ArraySlice<UInt8>]) throws {
         guard let huff = records.first.map(Array.init), huff.count >= 16, huff.starts(with: Array("HUFF".utf8)) else { throw ReaderError.message("MOBI 的 HUFF 压缩表缺失。") }
         let off1 = Int(MobiReader.u32(huff, 8)), off2 = Int(MobiReader.u32(huff, 12))
-        guard off1 + 1024 <= huff.count, off2 + 256 <= huff.count else { throw ReaderError.message("MOBI 的 HUFF 压缩表损坏。") }
+        guard off1 >= 16, off2 >= 16, off1 + 1024 <= huff.count, off2 + 256 <= huff.count else { throw ReaderError.message("MOBI 的 HUFF 压缩表损坏。") }
         for i in 0..<256 {
             let v = MobiReader.u32(huff, off1 + i * 4)
             let length = Int(v & 0x1F), term = v & 0x80 != 0
@@ -198,22 +208,32 @@ final class HuffCDIC {
             minCode.append(lo << (32 - length))
             maxCode.append(((hi + 1) << (32 - length)) &- 1)
         }
+        var phraseCount: Int?
         for cdic in records.dropFirst().map(Array.init) {
-            guard cdic.count >= 16, cdic.starts(with: Array("CDIC".utf8)) else { continue }
+            guard cdic.count >= 16, cdic.starts(with: Array("CDIC".utf8)) else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
             let phrases = Int(MobiReader.u32(cdic, 8)), bits = Int(MobiReader.u32(cdic, 12))
+            guard (0...31).contains(bits), phrases > dictionary.count,
+                  phraseCount == nil || phraseCount == phrases else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
+            phraseCount = phrases
             let n = min(1 << bits, phrases - dictionary.count)
-            for k in 0..<max(0, n) {
+            guard n <= (cdic.count - 16) / 2 else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
+            for k in 0..<n {
                 let off = Int(MobiReader.u16(cdic, 16 + k * 2))
+                guard off >= n * 2, 18 + off <= cdic.count else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
                 let blen = Int(MobiReader.u16(cdic, 16 + off))
-                let start = 18 + off, end = min(cdic.count, start + (blen & 0x7FFF))
-                dictionary.append(start <= end ? (Array(cdic[start..<end]), blen & 0x8000 != 0) : ([], true))
+                let start = 18 + off, end = start + (blen & 0x7FFF)
+                let cost = (blen & 0x7FFF) + MemoryLayout<(bytes: [UInt8], done: Bool)?>.stride
+                guard end <= cdic.count, cost <= Self.maximumBytes - dictionaryBytes else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏或过大。") }
+                dictionaryBytes += cost
+                dictionary.append((Array(cdic[start..<end]), blen & 0x8000 != 0))
             }
         }
+        guard !dictionary.isEmpty, phraseCount == dictionary.count else { throw ReaderError.message("MOBI 的 CDIC 压缩表缺失或不完整。") }
     }
 
-    func unpack(_ input: [UInt8]) throws -> [UInt8] {
+    func unpack(_ input: [UInt8], limit: Int = HuffCDIC.maximumBytes) throws -> [UInt8] {
         depth += 1; defer { depth -= 1 }
-        guard depth < 32 else { throw ReaderError.message("MOBI 压缩数据异常。") }
+        guard depth < 32, limit >= 0 else { throw ReaderError.message("MOBI 压缩数据异常。") }
         var data = input + [UInt8](repeating: 0, count: 8)
         var bitsLeft = input.count * 8
         var pos = 0
@@ -221,7 +241,7 @@ final class HuffCDIC {
         var x = q(pos)
         var n = 32
         var out: [UInt8] = []
-        while true {
+        while bitsLeft > 0 {
             if n <= 0 {
                 pos += 4
                 if pos + 8 > data.count { data += [UInt8](repeating: 0, count: 8) }
@@ -237,12 +257,18 @@ final class HuffCDIC {
             n -= length
             bitsLeft -= length
             if bitsLeft < 0 { break }
-            let r = Int((maxValue &- code) >> UInt64(32 - length))
-            guard dictionary.indices.contains(r), let entry = dictionary[r] else { throw ReaderError.message("MOBI 压缩字典损坏。") }
-            if entry.done { out += entry.bytes }
+            guard (term || code >= minCode[length]), maxValue >= code,
+                  let r = Int(exactly: (maxValue - code) >> UInt64(32 - length)),
+                  dictionary.indices.contains(r), let entry = dictionary[r] else { throw ReaderError.message("MOBI 压缩字典损坏。") }
+            if entry.done {
+                guard entry.bytes.count <= limit - out.count else { throw ReaderError.message("MOBI 正文过大。") }
+                out += entry.bytes
+            }
             else {
                 dictionary[r] = nil
-                let expanded = try unpack(entry.bytes)
+                let expanded = try unpack(entry.bytes, limit: limit - out.count)
+                guard expanded.count <= Self.maximumBytes - (dictionaryBytes - entry.bytes.count) else { throw ReaderError.message("MOBI 压缩字典过大。") }
+                dictionaryBytes += expanded.count - entry.bytes.count
                 dictionary[r] = (expanded, true)
                 out += expanded
             }

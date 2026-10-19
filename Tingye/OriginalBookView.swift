@@ -205,6 +205,70 @@ enum OriginalSpeechHighlight {
     }
 }
 
+/// 章内位置沿用句子序号；每次查询重新读取 DOM，避免朗读高亮拆分文字节点后坐标失效。
+enum OriginalReadingPosition {
+    static func script(text: String) -> String {
+        let sentences = Sentence.split(text).map(\.text)
+        let json = String(data: try! Integrity.encoder().encode(sentences), encoding: .utf8)!
+        return "window.__tyReading = (() => { const sentences = " + json + ";" + #"""
+            function index() {
+                const root = document.getElementById('ty-reader-book');
+                if (!root) return {points: [], spans: []};
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                const points = [], spans = []; let text = '', node;
+                while ((node = walker.nextNode())) {
+                    if (node.parentElement.closest('style,script,noscript,nav,svg,[hidden]')) continue;
+                    for (let i = 0; i < node.length; i++) {
+                        if (!/\s/.test(node.data[i])) { text += node.data[i]; points.push([node, i]); }
+                    }
+                }
+                let cursor = 0;
+                sentences.forEach((sentence, position) => {
+                    const value = sentence.replace(/\s/g, '');
+                    if (!value.length) return;
+                    let start = text.indexOf(value, cursor);
+                    if (start < 0) start = text.indexOf(value);
+                    if (start < 0) return;
+                    const end = start + value.length;
+                    spans.push({position, start, end}); cursor = end;
+                });
+                return {points, spans};
+            }
+            function range(points, span, firstOnly) {
+                const start = points[span.start], end = points[firstOnly ? span.start : span.end - 1];
+                const r = document.createRange();
+                r.setStart(start[0], start[1]); r.setEnd(end[0], end[1] + 1);
+                return r;
+            }
+            return {
+                goTo(position) {
+                    const {points, spans} = index();
+                    const span = spans.find(s => s.position >= position) || spans[spans.length - 1];
+                    if (!span) return -1;
+                    const rect = range(points, span, true).getBoundingClientRect();
+                    const page = Math.max(0, Math.floor((scrollX + rect.left + 1) / innerWidth));
+                    window.scrollTo({left: page * innerWidth, behavior: 'instant'});
+                    return page;
+                },
+                position(page) {
+                    const {points, spans} = index();
+                    const left = page * innerWidth, right = left + innerWidth;
+                    let preceding = -1;
+                    for (const span of spans) {
+                        const rects = [...range(points, span, false).getClientRects()];
+                        if (rects.some(r => r.width > 0 && r.height > 0 && r.right + scrollX > left + 0.5 && r.left + scrollX < right - 0.5)) return span.position;
+                        if (rects.some(r => r.right + scrollX <= left + 0.5)) preceding = span.position;
+                    }
+                    return preceding;
+                }
+            };
+        })(); 0;
+        """#
+    }
+    static func restore(_ position: Int) -> String { "window.__tyReading ? window.__tyReading.goTo(\(max(0, position))) : -1" }
+    static func read(page: Int) -> String { "window.__tyReading ? window.__tyReading.position(\(max(0, page))) : -1" }
+}
+
 struct OriginalBookView: UIViewRepresentable {
     let html: String
     let css: String
@@ -221,6 +285,10 @@ struct OriginalBookView: UIViewRepresentable {
     var spokenSource: CurrentValueSubject<Int?, Never>? = nil
     var follow = true
     var highlightColor: UIColor = UIColor(Theme.wash)
+    var readingPosition = 0
+    /// 显式跳转与普通翻页回写区分开，避免每次保存位置又跳回当前句句首。
+    var positionRevision = 0
+    var onPositionChange: ((Int) -> Void)? = nil
     /// 点按中间区域：显示 / 隐藏工具栏。
     var onToggleChrome: (() -> Void)? = nil
     /// 手动翻到别的页（点按或滑动后页码确实变了）：停止朗读跟随，与纯文本翻页一致。
@@ -263,12 +331,15 @@ struct OriginalBookView: UIViewRepresentable {
     func updateUIView(_ view: WKWebView, context: Context) {
         let coordinator = context.coordinator
         coordinator.onToggleChrome = onToggleChrome; coordinator.onManualPage = onManualPage; coordinator.onResumeFollow = onResumeFollow; coordinator.onEdgeTurn = onEdgeTurn
+        coordinator.onPositionChange = onPositionChange
+        coordinator.requestPosition(readingPosition, revision: positionRevision)
         let color = UIColor(foreground).resolvedColor(with: view.traitCollection).cssHex
         let paperHex = UIColor(paper).resolvedColor(with: view.traitCollection).cssHex
         let typoKey = "\(preferences.font)-\(Int(preferences.fontSize.rounded()))-\(Int(preferences.lineSpacing.rounded()))-\(Int(preferences.paragraphSpacing.rounded()))-\(preferences.letterSpacing)-\(preferences.indent)-\(preferences.justified)"
         let key = "\(book.id)-\(chapter)-\(color)-\(paperHex)-\(typoKey)-\(html.hashValue)-\(css.hashValue)"
         let highlightKey = "\(key)-\(String(describing: highlight))-\(highlightColor.resolvedColor(with: view.traitCollection).cssHex)"
         let text = book.chapters.indices.contains(chapter) ? book.chapters[chapter].text : ""
+        if coordinator.text != text || coordinator.readingScript.isEmpty { coordinator.readingScript = OriginalReadingPosition.script(text: text) }
         coordinator.subscribe(spokenSource, view: view)
         coordinator.text = text; coordinator.highlight = highlight
         let spoken = OriginalSpeechHighlight.spokenIndex(text: text, sentence: highlight, offset: spokenSource?.value)
@@ -277,6 +348,7 @@ struct OriginalBookView: UIViewRepresentable {
         // 句子没变、只是读到的字或跟随状态变了：只重新定位翻页，不重建高亮。
         guard coordinator.highlightKey != highlightKey else {
             if coordinator.loaded && highlight != nil { coordinator.refollow(view) }
+            if coordinator.loaded { coordinator.restorePosition(view) }
             return
         }
         coordinator.highlightKey = highlightKey
@@ -285,9 +357,11 @@ struct OriginalBookView: UIViewRepresentable {
         coordinator.script = script
         guard coordinator.key != key else {
             if changed && coordinator.loaded { coordinator.apply(view) }
+            else if coordinator.loaded { coordinator.restorePosition(view) }
             return
         }
         coordinator.key = key; coordinator.loaded = false
+        coordinator.pendingPosition = readingPosition
         coordinator.resources?.update(book)
         view.loadHTMLString(OriginalDocument.html(html, css: css, color: color, background: "transparent", paper: paperHex, preferences: preferences), baseURL: nil)
     }
@@ -304,6 +378,22 @@ struct OriginalBookView: UIViewRepresentable {
         var spokenPage: Int?
         var text = ""
         var highlight: NSRange?
+        var readingScript = ""
+        var readingPosition = 0
+        var positionRevision: Int?
+        var pendingPosition: Int?
+        private var manualRevision = 0
+        var onPositionChange: ((Int) -> Void)?
+        func requestPosition(_ position: Int, revision: Int) {
+            readingPosition = position
+            if positionRevision != revision { positionRevision = revision; pendingPosition = position }
+        }
+        func restorePosition(_ view: WKWebView) {
+            guard let position = pendingPosition else { return }
+            pendingPosition = nil
+            guard highlight == nil || !follow else { return }
+            view.evaluateJavaScript(OriginalReadingPosition.restore(position), in: nil, in: .defaultClient, completionHandler: nil)
+        }
         private var lastFollow: (Int, Bool)?
         private var spokenSubscription: AnyCancellable?
         private weak var spokenSubject: CurrentValueSubject<Int?, Never>?
@@ -353,23 +443,41 @@ struct OriginalBookView: UIViewRepresentable {
         }
         /// 与纯文本翻页一致：翻到朗读所在页恢复跟随，翻到别处停止跟随。
         private func settled(on page: Int) {
-            if let spokenPage, page == spokenPage { onResumeFollow?() } else { onManualPage?() }
+            manualRevision += 1; pendingPosition = nil
+            if let spokenPage, page == spokenPage { follow = true; onResumeFollow?() }
+            else {
+                follow = false; onManualPage?()
+                guard let view else { return }
+                let documentKey = key, revision = manualRevision, requestedRevision = positionRevision
+                view.evaluateJavaScript(OriginalReadingPosition.read(page: page), in: nil, in: .defaultClient) { [weak self] result in
+                    guard let self, self.key == documentKey, self.manualRevision == revision,
+                          self.positionRevision == requestedRevision, !self.follow,
+                          case .success(let value) = result, let position = value as? Int, position >= 0 else { return }
+                    self.readingPosition = position
+                    self.onPositionChange?(position)
+                }
+            }
         }
         private func page(by delta: Int) {
             guard let view else { return }
             let scroll = view.scrollView
             let target = scroll.contentOffset.x + CGFloat(delta) * scroll.bounds.width
             let last = max(0, scroll.contentSize.width - scroll.bounds.width)
-            if target < -0.5 || target > last + 0.5 { onEdgeTurn?(delta); return }
+            if target < -0.5 || target > last + 0.5 {
+                manualRevision += 1; pendingPosition = nil
+                onEdgeTurn?(delta); return
+            }
             let x = min(max(0, target), last)
             settled(on: Int((x / max(1, scroll.bounds.width)).rounded()))
             scroll.setContentOffset(CGPoint(x: x, y: 0), animated: true)
         }
         func apply(_ view: WKWebView) {
             lastFollow = (spoken, follow)
-            view.evaluateJavaScript(script, in: nil, in: .defaultClient) { [weak self, weak view] _ in
-                guard let self, let view else { return }
+            let documentKey = key
+            view.evaluateJavaScript(readingScript + "\n" + script, in: nil, in: .defaultClient) { [weak self, weak view] _ in
+                guard let self, let view, self.key == documentKey else { return }
                 self.readSpokenPage(view)
+                self.restorePosition(view)
             }
         }
         /// 读到的字变化：只定位该字所在页，跟随时翻过去。
@@ -387,9 +495,12 @@ struct OriginalBookView: UIViewRepresentable {
         }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             loaded = true; apply(webView)
+            let documentKey = key, manual = manualRevision, revision = positionRevision
             // 布局稳定（尺寸 / 字体 / 图片落定）后再对齐一次整页边界，修正加载早期的错位。
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak webView] in
-                guard let self, let webView, self.loaded else { return }
+                guard let self, let webView, self.loaded, self.key == documentKey,
+                      self.manualRevision == manual, self.positionRevision == revision else { return }
+                self.pendingPosition = self.readingPosition
                 self.apply(webView)
             }
         }

@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import Security
 import CryptoKit
 import os
@@ -214,7 +215,7 @@ enum CloudSpeech {
         request.httpBody = try Integrity.encoder().encode(body)
         let (data, http) = try await send(request)
         let type = http.value(forHTTPHeaderField: "Content-Type") ?? ""
-        guard (200..<300).contains(http.statusCode) else { throw failure(http.statusCode, detail: detail(data)) }
+        guard (200..<300).contains(http.statusCode) else { throw glmFailure(http.statusCode, data: data) }
         guard !type.contains("json"), !type.hasPrefix("text/") else {
             let extra = detail(data).map { "（服务商返回：\($0)）" } ?? ""
             throw ReaderError.message("语音服务未返回音频，请检查账户额度和音色。" + extra)
@@ -363,6 +364,24 @@ enum CloudSpeech {
         return message.flatMap { $0.isEmpty ? nil : String($0.prefix(200)) }
     }
 
+    /// 智谱把业务错误放在 error.code（字符串）里，HTTP 一律 429/400 等：1113 是余额/资源包问题，重试无用，需单独说明。
+    static func glmFailure(_ status: Int, data: Data) -> Error {
+        let body = try? JSONDecoder().decode([String: JSONValue].self, from: data.prefix(4000))
+        let raw = body?["error"]?.object?["code"] ?? body?["code"]
+        let code: String? = switch raw { case .string(let v): v; case .number(let v): String(Int(v)); default: nil }
+        let extra = detail(data).map { "（服务商返回：\($0)）" } ?? ""
+        switch code {
+        case "1113":
+            return ReaderError.message("智谱账户没有可用于 glm-tts 的余额或资源包。GLM Coding Plan、文本模型资源包和部分赠送额度不能用于语音合成，请在智谱控制台确认该密钥所属账户有现金余额或语音资源包。" + extra)
+        case "1112", "1121":
+            return ReaderError.message("智谱账户状态异常（已被锁定或停用），请登录智谱控制台查看。" + extra)
+        case "1302", "1303", "1305":
+            return APIError(status: 429, code: "TTS_RATE_LIMIT", retryAfter: 2, message: "智谱语音请求过快，请稍后重试。" + extra)
+        default:
+            return failure(status, detail: detail(data))
+        }
+    }
+
     private static func failure(_ status: Int, detail: String?) -> Error {
         let extra = detail.map { "（服务商返回：\($0)）" } ?? ""
         switch status {
@@ -371,6 +390,16 @@ enum CloudSpeech {
         case 403: return ReaderError.message("当前密钥没有此语音模型的使用权限。" + extra)
         case 429: return APIError(status: 429, code: "TTS_RATE_LIMIT", retryAfter: 2, message: "语音服务额度不足或请求过快，请稍后重试。" + extra)
         default: return ReaderError.message("语音服务返回 \(status)，请检查模型权限和音色。" + extra)
+        }
+    }
+
+    /// 句子是否含有实际可发声的文字（汉字、字母、数字等）：纯分割线、省略号、闭合引号等不应发往云端合成。
+    static func hasSpeakableText(_ text: String) -> Bool {
+        text.unicodeScalars.contains {
+            !CharacterSet.whitespacesAndNewlines.contains($0)
+                && !CharacterSet.punctuationCharacters.contains($0)
+                && !CharacterSet.symbols.contains($0)
+                && !CharacterSet.controlCharacters.contains($0)
         }
     }
 
@@ -396,6 +425,51 @@ enum CloudSpeech {
         return words
     }
 
+    /// 任意格式音频的实际发声区间：WAV 直接解析，MP3 等先解码为 PCM 再按电平判断。
+    /// MiniMax 每句 MP3 首尾都带有静音（加上编码器延迟），逐句拼接时会形成明显的句间空白。
+    static func speechSpan(audio source: Data) -> (start: Double, end: Double)? {
+        if let span = speechSpan(wav: source) { return span }
+        // AudioFile 按扩展名选择解析器：MiniMax 返回 MP3，ElevenLabs 等可能是 MP4 容器。
+        let isMP4 = source.count > 8 && source[source.startIndex + 4..<source.startIndex + 8] == Data("ftyp".utf8)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("tts-span-\(UUID().uuidString).\(isMP4 ? "m4a" : "mp3")")
+        defer { try? FileManager.default.removeItem(at: url) }
+        guard (try? source.write(to: url)) != nil, let file = try? AVAudioFile(forReading: url) else { return nil }
+        let format = file.processingFormat, rate = format.sampleRate
+        guard rate > 0, file.length > 0, file.length < Int64(rate * 600),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)),
+              (try? file.read(into: buffer)) != nil, let channels = buffer.floatChannelData else { return nil }
+        let frames = Int(buffer.frameLength), window = max(1, Int(rate) / 100)
+        guard frames > window else { return nil }
+        var levels: [Float] = []
+        levels.reserveCapacity(frames / window + 1)
+        var frame = 0
+        while frame < frames {
+            var peak: Float = 0
+            for channel in 0..<Int(format.channelCount) {
+                let samples = channels[channel]
+                for f in frame..<min(frames, frame + window) { peak = max(peak, abs(samples[f])) }
+            }
+            levels.append(peak); frame += window
+        }
+        let loudest = levels.max() ?? 0
+        guard loudest > 0 else { return nil }
+        // 与 WAV 分支同样的阈值：约 -26 dB 相对峰值，且不低于 16 位 PCM 的 300。
+        let threshold = max(300 / 32768, loudest / 20)
+        guard let first = levels.firstIndex(where: { $0 >= threshold }), let last = levels.lastIndex(where: { $0 >= threshold }) else { return nil }
+        let seconds = Double(window) / rate, duration = Double(frames) / rate
+        return (Double(first) * seconds, min(duration, Double(last + 1) * seconds))
+    }
+
+    /// 句末保留的停顿（秒，按音频原速）：去掉合成音频自带的静音后，按标点补回自然的句间节奏。
+    static func trailingPause(after text: String) -> Double {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "”’」』\"'）)")))
+        guard let last = trimmed.unicodeScalars.last else { return 0.3 }
+        if "。！？.!?…".unicodeScalars.contains(last) { return 0.28 }
+        if "，,、；;：:—".unicodeScalars.contains(last) { return 0.14 }
+        // 无标点的行（标题、诗句、列表项）通常是独立一行，停顿稍长。
+        return 0.36
+    }
+
     /// 16 位 PCM WAV 中实际发声的起止秒数（去掉首尾静音）；无法解析时返回 nil。
     static func speechSpan(wav source: Data) -> (start: Double, end: Double)? {
         let bytes = [UInt8](source)
@@ -404,12 +478,14 @@ enum CloudSpeech {
         func u32(_ i: Int) -> Int { u16(i) | u16(i + 2) << 16 }
         var p = 12, channels = 0, rate = 0, bits = 0, format = 0, data: Range<Int>?
         while p + 8 <= bytes.count {
-            let size = u32(p + 4), body = p + 8
-            guard body + size <= bytes.count else { break }
+            let rawSize = u32(p + 4), body = p + 8
             let id = String(decoding: bytes[p..<p + 4], as: UTF8.self)
+            let size = (id == "data" && rawSize == 0xFFFF_FFFF) ? (bytes.count - body) : rawSize
+            guard size >= 0, body + size <= bytes.count else { break }
             if id == "fmt ", size >= 16 { format = u16(body); channels = u16(body + 2); rate = u32(body + 4); bits = u16(body + 14) }
             else if id == "data" { data = body..<body + size }
-            p = body + size + size % 2
+            let next = body + size
+            p = next == bytes.count ? next : next + size % 2
         }
         guard let data, format == 1 || format == 0xFFFE, bits == 16, channels > 0, rate > 0 else { return nil }
         let frameBytes = 2 * channels, frames = data.count / frameBytes
@@ -434,23 +510,41 @@ enum CloudSpeech {
         return (Double(first) * seconds, min(duration, Double(last + 1) * seconds))
     }
 
-    /// 部分 GLM 返回的 WAV 中 RIFF 长度少报 4 字节，严格解码器会丢掉结尾；仅在各 chunk 完整时修正长度字段。
+    /// 部分 GLM 返回的 WAV 中 RIFF 长度少报 4 字节，或流式网关写 0xFFFFFFFF 占位长度；在各 chunk 完整时修正头部长度字段。
     static func normalizedWav(_ source: Data) throws -> Data {
         let invalid = ReaderError.message("GLM 音频文件不完整或格式异常，请重试。")
         let bytes = [UInt8](source)
-        guard bytes.count >= 44, bytes.count <= 8 * 1024 * 1024, bytes[0..<4] == Array("RIFF".utf8)[...], bytes[8..<12] == Array("WAVE".utf8)[...] else { throw invalid }
+        guard bytes.count >= 44, bytes.count <= maxAudio, bytes[0..<4] == Array("RIFF".utf8)[...], bytes[8..<12] == Array("WAVE".utf8)[...] else { throw invalid }
         func u32(_ i: Int) -> Int { Int(bytes[i]) | Int(bytes[i + 1]) << 8 | Int(bytes[i + 2]) << 16 | Int(bytes[i + 3]) << 24 }
-        var p = 12, hasData = false
+        var p = 12, hasData = false, dataLengthFix: (offset: Int, length: UInt32)?
         while p + 8 <= bytes.count {
-            let size = u32(p + 4), body = p + 8
-            guard body + size + size % 2 <= bytes.count else { throw invalid }
-            if bytes[p..<p + 4] == Array("data".utf8)[...] { hasData = size > 0 }
-            p = body + size + size % 2
+            let rawSize = u32(p + 4), body = p + 8
+            let isData = bytes[p..<p + 4] == Array("data".utf8)[...]
+            let size: Int
+            if isData && rawSize == 0xFFFF_FFFF {
+                size = bytes.count - body
+                dataLengthFix = (p + 4, UInt32(size).littleEndian)
+            } else {
+                size = rawSize
+            }
+            guard size >= 0, body + size <= bytes.count else { throw invalid }
+            if isData { hasData = size > 0 }
+            let next = body + size
+            let padded = next == bytes.count ? next : next + size % 2
+            guard padded <= bytes.count else { throw invalid }
+            p = padded
         }
         guard p == bytes.count, hasData else { throw invalid }
-        if u32(4) == bytes.count - 8 { return source }
-        var repaired = source, length = UInt32(bytes.count - 8).littleEndian
-        withUnsafeBytes(of: &length) { repaired.replaceSubrange(4..<8, with: $0) }
+        let riffMatches = u32(4) == bytes.count - 8
+        if riffMatches && dataLengthFix == nil { return source }
+        var repaired = source
+        if !riffMatches {
+            var length = UInt32(bytes.count - 8).littleEndian
+            withUnsafeBytes(of: &length) { repaired.replaceSubrange(4..<8, with: $0) }
+        }
+        if var fix = dataLengthFix {
+            withUnsafeBytes(of: &fix.length) { repaired.replaceSubrange(fix.offset..<fix.offset + 4, with: $0) }
+        }
         return repaired
     }
 }

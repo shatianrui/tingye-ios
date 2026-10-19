@@ -78,6 +78,7 @@ struct RootView: View {
         .toolbar(.hidden, for: .tabBar)
         if !navigationHidden { LibraryNavigationBar(player: model.player) }
         }
+        .disabled(model.restoringLibrary)
         .paperBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
         .modifier(AppLockGate())

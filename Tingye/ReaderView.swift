@@ -232,6 +232,7 @@ struct ReaderView: View {
         .onAppear {
             let progress = entry?.progress ?? .init()
             chapter = min(max(0, progress.chapter), chapters.count - 1); sentencePosition = progress.position
+            jumpRevision += 1
             // 朗读暂停后若手动读到别处，重新打开时停在保存的位置，而不是被拉回暂停处。
             following = active && (player.playing || (player.chapter == chapter && player.position == sentencePosition))
             if let jump = model.readerJump, jump.id == book.id, chapters.indices.contains(jump.chapter) {
@@ -312,7 +313,12 @@ struct ReaderView: View {
             GeometryReader { geometry in
                 Group {
                     if let html = originalHTML {
-                        OriginalBookView(html: html, css: current.fields["document"]?.object?["css"]?.string ?? "", book: book, chapter: chapter, foreground: prefs.foreground, paper: prefs.background, preferences: prefs, highlight: highlightRange, spokenSource: player.followPublisher, follow: following, highlightColor: prefs.highlightBand, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onResumeFollow: { following = true; followSpeech() }, onEdgeTurn: { delta in following = false; jump(chapter: chapter + delta, position: 0) })
+                        let displayedChapter = chapter, requestedRevision = jumpRevision
+                        OriginalBookView(html: html, css: current.fields["document"]?.object?["css"]?.string ?? "", book: book, chapter: chapter, foreground: prefs.foreground, paper: prefs.background, preferences: prefs, highlight: highlightRange, spokenSource: player.followPublisher, follow: following, highlightColor: prefs.highlightBand, readingPosition: sentencePosition, positionRevision: jumpRevision, onPositionChange: { position in
+                            guard chapter == displayedChapter, jumpRevision == requestedRevision else { return }
+                            sentencePosition = position
+                            model.saveProgress(book.id, chapter: chapter, position: position)
+                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onResumeFollow: { following = true; followSpeech() }, onEdgeTurn: { delta in following = false; jump(chapter: chapter + delta, position: 0) })
                             // WebKit 视口宽取整，滚动分页按实际宽度；宽度取整后二者一致，翻页不累积亚像素错位。
                             .frame(width: geometry.size.width.rounded(.down))
                     } else if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }

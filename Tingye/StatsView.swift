@@ -38,7 +38,7 @@ struct StatsView: View {
             .sorted { $0.0 < $1.0 }
     }
     private var totalSeconds: Double { dayTotals.reduce(0) { $0 + $1.seconds } }
-    private var periodSessions: [ReadingSession] { model.sessions.filter { interval.contains($0.start) } }
+    private var periodSessions: [ReadingSession] { model.visibleSessions.filter { interval.contains($0.start) } }
 
     var body: some View {
         ScrollView {
@@ -412,7 +412,7 @@ struct StatsView: View {
 
     private func exportStats() {
         do {
-            let payload = ReadingStatsExport(exportedAt: Date(), readingSeconds: model.readingSeconds, entries: model.entries.map { .init(id: $0.id, title: $0.title, author: $0.author, chapterCount: $0.chapterCount, percent: $0.percentText, progress: $0.progress) }, sessions: model.sessions)
+            let payload = ReadingStatsExport(exportedAt: Date(), readingSeconds: model.readingSeconds, entries: model.visibleEntries.map { .init(id: $0.id, title: $0.title, author: $0.author, chapterCount: $0.chapterCount, percent: $0.percentText, progress: $0.progress) }, sessions: model.visibleSessions)
             let encoder = Integrity.encoder()
             encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes, .prettyPrinted]
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-reading-stats.json")

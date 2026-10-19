@@ -42,7 +42,7 @@ final class AppModel: ObservableObject {
     private static let dayFormatter: DateFormatter = { let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f }()
     static func dayKey(_ date: Date) -> String { dayFormatter.string(from: date) }
     let player = SpeechPlayer()
-    let sync = ProgressSync()
+    let sync: ProgressSync
     /// 手动 iCloud 备份 / 还原的当前阶段；存于模型中，离开再进入页面仍可看到。
     @Published var icloud: ICloudTransfer?
     @Published var pendingRestore: ICloudArchive?
@@ -54,18 +54,26 @@ final class AppModel: ObservableObject {
     private var catalogDirty = false
     var sessionsSaveTask: Task<Void, Never>?
     var sessionsDirty = false
-    /// 还原替换书库期间暂停合并 iCloud 阅读进度。
-    var restoringLibrary = false
+    /// 还原替换书库期间暂停目录和书籍写入。
+    @Published var restoringLibrary = false
+    private var activeBookWrites = 0
+    private var libraryGeneration = UUID()
+    private var indexTasks: [UUID: Task<Void, Never>] = [:]
     private var playbackObserver: AnyCancellable?
     private(set) var disk: LibraryDisk?
     private var cache: [String: Book] = [:]
     /// 书库目录名。旧版登录过的用户沿用原账号目录，避免书籍、进度与 iCloud 存档"消失"。
-    let owner: String = LocalOwner.resolve()
+    let owner: String
     var lastBook: ShelfEntry? { entries.filter(\.local).max { $0.progress.updatedAt < $1.progress.updatedAt } }
 
-    init() {
-        do { try loadLibrary() }
-        catch { message = error.localizedDescription }
+    init(disk suppliedDisk: LibraryDisk? = nil, progressSync: ProgressSync? = nil) {
+        owner = suppliedDisk?.root.lastPathComponent ?? LocalOwner.resolve()
+        sync = progressSync ?? ProgressSync()
+        do {
+            if let suppliedDisk {
+                disk = suppliedDisk; entries = try suppliedDisk.catalog(); indexLibrary()
+            } else { try loadLibrary() }
+        } catch { message = error.localizedDescription }
         player.onProgress = { [weak self] id, chapter, position in self?.saveProgress(id, chapter: chapter, position: position) }
         sync.start { [weak self] in self?.pullProgress() }
         // 朗读暂停或结束后，合并期间被搁置的远端进度（延后一拍，等播放器状态落定）。
@@ -77,8 +85,10 @@ final class AppModel: ObservableObject {
         pullProgress()
     }
     func loadLibrary() throws {
+        try requireWritableLibrary()
         flushPendingSaves()
-        player.stop(); selectedBook = nil; cache = [:]; cacheOrder = []; covers = [:]; categories = [:]; indexed = []
+        player.stop(); selectedBook = nil
+        invalidateLibraryCache()
         let next = try LibraryDisk(owner: owner)
         var rows = try next.catalog()
         let migrationMarker = next.root.appendingPathComponent("legacy-migration-v1.complete")
@@ -122,6 +132,7 @@ final class AppModel: ObservableObject {
         openBook(entry)
     }
     private func openBook(_ entry: ShelfEntry) {
+        guard !restoringLibrary else { return }
         openTask?.cancel()
         if let cached = cache[entry.id] {
             selectedBook = cached
@@ -143,12 +154,16 @@ final class AppModel: ObservableObject {
     }
     /// 在后台读取并解码：多图 EPUB 的书籍文件可达上百 MB，放在主线程会让翻开时整屏卡住。
     func loadBook(_ id: String) async throws -> Book {
+        try requireWritableLibrary()
         if let value = cache[id] { return value }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
+        let generation = libraryGeneration
         let value = try await Task.detached(priority: .userInitiated) { try disk.read(id) }.value
+        guard !restoringLibrary, generation == libraryGeneration else { throw CancellationError() }
         remember(value); return value
     }
     func book(_ id: String) throws -> Book {
+        try requireWritableLibrary()
         if let value = cache[id] { return value }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         let value = try disk.read(id); remember(value); return value
@@ -159,38 +174,76 @@ final class AppModel: ObservableObject {
         while cacheOrder.count > 4 { let old = cacheOrder.removeFirst(); if old != player.book?.id && old != selectedBook?.id { cache[old] = nil } }
     }
     /// 只丢弃封面缩略图与分类索引并在后台重建；不重载书架，正在听的书不受影响。
-    func clearIndexCache() { disk?.removeIndex(); covers = [:]; categories = [:]; indexed = []; indexLibrary() }
+    func clearIndexCache() {
+        guard !restoringLibrary else { return }
+        invalidateLibraryCache(); disk?.removeIndex(); indexLibrary()
+    }
+    private func invalidateLibraryCache() {
+        libraryGeneration = UUID()
+        for task in indexTasks.values { task.cancel() }
+        cache = [:]; cacheOrder = []; covers = [:]; categories = [:]; indexed = []
+    }
+    private func requireWritableLibrary() throws {
+        guard !restoringLibrary else { throw ReaderError.message("正在还原书库，请完成后重试。") }
+    }
+    /// 提交旧目录后，取消并等候全部后台索引任务，避免它们写入替换后的书库。
+    func beginLibraryRestore() async throws -> [ShelfEntry] {
+        try requireWritableLibrary()
+        guard activeBookWrites == 0 else { throw ReaderError.message("书籍正在保存，请完成后重试还原。") }
+        player.stop()
+        try commitCatalogSave()
+        flushSessionsSave()
+        restoringLibrary = true
+        openTask?.cancel(); openTask = nil; selectedBook = nil
+        let tasks = Array(indexTasks.values)
+        invalidateLibraryCache()
+        for task in tasks { await task.value }
+        return entries
+    }
+    /// 成功时接纳事务返回的目录；失败时继续使用原来的内存和磁盘书库。
+    func endLibraryRestore(_ restored: [ShelfEntry]?) {
+        if let restored { entries = restored }
+        restoringLibrary = false
+        indexLibrary()
+        if restored != nil { refreshProgressSync() }
+    }
     private func forget(_ id: String) { cache[id] = nil; cacheOrder.removeAll { $0 == id }; covers[id] = nil; categories[id] = nil; indexed.remove(id); disk?.removeIndex(id) }
     /// 在后台为尚未索引的本机书籍读取分类与封面缩略图。
     func indexLibrary() {
-        guard let disk else { return }
+        guard !restoringLibrary, let disk else { return }
         let ids = entries.filter { $0.local && !indexed.contains($0.id) }.map(\.id)
         guard !ids.isEmpty else { return }
         indexed.formUnion(ids)
-        let captured = owner
+        let captured = owner, generation = libraryGeneration, taskID = UUID()
         // 句数索引已在书架目录里、且有缩略图缓存的书，直接读缓存，不必解码整本书。
         let counted = Set(entries.filter { $0.sentenceCounts != nil }.map(\.id))
-        Task.detached(priority: .utility) { [weak self] in
+        indexTasks[taskID] = Task.detached(priority: .utility) { [weak self] in
             for id in ids {
+                guard !Task.isCancelled else { break }
                 if counted.contains(id), let (meta, data) = disk.cachedIndex(id) {
                     let cover = data.flatMap(UIImage.init(data:))
                     await MainActor.run { [weak self] in
-                        guard let self, self.owner == captured, self.indexed.contains(id) else { return }
+                        guard let self, !self.restoringLibrary, self.libraryGeneration == generation,
+                              self.owner == captured, self.indexed.contains(id) else { return }
                         if let category = meta.category { self.categories[id] = category }
                         if let cover { self.covers[id] = cover }
                     }
                     continue
                 }
                 guard let book = try? disk.read(id) else { continue }
+                guard !Task.isCancelled else { break }
                 let counts = book.chapters.map { Sentence.split($0.text).count }
                 let category = book.fields["category"]?.string
                 let intro = [book.fields["description"]?.string, book.fields["intro"]?.string]
                     .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                     .first { !$0.isEmpty }
                 let cover = book.coverData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 240, height: 343))
-                disk.saveIndex(id, category: category, cover: cover?.jpegData(compressionQuality: 0.85))
+                let coverData = cover?.jpegData(compressionQuality: 0.85)
+                guard !Task.isCancelled else { break }
                 await MainActor.run { [weak self] in
-                    guard let self, self.owner == captured, self.indexed.contains(id) else { return }
+                    guard let self, !self.restoringLibrary, self.libraryGeneration == generation,
+                          self.owner == captured, self.indexed.contains(id) else { return }
+                    disk.saveIndex(id, category: category, cover: coverData)
                     if let i = self.entries.firstIndex(where: { $0.id == id }),
                        self.entries[i].sentenceCounts != counts || (self.entries[i].intro == nil && intro != nil) {
                         var next = self.entries; next[i].sentenceCounts = counts; next[i].chapterCount = counts.count
@@ -202,10 +255,13 @@ final class AppModel: ObservableObject {
                     if let cover { self.covers[id] = cover }
                 }
             }
+            await MainActor.run { [weak self] in self?.indexTasks[taskID] = nil }
         }
     }
     /// 写入新导入的书籍。编码、校验与逐章分句在后台进行，大书导入不阻塞界面。
     func add(_ book: Book, progress: ReadingProgress = .init()) async throws {
+        try requireWritableLibrary()
+        activeBookWrites += 1; defer { activeBookWrites -= 1 }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         let entry = try await Task.detached(priority: .userInitiated) {
             try disk.write(book)
@@ -217,6 +273,7 @@ final class AppModel: ObservableObject {
         try disk.saveCatalog(updated); entries = updated; forget(book.id); remember(book); indexLibrary()
     }
     func scheduleCatalogSave() {
+        guard !restoringLibrary else { return }
         catalogDirty = true
         catalogSaveTask?.cancel()
         catalogSaveTask = Task { [weak self] in
@@ -224,13 +281,16 @@ final class AppModel: ObservableObject {
             self?.flushCatalogSave()
         }
     }
-    private func flushCatalogSave() {
+    private func commitCatalogSave() throws {
+        guard !restoringLibrary else { return }
         catalogSaveTask?.cancel()
         catalogSaveTask = nil
         guard catalogDirty, let disk else { return }
+        try disk.saveCatalog(entries)
         catalogDirty = false
-        let snapshot = entries
-        do { try disk.saveCatalog(snapshot) }
+    }
+    private func flushCatalogSave() {
+        do { try commitCatalogSave() }
         catch { message = "阅读位置保存失败：" + error.localizedDescription }
     }
     func flushPendingSaves() {
@@ -238,6 +298,7 @@ final class AppModel: ObservableObject {
         flushSessionsSave()
     }
     func saveProgress(_ id: String, chapter: Int, position: Int) {
+        guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].local,
               let progress = sync.update(entries[i], chapter: chapter, position: position) else { return }
         entries[i].progress = progress
@@ -245,6 +306,7 @@ final class AppModel: ObservableObject {
         scheduleCatalogSave()
     }
     func bookmark(_ id: String, chapter: Int, position: Int, excerpt: String) {
+        guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
         var next = entries
         if let index = next[i].bookmarks.firstIndex(where: { $0.chapter == chapter && $0.position == position }) { next[i].bookmarks.remove(at: index) }
@@ -253,6 +315,7 @@ final class AppModel: ObservableObject {
         do { try disk?.saveCatalog(next); entries = next } catch { message = error.localizedDescription }
     }
     func removeLocal(_ id: String) throws {
+        try requireWritableLibrary()
         if player.book?.id == id { player.stop() }
         var next = entries
         next.removeAll { $0.id == id }
@@ -277,6 +340,9 @@ final class AppModel: ObservableObject {
         guard owner == captured else { throw ReaderError.message("书库已变化，请重新操作。") }
     }
     func importFiles(_ urls: [URL]) async throws {
+        try requireWritableLibrary()
+        // 解析中的导入也属于写入事务，防止旧文件在还原完成后才继续提交。
+        activeBookWrites += 1; defer { activeBookWrites -= 1 }
         let captured = owner
         var failures: [String] = []
         for url in urls {
@@ -289,6 +355,7 @@ final class AppModel: ObservableObject {
         if !failures.isEmpty { throw ReaderError.message(failures.joined(separator: "\n")) }
     }
     func startListening(_ book: Book, showPlayer: Bool = true) {
+        guard !restoringLibrary else { return }
         guard book.fields["comic"]?.bool != true else { message = "漫画没有可以朗读的文字。"; return }
         let progress = entries.first(where: { $0.id == book.id })?.progress ?? .init()
         player.start(book: book, chapter: progress.chapter, position: progress.position)
@@ -296,6 +363,7 @@ final class AppModel: ObservableObject {
     }
     /// 所有「听书」入口共用：正在听这本书时只继续并打开听读页，不从头重建朗读。
     func listen(_ id: String, showPlayer: Bool = true) {
+        guard !restoringLibrary else { return }
         if player.book?.id == id {
             if !player.playing { player.resume() }
             showingPlayer = showPlayer
@@ -307,6 +375,8 @@ final class AppModel: ObservableObject {
     }
     func category(_ row: ShelfEntry) -> String { categories[row.id] ?? "其他" }
     func markChapters(_ id: String, chapters: Set<Int>, read: Bool) async throws {
+        try requireWritableLibrary()
+        activeBookWrites += 1; defer { activeBookWrites -= 1 }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         var value = try await loadBook(id)
         var marked = Set(value.fields["nativeReadChapters"]?.array?.compactMap(\.int) ?? [])
@@ -317,6 +387,8 @@ final class AppModel: ObservableObject {
         remember(value); objectWillChange.send()
     }
     func repair(_ id: String, from url: URL) async throws {
+        try requireWritableLibrary()
+        activeBookWrites += 1; defer { activeBookWrites -= 1 }
         let captured = owner
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }

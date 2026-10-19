@@ -21,6 +21,54 @@ struct RemoteSource: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+/// 书源密码仅用于配置的源站；书目链接和 HTTP 重定向都不能扩大认证范围。
+final class SourceHTTPClient: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let baseURL: URL?
+    private let authorization: String?
+
+    init(baseURL: URL?, authorization: String?) {
+        self.baseURL = baseURL; self.authorization = authorization
+    }
+
+    convenience init(source: RemoteSource) {
+        self.init(baseURL: source.baseURL, authorization: source.authorization)
+    }
+
+    func authorized(_ request: URLRequest) -> URLRequest {
+        var result = request
+        result.setValue(Self.sameOrigin(baseURL, request.url) ? authorization : nil, forHTTPHeaderField: "Authorization")
+        return result
+    }
+
+    private static func sameOrigin(_ lhs: URL?, _ rhs: URL?) -> Bool {
+        guard let lhs, let rhs, let scheme = lhs.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              scheme == rhs.scheme?.lowercased(), let host = lhs.host?.lowercased(), host == rhs.host?.lowercased() else { return false }
+        let defaultPort = scheme == "https" ? 443 : 80
+        return (lhs.port ?? defaultPort) == (rhs.port ?? defaultPort)
+    }
+
+    private func session() -> URLSession {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCredentialStorage = nil
+        return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let session = session(); defer { session.invalidateAndCancel() }
+        return try await session.data(for: authorized(request))
+    }
+
+    func download(for request: URLRequest) async throws -> (URL, URLResponse) {
+        let session = session(); defer { session.invalidateAndCancel() }
+        return try await session.download(for: authorized(request))
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+        completionHandler(authorized(request))
+    }
+}
+
 enum SourceStore {
     private static let key = "sources.list"
     static func load() -> [RemoteSource] {
@@ -276,12 +324,11 @@ private struct SourceEditor: View {
 
 extension AppModel {
     /// 下载一个远程文件到临时目录并导入书库
-    func importRemote(_ url: URL, name: String, authorization: String?) {
+    func importRemote(_ url: URL, name: String, source: RemoteSource) {
         run("正在下载《\((name as NSString).deletingPathExtension)》") { [self] in
             var request = URLRequest(url: url)
             request.timeoutInterval = 120
-            if let authorization { request.setValue(authorization, forHTTPHeaderField: "Authorization") }
-            let (temp, response) = try await URLSession.shared.download(for: request)
+            let (temp, response) = try await SourceHTTPClient(source: source).download(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 throw ReaderError.message("下载失败（HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)）。")
             }
@@ -369,7 +416,7 @@ struct WebDAVBrowser: View {
     }
     private func download(_ item: WebDAVItem) {
         guard let url = WebDAV.url(source, path: item.path) else { return }
-        model.importRemote(url, name: item.name, authorization: source.authorization)
+        model.importRemote(url, name: item.name, source: source)
     }
 }
 
@@ -397,9 +444,8 @@ enum WebDAV {
         request.timeoutInterval = 30
         request.setValue("1", forHTTPHeaderField: "Depth")
         request.setValue("application/xml; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        if let auth = source.authorization { request.setValue(auth, forHTTPHeaderField: "Authorization") }
         request.httpBody = Data(#"<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:getcontentlength/><d:resourcetype/></d:prop></d:propfind>"#.utf8)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await SourceHTTPClient(source: source).data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 { throw ReaderError.message("用户名或密码不正确（401）。") }
         guard status == 207 || (200..<300).contains(status) else { throw ReaderError.message("WebDAV 请求失败（HTTP \(status)）。") }
@@ -479,7 +525,7 @@ struct OPDSBrowser: View {
             if let feed {
                 ForEach(feed.entries.filter { searchText.isEmpty || remoteSearchTemplate != nil || ($0.title + $0.author).localizedCaseInsensitiveContains(searchText) }) { entry in
                     if let acquisition = entry.acquisition {
-                        Button { model.importRemote(acquisition.url, name: entry.title + "." + acquisition.fileExtension, authorization: source.authorization) } label: { bookRow(entry, acquisition) }
+                        Button { model.importRemote(acquisition.url, name: entry.title + "." + acquisition.fileExtension, source: source) } label: { bookRow(entry, acquisition) }
                             .buttonStyle(.plain)
                             .disabled(model.busy)
                     } else if let next = entry.navigation {
@@ -542,17 +588,16 @@ struct OPDSBrowser: View {
         do {
             var request = URLRequest(url: target)
             request.timeoutInterval = 30
-            if let auth = source.authorization { request.setValue(auth, forHTTPHeaderField: "Authorization") }
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let client = SourceHTTPClient(source: source)
+            let (data, response) = try await client.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             if status == 401 { throw ReaderError.message("需要登录，请在书源里填写用户名和密码（401）。") }
             guard (200..<300).contains(status) else { throw ReaderError.message("OPDS 请求失败（HTTP \(status)）。") }
             var parsed = OPDSFeed.parse(data, base: response.url ?? target)
             // OpenSearch 描述文件：再取一次得到真正的搜索模板
             if parsed.searchTemplate == nil, let description = parsed.searchDescription {
-                var r = URLRequest(url: description)
-                if let auth = source.authorization { r.setValue(auth, forHTTPHeaderField: "Authorization") }
-                if let (d, _) = try? await URLSession.shared.data(for: r), let xml = String(data: d, encoding: .utf8),
+                let r = URLRequest(url: description)
+                if let (d, _) = try? await client.data(for: r), let xml = String(data: d, encoding: .utf8),
                    let range = xml.range(of: #"template="([^"]+)""#, options: .regularExpression) {
                     parsed.searchTemplate = String(xml[range]).replacingOccurrences(of: "template=\"", with: "").replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "&amp;", with: "&")
                 }

@@ -9,6 +9,7 @@ extension AppModel {
 
     /// 修改若干书的书库条目并写回目录；写盘失败时界面不变并提示。
     func updateEntries(_ ids: Set<String>, _ change: (inout ShelfEntry) -> Void) {
+        guard !restoringLibrary else { message = "正在还原书库，请完成后再修改。"; return }
         var next = entries
         for i in next.indices where ids.contains(next[i].id) { change(&next[i]) }
         do { try disk?.saveCatalog(next); entries = next }
@@ -17,6 +18,16 @@ extension AppModel {
 
     /// 当前可见的书：隐藏的书只在解锁隐藏模式后出现。
     var visibleEntries: [ShelfEntry] { hiddenUnlocked ? entries : entries.filter { !$0.isHidden } }
+
+    /// 隐藏模式未解锁时，阅读记录也不能透露书名、封面或阅读时间。
+    var visibleSessions: [ReadingSession] {
+        Self.visibleSessions(sessions, entries: entries, hiddenUnlocked: hiddenUnlocked)
+    }
+    static func visibleSessions(_ sessions: [ReadingSession], entries: [ShelfEntry], hiddenUnlocked: Bool) -> [ReadingSession] {
+        guard !hiddenUnlocked else { return sessions }
+        let hiddenIDs = Set(entries.filter(\.isHidden).map(\.id))
+        return sessions.filter { !hiddenIDs.contains($0.bookID) }
+    }
 
     // MARK: 分组（多级，路径以「/」分隔）
 

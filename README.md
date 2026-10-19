@@ -1,6 +1,33 @@
 # 听页 · 原生 iOS
 
-## 当前版本：播放器修正（1.17.0 · 98，2026-10-18）
+## 当前版本：MiniMax 朗读连贯性优化（1.17.0 · 103，2026-10-19）
+
+云端朗读（主要针对 MiniMax）句间衔接改为无缝：解码 MP3 按电平裁掉合成音频自带的首尾静音，句尾按标点补回 0.14–0.36 秒停顿（只按实际音频电平，不按字幕）；下一句播放器提前创建并缓冲，当前句结束后同步接上；顺读时不再取消已发出的预取请求，预取窗口由 3 句增至 4 句并跨章节；音频会话只在开始、恢复、中断和媒体服务重置时激活。
+
+验证：新增压缩音频静音裁剪与标点停顿两项测试，iPhone 17e / iOS 27 模拟器全量 77 项测试通过。未调用实际 MiniMax 接口实听；MP3 解码路径仅以 AAC 样本间接覆盖。
+
+发布：1.17.0（103）于 2026-10-19 完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect；两个平台均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-103.log`、`build/upload-103-mac.log`）。上传时 Apple 返回正在处理，尚未确认 TestFlight 可安装状态。
+
+## 历史：MiniMax 句尾截断修复（1.17.0 · 102，2026-10-19）
+
+MiniMax 等云端朗读不再根据最后一条字幕的结束时间提前停止音频。字幕时间偏早、末尾词无法匹配原文且下一句已缓存时，旧逻辑会提前切句并截掉尾音；现在仅在音频播放器报告完整播放结束后自动切句，保留预取与逐字高亮，页面也不再按字幕结束时间提前跳句。音频原有的句尾停顿会完整保留。
+
+验证：两项真实 `SpeechPlayer` 离线回归测试通过，使用本地缓存的 2.4 秒 WAV 覆盖字幕提前结束、末词匹配失败、1 倍速和 2 倍速，确认音频结束前不切句、自然结束后进入下一句。未调用实际 MiniMax 接口。
+
+发布：1.17.0（102）于 2026-10-19 完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect；两个平台均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-102.log`、`build/upload-102-mac.log`）。归档版本、签名与 dSYM 匹配检查通过，Mac 支持 Apple Silicon 和 Intel。上传时 Apple 返回正在处理，尚未确认 TestFlight 可安装状态。
+
+## 历史：代码审查修复（1.17.0 · 101，2026-10-19）
+
+- **导入与书源**：拒绝损坏的 MOBI HUFF/CDIC 码表、越界记录和过量展开；超过 3000 个章节 / 分页片段明确报错，避免丢失书尾。WebDAV / OPDS / 搜索 / 下载及每次 HTTP 重定向只向配置的同源地址发送认证信息。
+- **iCloud 还原**：替换书库前提交待保存目录、暂停写入并等候旧索引任务退出；成功后直接接纳还原目录，失败保留原书库。清除被还原书籍的封面和分类索引，保留其他书籍的缓存。
+- **阅读与隐私**：原书图文回写并恢复章内句子位置，支持同章搜索和书签跳转，防止旧翻页回调覆盖新位置。进度继续使用跨端的句子序号，跨页长句从句首恢复。未解锁的隐藏书籍不出现在足迹明细、排行和统计导出书目中。
+- **听书**：暂停、跳转及换配置时取消不再需要的合成请求，实际并发最多两条；保留相关预取并为当前句留出名额。换书清除锁屏进度的字数缓存。
+
+验证：新增 16 项回归测试，iPhone 17e / iOS 27 模拟器全量 73 项测试通过；Mac Catalyst Debug 通用构建（未签名）通过。本机 HTTP 探针确认跨源重定向不携带认证，下载临时文件在 session 失效后仍可读取和移动。未执行真实 iCloud 跨设备同步或付费云语音联机验收。
+
+发布：1.17.0（101）于 2026-10-19 完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect；两个平台均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-101.log`、`build/upload-101-mac.log`）。上传时 Apple 返回正在处理，尚未确认 TestFlight 可安装状态。构建号由已上传的 100 递增至 101。
+
+## 历史：播放器修正（1.17.0 · 98，2026-10-18）
 
 在 1.17.0（97）「刊」设计上的修正版，不改视觉与数据格式。
 
@@ -12,6 +39,8 @@
 发布：1.17.0（98）于 2026-10-18 完成 iOS 与 Mac Catalyst Release 归档（`build/Tingye-98.xcarchive`、`build/Tingye-98-mac.xcarchive`，均不含小组件扩展）并上传 App Store Connect。iOS `Tingye.ipa` 与 macOS `Tingye.pkg` 均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-98.log`、`build/upload-98-mac.log`）；上传时状态为处理中，尚未确认 TestFlight 可安装状态。
 
 **1.17.0（99，2026-10-18）**：修复「查找并查看最新备份」只看当前账号目录的问题。Mac 以 guest 运行时，guest 目录中 10/10 的旧快照（5 本）会遮住 iPhone 在登录账号目录下的新备份（9 本）；现在始终在 `Backups/` 下全部账号目录中取最新一份。新增单元测试，核心测试 32 / 32 通过。iOS 与 Mac Catalyst Release 归档（`build/Tingye-99.xcarchive`、`build/Tingye-99-mac.xcarchive`）均已上传 App Store Connect，iOS `Tingye.ipa` 与 macOS `Tingye.pkg` 均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-99.log`、`build/upload-99-mac.log`）；上传时状态为处理中，尚未确认 TestFlight 可安装状态。
+
+**1.17.0（100，2026-10-19）**：修复并加固智谱 GLM（`glm-tts`）朗读模块：朗读与预取自动跳过纯标点/分割线句子（`***`、`———`、`……` 等）；WAV 校验支持 16 MB 上限、流式 `0xFFFFFFFF` 占位长度自动修复及末尾奇数块免对齐；支持输入 GLM 自定义/复刻音色并对分角色配音按服务商做合法性清洗。新增单元测试，核心测试 33 / 33 通过。iOS 与 Mac Catalyst Release 归档（`build/Tingye-100.xcarchive`、`build/Tingye-100-mac.xcarchive`）均已上传 App Store Connect，iOS `Tingye.ipa` 与 macOS `Tingye.pkg` 均收到 `Upload succeeded` 与 `EXPORT SUCCEEDED` 回执（日志 `build/upload-100.log`、`build/upload-100-mac.log`）。
 
 ## 历史：刊 · 杂志编辑风重设计（1.17.0 · 97，2026-10-15）
 
@@ -110,7 +139,7 @@
 下文保留项目的功能说明与历次发布记录；历史设计描述不代表当前界面。
 
 
-纯 Swift / SwiftUI 阅读器。当前本地版本 1.17.0（97），最低 iOS 17；构建 89 的历史上传记录见上节。
+纯 Swift / SwiftUI 阅读器。当前本地版本 1.17.0（102），最低 iOS 17；构建 89 的历史上传记录见上节。
 
 **纯前端应用**：没有账号，也不依赖任何听页服务器（已移除 `copilotcli.top` 的登录与云备份）。书籍与进度只保存在本机，备份走用户自己的 iCloud Drive；云朗读由本机携带用户自己的 API Key 直连智谱 GLM / MiniMax，系统声音朗读完全离线。
 

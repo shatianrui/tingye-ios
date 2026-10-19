@@ -15,6 +15,68 @@ enum SpeechAudioSession {
     }
 }
 
+/// A shared request survives one consumer finishing, but never outlives the playback scope
+/// that still needs its key. Cancelled operations hold their slot until they actually exit.
+@MainActor
+final class SpeechRequestPool<Value: Sendable> {
+    private struct Request { let id: UUID; let task: Task<Value, Error> }
+    private struct Waiter { let id: UUID; let continuation: CheckedContinuation<Void, Error> }
+    private let limit: Int
+    private var active = 0
+    private var requests: [String: Request] = [:]
+    private var waiters: [Waiter] = []
+
+    init(limit: Int = 2) { self.limit = max(1, limit) }
+
+    func value(for key: String, operation: @escaping @MainActor () async throws -> Value) async throws -> Value {
+        try Task.checkCancellation()
+        if let request = requests[key] { return try await request.task.value }
+        let id = UUID()
+        let task = Task { [self] in
+            defer { if requests[key]?.id == id { requests[key] = nil } }
+            try await acquire()
+            defer { release() }
+            try Task.checkCancellation()
+            let result = try await operation()
+            try Task.checkCancellation()
+            return result
+        }
+        requests[key] = Request(id: id, task: task)
+        return try await task.value
+    }
+
+    func isPending(_ key: String) -> Bool { requests[key] != nil }
+
+    func retainOnly(_ keys: Set<String> = []) {
+        for key in Array(requests.keys) where !keys.contains(key) {
+            requests.removeValue(forKey: key)?.task.cancel()
+        }
+    }
+
+    private func acquire() async throws {
+        try Task.checkCancellation()
+        if active < limit { active += 1; return }
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                waiters.append(Waiter(id: id, continuation: continuation))
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.cancelWaiter(id) }
+        }
+    }
+
+    private func cancelWaiter(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+    }
+
+    private func release() {
+        if waiters.isEmpty { active -= 1 }
+        else { waiters.removeFirst().continuation.resume() }
+    }
+}
+
 struct VoiceOptions {
     var provider: String
     var model: String
@@ -35,8 +97,8 @@ struct VoiceOptions {
         let group = provider == "azure" ? (d.string(forKey: "voice.azureRegion") ?? "") : (d.string(forKey: "voice.groupID") ?? "")
         var options = VoiceOptions(provider: provider, model: chosen.model, voice: chosen.voice, rate: min(2, max(0.5, rate == 0 ? 1 : rate)), key: apiKey(provider), groupID: group)
         options.roles = d.bool(forKey: "voice.roles")
-        options.maleVoice = d.string(forKey: roleKey("male", provider)) ?? ""
-        options.femaleVoice = d.string(forKey: roleKey("female", provider)) ?? ""
+        options.maleVoice = sanitizedRoleVoice(provider: provider, voice: d.string(forKey: roleKey("male", provider)))
+        options.femaleVoice = sanitizedRoleVoice(provider: provider, voice: d.string(forKey: roleKey("female", provider)))
         return options
     }
     static func roleKey(_ role: String, _ provider: String) -> String { "voice.role.\(role).\(provider)" }
@@ -65,13 +127,15 @@ struct VoiceOptions {
         return String(data: data, encoding: .utf8) ?? ""
     }
     static let glmVoices = ["tongtong", "chuichui", "xiaochen", "jam", "kazi", "douji", "luodo"]
+    private static let minimaxPresetPrefixes = ["male-qn-", "female-", "presenter_", "audiobook_"]
+    private static let elevenPresetVoices: Set<String> = ["21m00Tcm4TlvDq8ikWAM", "pNInz6obpgDQGcFmaJgB", "EXAVITQu4vr4xnSDxMaL", "onwK4e9ZLuTAKqWW03F9"]
     static func defaultModel(_ provider: String) -> String {
         ["minimax": "speech-2.8-hd", "glm": "glm-tts", "elevenlabs": "eleven_multilingual_v2"][provider] ?? ""
     }
     static func defaultVoice(_ provider: String) -> String {
         ["minimax": "male-qn-qingse", "glm": "tongtong", "azure": "zh-CN-XiaoxiaoNeural", "elevenlabs": "21m00Tcm4TlvDq8ikWAM"][provider] ?? ""
     }
-    /// 两家的模型与音色不通用：GLM 只用 glm 开头的模型和它的预设音色；MiniMax 不接受 GLM 的模型或音色。
+    /// 两家的模型与音色不通用：GLM 只用 glm 开头的模型及其系统/复刻音色；MiniMax 不接受 GLM 的模型或音色。
     /// 已经串用的旧值在这里回到各自的默认值，避免把 GLM 的模型发给 MiniMax（或反过来）导致合成失败。
     static func sanitized(provider: String, model: String?, voice: String?) -> (model: String, voice: String) {
         var model = (model ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -79,7 +143,11 @@ struct VoiceOptions {
         switch provider {
         case "glm":
             if !model.lowercased().hasPrefix("glm") { model = defaultModel("glm") }
-            if !glmVoices.contains(voice) { voice = defaultVoice("glm") }
+            if voice.isEmpty || voice.hasPrefix("com.apple.") || voice.hasSuffix("Neural")
+                || minimaxPresetPrefixes.contains(where: { voice.hasPrefix($0) })
+                || elevenPresetVoices.contains(voice) {
+                voice = defaultVoice("glm")
+            }
         case "minimax":
             if model.isEmpty || model.lowercased().hasPrefix("glm") { model = defaultModel("minimax") }
             if voice.isEmpty || glmVoices.contains(voice) || voice.hasPrefix("com.apple.") { voice = defaultVoice("minimax") }
@@ -94,6 +162,13 @@ struct VoiceOptions {
             if !voice.isEmpty && !voice.hasPrefix("com.apple.") { voice = "" }
         }
         return (model, voice)
+    }
+    /// 分角色音色校验：空值表示「与旁白相同」；若残留了其他服务商的音色则回退为空（沿用旁白）。
+    static func sanitizedRoleVoice(provider: String, voice: String?) -> String {
+        let trimmed = (voice ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let checked = sanitized(provider: provider, model: nil, voice: trimmed).voice
+        return checked == trimmed ? trimmed : ""
     }
     /// 旧版设置页把模型、音色、密钥存在不分服务商的键里（voice.model / voice.id / voice.key），
     /// 切换服务商时两家互相覆盖，播放器也读不到。按内容判断归属后迁到各自的键，只做一次。
@@ -135,8 +210,6 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     /// 一秒重算十几次。改由 `followPublisher` 单独推送，只有跟读翻页的地方订阅。
     private(set) var wordRange: NSRange? { didSet { publishFollow() } }
     @Published private(set) var timingLabel = "句子同步"
-    /// 云端语音本句已读完最后一个字（只剩尾部静音），阅读页应立即翻到下一句所在页。
-    private(set) var speechFinished = false { didSet { publishFollow() } }
     /// 当前应跟随的位置（即 `followOffset`），变化时推送。
     let followPublisher = CurrentValueSubject<Int?, Never>(nil)
     private func publishFollow() {
@@ -154,16 +227,26 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     private var cloudWords: [TimedWord] = []
     private var audioCache: [String: CloudClip] = [:]
     /// 正在合成的句子（按缓存键）：当前句与预取共用同一个请求。
-    private var inflight: [String: Task<CloudClip, Error>] = [:]
-    private static let cloudLookahead = 3
+    private let cloudRequests = SpeechRequestPool<CloudClip>()
+    private static let cloudLookahead = 4
     private var cacheOrder: [String] = []
-    struct TimedWord { let range: NSRange; let start: Double; let end: Double }
-    struct CloudClip { let data: Data; let words: [TimedWord] }
+    /// 下一句的播放器提前创建并完成 prepareToPlay：当前句一结束就同步接上，不再等解码与缓冲。
+    private var preparedAudio: (key: String, player: AVAudioPlayer)?
+    /// 当前句在去掉尾部静音、补回标点停顿后应结束的时间点（音频时间轴）。
+    private var stopAt: TimeInterval?
+    /// 下一章的分句结果：预取跨章节，读到章末时下一章开头已合成好。
+    private var nextChapterSplit: (chapter: Int, sentences: [Sentence])?
+    private var audioSessionReady = false
+    struct TimedWord: Sendable { let range: NSRange; let start: Double; let end: Double }
+    struct CloudClip: Sendable {
+        let data: Data; let words: [TimedWord]
+        /// 实际发声区间（去掉 MiniMax 等合成音频自带的首尾静音），无法解析时为 nil。
+        var span: (start: Double, end: Double)?
+    }
     var sentenceRange: NSRange? { sentences.indices.contains(position) ? sentences[position].range : nil }
-    /// 阅读页跟随朗读时应显示的位置：当前读到的字；本句读完则为下一句开头。
+    /// 阅读页跟随朗读时应显示的位置；整句结束由播放器回调推进，字幕只用于逐字高亮。
     var followOffset: Int? {
         guard let sentence = sentenceRange else { return nil }
-        if speechFinished { return sentences.indices.contains(position + 1) ? sentences[position + 1].range.location : NSMaxRange(sentence) }
         return wordRange?.location ?? sentence.location
     }
     var allSentences: [Sentence] { sentences }
@@ -254,9 +337,12 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0).contains(.shouldResume)
             Task { @MainActor in
                 guard let self else { return }
-                if type == .began { if self.playing { self.pause(); self.resumeAfterInterruption = true } }
+                if type == .began { self.audioSessionReady = false; if self.playing { self.pause(); self.resumeAfterInterruption = true } }
                 else if type == .ended { let resume = self.resumeAfterInterruption && shouldResume; self.resumeAfterInterruption = false; if resume { self.resume() } }
             }
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.audioSessionReady = false }
         })
         observers.append(NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] note in
             if (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { Task { @MainActor in self?.pause() } }
@@ -276,11 +362,13 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     func toggle() { playing ? pause() : resume() }
     func pause() {
         playing = false; buffering = false; generation = UUID(); task?.cancel(); task = nil
+        prefetchTask?.cancel(); prefetchTask = nil; cloudRequests.retainOnly()
         if synth.isSpeaking { synth.pauseSpeaking(at: .immediate) }
         audio?.pause(); updateNowPlaying()
     }
     func resume() {
         guard book != nil else { return }
+        audioSessionReady = false
         guard prepareAudioSession() else { return }
         error = nil; playing = true; resumeAfterInterruption = false
         if synth.isPaused {
@@ -289,6 +377,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         }
         else if let audio, audio.currentTime < audio.duration {
             if !audio.play() { pause(); error = "音频未能恢复，请重新选择当前句重试。" }
+            else { prefetch(after: position, options: options); prepareNext() }
             updateNowPlaying()
         }
         else { playSentence() }
@@ -296,9 +385,9 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     func stop() {
         generation = UUID(); task?.cancel(); task = nil; utterance = nil; audio?.delegate = nil
         synth.stopSpeaking(at: .immediate); queued = [:]; audio?.stop(); audio = nil
-        playing = false; buffering = false; error = nil; book = nil; sentences = []; chapterList = []; wordRange = nil; speechFinished = false; spokenOffset = 0; resumeAfterInterruption = false
+        playing = false; buffering = false; error = nil; book = nil; sentences = []; chapterList = []; wordRange = nil; spokenOffset = 0; resumeAfterInterruption = false
         clockTask?.cancel(); prefetchTask?.cancel(); cloudWords = []; audioCache = [:]; cacheOrder = []
-        inflight.values.forEach { $0.cancel() }; inflight = [:]
+        cloudRequests.retainOnly(); lengths = nil; preparedAudio = nil; stopAt = nil; nextChapterSplit = nil; audioSessionReady = false
         setSleep(minutes: 0); MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
@@ -307,14 +396,15 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         guard let book else { return }
         let chapters = chapterList
         generation = UUID(); task?.cancel(); utterance = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
+        prefetchTask?.cancel(); prefetchTask = nil
         if index >= sentences.count {
-            if chapter + 1 < chapters.count { chapter += 1; sentences = Sentence.split(chapters[chapter].text); position = 0 }
-            else { playing = false; position = max(0, sentences.count - 1); buffering = false; updateNowPlaying(); return }
+            if chapter + 1 < chapters.count { chapter += 1; sentences = split(chapter); position = 0 }
+            else { playing = false; position = max(0, sentences.count - 1); buffering = false; cloudRequests.retainOnly(); updateNowPlaying(); return }
         } else if index < 0, chapter > 0 { chapter -= 1; sentences = Sentence.split(chapters[chapter].text); position = max(0, sentences.count - 1) }
         else { position = min(max(0, index), max(0, sentences.count - 1)) }
-        spokenOffset = 0; wordRange = nil; speechFinished = false; cloudWords = []; clockTask?.cancel()
+        spokenOffset = 0; wordRange = nil; cloudWords = []; stopAt = nil; clockTask?.cancel()
         onProgress?(book.id, chapter, position)
-        if playing { playSentence() } else { buffering = false; updateNowPlaying() }
+        if playing { playSentence() } else { buffering = false; cloudRequests.retainOnly(); updateNowPlaying() }
     }
     func changeRate(_ value: Double) {
         UserDefaults.standard.set(value, forKey: "voice.rate"); options.rate = Float(value)
@@ -333,16 +423,16 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         if let range = wordRange, let sentenceRange { spokenOffset = max(0, range.location - sentenceRange.location) }
         generation = UUID(); task?.cancel(); prefetchTask?.cancel(); clockTask?.cancel()
         utterance = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
-        buffering = false; speechFinished = false; playing = wasPlaying
-        if wasPlaying { playSentence() }
+        preparedAudio = nil; stopAt = nil; buffering = false; playing = wasPlaying
+        if wasPlaying { playSentence() } else { cloudRequests.retainOnly() }
     }
     func skipChapter(_ delta: Int) {
         guard book != nil, chapterList.indices.contains(chapter + delta) else { return }
-        chapter += delta; sentences = Sentence.split(chapterList[chapter].text); seek(0)
+        chapter += delta; sentences = split(chapter); seek(0)
     }
     func seek(chapter target: Int, position: Int) {
         guard book != nil, chapterList.indices.contains(target) else { return }
-        chapter = target; sentences = Sentence.split(chapterList[target].text); seek(position)
+        chapter = target; sentences = split(target); seek(position)
     }
     func setSleep(minutes: Int) { setSleep(until: minutes > 0 ? Date().addingTimeInterval(Double(minutes * 60)) : nil) }
     private func setSleep(until date: Date?) {
@@ -353,9 +443,13 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             self?.pause(); self?.sleepUntil = nil
         }
     }
+    /// 会话激活一次即可：逐句调用 setCategory / setActive 是同步跨进程调用，会拖慢切句。
+    /// 中断、媒体服务重置、停止与手动恢复时重新激活。
     private func prepareAudioSession() -> Bool {
+        if audioSessionReady { return true }
         do {
             try SpeechAudioSession.activate()
+            audioSessionReady = true
             return true
         } catch {
             pause()
@@ -369,11 +463,16 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         if let sleepUntil, sleepUntil <= Date() { pause(); setSleep(minutes: 0); return }
         guard sentences.indices.contains(position) else {
             // Skip empty / illustration-only chapters without recursive calls.
-            task = Task { [weak self] in self?.seek((self?.sentences.count ?? 0)) }; return
+            prefetchTask?.cancel(); cloudRequests.retainOnly()
+            task = Task { [weak self] in
+                guard !Task.isCancelled else { return }
+                self?.seek((self?.sentences.count ?? 0))
+            }; return
         }
         guard prepareAudioSession() else { return }
         onProgress?(book.id, chapter, position); updateNowPlaying()
         if options.provider == "system" {
+            cloudRequests.retainOnly()
             let offset = min(spokenOffset, max(0, (currentText as NSString).length - 1))
             spokenOffset = offset; timingLabel = "句子同步"
             let line = makeUtterance((currentText as NSString).substring(from: offset), sentence: position)
@@ -381,44 +480,101 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             utterance = line; synth.speak(line); buffering = false
             enqueueAhead()
         } else {
-            let marker = UUID(); generation = marker; buffering = true; speechFinished = false; timingLabel = "正在合成"
             let offset = min(spokenOffset, max(0, (currentText as NSString).length - 1))
-            let content = (currentText as NSString).substring(from: offset), config = options.forRole(role(position)), base = options
-            // 当前句一开始合成就同时预取后面几句（已缓存的跳过），切句时下一句通常已就绪。
-            prefetch(after: position, options: base)
+            let content = (currentText as NSString).substring(from: offset)
+            let config = options.forRole(role(position)), base = options
+            let key = try? clipKey(content, options: config)
+            // 正常顺读时当前句早已缓存或在合成中：保留整个预取窗口，不打断已发出的请求。
+            // 跳转到未缓存的位置时只保留最近的一条预取，给当前句留出合成名额。
+            let window = upcomingClips(after: position, options: base).filter { cachedClip($0.0, options: $0.1) == nil }
+            let currentReady = key.map { audioCache[$0] != nil || cloudRequests.isPending($0) } ?? false
+            let needed = [(content, config)] + (currentReady ? window : Array(window.prefix(1)))
+            cloudRequests.retainOnly(Set(needed.compactMap { try? clipKey($0.0, options: $0.1) }))
+            // 纯符号或分割线（如 ***、———、……）无可发声文字，直接跳下一句，避免云端报错中断或浪费额度。
+            guard CloudSpeech.hasSpeakableText(content) else {
+                buffering = false
+                task = Task { [weak self] in
+                    guard !Task.isCancelled else { return }
+                    self?.skip(1)
+                }
+                return
+            }
+            let marker = UUID(); generation = marker
+            // 已缓存（通常是预取好的下一句）：同步接上播放，不经过异步任务调度。
+            if let key, let clip = audioCache[key] {
+                do { try startClip(clip, key: key, text: content, offset: offset, options: config) }
+                catch { pause(); self.error = error.localizedDescription; return }
+                prefetch(after: position, options: base)
+                return
+            }
+            buffering = true; timingLabel = "正在合成"
             task = Task { [weak self] in
                 guard let self else { return }
                 do {
                     let clip = try await self.cloudClip(content, options: config)
                     try Task.checkCancellation()
                     guard self.generation == marker, self.playing else { return }
-                    let audio = try AVAudioPlayer(data: clip.data); audio.enableRate = true; audio.rate = config.rate; audio.delegate = self; audio.prepareToPlay()
-                    self.audio = audio; self.cloudWords = clip.words; self.buffering = false
-                    self.timingLabel = "句子同步"
-                    guard audio.play() else { throw ReaderError.message("音频无法播放，请重试或切换系统声音。") }
-                    self.clockTask?.cancel()
-                    self.clockTask = Task { [weak self, weak audio] in
-                        while !Task.isCancelled {
-                            guard let self, let audio, self.audio === audio else { return }
-                            if self.playing, !self.speechFinished, let last = self.cloudWords.last, audio.currentTime >= last.end { self.speechFinished = true }
-                            // 本句最后一个字已读完、只剩音频尾部静音，且下一句已合成好：直接接下一句，不等静音放完。
-                            if self.playing, self.speechFinished, let last = self.cloudWords.last, audio.currentTime >= last.end + 0.12,
-                               self.sentences.indices.contains(self.position + 1), self.cachedClip(self.sentences[self.position + 1].text, options: base.forRole(self.role(self.position + 1))) != nil {
-                                audio.delegate = nil; self.skip(1); return
-                            }
-                            if self.playing, let word = self.cloudWords.first(where: { audio.currentTime >= $0.start && audio.currentTime < $0.end }), let sentence = self.sentenceRange {
-                                self.wordRange = NSRange(location: sentence.location + offset + word.range.location, length: word.range.length)
-                            }
-                            do { try await Task.sleep(for: .milliseconds(30)) } catch { return }
-                        }
-                    }
+                    try self.startClip(clip, key: key, text: content, offset: offset, options: config)
                 } catch is CancellationError {} catch {
                     guard self.generation == marker else { return }
-                    self.error = error.localizedDescription; self.buffering = false; self.playing = false; self.updateNowPlaying()
+                    self.pause(); self.error = error.localizedDescription
                 }
             }
-
+            // 当前句先占合成名额，再预取后面几句（已缓存的跳过），切句时下一句通常已就绪。
+            prefetch(after: position, options: base)
         }
+    }
+    /// 合成音频首尾的静音裁掉：开头留一点余量保住轻声起音，结尾按标点补回自然停顿。
+    private static func playWindow(_ clip: CloudClip, text: String, duration: TimeInterval) -> (start: TimeInterval, stop: TimeInterval?) {
+        guard let span = clip.span, span.end > span.start else { return (0, nil) }
+        var start = min(1, max(0, span.start - 0.08))
+        if let first = clip.words.first { start = min(start, max(0, first.start - 0.02)) }
+        let stop = span.end + CloudSpeech.trailingPause(after: text)
+        return (start, stop < duration - 0.02 && stop > start + 0.1 ? stop : nil)
+    }
+    private func makePlayer(_ clip: CloudClip, text: String) throws -> AVAudioPlayer {
+        let player = try AVAudioPlayer(data: clip.data); player.enableRate = true
+        player.currentTime = Self.playWindow(clip, text: text, duration: player.duration).start
+        player.prepareToPlay()
+        return player
+    }
+    private func startClip(_ clip: CloudClip, key: String?, text: String, offset: Int, options config: VoiceOptions) throws {
+        let player: AVAudioPlayer
+        if let key, let prepared = preparedAudio, prepared.key == key { player = prepared.player }
+        else { player = try makePlayer(clip, text: text) }
+        preparedAudio = nil
+        player.rate = config.rate; player.delegate = self
+        audio = player; cloudWords = clip.words; buffering = false; timingLabel = "句子同步"
+        stopAt = Self.playWindow(clip, text: text, duration: player.duration).stop
+        guard player.play() else { throw ReaderError.message("音频无法播放，请重试或切换系统声音。") }
+        clockTask?.cancel()
+        clockTask = Task { [weak self, weak player] in
+            while !Task.isCancelled {
+                guard let self, let player, self.audio === player else { return }
+                if self.playing {
+                    // 尾部只按实际音频电平裁剪，不按字幕：字幕可能提前结束或有词未匹配原文。
+                    if let stop = self.stopAt, player.currentTime >= stop { self.finishClip(player); return }
+                    if let word = self.cloudWords.first(where: { player.currentTime >= $0.start && player.currentTime < $0.end }), let sentence = self.sentenceRange {
+                        self.wordRange = NSRange(location: sentence.location + offset + word.range.location, length: word.range.length)
+                    }
+                }
+                // 临近结束时缩短轮询间隔，句间衔接误差控制在 10ms 内。
+                let remaining = ((self.stopAt ?? player.duration) - player.currentTime) / Double(max(0.5, player.rate))
+                do { try await Task.sleep(for: .milliseconds(remaining < 0.06 ? 10 : 30)) } catch { return }
+            }
+        }
+        prepareNext()
+    }
+    private func finishClip(_ player: AVAudioPlayer) {
+        guard player === audio, playing else { return }
+        player.delegate = nil; player.stop(); skip(1)
+    }
+    /// 下一句已合成时提前建好播放器；跨章节同样适用。
+    private func prepareNext() {
+        guard playing, options.provider != "system", let next = upcomingClips(after: position, options: options).first,
+              let key = try? clipKey(next.0, options: next.1), preparedAudio?.key != key, let clip = audioCache[key],
+              let player = try? makePlayer(clip, text: next.0) else { return }
+        preparedAudio = (key, player)
     }
     private func clipKey(_ text: String, options config: VoiceOptions) throws -> String {
         let body: [String: JSONValue] = ["provider": .string(config.provider), "model": .string(config.model), "voice": .string(config.voice), "key": .string(config.key), "groupId": .string(config.groupID), "input": .string(text)]
@@ -428,27 +584,26 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         (try? clipKey(text, options: config)).flatMap { audioCache[$0] }
     }
     private func cloudClip(_ text: String, options config: VoiceOptions) async throws -> CloudClip {
+        try Task.checkCancellation()
         let key = try clipKey(text, options: config)
         if let cached = audioCache[key] { return cached }
         // 同一句已在合成（多为预取）：直接等它完成，不再重复请求。旧实现会再发一次请求，
         // 句间要多等一整个网络往返，这是朗读卡顿的主要原因。
-        if let running = inflight[key] { return try await running.value }
-        let request = Task { [weak self] () throws -> CloudClip in
+        return try await cloudRequests.value(for: key) { [weak self] in
             guard let self else { throw CancellationError() }
-            defer { self.inflight[key] = nil }
             return try await self.synthesizeClip(text, key: key, options: config)
         }
-        inflight[key] = request
-        return try await request.value
     }
     private func synthesizeClip(_ text: String, key: String, options config: VoiceOptions) async throws -> CloudClip {
         var result: CloudSpeech.Result? = await Task.detached(priority: .userInitiated) {
             CloudSpeech.cachedResult(forKey: key)
         }.value
+        try Task.checkCancellation()
         if result == nil {
             for attempt in 0...2 {
                 do {
                     let fetched = try await CloudSpeech.synthesize(text, provider: config.provider, model: config.model, voice: config.voice, key: config.key, groupID: config.groupID)
+                    try Task.checkCancellation()
                     result = fetched
                     Task.detached(priority: .utility) { CloudSpeech.storeCachedResult(fetched, forKey: key) }
                     break
@@ -463,9 +618,11 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         }
         guard let result else { throw ReaderError.message("语音请求失败。") }
         let audioData = result.audio, source = text as NSString
+        let span = await Task.detached(priority: .userInitiated) { CloudSpeech.speechSpan(audio: audioData) }.value
+        try Task.checkCancellation()
         var timed = result.words
-        if timed.isEmpty, let span = CloudSpeech.speechSpan(wav: audioData) ?? (try? AVAudioPlayer(data: audioData)).map({ (start: 0.0, end: $0.duration) }) {
-            timed = CloudSpeech.estimatedWords(text, from: span.start, to: span.end)
+        if timed.isEmpty, let bounds = span ?? (try? AVAudioPlayer(data: audioData)).map({ (start: 0.0, end: $0.duration) }) {
+            timed = CloudSpeech.estimatedWords(text, from: bounds.start, to: bounds.end)
         }
         var words: [TimedWord] = [], cursor = 0
         for word in timed {
@@ -473,21 +630,44 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             guard range.location != NSNotFound, range.length > 0 else { continue }
             words.append(TimedWord(range: range, start: word.start, end: word.end)); cursor = NSMaxRange(range)
         }
-        let clip = CloudClip(data: audioData, words: words)
+        let clip = CloudClip(data: audioData, words: words, span: span)
         audioCache[key] = clip; cacheOrder.removeAll { $0 == key }; cacheOrder.append(key)
         while audioCache.values.reduce(0, { $0 + $1.data.count }) > 32 * 1024 * 1024, let first = cacheOrder.first { audioCache[first] = nil; cacheOrder.removeFirst() }
         return clip
     }
-    /// 预取当前句之后的几句：与当前句的合成同时开始，而不是等当前句开始播放才排队。
-    /// 依次请求（同时最多一条预取 + 当前句一条），避免触发服务商限流；已缓存或正在合成的句子直接跳过。
+    /// 当前句之后的若干句（跳过无可发声文字的句子）；本章读完时接着取下一章开头。
+    private func upcomingClips(after index: Int, options config: VoiceOptions) -> [(String, VoiceOptions)] {
+        var result: [(String, VoiceOptions)] = [], list = sentences, i = index + 1, remaining = Self.cloudLookahead, crossed = false
+        while remaining > 0 {
+            guard list.indices.contains(i) else {
+                guard !crossed, chapterList.indices.contains(chapter + 1) else { break }
+                list = split(chapter + 1); i = 0; crossed = true; continue
+            }
+            remaining -= 1
+            if CloudSpeech.hasSpeakableText(list[i].text) {
+                result.append((list[i].text, config.forRole(options.roles ? DialogueRoles.role(i, in: list) : .narrator)))
+            }
+            i += 1
+        }
+        return result
+    }
+    /// 分句结果按章缓存一份下一章，预取与真正换章共用。
+    private func split(_ index: Int) -> [Sentence] {
+        if let cached = nextChapterSplit, cached.chapter == index { return cached.sentences }
+        let result = Sentence.split(chapterList[index].text)
+        nextChapterSplit = (index, result)
+        return result
+    }
+    /// 预取当前句之后的几句，当前句与预取共享最多两个合成名额。
     private func prefetch(after index: Int, options config: VoiceOptions) {
-        let upcoming = (1...Self.cloudLookahead).compactMap { sentences.indices.contains(index + $0) ? (sentences[index + $0].text, config.forRole(role(index + $0))) : nil }
-        guard !upcoming.isEmpty else { return }
         prefetchTask?.cancel()
+        let upcoming = upcomingClips(after: index, options: config)
+        guard !upcoming.isEmpty else { prefetchTask = nil; return }
         prefetchTask = Task { [weak self] in
             for (next, options) in upcoming {
                 guard !Task.isCancelled, let self, self.playing else { return }
                 _ = try? await self.cloudClip(next, options: options)
+                self.prepareNext()
             }
         }
     }
@@ -523,7 +703,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
                   let index = self.queued[ObjectIdentifier(utterance)]?.index else { return }
             if let sleepUntil = self.sleepUntil, sleepUntil <= Date() { self.pause(); self.setSleep(minutes: 0); return }
             self.utterance = utterance; self.position = index
-            self.spokenOffset = 0; self.wordRange = nil; self.speechFinished = false
+            self.spokenOffset = 0; self.wordRange = nil
             self.onProgress?(book.id, self.chapter, index); self.updateNowPlaying()
             self.enqueueAhead()
         }
@@ -541,7 +721,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor [weak self] in
             guard let self, player === self.audio, self.playing else { return }
-            if flag { self.skip(1) } else { self.pause(); self.error = "音频播放中断，请重试。" }
+            if flag { self.finishClip(player) } else { self.pause(); self.error = "音频播放中断，请重试。" }
         }
     }
     // MARK: - 锁屏 / 控制中心「正在播放」

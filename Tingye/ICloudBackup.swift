@@ -219,6 +219,11 @@ extension LibraryDisk {
                 next[i] = row
             } else { next.append(row) }
             try Integrity.encoder().encode(book).write(to: staging.appendingPathComponent("Books/\(book.id).json"), options: .atomic)
+            // 同标识书籍的资源、封面和分类也可能变化，暂存目录不能沿用旧索引。
+            for ext in ["json", "jpg"] {
+                let indexURL = staging.appendingPathComponent("Index/\(book.id).\(ext)")
+                if fm.fileExists(atPath: indexURL.path) { try fm.removeItem(at: indexURL) }
+            }
             progress?(index + 1, archive.books.count)
         }
         try Integrity.encoder().encode(next).write(to: staging.appendingPathComponent("catalog.json"), options: .atomic)
@@ -480,27 +485,24 @@ extension AppModel {
         if let value = icloud, value.stage == .confirming { icloud = nil }
         runICloud(.restore, .restoring, detail: "先在临时目录写入全部书籍，成功后才替换本机书库。") { [self] id in
             guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
-            let captured = owner, rows = entries
+            let captured = owner
             // 存档的 owner 是来源账号（可能是旧账号目录），只校验存档自洽；书籍还原进当前书架。
             _ = try archive.validatedHeader(owner: archive.owner)
-            player.stop()
-            restoringLibrary = true
-            defer { restoringLibrary = false }
+            let rows = try await beginLibraryRestore()
+            var restored: [ShelfEntry]?
+            defer { endLibraryRestore(restored) }
             step(id, .restoring, completed: 0, total: archive.books.count)
             let progress = reporter(id, .restoring)
             let replacing: @Sendable () -> Void = { [weak self] in
                 DispatchQueue.main.async { MainActor.assumeIsolated { self?.step(id, .replacing, detail: "正在替换本机书库。") } }
             }
             do {
-                _ = try await Task.detached(priority: .userInitiated) {
+                restored = try await Task.detached(priority: .userInitiated) {
                     try disk.restore(archive, owner: captured, entries: rows, progress: progress, willReplace: replacing)
                 }.value
             } catch { throw ReaderError.message("\(error.localizedDescription)\n还原未完成，本机书架保持原样。") }
             step(id, .reloading, detail: "重新载入书架。")
-            do { try loadLibrary() }
-            catch { throw ReaderError.message("书库已替换，但重新载入失败：\(error.localizedDescription)。请重新打开听页。") }
-            restoringLibrary = false
-            refreshProgressSync()
+            // defer 接纳事务返回的目录，避免 loadLibrary 的旧目录 flush 覆盖恢复结果。
             return "已还原 \(archive.books.count) 本书的内容、进度与书签，其余书籍保留。"
         }
     }

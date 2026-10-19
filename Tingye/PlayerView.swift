@@ -605,7 +605,7 @@ struct VoiceSettingsView: View {
                         if !presetModels.contains(modelName) { Text(modelName).tag(modelName) }
                     }
                     DisclosureGroup("自定义模型") {
-                        TextField("模型 ID", text: $modelName).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        TextField(provider == "glm" ? "模型 ID（需以 glm 开头，如 glm-tts）" : "模型 ID", text: $modelName).textInputAutocapitalization(.never).autocorrectionDisabled()
                     }
                 }
             } header: { Text("连接 \(VoiceOptions.providerName(provider))") } footer: { Text(cloudNote) }
@@ -677,9 +677,15 @@ struct VoiceSettingsView: View {
             }
         } else if provider == "glm" {
             Picker("音色", selection: $voice) {
-                ForEach([("tongtong", "彤彤"), ("chuichui", "锤锤"), ("xiaochen", "小陈"), ("jam", "动动"), ("kazi", "卡子"), ("douji", "豆吉"), ("luodo", "洛多")], id: \.0) { key, title in
-                    Text(title).tag(key)
+                ForEach(glmVoices, id: \.value) { v in
+                    Text(v.label).tag(v.value)
                 }
+                if !glmVoices.contains(where: { $0.value == voice }) { Text("自定义音色").tag(voice) }
+            }
+            DisclosureGroup("自定义 / 复刻音色") {
+                TextField("音色 ID（如 tongtong 或复刻音色 ID）", text: $voice)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
             }
         } else if provider == "azure" {
             Picker("音色", selection: $voice) {
@@ -700,6 +706,10 @@ struct VoiceSettingsView: View {
                 if !minimaxVoices.contains(where: { $0.value == voice }) { Text("自定义音色").tag(voice) }
             }
         }
+    }
+
+    private var glmVoices: [CloudVoice] {
+        [("tongtong", "彤彤"), ("chuichui", "锤锤"), ("xiaochen", "小陈"), ("jam", "动动"), ("kazi", "卡子"), ("douji", "豆吉"), ("luodo", "洛多")].map { CloudVoice(value: $0.0, label: $0.1) }
     }
 
     private var minimaxVoices: [CloudVoice] {
@@ -740,7 +750,12 @@ struct VoiceSettingsView: View {
     private var voiceChoices: [CloudVoice] {
         switch provider {
         case "system": return voices.map { CloudVoice(value: $0.identifier, label: "\($0.name) · \($0.language)") }
-        case "glm": return [("tongtong", "彤彤"), ("chuichui", "锤锤"), ("xiaochen", "小陈"), ("jam", "动动"), ("kazi", "卡子"), ("douji", "豆吉"), ("luodo", "洛多")].map { CloudVoice(value: $0.0, label: $0.1) }
+        case "glm":
+            let cleaned = voice.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !cleaned.isEmpty && !glmVoices.contains(where: { $0.value == cleaned }) {
+                return glmVoices + [CloudVoice(value: cleaned, label: cleaned)]
+            }
+            return glmVoices
         case "azure": return AzureVoices.all
         case "elevenlabs": return elevenVoices
         default: return minimaxVoices
@@ -753,8 +768,7 @@ struct VoiceSettingsView: View {
             return voices.first(where: { $0.identifier == voice })?.name ?? "默认中文声音"
         }
         if provider == "glm" {
-            let map = ["tongtong": "彤彤", "chuichui": "锤锤", "xiaochen": "小陈", "jam": "动动", "kazi": "卡子", "douji": "豆吉", "luodo": "洛多"]
-            return map[voice] ?? voice
+            return glmVoices.first(where: { $0.value == voice })?.label ?? voice
         }
         if provider == "azure" { return AzureVoices.all.first { $0.value == voice }?.label ?? voice }
         if provider == "elevenlabs" { return elevenVoices.first { $0.value == voice }?.label ?? voice }
@@ -839,8 +853,8 @@ struct VoiceSettingsView: View {
         let chosen = VoiceOptions.sanitized(provider: target, model: d.string(forKey: VoiceOptions.modelKey(target)), voice: d.string(forKey: VoiceOptions.voiceKey(target)))
         voice = chosen.voice; modelName = chosen.model
         apiKey = VoiceOptions.apiKey(target)
-        maleVoice = d.string(forKey: VoiceOptions.roleKey("male", target)) ?? ""
-        femaleVoice = d.string(forKey: VoiceOptions.roleKey("female", target)) ?? ""
+        maleVoice = VoiceOptions.sanitizedRoleVoice(provider: target, voice: d.string(forKey: VoiceOptions.roleKey("male", target)))
+        femaleVoice = VoiceOptions.sanitizedRoleVoice(provider: target, voice: d.string(forKey: VoiceOptions.roleKey("female", target)))
     }
 
     /// 仅保存时提交草稿；切换提供方不会改变正在使用的配置。
@@ -858,8 +872,8 @@ struct VoiceSettingsView: View {
             let chosen = VoiceOptions.sanitized(provider: target, model: draft.model, voice: draft.voice)
             d.set(chosen.voice, forKey: VoiceOptions.voiceKey(target))
             if target != "system" { d.set(chosen.model, forKey: VoiceOptions.modelKey(target)) }
-            d.set(draft.male, forKey: VoiceOptions.roleKey("male", target))
-            d.set(draft.female, forKey: VoiceOptions.roleKey("female", target))
+            d.set(VoiceOptions.sanitizedRoleVoice(provider: target, voice: draft.male), forKey: VoiceOptions.roleKey("male", target))
+            d.set(VoiceOptions.sanitizedRoleVoice(provider: target, voice: draft.female), forKey: VoiceOptions.roleKey("female", target))
         }
         d.set(provider, forKey: "voice.provider"); d.set(rate, forKey: "voice.rate")
         d.set(groupID, forKey: "voice.groupID"); d.set(azureRegion, forKey: "voice.azureRegion"); d.set(roles, forKey: "voice.roles")
