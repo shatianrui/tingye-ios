@@ -33,7 +33,7 @@ project.build_configurations.each do |config|
 end
 [app, test, ui_test].each do |target|
   target.build_configurations.each do |config|
-    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '105', 'MARKETING_VERSION' => '1.18.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
+    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '106', 'MARKETING_VERSION' => '1.18.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
   end
 end
 app.build_configurations.each do |config|

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 功能键分层</title>
+<style>
+:root{color-scheme:light dark;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#faf9fd;color:#292633}body{max-width:1220px;margin:0 auto;padding:40px 24px}h1{font-weight:600;font-size:30px}p{line-height:1.8;color:#4f485d}nav{margin:24px 0}a{color:#756184}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px}figure{margin:0}figcaption{font-size:15px;line-height:1.7;margin:12px 0}img{width:100%;height:auto;border-radius:20px;box-shadow:0 4px 20px #29263312}small{display:block;color:#6e637d}footer{margin-top:40px;line-height:1.8}@media(prefers-color-scheme:dark){:root{background:#191820;color:#f0edf5}p{color:#c5bdcf}a,small{color:#c9b5df}}
+</style>
+</head>
+<body>
+<h1>听页 · 功能键分层</h1>
+<p>1.18.0（106）｜保留专注版配色，重新组织阅读、听书与书架操作。<br>以下均为最终自动化测试中的 App 实际截图；测试书名、长句和记录来自 Debug 临时书库，不是用户内容。</p>
+<nav><a href="../ACTIONS.md">功能键与状态契约</a> · <a href="../../../docs/ACCEPTANCE.md">验收证据与真实服务边界</a></nav>
+<main>
+<figure><a href="reader.png"><img src="reader.png" alt="阅读工具：上方返回与书签，下方定位与固定四键"></a><figcaption>阅读 · 目录 / 排版 / 听书 / 更多<small>阅读定位和播放互不混用</small></figcaption></figure>
+<figure><a href="reader-listening.png"><img src="reader-listening.png" alt="边读边听工具面板"></a><figcaption>边读边听 · 四键位置保持不变<small>展开听书页与播放 / 暂停分开</small></figcaption></figure>
+<figure><a href="player.png"><img src="player.png" alt="听书页主播放控制和四个常用工具"></a><figcaption>听书 · 目录 / 语速 / 声音 / 定时<small>播放、上一句、下一句为第一层</small></figcaption></figure>
+<figure><a href="audio-output.png"><img src="audio-output.png" loading="lazy" alt="声音设置中的音频输出设备"></a><figcaption>声音 · 系统输出设备<small>切换设备立即生效；音色配置仍须保存</small></figcaption></figure>
+<figure><a href="shelf.png"><img src="shelf.png" loading="lazy" alt="书架列表中的分层操作"></a><figcaption>书架 · 筛选、排序与显示分离<small>添加和整理保留明确文字</small></figcaption></figure>
+<figure><a href="shelf-grid.png"><img src="shelf-grid.png" loading="lazy" alt="按书名排序的封面网格"></a><figcaption>书架 · 同一组工具，不同显示方式<small>排序只改变顺序，不混入隐藏书籍管理</small></figcaption></figure>
+<figure><a href="shelf-dark.png"><img src="shelf-dark.png" loading="lazy" alt="夜间书架操作区域"></a><figcaption>夜间 · 同样的功能层级</figcaption></figure>
+<figure><a href="miniplayer.png"><img src="miniplayer.png" loading="lazy" alt="底部精简迷你播放器"></a><figcaption>迷你播放器 · 展开与播放两种操作<small>结束听书需进入完整播放器确认</small></figcaption></figure>
+<figure><a href="search-small.png"><img src="search-small.png" loading="lazy" alt="小屏键盘打开时仍可操作搜索结果"></a><figcaption>375 × 667pt · 搜索聚焦<small>收起页首，让结果留在键盘上方</small></figcaption></figure>
+<figure><a href="reader-large-small.png"><img src="reader-large-small.png" loading="lazy" alt="小屏最大字号下的两列阅读工具"></a><figcaption>小屏最大字号 · 两列工具与独立滚动<small>返回保留在顶部，不压缩字体适配</small></figcaption></figure>
+</main>
+<footer>来源：<code>ActionLayoutRelease.xcresult</code>、<code>ActionLayoutReleaseSmall.xcresult</code>（iOS 27，2026-10-20）。模拟器截图不代表真机 VoiceOver、蓝牙 / AirPlay 或云语音验收。</footer>
+</body>
+</html>

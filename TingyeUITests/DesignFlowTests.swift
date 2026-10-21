@@ -7,7 +7,7 @@ final class DesignFlowTests: XCTestCase {
 
     private func launch(_ scene: String, largeType: Bool = false, appearance: String = "light") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-fixture", "-uireview", scene, "-ui-reduce-motion", "-app.appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.paper", "paper", "-reader.original", "NO", "-shelf.layout", "list"]
+        app.launchArguments = ["-ui-fixture", "-ui-reset-preferences", "-uireview", scene, "-ui-reduce-motion", "-app.appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.original", "NO", "-reader.scrolling", "NO", "-shelf.kind", "books", "-voice.rate", "1.0"]
         if largeType { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
         app.launch()
         return app
@@ -22,6 +22,18 @@ final class DesignFlowTests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(element.isHittable)
+    }
+
+    private func cancelConfirmation(in app: XCUIApplication) {
+        // iOS / iPadOS 的 popover 形式会省略取消按钮，轻点外部即取消。
+        if app.buttons["取消"].exists { app.buttons["取消"].tap() }
+        else {
+            let outside = app.otherElements["PopoverDismissRegion"]
+            XCTAssertTrue(outside.exists)
+            // 不点状态栏：状态栏触摸不会关闭 popover。
+            outside.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.25)).tap()
+            XCTAssertTrue(outside.waitForNonExistence(timeout: 5))
+        }
     }
 
     func testHomeShowsContinueAndRecentWithoutScrolling() {
@@ -43,7 +55,8 @@ final class DesignFlowTests: XCTestCase {
         let field = app.textFields["shelf.search-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap(); field.typeText("长标题")
-        XCTAssertTrue(app.buttons["book.detail.ui-long"].exists)
+        XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable, "小屏键盘上方应能直接操作搜索结果")
         screenshot(app, "专注-从首页搜索书架")
         app.buttons["取消"].tap()
         XCTAssertTrue(app.buttons["shelf.search"].isHittable)
@@ -68,7 +81,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["continue.reading"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["now.listen"].isHittable)
         screenshot(app, "专注-夜间首页")
-        app.buttons["navigation.tab.1"].tap()
+        app.buttons["navigation.tab.0"].tap()
         XCTAssertTrue(app.buttons["shelf.organize"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable)
         screenshot(app, "专注-夜间书架")
@@ -129,10 +142,10 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(read.waitForExistence(timeout: 15))
         reveal(read, in: app)
         screenshot(app, "今日-最大字号")
-        for (index, label) in ["今日", "书架", "足迹", "设置"].enumerated() {
+        for (index, label) in ["书", "读", "己"].enumerated() {
             XCTAssertEqual(app.buttons["navigation.tab.\(index)"].label, label)
         }
-        app.buttons["navigation.tab.1"].tap()
+        app.buttons["navigation.tab.0"].tap()
         let organize = app.buttons["shelf.organize"]
         XCTAssertTrue(organize.waitForExistence(timeout: 10))
         XCTAssertTrue(organize.isHittable)
@@ -149,5 +162,158 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["失败示例.json"].exists)
         XCTAssertTrue(app.buttons["重新选择失败文件"].isHittable)
         screenshot(app, "导入-逐项结果与重试")
+    }
+
+    func testReaderKeepsActionSlotsAndChapterNavigationDoesNotSeekAudio() {
+        let app = launch("reader")
+        XCTAssertTrue(app.buttons["reader.listen"].waitForExistence(timeout: 15))
+        let ids = ["reader.contents", "reader.preferences", "reader.more"]
+        let positions = ids.map { app.buttons[$0].frame.midX }
+        app.buttons["reader.listen"].tap()
+        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 5))
+        if app.buttons["player.toggle"].label.contains("暂停") { app.buttons["player.toggle"].tap() }
+        app.buttons["player.collapse"].tap()
+        XCTAssertTrue(app.buttons["reader.expandPlayer"].waitForExistence(timeout: 5))
+        for (index, id) in ids.enumerated() {
+            XCTAssertEqual(app.buttons[id].frame.midX, positions[index], accuracy: 1, "播放状态不能改变功能键的位置")
+        }
+        XCTAssertEqual(app.buttons.matching(identifier: "reader.expandPlayer").count, 1)
+        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        app.buttons["reader.nextChapter"].tap()
+        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2")
+        XCTAssertFalse(app.buttons["reader.nextChapter"].isEnabled)
+        app.buttons["reader.expandPlayer"].tap()
+        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["player.currentChapter"].label, "第 1 / 2 章", "阅读翻章不能改变听书章节")
+        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"), "展开听书页不能擅自恢复播放")
+        app.buttons["player.collapse"].tap()
+        app.buttons["reader.returnToSpeech"].tap()
+        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
+        screenshot(app, "功能键-阅读固定四键与独立播放控制")
+    }
+
+    func testReaderMoreGroupsDayNightAndKeepsBookmarkSeparate() {
+        let app = launch("reader")
+        XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["reader.bookmark"].isHittable)
+        app.buttons["reader.more"].tap()
+        // UIKit 系统菜单的 Section 子项不一定保留 SwiftUI identifier，按可见名称操作。
+        XCTAssertTrue(app.buttons["切换夜间纸色"].waitForExistence(timeout: 5))
+        app.buttons["切换夜间纸色"].tap()
+        app.buttons["reader.more"].tap()
+        XCTAssertTrue(app.buttons["切换日间纸色"].waitForExistence(timeout: 5))
+        screenshot(app, "功能键-更多阅读操作与夜间切换")
+    }
+
+    func testShelfSeparatesFilterSortAndLayoutAndProtectsDeletion() {
+        let app = launch("shelf")
+        XCTAssertTrue(app.buttons["shelf.filter"].waitForExistence(timeout: 15))
+        for id in ["shelf.filter", "shelf.sort", "shelf.layout", "shelf.more", "import.book"] {
+            XCTAssertEqual(app.buttons.matching(identifier: id).count, 1)
+            XCTAssertTrue(app.buttons[id].isHittable)
+        }
+        app.buttons["shelf.filter"].tap()
+        app.buttons["未读"].tap()
+        XCTAssertTrue(app.buttons["shelf.clearFilters"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["book.detail.ui-long"].exists)
+        XCTAssertEqual(app.buttons.matching(identifier: "shelf.sort").count, 1, "筛选后不能复制一份浏览工具")
+        app.buttons["shelf.clearFilters"].tap()
+        app.buttons["shelf.sort"].tap()
+        app.buttons["书名"].tap()
+        XCTAssertTrue(app.buttons["shelf.sort"].label.contains("书名"))
+        app.buttons["shelf.layout"].tap()
+        app.buttons["封面网格"].tap()
+        XCTAssertTrue(app.buttons["shelf.layout"].label.contains("网格"))
+        screenshot(app, "功能键-书架筛选排序与显示分层")
+        app.buttons["shelf.organize"].tap()
+        XCTAssertFalse(app.buttons["shelf.delete"].isEnabled)
+        app.buttons["shelf.selectAll"].tap()
+        XCTAssertTrue(app.buttons["shelf.move"].isEnabled)
+        app.buttons["shelf.delete"].tap()
+        XCTAssertTrue(app.buttons["删除本机副本"].waitForExistence(timeout: 5))
+        cancelConfirmation(in: app)
+        app.buttons["shelf.finishOrganizing"].tap()
+        XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5), "取消删除应保留书籍")
+    }
+
+    func testPlayerToolsAreDirectAndPreservePausedState() {
+        let app = launch("player")
+        XCTAssertTrue(app.buttons["player.voice"].waitForExistence(timeout: 15))
+        let ids = ["player.contents", "player.rate", "player.voice", "player.sleep"]
+        let positions = ids.map { app.buttons[$0].frame.midX }
+        XCTAssertEqual(positions, positions.sorted())
+        for id in ids { XCTAssertTrue(app.buttons[id].isHittable) }
+        app.buttons["player.voice"].tap()
+        XCTAssertTrue(app.navigationBars["声音设置"].waitForExistence(timeout: 5))
+        reveal(app.buttons["AirPlay"], in: app)
+        XCTAssertTrue(app.buttons["AirPlay"].isHittable)
+        screenshot(app, "功能键-声音与播放设备")
+        app.buttons["取消声音设置，不保存修改"].tap()
+        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
+        app.buttons["player.sleep"].tap()
+        app.buttons["15 分钟后停止"].tap()
+        XCTAssertTrue((app.buttons["player.sleep"].value as? String)?.contains("15") == true)
+        app.buttons["player.sleep"].tap()
+        app.buttons["关闭定时"].tap()
+        XCTAssertEqual(app.buttons["player.sleep"].value as? String, "未开启")
+        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
+        screenshot(app, "功能键-听书四项常用工具")
+    }
+
+    func testMiniPlayerOnlyExpandsAndTogglesAndEndNeedsConfirmation() {
+        let app = launch("player")
+        XCTAssertTrue(app.buttons["player.collapse"].waitForExistence(timeout: 15))
+        app.buttons["player.collapse"].tap()
+        XCTAssertTrue(app.buttons["miniPlayer.open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["miniPlayer.toggle"].label.contains("继续"))
+        XCTAssertFalse(app.buttons["下一句"].exists)
+        screenshot(app, "功能键-精简迷你播放器")
+        app.buttons["miniPlayer.open"].tap()
+        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
+        app.buttons["player.more"].tap()
+        app.buttons["player.endListening"].tap()
+        XCTAssertTrue(app.buttons["结束听书"].waitForExistence(timeout: 5))
+        cancelConfirmation(in: app)
+        XCTAssertTrue(app.buttons["player.toggle"].isHittable)
+        app.buttons["player.more"].tap()
+        app.buttons["player.endListening"].tap()
+        app.buttons["结束听书"].tap()
+        XCTAssertTrue(app.buttons["navigation.tab.0"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["miniPlayer.open"].exists)
+    }
+
+    func testLargestTypeReaderToolsCanScrollWithoutLosingBackButton() {
+        let app = launch("reader", largeType: true)
+        XCTAssertTrue(app.buttons["reader.back"].waitForExistence(timeout: 15))
+        let tools = app.scrollViews["reader.tools"]
+        for id in ["reader.contents", "reader.preferences", "reader.listen", "reader.more"] {
+            let button = app.buttons[id]
+            for _ in 0..<5 {
+                if button.isHittable { break }
+                tools.swipeUp()
+            }
+            XCTAssertTrue(button.isHittable)
+            XCTAssertTrue(app.buttons["reader.back"].isHittable)
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+            XCTAssertGreaterThanOrEqual(button.frame.minX, 20)
+            XCTAssertLessThanOrEqual(button.frame.maxX, app.frame.maxX - 20, "大字号不能把工具面板撑出水平边距")
+        }
+        XCTAssertLessThanOrEqual(app.buttons["reader.bookmark"].frame.maxX, app.frame.maxX - 12)
+        screenshot(app, "功能键-最大字号阅读工具")
+        app.buttons["reader.more"].tap()
+        XCTAssertTrue(app.buttons["切换夜间纸色"].waitForExistence(timeout: 5))
+    }
+
+    func testLandscapePlayerKeepsPlaybackVisible() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launch("player")
+        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 15))
+        for id in ["player.previousSentence", "player.toggle", "player.nextSentence"] {
+            XCTAssertTrue(app.buttons[id].isHittable)
+            XCTAssertTrue(app.frame.contains(app.buttons[id].frame))
+        }
+        screenshot(app, "功能键-横屏固定播放控制")
     }
 }

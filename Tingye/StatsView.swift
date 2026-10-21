@@ -5,12 +5,17 @@ import Charts
 /// 按日的总时长来自 `readingSeconds`（旧版本也有）；时段与排行来自 1.14 起记录的 `sessions`。
 struct StatsView: View {
     @EnvironmentObject var model: AppModel
+    /// v16「墨」：己页签 = 统计 + 今日摘句 + 设置题录清单；从设置页进入的纯统计为 false。
+    var ji = false
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
+    @AppStorage("app.appearance") private var appearance = "system"
     @State private var period: Period = .day
     @State private var offset = 0
     @State private var editingGoal = false
     @State private var goalDraft = 30
     @State private var export: ExportedBook?
+    @State private var settingsRoute: SettingsDestination?
+    @State private var showingImportHub = false
     @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 44
     @Environment(\.dynamicTypeSize) private var typeSize
     private var summaryLayout: AnyLayout {
@@ -48,7 +53,7 @@ struct StatsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center, spacing: 8) {
-                    PageMasthead(title: "足迹", subtitle: "阅读和听书的时间。")
+                    PageMasthead(title: ji ? "己" : "足迹", subtitle: ji ? "读过的书，和这台设备上的书。" : "阅读和听书的时间。")
                     Button("目标") { editGoal() }
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 44)
@@ -83,15 +88,31 @@ struct StatsView: View {
                 ranking
                 overview
                 if period == .day && offset == 0 { DailyQuoteCard() }
+                if ji { settingsSection }
             }
             .padding(.horizontal, Theme.inset)
             .padding(.top, 12).padding(.bottom, 32)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
         .paperBackground()
-        .navigationTitle("足迹")
+        .navigationTitle(ji ? "己" : "足迹")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .navigationDestination(item: $settingsRoute) { route in
+            settingsDestinationView(route)
+                .toolbar(.visible, for: .navigationBar)
+                .toolbar(.hidden, for: .tabBar)
+        }
+        .sheet(isPresented: $showingImportHub) { ImportHubView().environmentObject(model).tint(Theme.accent) }
+        #if DEBUG
+        .task {
+            if let screen = UIReview.screen, settingsRoute == nil {
+                if screen == "appearance" { settingsRoute = .appearance }
+                else if screen == "backup" { settingsRoute = .backup }
+                else if screen == "profile" { settingsRoute = .profile }
+            }
+        }
+        #endif
         #if DEBUG
         .task { if UIReview.screen == "stats-goal" { editGoal() } }
         #endif
@@ -388,6 +409,53 @@ struct StatsView: View {
                 }
             }
         }
+    }
+
+    // MARK: 己 · 设置题录清单
+
+    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
+
+    private var settingsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            RowDivider()
+            Text("设置")
+                .font(Theme.serifSemibold(22, relativeTo: .title3))
+                .foregroundStyle(Theme.ink)
+                .frame(minHeight: 44)
+                .padding(.top, 16)
+                .accessibilityAddTraits(.isHeader)
+            settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
+            settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
+            settingsEntry(icon: Icon.voice, title: "声音与朗读", subtitle: "语音服务、音色与朗读设置") { settingsRoute = .voice }
+            settingsEntry(icon: Icon.appearance, title: "外观模式", value: appearanceName) { settingsRoute = .appearance }
+            settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
+            settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
+            settingsEntry(icon: Icon.highlight, title: "全部书摘与笔记", value: "\(model.noteCount) 条") { settingsRoute = .notes }
+            settingsEntry(icon: Icon.settings, title: "更多设置", subtitle: "应用锁、隐藏书籍、隐私与关于") { settingsRoute = .profile }
+        }
+        .padding(.top, 8)
+    }
+
+    private func settingsEntry(icon: String, title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ThemeIcon(symbol: icon, size: 22, weight: .medium)
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 28, height: 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                    if let subtitle { Text(subtitle).font(.caption).foregroundStyle(Theme.ink3) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if let value { Text(value).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+                ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
+            }
+            .frame(minHeight: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressButtonStyle(scale: 0.99))
+        .overlay(alignment: .bottom) { RowDivider() }
     }
 
     // MARK: 工具

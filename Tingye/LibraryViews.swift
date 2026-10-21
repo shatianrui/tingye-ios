@@ -103,7 +103,7 @@ struct BookDetailView: View {
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(entry.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
+                    Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
                     Text(model.category(entry) + " · " + entry.format).font(.caption).foregroundStyle(Theme.ink3)
@@ -296,7 +296,7 @@ struct ChapterManagerView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(book.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
+                    Text(book.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
                         .font(.caption).foregroundStyle(Theme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")
@@ -423,6 +423,26 @@ struct ChapterManagerView: View {
 
 // MARK: - 我的书房与个人设置
 
+/// 设置目的地：己页签与「更多设置」页共用。
+enum SettingsDestination: String, Hashable {
+    case reading, fonts, voice, appearance, backup, notes, privacy, licenses, profile
+}
+
+@ViewBuilder
+func settingsDestinationView(_ route: SettingsDestination) -> some View {
+    switch route {
+    case .reading: ReadingPreferencesView()
+    case .fonts: MyFontsView()
+    case .voice: VoiceSettingsView()
+    case .appearance: AppearanceView()
+    case .backup: ICloudBackupView()
+    case .notes: AllNotesView()
+    case .privacy: PrivacyPolicyView()
+    case .licenses: FontLicenseView()
+    case .profile: ProfileView()
+    }
+}
+
 struct ProfileView: View {
     @EnvironmentObject var model: AppModel
     @AppStorage("app.appearance") private var appearance = "system"
@@ -432,9 +452,6 @@ struct ProfileView: View {
     @State private var export: ExportedBook?
     @State private var clearingCache = false
     @State private var settingsRoute: SettingsDestination?
-    private enum SettingsDestination: String, Hashable {
-        case reading, fonts, voice, appearance, backup, notes, stats, privacy, licenses
-    }
     #if DEBUG
     @State private var reviewRoute: String?
     #endif
@@ -453,7 +470,7 @@ struct ProfileView: View {
             .contentMargins(.horizontal, Theme.inset, for: .scrollContent)
             .contentMargins(.top, 12, for: .scrollContent)
             .navigationDestination(item: $settingsRoute) { route in
-                settingsDestination(route)
+                settingsDestinationView(route)
                     .toolbar(.visible, for: .navigationBar)
                     .toolbar(.hidden, for: .tabBar)
             }
@@ -552,7 +569,6 @@ struct ProfileView: View {
             }
             Section {
                 settingsLink(.notes, icon: Icon.highlight, color: Theme.gold, title: "全部书摘与笔记", value: "\(model.noteCount) 条")
-                settingsLink(.stats, icon: Icon.stats, color: Theme.indigo, title: "阅读足迹", subtitle: "查看时长、目标与阅读记录")
             } header: { settingSectionTitle("阅读资料") }
             Section {
                 settingsRow(title: "版本", value: version + " (" + build + ")", disclosure: false)
@@ -610,17 +626,7 @@ struct ProfileView: View {
 
     @ViewBuilder
     private func settingsDestination(_ route: SettingsDestination) -> some View {
-        switch route {
-        case .reading: ReadingPreferencesView()
-        case .fonts: MyFontsView()
-        case .voice: VoiceSettingsView()
-        case .appearance: AppearanceView()
-        case .backup: ICloudBackupView()
-        case .notes: AllNotesView()
-        case .stats: StatsView()
-        case .privacy: PrivacyPolicyView()
-        case .licenses: FontLicenseView()
-        }
+        settingsDestinationView(route)
     }
 
     private func exportStats() {
@@ -653,17 +659,17 @@ struct AppearanceView: View {
             VStack(alignment: .leading, spacing: 26) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("让界面，合你的光。")
-                        .font(.title2.weight(.medium))
+                        .font(Theme.serifSemibold(23, relativeTo: .title2))
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("浅灰紫与柔和夜色，日夜都保持安静。")
+                    Text("宣纸与墨夜，日夜都保持安静。")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.ink3)
                 }
                 VStack(spacing: 12) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "浅灰紫底色，深色文字与轻量留白")
-                    appearanceOption("dark", title: "夜间", subtitle: "柔和深灰底，降低明暗刺激")
+                    appearanceOption("light", title: "日间", subtitle: "宣纸底色，墨色文字与克制留白")
+                    appearanceOption("dark", title: "夜间", subtitle: "墨黑底，降低明暗刺激")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.system(size: 12))
@@ -712,14 +718,14 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x191820) : Color(hex: 0xFAF9FD)
-        let foreground = dark ? Color(hex: 0xF0EDF5) : Color(hex: 0x292633)
+        let background = dark ? Color(hex: 0x101012) : Color(hex: 0xFAF7EF)
+        let foreground = dark ? Color(hex: 0xEFEDE6) : Color(hex: 0x1C1B18)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
                 Circle().fill(foreground.opacity(0.55)).frame(width: 4, height: 4)
                 Capsule().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xD4CDDF)).frame(height: 25)
+            RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0xF3E4DE)).frame(height: 25)
                 .overlay(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 1).fill(Color(hex: 0xFFFFFF)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
@@ -732,8 +738,8 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x191820)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.system(size: 12)).foregroundStyle(Color(hex: 0xC9B5DF)) }
+                Rectangle().fill(Color(hex: 0x101012)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.system(size: 12)).foregroundStyle(Color(hex: 0xD97B6C)) }
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

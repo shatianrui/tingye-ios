@@ -83,7 +83,7 @@ struct PlayerView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 220)
-                            Text(book.title).font(.title2).multilineTextAlignment(.center)
+                            Text(book.title).font(Theme.serifSemibold(23, relativeTo: .title2)).multilineTextAlignment(.center)
                             Text(book.author).font(.body)
                         }.padding(24).frame(maxWidth: .infinity)
                     }
@@ -93,7 +93,11 @@ struct PlayerView: View {
             }
         }
         .confirmationDialog("结束这次听书？", isPresented: $endingListening, titleVisibility: .visible) {
-            Button("结束听书", role: .destructive) { player.stop(); model.showingPlayer = false; dismiss() }
+            Button("结束听书", role: .destructive) {
+                player.stop()
+                if !fromReader { model.showingPlayer = false }
+                dismiss()
+            }
             Button("取消", role: .cancel) {}
         } message: { Text("阅读进度会保留，随时可以继续。") }
         .sheet(isPresented: $settings) {
@@ -132,36 +136,28 @@ struct PlayerView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Button { dismiss() } label: {
-                    ThemeIcon(symbol: Icon.collapse, size: 24, weight: .semibold)
-                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                    Label("收起", systemImage: Icon.collapse)
+                        .font(.caption.weight(.medium)).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityLabel("收起播放器")
-                Text("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
-                    .font(.caption).foregroundStyle(secondary).monospacedDigit()
-                    .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("player.collapse")
+                Spacer(minLength: 8)
                 // 回到正文是听书时最常用的跳转，单独放在顶栏
                 Button {
                     if fromReader { dismiss() }
                     else { dismiss(); model.showingPlayer = false; model.selectedBook = book }
                 } label: {
-                    ThemeIcon(symbol: Icon.read, size: 24)
-                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                    Label("看原文", systemImage: Icon.read)
+                        .font(.caption.weight(.medium)).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityLabel("看原文")
                 .accessibilityIdentifier("player.backToReader")
-                // 低频操作：声音配置、跳章、结束
-            Menu {
+                // 章节跳转归目录，声音归底部；这里只保留低频操作。
+                Menu {
                     Button { showingCover = true } label: { Label("查看封面", systemImage: Icon.emptyBook) }
-                    Button { settings = true } label: { Label("声音设置", systemImage: Icon.speaker) }
-                        .accessibilityLabel("声音设置，当前 \(player.voiceLabel)")
-                        .accessibilityIdentifier("player.voice")
-                    Section("章节") {
-                        Button { player.skipChapter(-1) } label: { Label("上一章", systemImage: Icon.previousChapter) }
-                            .disabled(player.chapter == 0)
-                        Button { player.skipChapter(1) } label: { Label("下一章", systemImage: Icon.nextChapter) }
-                            .disabled(player.chapter + 1 >= player.chapterCount)
-                    }
+                    Divider()
                     Button(role: .destructive) { endingListening = true } label: { Label("结束听书", systemImage: Icon.stopListening) }
+                        .accessibilityIdentifier("player.endListening")
                 } label: {
                     ThemeIcon(symbol: Icon.more, size: 24)
                         .frame(width: 44, height: 44).contentShape(Rectangle())
@@ -179,8 +175,11 @@ struct PlayerView: View {
                         .accessibilityIdentifier("player.cover")
                 }
                 VStack(alignment: .leading, spacing: 4) {
+                    Text("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
+                        .font(.caption).foregroundStyle(tertiary).monospacedDigit()
+                        .accessibilityIdentifier("player.currentChapter")
                     Text(book.title)
-                        .font(.title3.weight(.medium))
+                        .font(Theme.serifSemibold(19, relativeTo: .title3))
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                     Text([book.author, player.chapterTitle].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(secondary)
@@ -302,31 +301,32 @@ struct PlayerView: View {
 
     private var footer: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 12) {
-            Button { chaptersSheet = true } label: { footerItem(Icon.contents, "章节") }
+            Button { chaptersSheet = true } label: { footerItem(Icon.contents, "目录") }
                 .accessibilityLabel("听书目录，第 \(player.chapter + 1) 章")
                 .accessibilityIdentifier("player.contents")
-            Menu {
-                ForEach([0, 15, 30, 45, 60], id: \.self) { minutes in
-                    Button(minutes == 0 ? "关闭定时" : "\(minutes) 分钟后停止") { player.setSleep(minutes: minutes) }
-                }
-            } label: { footerItem(Icon.sleepTimer, sleepLabel, highlighted: player.sleepUntil != nil) }
-            .accessibilityLabel(player.sleepUntil == nil ? "设置定时停止" : sleepLabel)
-            .accessibilityIdentifier("player.sleep")
             Menu {
                 Picker("语速", selection: Binding(get: { player.rate }, set: { player.changeRate($0) })) {
                     ForEach([0.5, 0.75, 0.8, 1.0, 1.2, 1.25, 1.5, 1.75, 2.0], id: \.self) { value in
                         Text(value.rateText + "×").tag(value)
                     }
                 }
-            } label: { footerItem(Icon.rate, "\(player.rate.rateText)×", highlighted: player.rate != 1.0) }
+            } label: { footerItem(Icon.rate, "语速 \(player.rate.rateText)×", highlighted: player.rate != 1.0) }
             .accessibilityLabel("语速，当前 \(player.rate.rateText) 倍")
             .accessibilityIdentifier("player.rate")
-            VStack(spacing: 0) {
-                AirPlayButton().frame(width: 44, height: 44).accessibilityLabel("选择音频输出设备")
-                Text("音频输出").font(.caption).foregroundStyle(secondary)
+            Button { settings = true } label: { footerItem(Icon.voice, "声音") }
+                .accessibilityLabel("声音设置，当前 \(player.voiceLabel)")
+                .accessibilityIdentifier("player.voice")
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                Menu {
+                    Button("关闭定时") { player.setSleep(minutes: 0) }.disabled(player.sleepUntil == nil)
+                    ForEach([15, 30, 45, 60], id: \.self) { minutes in
+                        Button("\(minutes) 分钟后停止") { player.setSleep(minutes: minutes) }
+                    }
+                } label: { footerItem(Icon.sleepTimer, sleepLabel(at: context.date), highlighted: player.sleepUntil != nil) }
+                .accessibilityLabel("定时停止")
+                .accessibilityValue(player.sleepUntil == nil ? "未开启" : sleepLabel(at: context.date))
+                .accessibilityIdentifier("player.sleep")
             }
-            .frame(maxWidth: .infinity, minHeight: 60, alignment: .top)
-            .accessibilityElement(children: .contain)
         }
         .buttonStyle(.plain)
     }
@@ -358,9 +358,9 @@ struct PlayerView: View {
         Button("检查声音设置") { settings = true }.frame(minHeight: 44)
     }
 
-    private var sleepLabel: String {
-        if let until = player.sleepUntil, until.timeIntervalSinceNow > 0 {
-            return "\(Int(ceil(until.timeIntervalSinceNow / 60))) 分后停"
+    private func sleepLabel(at date: Date) -> String {
+        if let until = player.sleepUntil, until > date {
+            return "\(Int(ceil(until.timeIntervalSince(date) / 60))) 分后停"
         }
         return "定时"
     }
@@ -490,7 +490,7 @@ struct ChapterListView: View {
         ScrollViewReader { proxy in
             List {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(book.title).font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
+                    Text(book.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                     HStack(spacing: 7) {
                         Image(systemName: Icon.listening)
                         Text("共 \(book.chapters.count) 章 · 正在听第 \(player.chapter + 1) 章")
@@ -615,6 +615,18 @@ struct VoiceSettingsView: View {
             voiceSection.listRowBackground(Theme.surface)
             rateSection.listRowBackground(Theme.surface)
             roleSection.listRowBackground(Theme.surface)
+            Section {
+                HStack {
+                    Label("音频输出", systemImage: Icon.speaker)
+                    Spacer(minLength: 8)
+                    AirPlayButton().frame(width: 44, height: 44)
+                        .accessibilityLabel("选择音频输出设备")
+                        .accessibilityIdentifier("voice.audioOutput")
+                }
+            } header: { Text("播放设备") } footer: {
+                Text("选择扬声器、耳机或 AirPlay。设备切换立即生效，不需要保存声音设置。")
+            }
+            .listRowBackground(Theme.surface)
             Section {
                 Text(auditionHint)
                     .font(.caption).foregroundStyle(Theme.ink2)

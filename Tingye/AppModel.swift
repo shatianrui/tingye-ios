@@ -27,7 +27,7 @@ final class AppModel: ObservableObject {
     private var listeningObserver: AnyCancellable?
     @Published var busy = false
     @Published var activity = ""
-    @Published var tab = 0
+    @Published var tab = 1
     /// 首页搜索交给书架处理，沿用同一套跨分组搜索，不建立第二份查询状态。
     @Published var shelfSearchRequested = false
     /// 书架排序方式:recent 最近阅读 / title 书名 / author 作者 / added 添加时间

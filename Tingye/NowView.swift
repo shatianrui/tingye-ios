@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 方案 B：无框续读区、最近在读列表、轻量阅读习惯。读听语义沿用实际使用记录。
+/// v16「墨」读页：无框续读区、最近在读列表、轻量阅读习惯。读听语义沿用实际使用记录。
 struct NowView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -56,12 +56,12 @@ struct NowView: View {
     private var masthead: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("听页").scaledFont(26, weight: .semibold, relativeTo: .title)
+                Text("听页").font(Theme.serifSemibold(30, relativeTo: .title))
                     .foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
                 CircleIconButton(systemName: Icon.search, label: "搜索书架") {
                     model.shelfSearchRequested = true
-                    model.tab = 1
+                    model.tab = 0
                 }.accessibilityIdentifier("now.search")
             }
             Text("为自己留一点安静。")
@@ -84,7 +84,7 @@ struct NowView: View {
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 9) {
-                    Text(entry.title).font(.title2.weight(.medium))
+                    Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2))
                         .foregroundStyle(Theme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 3)
                     Text(entry.author).font(.caption).foregroundStyle(Theme.ink3)
                     Text("第 \(chapter + 1) / \(max(1, entry.chapterCount)) 章")
@@ -182,9 +182,9 @@ struct NowView: View {
     private func bookRows(_ title: String, _ rows: [ShelfEntry]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                Text(title).font(Theme.serifSemibold(17, relativeTo: .subheadline)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
-                Button { model.tab = 1 } label: {
+                Button { model.tab = 0 } label: {
                     HStack(spacing: 2) { Text("书架"); ThemeIcon(symbol: Icon.disclosure, size: 14) }
                         .font(.caption).foregroundStyle(Theme.ink3).frame(minWidth: 44, minHeight: 44)
                 }.buttonStyle(.plain)
@@ -198,7 +198,7 @@ struct NowView: View {
                                 .accessibilityHidden(true)
                         }
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                            Text(entry.title).font(Theme.serifSemibold(16, relativeTo: .subheadline)).foregroundStyle(Theme.ink)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                             Text(entry.author + (entry.started ? " · 已读 \(entry.percentText)" : ""))
                                 .font(.caption).foregroundStyle(Theme.ink3)
@@ -220,7 +220,7 @@ struct NowView: View {
 
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("从一本书开始。").font(.title2.weight(.medium)).foregroundStyle(Theme.ink)
+            Text("从一本书开始。").font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
             Text("导入 EPUB、TXT、PDF 或 MOBI，可以读，也可以合上眼睛听。")
                 .font(.subheadline).foregroundStyle(Theme.ink2)
             actionLayout {

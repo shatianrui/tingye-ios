@@ -1,8 +1,31 @@
 # 听页 · 界面、图标与核心链路验收
 
-最新上传版本为 **1.18.0（105）**：用户选定 02「抱书的小王子」图标后，已按要求完成 iOS 与 Mac Catalyst TestFlight 上传；回执为 Apple 正在处理，尚未确认可安装。TestFlight 用于继续真机验证，不代表正式 App Store 发布或全部验收完成。测试结果与环境必须分开记录：**模拟器 / 注入存储 / 本地缓存音频通过，不等于真实付费接口、蓝牙或跨设备 iCloud 通过。**
+最新上传版本为 **1.18.0（106）**：功能键分层重设计，已按用户追加要求完成 iOS 与 Mac Catalyst TestFlight 上传；回执为 Apple 正在处理，尚未确认可安装。TestFlight 用于继续真机验证，不代表正式 App Store 发布或全部验收完成。测试结果与环境必须分开记录：**模拟器 / 注入存储 / 本地缓存音频通过，不等于真实付费接口、蓝牙或跨设备 iCloud 通过。**
 
-## 自动化与界面证据
+## 功能键分层重设计（1.18.0 · 106，2026-10-20）
+
+- 阅读固定四键，顶栏只保留返回 / 书签；阅读翻章与声音定位分开，展开已暂停的播放器不自动恢复。
+- 听书固定「目录 / 语速 / 声音 / 定时」，输出设备归声音设置；迷你播放器只保留展开与播放，结束会话仍确认。
+- 书架独立筛选、排序与显示；隐藏入口归「更多」。小屏搜索时精简页首，键盘上方可以直接点击结果。
+- 小屏走查修正了最大辅助功能字号下翻章文字撑宽浮层的问题；新增水平边距断言。系统菜单 / popover 测试按实际可访问名称操作，并等待取消完成；纸色 / 显示方式采用可修改测试初值，不再被启动参数域锁住。
+- 最终测试发生在构建号递增至 106 后，使用冻结的同一份代码。核心 86 项未新增，UI 从 9 增至 16 项。测试不调用付费语音、不改用户书库。
+
+| 环境 / 范围 | 最终结果 | 证据 |
+| --- | --- | --- |
+| iPhone 17e / iOS 27，核心 + UI | **102 / 102 通过** | `build/action-layout-release-tests.log`、`build/ActionLayoutRelease.xcresult` |
+| iPhone SE 3 / iOS 27，375 × 667pt | **16 / 16 UI 通过** | `build/action-layout-release-small.log`、`build/ActionLayoutReleaseSmall.xcresult` |
+| 日夜、最大字号、横屏 / 低高度 | 自动化与截图抽样通过 | 上述结果包附件；[实际界面截图](../Design/v15-focus/action-previews/index.html) |
+| Mac Catalyst Debug | **编译通过** | `build/action-layout-mac.log`；未做 Mac 交互实测 |
+| iOS / Mac Catalyst Release | **两端归档与包检查通过** | `build/archive-106.log`、`build/archive-106-mac.log`；`build/release-106-ios-checks.json`、`build/release-106-mac-checks.json` |
+| 真机 VoiceOver、蓝牙 / AirPlay、来电、云语音、双设备 iCloud | **仍待实测** | 本轮只验证设备选择入口，不声称真实路由或付费接口通过 |
+
+发布检查：iOS 为 arm64，Mac 为 arm64 / x86_64；版本、签名、iCloud / Keychain 权限、dSYM UUID、隐私清单、三种 iOS 图标资源保持正确。Release 二进制不含 `UIReview`、`-ui-reset-preferences` 等测试入口，也未打包 XCTest bundle。136 个构建输入的 SHA-256 见 `build/release-106-source-manifest.json`，检查脚本为 `build/verify-release-106.py`。
+
+上传：iOS **17:56:47**、Mac **17:58:27**（本机时间）分别收到 `Upload succeeded` 与 `EXPORT SUCCEEDED`，进程退出码均为 0。日志为 `build/upload-106.log`、`build/upload-106-mac.log`，汇总为 `build/release-106-upload-summary.json`。Apple 回执为 `Uploaded package is processing`，**尚未确认 TestFlight 可安装**。没有提交正式 App Store 审核、没有修改测试组或邀请测试者。
+
+以下保留历史版本证据，不能替代本轮记录。
+
+## 历史：专注版初始自动化与界面证据
 
 - 核心套件：86 项；包含此前 7 项设计回归，以及本轮新增的七种阅读纸色对比度、默认字体与明确用户偏好保留检查。
 - UI 套件：9 项；使用临时书库、长书名、100 字以上长句、系统声音、关闭 iCloud，不操作用户原书库。本轮新增首页搜索衔接、阅读工具 / 排版与夜间布局。

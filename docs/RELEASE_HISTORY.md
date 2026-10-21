@@ -2,6 +2,26 @@
 
 > 本文件记录实际上传与历代设计；1.17.0（103）及更早部分保留可用性修订前 README 的原文。历史段落中的「当前版本」、导航、文件路径、验证状态仅对应各段记录当时的版本，不作为当前规范。当前说明见 [README](../README.md)，发布门槛见 [验收清单](ACCEPTANCE.md)。
 
+## 功能键分层重设计（1.18.0 · 106，2026-10-20）
+
+保留用户选定的「极简·专注」配色与 02「抱书的小王子」图标，重新组织功能键：
+
+- 阅读固定「目录 / 排版 / 听书 / 更多」，日夜与低频阅读操作归「更多」，书签保留在顶栏。阅读翻章不再连带跳转声音，回到朗读处需显式操作。
+- 听书固定「目录 / 语速 / 声音 / 定时」，播放 / 跳句仍为主操作；系统音频输出归声音设置。迷你播放器只负责展开与播放，展开保持原暂停状态，结束需确认。
+- 书架分开筛选、排序和显示，添加与整理有文字，隐藏入口归「更多」；搜索时精简页首，小屏键盘上方可直接操作结果。
+- 大字号阅读两列布局、独立滚动；修正小屏浮层横向撑宽，并补充回归断言。
+
+验证：最终构建 106 在 iPhone 17e / iOS 27 **102 / 102（86 核心 + 16 UI）通过**，iPhone SE 3 / iOS 27 **16 / 16 UI 通过**；Mac Catalyst Debug 编译通过。两端 Release 归档通过，签名、权限、dSYM、隐私清单、图标与 Debug 入口隔离检查通过；Mac 为 Apple Silicon / Intel 通用构建。测试使用临时书库与系统声音，未调用付费服务。
+
+发布：用户追加要求「完成后推送 TestFlight」。iOS 于 **17:56:47**、Mac 于 **17:58:27**（本机时间）分别收到 `Upload succeeded`，两个平台均返回 `EXPORT SUCCEEDED`，退出码为 0。版本均为 **1.18.0（106）**；Apple 回执为 `Uploaded package is processing`，**尚未确认 TestFlight 可安装**。未提交正式 App Store 审核，未改测试组或邀请测试者。
+
+- 规范与实际截图：[功能键状态契约](../Design/v15-focus/ACTIONS.md)、[预览](../Design/v15-focus/action-previews/index.html)。
+- 测试：`build/ActionLayoutRelease.xcresult`、`build/ActionLayoutReleaseSmall.xcresult`；日志 `build/action-layout-release-tests.log`、`build/action-layout-release-small.log`。
+- 归档：`build/Tingye-106.xcarchive`、`build/Tingye-106-mac.xcarchive`；日志 `build/archive-106.log`、`build/archive-106-mac.log`。
+- 来源与验证：`build/release-106-source-manifest.json`、`build/release-106-ios-checks.json`、`build/release-106-mac-checks.json`。
+- 上传：`build/upload-106.log`、`build/upload-106-mac.log`、`build/release-106-upload-summary.json`。
+- 真机 VoiceOver、真实蓝牙 / AirPlay、来电、付费云语音和双设备 iCloud 仍须验收，详见 [验收清单](ACCEPTANCE.md)。
+
 ## 抱书的小王子图标（1.18.0 · 105，2026-10-20）
 
 用户从三个预览方向中选定 **02「抱书的小王子」**，并明确要求完成后上传。默认图标与所选 PNG 完全一致，新增同构图的夜间 / 灰阶着色资源；替换现有 AppIcon 资源，不改应用名称或功能代码。Mac 使用由默认图标生成的系统图标。

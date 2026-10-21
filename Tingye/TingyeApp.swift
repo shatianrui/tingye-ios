@@ -53,6 +53,11 @@ enum UIReview {
     /// UI 回归只写临时书库，不修改用户书籍，也不连接云语音 / iCloud。
     @MainActor static func makeFixture() throws -> AppModel? {
         guard isolated else { return nil }
+        if ProcessInfo.processInfo.arguments.contains("-ui-reset-preferences") {
+            // 仅自动化临时书库：写入可修改的初值。启动参数域会锁住 @AppStorage，无法测试用户切换。
+            UserDefaults.standard.set("paper", forKey: "reader.paper")
+            UserDefaults.standard.set("list", forKey: "shelf.layout")
+        }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ui-review-" + UUID().uuidString)
         let disk = try LibraryDisk(owner: "fixture", base: root)
         let text = (1...12).map { "第\($0)句，" + String(repeating: "安静读书，", count: 22) + "这一段结束。" }.joined()
@@ -126,7 +131,7 @@ enum UIReview {
 }
 #endif
 
-/// 四个独立导航栈；轻量页签栏与可选的迷你播放器。
+/// 三个独立导航栈；轻量页签栏与可选的迷你播放器。
 struct RootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -134,18 +139,15 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
         TabView(selection: $model.tab) {
-            tabRoot { NowView(player: model.player) }
-                .tabItem { Label("今日", systemImage: Icon.now) }
-                .tag(0)
             tabRoot { ShelfView() }
-                .tabItem { Label("书架", systemImage: Icon.shelf) }
+                .tabItem { Label("书", systemImage: Icon.shelf) }
+                .tag(0)
+            tabRoot { NowView(player: model.player) }
+                .tabItem { Label("读", systemImage: Icon.read) }
                 .tag(1)
-            tabRoot { StatsView() }
-                .tabItem { Label("足迹", systemImage: Icon.stats) }
+            tabRoot { StatsView(ji: true) }
+                .tabItem { Label("己", systemImage: Icon.profile) }
                 .tag(2)
-            tabRoot { ProfileView() }
-                .tabItem { Label("设置", systemImage: Icon.settings) }
-                .tag(3)
         }
         .toolbar(.hidden, for: .tabBar)
         if !navigationHidden { LibraryNavigationBar(player: model.player) }
@@ -208,9 +210,9 @@ struct RootView: View {
     #if DEBUG
     private func driveUIReview() {
         guard let screen = UIReview.screen else { return }
-        if screen == "now" { model.tab = 0; return }
+        if screen == "now" { model.tab = 1; return }
         if screen == "import-results", UIReview.isolated {
-            model.tab = 1
+            model.tab = 0
             model.run("正在导入书籍") {
                 let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -222,9 +224,8 @@ struct RootView: View {
             }
             return
         }
-        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { model.tab = 1; return }
-        if screen.hasPrefix("stats") { model.tab = 2; return }
-        if ["profile", "appearance", "backup"].contains(screen) { model.tab = 3; return }
+        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { model.tab = 0; return }
+        if screen.hasPrefix("stats") || ["profile", "appearance", "backup"].contains(screen) { model.tab = 2; return }
         if screen == "comic", let comic = model.entries.first(where: \.isComic) { model.open(comic); return }
         guard let entry = model.lastBook ?? model.entries.first(where: \.local) else { return }
         if screen == "reader-original" {
@@ -263,11 +264,11 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 保留各页签导航状态，选中态只用字重和柔和紫色，不再添加粗短横。
+/// 保留各页签导航状态；选中态用朱砂字重与小方块，宋体小字。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
-    private let items = [("今日", Icon.now), ("书架", Icon.shelf), ("足迹", Icon.stats), ("设置", Icon.settings)]
+    private let items = [("书", Icon.shelf), ("读", Icon.read), ("己", Icon.profile)]
     var body: some View {
         VStack(spacing: 0) {
             if player.book != nil {
@@ -281,9 +282,10 @@ private struct LibraryNavigationBar: View {
                 ForEach(items.indices, id: \.self) { index in
                     let selected = model.tab == index
                     Button { model.tab = index } label: {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 3) {
                             ThemeIcon(symbol: items[index].1, size: 24, weight: selected ? .medium : .regular)
-                            Text(items[index].0).font(.caption2.weight(selected ? .semibold : .regular)).fixedSize(horizontal: false, vertical: true)
+                            Text(items[index].0).font(Theme.serifSemibold(11, relativeTo: .caption2)).fixedSize(horizontal: false, vertical: true)
+                            Rectangle().fill(selected ? Theme.accent : .clear).frame(width: 4, height: 4).clipShape(RoundedRectangle(cornerRadius: 1))
                         }
                         .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 54)
@@ -332,7 +334,7 @@ extension UIUserInterfaceStyle {
 
 // MARK: - 迷你播放器（底部导航上方）
 
-/// 迷你播放器：浅灰紫表面、细进度线；不再用整块墨色争夺页面注意力。
+/// 迷你播放器只负责「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
 struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -347,7 +349,7 @@ struct MiniPlayer: View {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 34)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(Theme.serifSemibold(15, relativeTo: .subheadline))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
@@ -357,13 +359,15 @@ struct MiniPlayer: View {
                                     .lineLimit(1)
                             }
                             Spacer(minLength: 0)
+                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(Theme.ink3)
+                                .accessibilityHidden(true)
                         }
-                        .contentShape(Rectangle())
+                        .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("打开播放器：\(book.title)")
+                    .accessibilityLabel("展开听书页：\(book.title)，\(subtitle)")
+                    .accessibilityIdentifier("miniPlayer.open")
 
-                    HStack(spacing: 4) {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
@@ -378,30 +382,7 @@ struct MiniPlayer: View {
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
-
-                    Button { Haptics.light(); player.skip(1) } label: {
-                        ThemeIcon(symbol: Icon.nextSentence, size: 22)
-                            .foregroundStyle(Theme.ink2)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PressButtonStyle(scale: 0.88))
-                    .accessibilityLabel("下一句")
-
-                    Menu {
-                        if let entry = model.entries.first(where: { $0.id == book.id }) {
-                            Button { model.open(entry) } label: { Label("回到正文", systemImage: Icon.read) }
-                        }
-                        Button { player.stop() } label: { Label("结束听书", systemImage: Icon.stopListening) }
-                    } label: {
-                        ThemeIcon(symbol: Icon.more, size: 20)
-                            .foregroundStyle(Theme.ink3)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("听书更多操作")
-                    }
+                    .accessibilityIdentifier("miniPlayer.toggle")
                 }
                 .padding(.leading, 8)
                 .padding(.trailing, 4)

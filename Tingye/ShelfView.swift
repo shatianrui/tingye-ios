@@ -97,20 +97,15 @@ struct ShelfView: View {
     private var shelfContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if isRoot { shelfHeader }
+                // 搜索时让出页首与类型栏，键盘上方直接呈现结果；取消后恢复完整浏览入口。
+                if isRoot && !searching { shelfHeader }
                 if !editing {
-                    if searching { shelfSearchBar.padding(.top, 18) }
+                    if searching { shelfSearchBar }
                     else { searchEntry.padding(.top, isRoot ? 18 : 0) }
                 }
-                if isRoot && !editing {
-                    kindSelector.padding(.top, 14)
-                } else {
-                    shelfControls.padding(.top, 16)
-                }
-                if editing || !searchText.isEmpty || hasFilters {
-                    if isRoot && !editing { shelfControls.padding(.top, 8) }
-                    scopeNotice.padding(.top, 8)
-                }
+                if isRoot && !editing && !searching { kindSelector.padding(.top, 14) }
+                shelfControls.padding(.top, editing ? 16 : 8)
+                if editing || !searchText.isEmpty || hasFilters { scopeNotice.padding(.top, 8) }
                 if sorted.isEmpty && folders.isEmpty {
                     emptyState
                 } else {
@@ -211,7 +206,7 @@ struct ShelfView: View {
         }
         .onChange(of: sorted.map(\.id)) { _, ids in selection.formIntersection(Set(ids)) }
         .onChange(of: model.tab) { _, tab in
-            if tab != 1 { finishEditing(); searching = false }
+            if tab != 0 { finishEditing(); searching = false }
             else { consumeSearchRequest() }
         }
         .onAppear(perform: consumeSearchRequest)
@@ -270,10 +265,10 @@ struct ShelfView: View {
                 Button { showingImportResults = true } label: { Label("最近导入结果", systemImage: Icon.list) }
             }
         } label: {
-            ThemeIcon(symbol: Icon.add, size: 22, weight: .medium)
-                .foregroundStyle(Theme.accent)
-                .frame(width: 44, height: 44)
-                .background(Theme.accentSoft, in: Circle())
+            Label("添加", systemImage: Icon.add)
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accent)
+                .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
+                .background(Theme.accentSoft, in: Capsule())
                 .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")
@@ -308,7 +303,7 @@ struct ShelfView: View {
                 VStack(alignment: .leading, spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
-            viewOptions
+            libraryOptions
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -330,27 +325,25 @@ struct ShelfView: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private var shelfControls: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(editing ? "选择要整理的书" : (!searchText.isEmpty ? "搜索结果" : (hasFilters ? "筛选结果" : (model.sortOrder == "added" ? "最近加入" : "全部藏书"))))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
-                    .accessibilityAddTraits(.isHeader)
-                if editing || hasFilters || !searchText.isEmpty {
+    @ViewBuilder private var shelfControls: some View {
+        if editing {
+            adaptiveRow {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("选择要整理的书").font(.headline).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                     Text(summary).font(.caption).foregroundStyle(Theme.ink3)
                 }
-            }
-            Spacer(minLength: 12)
-            if editing {
+                Spacer(minLength: 8)
                 Button(selection == Set(sorted.map(\.id)) && !sorted.isEmpty ? "取消全选" : "全选") {
                     selection = selection == Set(sorted.map(\.id)) ? [] : Set(sorted.map(\.id))
                 }
-                .font(.subheadline.weight(.medium))
-                .frame(minWidth: 44, minHeight: 44)
-                .disabled(sorted.isEmpty)
-            } else {
-                viewOptions
+                .font(.subheadline.weight(.medium)).frame(minWidth: 44, minHeight: 44)
+                .disabled(sorted.isEmpty).accessibilityIdentifier("shelf.selectAll")
+            }
+        } else {
+            viewOptions
+            if hasFilters || !searchText.isEmpty {
+                Text("\(!searchText.isEmpty ? "搜索结果" : "筛选结果") · \(summary)")
+                    .font(.caption).foregroundStyle(Theme.ink3).padding(.top, 4)
             }
         }
     }
@@ -362,7 +355,7 @@ struct ShelfView: View {
                     .font(.caption)
                     .foregroundStyle(Theme.ink3)
             }
-            if !searchText.isEmpty {
+            if !searchText.isEmpty && !searching {
                 Label(kind == "comics" ? "正在搜索所有分组中的漫画" : "正在搜索所有分组中的书籍", systemImage: Icon.search)
                     .font(.caption)
                     .foregroundStyle(Theme.ink2)
@@ -375,6 +368,7 @@ struct ShelfView: View {
                     Button("清除筛选") { filter = "全部"; category = nil }
                         .font(.caption.weight(.medium))
                         .frame(minHeight: 44)
+                        .accessibilityIdentifier("shelf.clearFilters")
                     Spacer()
                 }
             }
@@ -382,7 +376,18 @@ struct ShelfView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// 浏览工具各司其职：筛选改变范围，排序改变顺序，显示改变呈现方式。
     private var viewOptions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) { filterMenu; Spacer(minLength: 0); sortMenu; layoutMenu }
+            VStack(alignment: .leading, spacing: 4) {
+                HStack { filterMenu; Spacer(minLength: 8); layoutMenu }
+                sortMenu
+            }
+        }
+    }
+
+    private var filterMenu: some View {
         Menu {
             Picker("阅读状态", selection: $filter) {
                 Text("全部状态").tag("全部")
@@ -393,36 +398,66 @@ struct ShelfView: View {
                 Text("全部分类").tag(String?.none)
                 ForEach(categories, id: \.self) { Text($0).tag(Optional($0)) }
             }
+            if hasFilters { Button("清除筛选") { filter = "全部"; category = nil } }
+        } label: {
+            optionLabel(Icon.filter, hasFilters ? "筛选 · \((filter == "全部" ? 0 : 1) + (category == nil ? 0 : 1))" : "筛选")
+                .foregroundStyle(hasFilters ? Theme.accent : Theme.ink2)
+        }
+        .accessibilityLabel("筛选书籍")
+        .accessibilityValue(hasFilters ? [filter == "全部" ? nil : filter, category].compactMap { $0 }.joined(separator: "，") : "全部状态与分类")
+        .accessibilityIdentifier("shelf.filter")
+    }
+
+    private var sortMenu: some View {
+        Menu {
             Picker("排序", selection: $model.sortOrder) {
                 Label("最近阅读", systemImage: Icon.sortRecent).tag("recent")
                 Label("书名", systemImage: Icon.sortTitle).tag("title")
                 Label("作者", systemImage: Icon.sortAuthor).tag("author")
                 Label("添加时间", systemImage: Icon.sortAdded).tag("added")
             }
-            Picker("显示方式", selection: $layout) {
-                Label("封面网格", systemImage: Icon.grid).tag("grid")
-                Label("书目列表", systemImage: Icon.list).tag("list")
+        } label: { optionLabel(Icon.sort, sortLabel) }
+        .foregroundStyle(Theme.ink2)
+        .accessibilityLabel("排序：\(sortLabel)")
+        .accessibilityIdentifier("shelf.sort")
+    }
+
+    private var layoutMenu: some View {
+        Menu {
+            if typeSize.isAccessibilitySize {
+                Text("大字号下使用列表，原有显示偏好保持不变。")
+            } else {
+                Picker("显示方式", selection: $layout) {
+                    Label("封面网格", systemImage: Icon.grid).tag("grid")
+                    Label("书目列表", systemImage: Icon.list).tag("list")
+                }
             }
-            Divider()
-            if hasFilters { Button("清除筛选") { filter = "全部"; category = nil } }
+        } label: { optionLabel(useList ? Icon.list : Icon.grid, useList ? "列表" : "网格") }
+        .foregroundStyle(Theme.ink2)
+        .accessibilityLabel("显示方式：\(useList ? "列表" : "网格")")
+        .accessibilityHint(typeSize.isAccessibilitySize ? "大字号下使用列表，原有显示偏好保持不变" : "切换封面网格或书目列表")
+        .accessibilityIdentifier("shelf.layout")
+    }
+
+    private func optionLabel(_ icon: String, _ text: String) -> some View {
+        Label(text, systemImage: icon).font(.caption.weight(.medium))
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+    }
+
+    private var libraryOptions: some View {
+        Menu {
             if model.hiddenUnlocked {
                 Button { model.hiddenUnlocked = false } label: { Label("收起隐藏书籍", systemImage: Icon.visibilityAction(currentlyVisible: true)) }
             } else {
                 Button { Task { await model.unlockHidden() } } label: { Label("显示隐藏书籍", systemImage: Icon.visibilityAction(currentlyVisible: false)) }
             }
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: Icon.sort).accessibilityHidden(true)
-                Text(sortLabel)
-                Image(systemName: Icon.collapse).font(.caption.weight(.bold)).accessibilityHidden(true)
-            }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(Theme.ink2)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            Label("更多", systemImage: Icon.more).font(.caption)
+                .foregroundStyle(Theme.ink2).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
         }
-        .accessibilityLabel("排序：\(sortLabel)，筛选和显示方式")
-        .accessibilityIdentifier("shelf.view-options")
+        .accessibilityLabel("更多书架操作")
+        .accessibilityIdentifier("shelf.more")
     }
 
     // MARK: 主入口：添加、搜索、整理
@@ -434,6 +469,7 @@ struct ShelfView: View {
                 Button("取消整理", action: finishEditing)
                     .font(.subheadline.weight(.medium))
                     .frame(minHeight: 44)
+                    .accessibilityIdentifier("shelf.finishOrganizing")
             }
         } else if !isRoot {
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -451,6 +487,7 @@ struct ShelfView: View {
                 }
                 .disabled(visibleKindEntries.isEmpty)
                 .accessibilityIdentifier("shelf.organize")
+                libraryOptions
             }
         }
     }
@@ -498,7 +535,7 @@ struct ShelfView: View {
     }
 
     private func consumeSearchRequest() {
-        guard isRoot, model.tab == 1, model.shelfSearchRequested else { return }
+        guard isRoot, model.tab == 0, model.shelfSearchRequested else { return }
         model.shelfSearchRequested = false
         startSearch()
     }
@@ -533,7 +570,7 @@ struct ShelfView: View {
             ContentUnavailableView {
                 Label("从第一本书开始", systemImage: Icon.shelf)
             } description: {
-                Text("支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份。在「＋」中也可使用 WiFi 传书、WebDAV 或 OPDS。")
+                Text("支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份。在「添加」中也可使用 WiFi 传书、WebDAV 或 OPDS。")
             } actions: {
                 Button("导入书籍") { importing = true }
                     .buttonStyle(PrimaryButtonStyle(height: 44))
@@ -711,7 +748,7 @@ struct ShelfView: View {
                     }
                 }
             Text(entry.title)
-                .font(.subheadline.weight(.medium))
+                .font(Theme.serifSemibold(15, relativeTo: .subheadline))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .padding(.top, 8)
@@ -757,7 +794,7 @@ struct ShelfView: View {
                         BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 44)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
-                                .font(.body.weight(.medium))
+                                .font(Theme.serifSemibold(17, relativeTo: .body))
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                             Text(row.author + " · " + model.category(row))
@@ -793,7 +830,10 @@ struct ShelfView: View {
             Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read)
         }
         if !entry.isComic {
-            Button { model.listen(entry.id) } label: {
+            Button {
+                if model.player.book?.id == entry.id { model.showingPlayer = true }
+                else { model.listen(entry.id) }
+            } label: {
                 Label(model.player.book?.id == entry.id ? "打开播放器" : "听书", systemImage: Icon.listen)
             }
         }
@@ -825,12 +865,13 @@ struct ShelfView: View {
                 editButton("移动分组", Icon.folder, disabled: selection.isEmpty) {
                     moveSelection = selection
                     moving = true
-                }
+                }.accessibilityIdentifier("shelf.move")
                 editButton(allSelectedHidden ? "取消隐藏" : "隐藏", Icon.visibilityAction(currentlyVisible: !allSelectedHidden), disabled: selection.isEmpty, action: hideSelectedBooks)
+                    .accessibilityIdentifier("shelf.hide")
                 editButton("删除", Icon.delete, destructive: true, disabled: removableSelection.isEmpty) {
                     removalSelection = removableSelection
                     removing = true
-                }
+                }.accessibilityIdentifier("shelf.delete")
             }
         }
         .padding(12)
@@ -844,7 +885,7 @@ struct ShelfView: View {
         Button(action: action) {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.system(size: 18))
-                Text(title).font(.caption.weight(.medium)).lineLimit(1)
+                Text(title).font(.caption.weight(.medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 54)
@@ -881,7 +922,7 @@ struct ShelfView: View {
         if ids.allSatisfy({ id in model.entries.first { $0.id == id }?.isHidden == hiding }) {
             finishEditing()
             if hiding && !model.hiddenUnlocked {
-                model.notify("已隐藏 \(ids.count) 本书。可在书架排序菜单或设置中验证身份后显示。")
+                model.notify("已隐藏 \(ids.count) 本书。可在书架「更多」或设置中验证身份后显示。")
             }
         }
     }
