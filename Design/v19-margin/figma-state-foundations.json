@@ -1,0 +1,13 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"pageId\":\"0:1\",\"collection\":{\"id\":\"VariableCollectionId:3:2\",\"light\":\"3:0\",\"dark\":\"3:1\"},\"vars\":{\"bg\":\"VariableID:3:3\",\"surface\":\"VariableID:3:4\",\"surface2\":\"VariableID:3:5\",\"ink\":\"VariableID:3:6\",\"ink2\":\"VariableID:3:7\",\"line\":\"VariableID:3:8\",\"accent\":\"VariableID:3:9\",\"accentSoft\":\"VariableID:3:10\",\"onAccent\":\"VariableID:3:11\",\"marker\":\"VariableID:3:12\",\"onMarker\":\"VariableID:3:13\",\"hero\":\"VariableID:3:14\",\"heroInk\":\"VariableID:3:15\",\"onInk\":\"VariableID:3:16\",\"inset\":\"VariableID:3:17\",\"space/sm\":\"VariableID:3:18\",\"space/md\":\"VariableID:3:19\",\"space/lg\":\"VariableID:3:20\",\"radius\":\"VariableID:3:21\",\"buttonRadius\":\"VariableID:3:22\"},\"styles\":{\"Title\":\"S:36ca365fd44ed19955472fab7d0041bc21710c1a,\",\"Section\":\"S:96b3085496327d2fc3caaab9f11e700e2d7ae179,\",\"Body\":\"S:48db0eda7de9dc6e55c60fbeae9fd2f8b86012ff,\",\"Small\":\"S:64db1206aed17344e1980baf4d41691c54cae280,\",\"Kicker\":\"S:da269e9b0a65d5c8890f59f316ffe90427e52b84,\",\"Book\":\"S:0e9d0e0921e8418487c9b7b6cb11451bc40245b3,\",\"Reading\":\"S:654ad1cedd90f5d654b5452e05c3f54f7f3cf1d3,\",\"Display\":\"S:e7e8476f4244195b7c8b770ee67a2b89e5e7547d,\"},\"status\":null,\"libraryError\":\"Error: Not permitted to upsert from library \\\"lk-3167e7e1386e96621fc3b20782e2ec1b199754eeceff2ef04bf90d28a124be6414b67982dc8fb71ea1896b0310c316f54d7b9f0ac598cb3111748728c039a567\\\"\",\"mutatedNodeIds\":[\"0:1\"],\"createdNodeIds\":[],\"counts\":{\"variables\":20,\"textStyles\":8}}"
+    }
+  ],
+  "metadata": {
+    "_meta": {
+      "mcpRequestId": "005055be-df62-4c12-971b-cfa7911370df"
+    }
+  }
+}

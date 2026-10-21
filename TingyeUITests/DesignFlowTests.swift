@@ -7,13 +7,13 @@ final class DesignFlowTests: XCTestCase {
 
     private func launch(_ scene: String, largeType: Bool = false, appearance: String = "light") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-fixture", "-ui-reset-preferences", "-uireview", scene, "-ui-reduce-motion", "-app.appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.original", "NO", "-reader.scrolling", "NO", "-shelf.kind", "books", "-voice.rate", "1.0"]
+        app.launchArguments = ["-ui-fixture", "-ui-reset-preferences", "-uireview", scene, "-ui-reduce-motion", "-ui-appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.original", "NO", "-reader.scrolling", "NO", "-shelf.kind", "books", "-voice.rate", "1.0"]
         if largeType { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
         app.launch()
         return app
     }
-    private func screenshot(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+    private func screenshot(_ app: XCUIApplication, _ name: String, wholeScreen: Bool = false) {
+        let attachment = XCTAttachment(screenshot: wholeScreen ? XCUIScreen.main.screenshot() : app.screenshot())
         attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
@@ -22,6 +22,18 @@ final class DesignFlowTests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(element.isHittable)
+    }
+
+    private func revealAboveDone(_ element: XCUIElement, in app: XCUIApplication) {
+        let done = app.buttons["完成"]
+        // XCUITest can report a control underneath a safe-area inset as hittable.
+        // Scroll the whole target above the fixed footer before tapping it.
+        for _ in 0..<8 {
+            if element.exists && element.isHittable && element.frame.maxY < done.frame.minY { return }
+            app.swipeUp()
+        }
+        XCTAssertTrue(element.isHittable)
+        XCTAssertLessThan(element.frame.maxY, done.frame.minY)
     }
 
     private func cancelConfirmation(in app: XCUIApplication) {
@@ -43,6 +55,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(read.isHittable)
         XCTAssertTrue(app.buttons["now.listen"].isHittable)
         XCTAssertTrue(read.label.contains("继续阅读"))
+        XCTAssertEqual(read.frame.height, app.buttons["now.listen"].frame.height, accuracy: 1, "默认字号的读听按钮不应挤成两行")
         XCTAssertTrue(app.staticTexts["最近在读"].firstMatch.isHittable)
         screenshot(app, "今日-首屏续读与最近在读")
     }
@@ -305,6 +318,56 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["切换夜间纸色"].waitForExistence(timeout: 5))
     }
 
+    func testMarginProfileAndAppearanceRoutesRemainAvailable() {
+        let app = launch("stats")
+        XCTAssertTrue(app.staticTexts["阅读足迹"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["按日查看"].isSelected)
+        screenshot(app, "余白-阅读足迹")
+        let appearance = app.buttons["profile.appearance"]
+        reveal(appearance, in: app)
+        appearance.tap()
+        XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["appearance.light"].isSelected)
+        app.buttons["appearance.dark"].tap()
+        XCTAssertTrue(app.buttons["appearance.dark"].isSelected)
+        screenshot(app, "余白-夜间外观选择")
+        app.navigationBars.firstMatch.buttons.firstMatch.tap()
+        let reading = app.buttons["profile.reading"]
+        // Navigation restores the same list position.
+        XCTAssertTrue(reading.waitForExistence(timeout: 5))
+        reading.tap()
+        XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["系统字体"].isSelected, "外观切换不能改变正文的独立字体偏好")
+        screenshot(app, "余白-夜间阅读排版")
+        let paper = app.buttons["旧书"]
+        revealAboveDone(paper, in: app)
+        paper.tap()
+        XCTAssertTrue(paper.isSelected)
+        app.buttons["完成"].tap()
+        reveal(appearance, in: app)
+        appearance.tap()
+        app.buttons["appearance.light"].tap()
+        XCTAssertTrue(app.buttons["appearance.light"].isSelected)
+        app.navigationBars.firstMatch.buttons.firstMatch.tap()
+        reading.tap()
+        XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        revealAboveDone(app.buttons["旧书"], in: app)
+        XCTAssertTrue(app.buttons["旧书"].isSelected, "全局外观切换不能重置独立选择的纸色")
+    }
+
+    func testMarginDarkPlayerAndReaderKeepControlsReachable() {
+        let app = launch("player", appearance: "dark")
+        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["player.toggle"].isHittable)
+        screenshot(app, "余白-夜间听书")
+        app.terminate()
+        let reader = launch("reader", appearance: "dark")
+        XCTAssertTrue(reader.buttons["reader.preferences"].waitForExistence(timeout: 15))
+        XCTAssertTrue(reader.buttons["reader.back"].isHittable)
+        XCTAssertTrue(reader.buttons["reader.contents"].isHittable)
+        screenshot(reader, "余白-夜间正文")
+    }
+
     func testLandscapePlayerKeepsPlaybackVisible() {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
@@ -314,6 +377,8 @@ final class DesignFlowTests: XCTestCase {
             XCTAssertTrue(app.buttons[id].isHittable)
             XCTAssertTrue(app.frame.contains(app.buttons[id].frame))
         }
-        screenshot(app, "功能键-横屏固定播放控制")
+        XCTAssertGreaterThan(app.frame.width, app.frame.height, "必须实际进入横屏布局")
+        // Xcode 27's application-cropped capture can use portrait bounds after rotation.
+        screenshot(app, "功能键-横屏固定播放控制", wholeScreen: true)
     }
 }

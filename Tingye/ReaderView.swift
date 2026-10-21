@@ -133,9 +133,10 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
-    /// 阅读页按实际纸色选择深浅紫，固定浅纸不会误用夜间浅色控件。
-    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xD97B6C) : Color(hex: 0xA63A2E) }
-    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x211B2C) : .white }
+    /// 按实际纸色选择深浅陶橙，固定浅纸不会误用夜间浅色控件。
+    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xF0AD88) : Color(hex: 0xA44A2C) }
+    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x322017) : .white }
+    private var readerPanelPaper: Color { paper == "paper" ? Theme.surface : prefs.background }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
     private var sentences: [Sentence] { document.sentences(chapter) }
@@ -416,7 +417,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .readerPaperPanel(paper: prefs.background, ink: prefs.foreground, radius: 8)
+        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
         .padding(.horizontal, 12)
         .frame(maxWidth: 760)
         .padding(.top, 4)
@@ -462,7 +463,7 @@ struct ReaderView: View {
         }
         .padding(.horizontal, 8).padding(.bottom, 8)
         .foregroundStyle(prefs.foreground)
-        .readerPaperPanel(paper: prefs.background, ink: prefs.foreground, radius: 8)
+        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
     }
 
     private var moreMenu: some View {
@@ -511,7 +512,7 @@ struct ReaderView: View {
     /// 阅读中的听条只承担播放状态与切换；精细控制统一在听书页。
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
-            .readerPaperPanel(paper: prefs.background, ink: prefs.foreground, radius: 8)
+            .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
     }
 
@@ -590,7 +591,7 @@ struct ReaderView: View {
         guard let sentence = highlightRange else { return page }
         let overlap = NSIntersectionRange(sentence, range)
         guard overlap.length > 0 else { return page }
-        // 分页模式按行画「靛蓝浅底 + 下划线」（CoreTextPageView），滚动模式整句铺软底
+        // 分页模式按行画「陶橙浅底 + 下划线」（CoreTextPageView），滚动模式整句铺软底
         return SpeechHighlight.apply(to: page, sentence: NSRange(location: overlap.location - range.location, length: overlap.length), color: prefs.highlightBand.withAlphaComponent(isDarkPaper ? 0.18 : 0.16))
     }
     private func rebuild(size: CGSize) async {
@@ -1413,11 +1414,10 @@ private struct MoreTypographyView: View {
 }
 
 private extension View {
-    /// 工具条保持实际纸色，用轻投影与细边界分层，不遮蔽正文。
+    /// 工具条保持用户纸色，以细边界而非重投影分层，正文不受工具显隐影响。
     func readerPaperPanel(paper: Color, ink: Color, radius: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: max(16, radius), style: .continuous)
-        return self
-            .background { shape.fill(paper).shadow(color: .black.opacity(0.08), radius: 12, y: 3) }
-            .overlay(shape.strokeBorder(ink.opacity(0.1), lineWidth: 0.5))
+        let shape = RoundedRectangle(cornerRadius: max(24, radius), style: .continuous)
+        return self.background(shape.fill(paper))
+            .overlay(shape.strokeBorder(ink.opacity(0.12), lineWidth: 0.5))
     }
 }

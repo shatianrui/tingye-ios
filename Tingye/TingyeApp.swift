@@ -57,6 +57,11 @@ enum UIReview {
             // 仅自动化临时书库：写入可修改的初值。启动参数域会锁住 @AppStorage，无法测试用户切换。
             UserDefaults.standard.set("paper", forKey: "reader.paper")
             UserDefaults.standard.set("list", forKey: "shelf.layout")
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-ui-appearance"), args.indices.contains(i + 1),
+               ["system", "light", "dark"].contains(args[i + 1]) {
+                UserDefaults.standard.set(args[i + 1], forKey: "app.appearance")
+            }
         }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ui-review-" + UUID().uuidString)
         let disk = try LibraryDisk(owner: "fixture", base: root)
@@ -264,7 +269,7 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 保留各页签导航状态；选中态用朱砂字重与小方块，宋体小字。
+/// 余白导航：三个稳定页签，选中项由石墨胶囊和字重共同标记。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -278,30 +283,35 @@ private struct LibraryNavigationBar: View {
                     .padding(.bottom, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            HStack(spacing: 0) {
+            HStack(spacing: 6) {
                 ForEach(items.indices, id: \.self) { index in
                     let selected = model.tab == index
-                    Button { model.tab = index } label: {
-                        VStack(spacing: 3) {
-                            ThemeIcon(symbol: items[index].1, size: 24, weight: selected ? .medium : .regular)
-                            Text(items[index].0).font(Theme.serifSemibold(11, relativeTo: .caption2)).fixedSize(horizontal: false, vertical: true)
-                            Rectangle().fill(selected ? Theme.accent : .clear).frame(width: 4, height: 4).clipShape(RoundedRectangle(cornerRadius: 1))
+                    Button { Haptics.selection(); model.tab = index } label: {
+                        HStack(spacing: 7) {
+                            ThemeIcon(symbol: items[index].1, size: 21, weight: selected ? .semibold : .regular)
+                            Text(items[index].0).font(.caption.weight(selected ? .semibold : .regular))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
-                        .frame(maxWidth: .infinity, minHeight: 54)
+                        .foregroundStyle(selected ? Theme.onInk : Theme.ink2)
+                        .frame(maxWidth: .infinity, minHeight: 46)
+                        .padding(.vertical, 2)
+                        .background(selected ? Theme.ink : .clear, in: Capsule())
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressButtonStyle(scale: 0.92))
+                    .buttonStyle(PressButtonStyle(scale: 0.96))
                     .accessibilityAddTraits(selected ? .isSelected : [])
                     .accessibilityLabel(items[index].0)
                     .accessibilityIdentifier("navigation.tab.\(index)")
                 }
             }
+            .padding(7)
             .frame(maxWidth: 560)
-            .padding(.top, 8)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(Theme.line.opacity(0.45), lineWidth: 0.5) }
+            .padding(.horizontal, Theme.inset)
+            .padding(.top, 4)
             .frame(maxWidth: .infinity)
             .background(Theme.bg.ignoresSafeArea(edges: .bottom))
-            .overlay(alignment: .top) { InkRule(height: 1.5) }
         }
         .animation(Theme.smoothSpring, value: player.book?.id)
     }
@@ -371,13 +381,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.accent)
+                                ProgressView().controlSize(.small).tint(Theme.onInk)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 26)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 24)
                             }
                         }
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.onInk)
                         .frame(width: 44, height: 44)
+                        .background(Theme.ink, in: Circle())
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -390,8 +401,9 @@ struct MiniPlayer: View {
                 ProgressBar(value: player.progress, tint: Theme.accent, height: 2)
                     .accessibilityHidden(true)
             }
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.line, lineWidth: 0.5) }
         }
     }
     private var subtitle: String {

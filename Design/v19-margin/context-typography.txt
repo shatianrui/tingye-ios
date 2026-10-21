@@ -1,0 +1,153 @@
+const assetPathPrefix = "https://www.figma.com/api/mcp/asset/b135bdc3-672f-4698-a5f0-308f3b69aa34";
+const imgTyIconWifi = `${assetPathPrefix}/a7417.svg`;
+const imgTyIconChevronLeft = `${assetPathPrefix}/7837a.svg`;
+const imgTyIconChevronRight = `${assetPathPrefix}/96748.svg`;
+const imgTyIconSliderHorizontal3 = `${assetPathPrefix}/4578d.svg`;
+const imgTyIconBook = `${assetPathPrefix}/8e41f.svg`;
+const imgTyIconMoon = `${assetPathPrefix}/e0747.svg`;
+const imgTyIconListBullet = `${assetPathPrefix}/2dc78.svg`;
+
+export default function Component() {
+  return (
+    <div className="bg-[var(--bg,#f6f3ec)] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[32px] size-full" data-node-id="11:109" data-name="排版 · 你的阅读方式">
+      <div className="content-stretch flex items-center justify-between relative shrink-0 w-[342px]" data-node-id="11:110" data-name="Native safe area / system status bar">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="11:111">
+          9:41
+        </p>
+        <div className="content-stretch flex gap-[7px] items-start relative shrink-0 w-[66px]" data-node-id="11:112" data-name="System status">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="11:113">
+            ▴
+          </p>
+          <div className="relative shrink-0 size-[13px]" data-node-id="11:114" data-name="TY icon / wifi">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconWifi} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="11:119">
+            ▰
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[22px] items-start min-h-px overflow-clip relative w-[342px]" data-node-id="11:120" data-name="Scroll content">
+        <div className="content-stretch flex items-start justify-between relative shrink-0 w-[342px]" data-node-id="11:121" data-name="Navigation title">
+          <div className="relative shrink-0 size-[20px]" data-node-id="11:122" data-name="TY icon / chevron.left">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronLeft} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[26px] relative shrink-0 text-[19px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="11:124">
+            阅读排版
+          </p>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="11:125">
+            完成
+          </p>
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[41px] relative shrink-0 text-[34px] text-[color:var(--ink,#292d29)] w-[342px]" data-node-id="11:126">
+          读得舒服一点。
+        </p>
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] w-[342px]" data-node-id="11:127">
+          这里的设置只影响阅读正文。已保存的字体和纸色不会被重置。
+        </p>
+        <div className="bg-[var(--surface,#fffdf8)] content-stretch flex flex-col items-start p-[16px] relative rounded-[var(--radius,24px)] shrink-0 w-[342px]" data-node-id="11:128" data-name="Settings group">
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:129" data-name="字号">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="11:130">
+              Aa
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:131">
+              字号
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:132">
+              22
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:133" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+          <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[310px]" data-node-id="11:135" data-name="Rectangle" />
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:136" data-name="行间距">
+            <div className="relative shrink-0 size-[20px]" data-node-id="11:137" data-name="TY icon / slider-horizontal-3">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconSliderHorizontal3} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:147">
+              行间距
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:148">
+              1.6
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:149" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+          <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[310px]" data-node-id="11:151" data-name="Rectangle" />
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:152" data-name="阅读字体">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="11:153">
+              Aa
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:154">
+              阅读字体
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:155">
+              系统字体
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:156" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+          <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[310px]" data-node-id="11:158" data-name="Rectangle" />
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:159" data-name="阅读方式">
+            <div className="relative shrink-0 size-[20px]" data-node-id="11:160" data-name="TY icon / book">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconBook} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:163">
+              阅读方式
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:164">
+              分页
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:165" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+          <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[310px]" data-node-id="11:167" data-name="Rectangle" />
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:168" data-name="纸色">
+            <div className="relative shrink-0 size-[20px]" data-node-id="11:169" data-name="TY icon / moon">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconMoon} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:171">
+              纸色
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:172">
+              宣纸
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:173" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+          <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[310px]" data-node-id="11:175" data-name="Rectangle" />
+          <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[310px]" data-node-id="11:176" data-name="段落间距">
+            <div className="relative shrink-0 size-[20px]" data-node-id="11:177" data-name="TY icon / list.bullet">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconListBullet} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[168px]" data-node-id="11:184">
+              段落间距
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="11:185">
+              适中
+            </p>
+            <div className="relative shrink-0 size-[12px]" data-node-id="11:186" data-name="TY icon / chevron.right">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex items-start justify-center relative shrink-0 w-[342px]" data-node-id="11:188" data-name="Home indicator safe area">
+        <div className="bg-[var(--ink,#292d29)] h-[4px] relative rounded-[2px] shrink-0 w-[124px]" data-node-id="11:189" data-name="Rectangle" />
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+The generated code contains image and SVG URL constants, e.g. const image = `${assetPathPrefix}/<asset file name>`, where assetPathPrefix is declared once at the top of the code and every asset URL interpolates it. These URLs are temporary download sources and expire after 7 days. Download each asset into the project with curl -L, then replace its URL in the generated code with a reference to the downloaded asset. Never use the temporary URLs as runtime image sources.

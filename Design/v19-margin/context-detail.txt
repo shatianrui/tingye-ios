@@ -1,0 +1,156 @@
+const assetPathPrefix = "https://www.figma.com/api/mcp/asset/5eb48770-c553-4b8b-901e-2aad7796bc2d";
+const imgTyIconWifi = `${assetPathPrefix}/a7417.svg`;
+const imgTyIconChevronLeft = `${assetPathPrefix}/7837a.svg`;
+const imgTyIconListBullet = `${assetPathPrefix}/2dc78.svg`;
+const imgTyIconChevronRight = `${assetPathPrefix}/96748.svg`;
+const imgTyIconFolder = `${assetPathPrefix}/3785c.svg`;
+
+function MarginButtonSecondary({ className }: { className?: string }) {
+  return (
+    <div className={className || "bg-[var(--surface,#fffdf8)] content-stretch flex items-start justify-center p-[14px] relative rounded-[16px] w-[120px]"} data-node-id="7:7" data-name="Margin/Button/Secondary">
+      <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:6">
+        听书
+      </p>
+    </div>
+  );
+}
+
+function MarginButtonPrimary({ className }: { className?: string }) {
+  return (
+    <div className={className || "bg-[var(--ink,#292d29)] content-stretch flex items-center justify-center p-[14px] relative rounded-[16px] w-[200px]"} data-node-id="7:4" data-name="Margin/Button/Primary">
+      <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--onink,#fffdf8)] whitespace-nowrap" data-node-id="7:3">
+        继续阅读
+      </p>
+    </div>
+  );
+}
+
+export default function Component() {
+  return (
+    <div className="bg-[var(--bg,#f6f3ec)] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[32px] size-full" data-node-id="7:349" data-name="书籍详情 · 每一本都有位置">
+      <div className="content-stretch flex items-center justify-between relative shrink-0 w-[342px]" data-node-id="7:350" data-name="Native safe area / system status bar">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:351">
+          9:41
+        </p>
+        <div className="content-stretch flex gap-[7px] items-start relative shrink-0 w-[66px]" data-node-id="7:352" data-name="System status">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:165">
+            ▴
+          </p>
+          <div className="relative shrink-0 size-[13px]" data-node-id="8:166" data-name="TY icon / wifi">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconWifi} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:171">
+            ▰
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[22px] items-start min-h-px overflow-clip relative w-[342px]" data-node-id="7:356" data-name="Scroll content">
+        <div className="content-stretch flex items-start justify-between relative shrink-0 w-[342px]" data-node-id="7:357" data-name="Navigation title">
+          <div className="relative shrink-0 size-[20px]" data-node-id="8:172" data-name="TY icon / chevron.left">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronLeft} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[26px] relative shrink-0 text-[19px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:359">
+            书籍详情
+          </p>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:360">
+            完成
+          </p>
+        </div>
+        <div className="content-stretch flex flex-col gap-[14px] items-center relative shrink-0 w-[342px]" data-node-id="7:361" data-name="Book identity">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[9.45px] h-[179.55px] items-start p-[15.75px] relative rounded-[4px] shrink-0 w-[126px]" data-node-id="7:362" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[25.2px] relative shrink-0 text-[9.45px] text-[color:var(--accent,#a64b2d)] w-[94.5px]" data-node-id="I7:362;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[29.925px] relative shrink-0 text-[20.47px] text-[color:var(--ink,#292d29)] w-[94.5px]" data-node-id="I7:362;7:10">
+              瓦尔登湖
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[1.575px] relative shrink-0 w-[40.95px]" data-node-id="I7:362;7:11" data-name="印记" />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[22px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:366">
+            瓦尔登湖
+          </p>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:367">
+            亨利·戴维·梭罗
+          </p>
+        </div>
+        <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal items-center justify-between leading-[19px] relative shrink-0 text-[13px] w-[342px] whitespace-nowrap" data-node-id="7:368" data-name="EPUB · 18 章">
+          <p className="relative shrink-0 text-[color:var(--ink,#292d29)]" data-node-id="7:369">
+            EPUB · 18 章
+          </p>
+          <p className="relative shrink-0 text-[color:var(--ink2,#686c63)]" data-node-id="7:370">
+            已读 42%
+          </p>
+        </div>
+        <div className="content-stretch flex gap-[12px] items-start relative shrink-0 w-[342px]" data-node-id="7:371" data-name="Primary actions">
+          <MarginButtonPrimary className="bg-[var(--ink,#292d29)] content-stretch flex h-[50px] items-center justify-center p-[14px] relative rounded-[16px] shrink-0 w-[210px]" />
+          <MarginButtonSecondary className="bg-[var(--surface,#fffdf8)] content-stretch flex h-[50px] items-start justify-center p-[14px] relative rounded-[16px] shrink-0 w-[120px]" />
+        </div>
+        <div className="content-stretch flex items-center justify-between relative shrink-0 w-[342px]" data-node-id="7:376" data-name="关于这本书">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[26px] relative shrink-0 text-[19px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:377">
+            关于这本书
+          </p>
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink2,#686c63)] w-[342px]" data-node-id="7:378">
+          在瓦尔登湖畔，找回生活最简单的形状。一本关于独处、自然与内心自由的书。
+        </p>
+        <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[342px]" data-node-id="7:379" data-name="目录">
+          <div className="relative shrink-0 size-[20px]" data-node-id="8:174" data-name="TY icon / list.bullet">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconListBullet} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[270px]" data-node-id="7:381">
+            目录
+          </p>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:382">
+            18 章
+          </p>
+          <div className="relative shrink-0 size-[12px]" data-node-id="8:181" data-name="TY icon / chevron.right">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+          </div>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[342px]" data-node-id="7:384" data-name="Rectangle" />
+        <div className="content-stretch flex gap-[14px] items-center py-[13px] relative shrink-0 w-[342px]" data-node-id="7:385" data-name="分组">
+          <div className="relative shrink-0 size-[20px]" data-node-id="8:183" data-name="TY icon / folder">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconFolder} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[25px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[270px]" data-node-id="7:387">
+            分组
+          </p>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:388">
+            我的书架
+          </p>
+          <div className="relative shrink-0 size-[12px]" data-node-id="8:185" data-name="TY icon / chevron.right">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconChevronRight} />
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex items-start justify-center relative shrink-0 w-[342px]" data-node-id="7:390" data-name="Home indicator safe area">
+        <div className="bg-[var(--ink,#292d29)] h-[4px] relative rounded-[2px] shrink-0 w-[124px]" data-node-id="7:391" data-name="Rectangle" />
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Margin/BookCover
+**Node ID:** 7:12
+
+Margin app-specific component; SwiftUI token binding and Dynamic Type adaptation required.
+
+## Margin/Button/Primary
+**Node ID:** 7:4
+
+Margin app-specific component; SwiftUI token binding and Dynamic Type adaptation required.
+
+## Margin/Button/Secondary
+**Node ID:** 7:7
+
+Margin app-specific component; SwiftUI token binding and Dynamic Type adaptation required.
+The generated code contains image and SVG URL constants, e.g. const image = `${assetPathPrefix}/<asset file name>`, where assetPathPrefix is declared once at the top of the code and every asset URL interpolates it. These URLs are temporary download sources and expire after 7 days. Download each asset into the project with curl -L, then replace its URL in the generated code with a reference to the downloaded asset. Never use the temporary URLs as runtime image sources.

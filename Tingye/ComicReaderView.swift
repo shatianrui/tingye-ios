@@ -93,7 +93,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(12)
-                .glassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .glassSurface(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 Spacer()
                 VStack(spacing: 4) {
                     HStack {
@@ -131,7 +131,7 @@ struct ComicReaderView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 8)
-                .glassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .glassSurface(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             }
             .frame(maxWidth: 760)
             .padding(.horizontal, 24)

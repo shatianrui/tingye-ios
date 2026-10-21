@@ -1,0 +1,56 @@
+[
+  {
+    "pageId": "15:63",
+    "rowId": "21:63",
+    "createdNodeIds": [
+      "21:63",
+      "21:64",
+      "21:65",
+      "21:66"
+    ],
+    "mutatedNodeIds": [
+      "21:64",
+      "21:65",
+      "21:66",
+      "15:65"
+    ],
+    "removedNodeIds": [
+      "20:65",
+      "20:64",
+      "20:63"
+    ],
+    "descendantCount": 3,
+    "nodeTypes": {
+      "FRAME": 3
+    },
+    "images": [
+      {
+        "id": "21:64",
+        "name": "日间 · GPT 原图 / AppIcon.png",
+        "width": 1024,
+        "height": 1024,
+        "imageHash": "b941774ebc5d58a16157eb9a7e931e82919c27d7"
+      },
+      {
+        "id": "21:65",
+        "name": "深色 · 同构色彩适配 / AppIcon-dark.png",
+        "width": 1024,
+        "height": 1024,
+        "imageHash": "d48df6913b8cd76e2613617f9d1aae7f4a79752f"
+      },
+      {
+        "id": "21:66",
+        "name": "着色 · 中性灰阶 / AppIcon-tinted.png",
+        "width": 1024,
+        "height": 1024,
+        "imageHash": "b7be7272b9582505dac8077ecaaca021b2d93b83"
+      }
+    ],
+    "format": "raster artwork; no new image-generation calls",
+    "historicalMastersPreserved": [
+      "12:63",
+      "12:69",
+      "12:75"
+    ]
+  }
+]

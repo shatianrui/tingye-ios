@@ -1,0 +1,148 @@
+const assetPathPrefix = "https://www.figma.com/api/mcp/asset/cddfce6b-4e9c-4cee-badf-51cca021af18";
+const imgTyIconWifi = `${assetPathPrefix}/a7417.svg`;
+const imgTyIconBackwardEndFill = `${assetPathPrefix}/3500d.svg`;
+const imgTyIconPauseFill = `${assetPathPrefix}/0e1a4.svg`;
+const imgTyIconForwardEndFill = `${assetPathPrefix}/b0041.svg`;
+const imgTyIconListBullet = `${assetPathPrefix}/696d8.svg`;
+const imgTyIconSpeakerWave2 = `${assetPathPrefix}/d9860.svg`;
+const imgTyIconMoon = `${assetPathPrefix}/fed77.svg`;
+
+export default function Component() {
+  return (
+    <div className="bg-[var(--bg,#f6f3ec)] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[32px] size-full" data-node-id="7:178" data-name="听书 · 逐句陪伴">
+      <div className="content-stretch flex items-center justify-between relative shrink-0 w-[342px]" data-node-id="7:179" data-name="Native safe area / system status bar">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:180">
+          9:41
+        </p>
+        <div className="content-stretch flex gap-[7px] items-start relative shrink-0 w-[66px]" data-node-id="7:181" data-name="System status">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:76">
+            ▴
+          </p>
+          <div className="relative shrink-0 size-[13px]" data-node-id="8:77" data-name="TY icon / wifi">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconWifi} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:82">
+            ▰
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[22px] items-start min-h-px overflow-clip relative w-[342px]" data-node-id="7:185" data-name="Scroll content">
+        <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal items-center justify-between leading-[19px] relative shrink-0 text-[13px] w-[342px] whitespace-pre" data-node-id="7:186" data-name="⌄  收起">
+          <p className="relative shrink-0 text-[color:var(--ink,#292d29)]" data-node-id="7:187">{`⌄  收起`}</p>
+          <p className="relative shrink-0 text-[color:var(--ink2,#686c63)]" data-node-id="7:188">{`看原文   ···`}</p>
+        </div>
+        <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex gap-[16px] items-start p-[18px] relative rounded-[var(--radius,24px)] shrink-0 w-[342px]" data-node-id="7:189" data-name="Listening label">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[3.9px] h-[74.1px] items-start p-[6.5px] relative rounded-[4px] shrink-0 w-[52px]" data-node-id="7:190" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[10.4px] relative shrink-0 text-[3.9px] text-[color:var(--accent,#a64b2d)] w-[39px]" data-node-id="I7:190;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[12.35px] relative shrink-0 text-[8.45px] text-[color:var(--ink,#292d29)] w-[39px]" data-node-id="I7:190;7:10">
+              瓦尔登湖
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[0.65px] relative shrink-0 w-[16.9px]" data-node-id="I7:190;7:11" data-name="印记" />
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[5px] items-start relative shrink-0 w-[236px] whitespace-nowrap" data-node-id="7:194" data-name="Title and chapter">
+            <p className="font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[22px] text-[color:var(--ink,#292d29)]" data-node-id="7:195">
+              瓦尔登湖
+            </p>
+            <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)]" data-node-id="7:196">
+              第 3 / 18 章 · 声音
+            </p>
+          </div>
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[16px] relative shrink-0 text-[11px] text-[color:var(--accent,#a64b2d)] whitespace-pre" data-node-id="7:197">{`●  正在朗读`}</p>
+        <p className="[word-break:break-word] font-['Noto_Serif_SC:Regular'] font-normal leading-[36px] relative shrink-0 text-[20px] text-[color:var(--ink2,#686c63)] w-[342px]" data-node-id="7:198">
+          我步入丛林，因为我希望生活得有意义。
+        </p>
+        <div className="bg-[var(--accentsoft,#f5e6da)] content-stretch flex gap-[12px] items-start p-[16px] relative rounded-[16px] shrink-0 w-[342px]" data-node-id="7:199" data-name="Current sentence">
+          <div className="bg-[var(--accent,#a64b2d)] h-[90px] relative rounded-[2px] shrink-0 w-[3px]" data-node-id="7:200" data-name="Rectangle" />
+          <div className="[word-break:break-word] font-['Noto_Serif_SC:Regular'] font-normal leading-[0] relative shrink-0 text-[20px] text-[color:var(--ink,#292d29)] w-[295px]" data-node-id="7:201">
+            <p className="leading-[36px] mb-0">我愿意深深地扎入生活，</p>
+            <p className="leading-[36px]">吮尽生活的骨髓。</p>
+          </div>
+        </div>
+        <p className="[word-break:break-word] font-['Noto_Serif_SC:Regular'] font-normal leading-[36px] relative shrink-0 text-[20px] text-[color:var(--ink2,#686c63)] w-[342px]" data-node-id="7:202">
+          把一切并非生活的内容剔除得干净利落。
+        </p>
+      </div>
+      <div className="bg-[var(--surface,#fffdf8)] content-stretch flex flex-col gap-[18px] items-start p-[18px] relative rounded-[var(--radius,24px)] shrink-0 w-[342px]" data-node-id="7:203" data-name="Playback console">
+        <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal items-center justify-between leading-[19px] relative shrink-0 text-[13px] w-[306px] whitespace-nowrap" data-node-id="7:204" data-name="本章第 12 / 86 句">
+          <p className="relative shrink-0 text-[color:var(--ink,#292d29)]" data-node-id="7:205">
+            本章第 12 / 86 句
+          </p>
+          <p className="relative shrink-0 text-[color:var(--ink2,#686c63)]" data-node-id="7:206">
+            约剩 8 分钟
+          </p>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] content-stretch flex h-[3px] items-start relative rounded-[2px] shrink-0 w-[306px]" data-node-id="7:207" data-name="Reading progress">
+          <div className="bg-[var(--accent,#a64b2d)] h-[3px] relative rounded-[2px] shrink-0 w-[73.44px]" data-node-id="7:208" data-name="Rectangle" />
+        </div>
+        <div className="content-stretch flex gap-[32px] items-center justify-center relative shrink-0 w-[306px]" data-node-id="7:209" data-name="Transport">
+          <div className="relative shrink-0 size-[24px]" data-node-id="8:83" data-name="TY icon / backward.end.fill">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconBackwardEndFill} />
+          </div>
+          <div className="bg-[var(--ink,#292d29)] content-stretch flex items-start p-[20px] relative rounded-[32px] shrink-0 w-[64px]" data-node-id="7:211" data-name="Play">
+            <div className="relative shrink-0 size-[24px]" data-node-id="8:86" data-name="TY icon / pause.fill">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconPauseFill} />
+            </div>
+          </div>
+          <div className="relative shrink-0 size-[24px]" data-node-id="8:89" data-name="TY icon / forward.end.fill">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconForwardEndFill} />
+          </div>
+        </div>
+        <div className="content-stretch flex items-start justify-between relative shrink-0 w-[306px]" data-node-id="7:214" data-name="Fixed tools">
+          <div className="content-stretch flex flex-col gap-[8px] items-center relative shrink-0 w-[58px]" data-node-id="7:215" data-name="目录">
+            <div className="relative shrink-0 size-[19px]" data-node-id="8:92" data-name="TY icon / list.bullet">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconListBullet} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:217">
+              目录
+            </p>
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col font-['Noto_Sans_SC:Regular'] font-normal gap-[8px] items-center leading-[19px] relative shrink-0 text-[13px] w-[58px] whitespace-nowrap" data-node-id="7:218" data-name="1.0×">
+            <p className="relative shrink-0 text-[color:var(--ink,#292d29)]" data-node-id="8:99">
+              1×
+            </p>
+            <p className="relative shrink-0 text-[color:var(--ink2,#686c63)]" data-node-id="7:220">
+              1.0×
+            </p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[8px] items-center relative shrink-0 w-[58px]" data-node-id="7:221" data-name="声音">
+            <div className="relative shrink-0 size-[19px]" data-node-id="8:100" data-name="TY icon / speaker.wave.2">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconSpeakerWave2} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:223">
+              声音
+            </p>
+          </div>
+          <div className="content-stretch flex flex-col gap-[8px] items-center relative shrink-0 w-[58px]" data-node-id="7:224" data-name="定时">
+            <div className="relative shrink-0 size-[19px]" data-node-id="8:104" data-name="TY icon / moon">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconMoon} />
+            </div>
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:226">
+              定时
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="content-stretch flex items-start justify-center relative shrink-0 w-[342px]" data-node-id="7:227" data-name="Home indicator safe area">
+        <div className="bg-[var(--ink,#292d29)] h-[4px] relative rounded-[2px] shrink-0 w-[124px]" data-node-id="7:228" data-name="Rectangle" />
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Margin/BookCover
+**Node ID:** 7:12
+
+Margin app-specific component; SwiftUI token binding and Dynamic Type adaptation required.
+The generated code contains image and SVG URL constants, e.g. const image = `${assetPathPrefix}/<asset file name>`, where assetPathPrefix is declared once at the top of the code and every asset URL interpolates it. These URLs are temporary download sources and expire after 7 days. Download each asset into the project with curl -L, then replace its URL in the generated code with a reference to the downloaded asset. Never use the temporary URLs as runtime image sources.

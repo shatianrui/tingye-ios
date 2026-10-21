@@ -5,7 +5,7 @@ import Charts
 /// 按日的总时长来自 `readingSeconds`（旧版本也有）；时段与排行来自 1.14 起记录的 `sessions`。
 struct StatsView: View {
     @EnvironmentObject var model: AppModel
-    /// v16「墨」：己页签 = 统计 + 今日摘句 + 设置题录清单；从设置页进入的纯统计为 false。
+    /// 余白：阅读足迹与设置题录共用己页签；独立统计入口保持可用。
     var ji = false
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @AppStorage("app.appearance") private var appearance = "system"
@@ -16,7 +16,7 @@ struct StatsView: View {
     @State private var export: ExportedBook?
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
-    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 44
+    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 52
     @Environment(\.dynamicTypeSize) private var typeSize
     private var summaryLayout: AnyLayout {
         typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 14))
@@ -53,7 +53,7 @@ struct StatsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center, spacing: 8) {
-                    PageMasthead(title: ji ? "己" : "足迹", subtitle: ji ? "读过的书，和这台设备上的书。" : "阅读和听书的时间。")
+                    PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。")
                     Button("目标") { editGoal() }
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 44)
@@ -65,13 +65,13 @@ struct StatsView: View {
                     .accessibilityLabel("更多阅读数据操作")
                 }
                 .font(.subheadline).foregroundStyle(Theme.ink2)
-                HStack(spacing: 0) {
+                HStack(spacing: 6) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
                             Text(item.rawValue).font(.subheadline.weight(period == item ? .semibold : .regular))
-                                .foregroundStyle(period == item ? Theme.accent : Theme.ink3)
+                                .foregroundStyle(period == item ? Theme.onInk : Theme.ink3)
                                 .frame(maxWidth: .infinity, minHeight: 44)
-                                .background(period == item ? Theme.accentSoft : .clear, in: Capsule())
+                                .background(period == item ? Theme.ink : Theme.surface2, in: Capsule())
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -84,11 +84,11 @@ struct StatsView: View {
                 header
                 chart
                 if period == .day && offset == 0 { goalCard }
+                if ji { settingsSection }
+                if period == .day && offset == 0 { DailyQuoteCard() }
                 sessionsCard
                 ranking
                 overview
-                if period == .day && offset == 0 { DailyQuoteCard() }
-                if ji { settingsSection }
             }
             .padding(.horizontal, Theme.inset)
             .padding(.top, 12).padding(.bottom, 32)
@@ -126,20 +126,20 @@ struct StatsView: View {
         let reading = periodSessions.filter { !$0.listening }.reduce(0) { $0 + $1.seconds }
         let listening = periodSessions.filter(\.listening).reduce(0) { $0 + $1.seconds }
         let unclassified = max(0, totalSeconds - reading - listening)
-        return VStack(alignment: .leading, spacing: 6) {
-            Text(period == .day && offset == 0 ? "今天 · 慢慢读" : "留给阅读的时间")
-                .font(Theme.kicker).tracking(1.2).foregroundStyle(Theme.ink3)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(period == .day && offset == 0 ? "今天 · 留给阅读的时间" : "留给阅读的时间")
+                .font(Theme.kicker).tracking(0.6).foregroundStyle(Theme.ink3)
+            HStack(alignment: .firstTextBaseline, spacing: 7) {
                 Text(Self.durationNumber(totalSeconds))
-                    .font(Theme.display(durationSize)).monospacedDigit()
+                    .font(.system(size: durationSize, weight: .regular)).monospacedDigit()
                     .minimumScaleFactor(0.5).lineLimit(1)
                 Text(Self.durationUnit(totalSeconds)).font(.body).foregroundStyle(Theme.ink2)
             }
             .foregroundStyle(Theme.ink).accessibilityElement(children: .combine)
             summaryLayout {
-                Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Rectangle().fill(Theme.ink).frame(width: 9, height: 9) }
+                Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Circle().fill(Theme.ink).frame(width: 8, height: 8) }
                     .foregroundStyle(Theme.ink)
-                Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Rectangle().fill(Theme.accent).frame(width: 9, height: 9) }
+                Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Circle().fill(Theme.accent).frame(width: 8, height: 8) }
                     .foregroundStyle(Theme.accent)
             }
             .font(.subheadline)
@@ -150,6 +150,7 @@ struct StatsView: View {
             }
             if period == .all { Text(intervalLabel).font(.caption).foregroundStyle(Theme.ink2) }
         }
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -249,8 +250,10 @@ struct StatsView: View {
                         .font(.system(size: 14, weight: .medium)).foregroundStyle(fraction >= 1 ? Theme.accent : Theme.ink2)
                 }
                 .foregroundStyle(Theme.ink)
-                ProgressBar(value: fraction, tint: Theme.accent, height: 6)
+                ProgressBar(value: fraction, track: Theme.surface, tint: Theme.accent, height: 6)
             }
+            .padding(18)
+            .background(Theme.hero, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -321,7 +324,8 @@ struct StatsView: View {
             }
             Chart(points, id: \.date) { point in
                 BarMark(x: .value("日期", point.date, unit: unit), y: .value("分钟", point.minutes))
-                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.accent : Theme.ink)
+                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.accent : Theme.hero)
+                    .cornerRadius(6)
             }
             .chartXScale(domain: displayed.start...displayed.end)
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
@@ -335,6 +339,7 @@ struct StatsView: View {
                 }
             }
         }
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -417,22 +422,26 @@ struct StatsView: View {
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            RowDivider()
             Text("设置")
-                .font(Theme.serifSemibold(22, relativeTo: .title3))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44)
-                .padding(.top, 16)
+                .padding(.top, 8)
                 .accessibilityAddTraits(.isHeader)
             settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
+                .accessibilityIdentifier("profile.reading")
             settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
             settingsEntry(icon: Icon.voice, title: "声音与朗读", subtitle: "语音服务、音色与朗读设置") { settingsRoute = .voice }
             settingsEntry(icon: Icon.appearance, title: "外观模式", value: appearanceName) { settingsRoute = .appearance }
+                .accessibilityIdentifier("profile.appearance")
             settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
             settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
+                .accessibilityIdentifier("profile.backup")
             settingsEntry(icon: Icon.highlight, title: "全部书摘与笔记", value: "\(model.noteCount) 条") { settingsRoute = .notes }
             settingsEntry(icon: Icon.settings, title: "更多设置", subtitle: "应用锁、隐藏书籍、隐私与关于") { settingsRoute = .profile }
         }
+        .padding(.horizontal, 16).padding(.bottom, 10)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .padding(.top, 8)
     }
 
@@ -440,7 +449,7 @@ struct StatsView: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 ThemeIcon(symbol: icon, size: 22, weight: .medium)
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.accent)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {

@@ -30,7 +30,7 @@ struct DailyQuoteCard: View {
                         Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
                     }
                 }
-                .font(.body)
+                .font(Theme.serif(20, relativeTo: .title3))
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.ink)
@@ -50,7 +50,9 @@ struct DailyQuoteCard: View {
                 }
                 .padding(.top, 2)
             }
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.hero, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }

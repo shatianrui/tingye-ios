@@ -1,0 +1,217 @@
+const assetPathPrefix = "https://www.figma.com/api/mcp/asset/4b629526-03ca-4a1b-ab19-34548d1955bc";
+const imgTyIconWifi = `${assetPathPrefix}/a7417.svg`;
+const imgTyIconPlusCircleFill = `${assetPathPrefix}/70f76.svg`;
+const imgTyIconBooksVertical = `${assetPathPrefix}/366ce.svg`;
+const imgTyIconBook = `${assetPathPrefix}/d0b4e.svg`;
+const imgTyIconPersonCropCircle = `${assetPathPrefix}/2a34e.svg`;
+
+export default function Component() {
+  return (
+    <div className="bg-[var(--bg,#f6f3ec)] content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[32px] size-full" data-node-id="7:98" data-name="书 · 我的书架">
+      <div className="content-stretch flex items-center justify-between relative shrink-0 w-[342px]" data-node-id="7:99" data-name="Native safe area / system status bar">
+        <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="7:100">
+          9:41
+        </p>
+        <div className="content-stretch flex gap-[7px] items-start relative shrink-0 w-[66px]" data-node-id="7:101" data-name="System status">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:54">
+            ▴
+          </p>
+          <div className="relative shrink-0 size-[13px]" data-node-id="8:55" data-name="TY icon / wifi">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconWifi} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink,#292d29)] whitespace-nowrap" data-node-id="8:60">
+            ▰
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[22px] items-start min-h-px overflow-clip relative w-[342px]" data-node-id="7:105" data-name="Scroll content">
+        <div className="content-stretch flex flex-col gap-[9px] items-start relative shrink-0 w-[342px]" data-node-id="7:106" data-name="Page header">
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[16px] relative shrink-0 text-[11px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:107">
+            MY LIBRARY · 本机书库
+          </p>
+          <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-[342px]" data-node-id="7:108" data-name="Title and action">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[41px] relative shrink-0 text-[34px] text-[color:var(--ink,#292d29)] w-[286px]" data-node-id="7:109">
+              书架
+            </p>
+            <div className="relative shrink-0 size-[23px]" data-node-id="8:61" data-name="TY icon / plus.circle.fill">
+              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconPlusCircleFill} />
+            </div>
+          </div>
+        </div>
+        <div className="[word-break:break-word] content-stretch flex font-['Noto_Sans_SC:Regular'] font-normal items-center justify-between leading-[19px] relative shrink-0 text-[13px] w-[342px] whitespace-nowrap" data-node-id="7:111" data-name="12 本书 · 3 本在读">
+          <p className="relative shrink-0 text-[color:var(--ink,#292d29)]" data-node-id="7:112">
+            12 本书 · 3 本在读
+          </p>
+          <p className="relative shrink-0 text-[color:var(--ink2,#686c63)]" data-node-id="7:113">
+            整理
+          </p>
+        </div>
+        <div className="content-stretch flex gap-[8px] items-start relative shrink-0 w-[342px]" data-node-id="7:114" data-name="Book / comic">
+          <div className="bg-[var(--ink,#292d29)] content-stretch flex items-start justify-center p-[9px] relative rounded-[20px] shrink-0 w-[82px]" data-node-id="7:115" data-name="书籍">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--onink,#fffdf8)] whitespace-nowrap" data-node-id="7:116">
+              书籍
+            </p>
+          </div>
+          <div className="bg-[var(--surface2,#ede8de)] content-stretch flex items-start justify-center p-[9px] relative rounded-[20px] shrink-0 w-[82px]" data-node-id="7:117" data-name="漫画">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:118">
+              漫画
+            </p>
+          </div>
+        </div>
+        <div className="content-stretch flex gap-[8px] items-start relative shrink-0 w-[342px]" data-node-id="7:119" data-name="Independent filters">
+          <div className="bg-[var(--surface2,#ede8de)] content-stretch flex items-start justify-center p-[9px] relative rounded-[20px] shrink-0 w-[92px]" data-node-id="7:120" data-name="筛选">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:121">
+              筛选
+            </p>
+          </div>
+          <div className="bg-[var(--surface2,#ede8de)] content-stretch flex items-start justify-center p-[9px] relative rounded-[20px] shrink-0 w-[144px]" data-node-id="7:122" data-name="最近阅读 ↓">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:123">
+              最近阅读 ↓
+            </p>
+          </div>
+          <div className="bg-[var(--ink,#292d29)] content-stretch flex items-start justify-center p-[9px] relative rounded-[20px] shrink-0 w-[90px]" data-node-id="7:124" data-name="列表">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--onink,#fffdf8)] whitespace-nowrap" data-node-id="7:125">
+              列表
+            </p>
+          </div>
+        </div>
+        <div className="content-stretch flex gap-[16px] items-center relative shrink-0 w-[342px]" data-node-id="7:126" data-name="瓦尔登湖">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[3.45px] h-[65.55px] items-start p-[5.75px] relative rounded-[4px] shrink-0 w-[46px]" data-node-id="7:127" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[9.2px] relative shrink-0 text-[3.45px] text-[color:var(--accent,#a64b2d)] w-[34.5px]" data-node-id="I7:127;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[10.925px] relative shrink-0 text-[7.47px] text-[color:var(--ink,#292d29)] w-[34.5px]" data-node-id="I7:127;7:10">
+              瓦尔登湖
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[0.575px] relative shrink-0 w-[14.95px]" data-node-id="I7:127;7:11" data-name="印记" />
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[5px] items-start relative shrink-0 w-[234px]" data-node-id="7:131" data-name="Book information">
+            <p className="font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[234px]" data-node-id="7:132">
+              瓦尔登湖
+            </p>
+            <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] w-[234px]" data-node-id="7:133">
+              亨利·戴维·梭罗 · 已读 42%
+            </p>
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:134">
+            详情
+          </p>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[342px]" data-node-id="7:135" data-name="Rectangle" />
+        <div className="content-stretch flex gap-[16px] items-center relative shrink-0 w-[342px]" data-node-id="7:136" data-name="悉达多">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[3.45px] h-[65.55px] items-start p-[5.75px] relative rounded-[4px] shrink-0 w-[46px]" data-node-id="7:137" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[9.2px] relative shrink-0 text-[3.45px] text-[color:var(--accent,#a64b2d)] w-[34.5px]" data-node-id="I7:137;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[10.925px] relative shrink-0 text-[7.47px] text-[color:var(--ink,#292d29)] w-[34.5px]" data-node-id="I7:137;7:10">
+              悉达多
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[0.575px] relative shrink-0 w-[14.95px]" data-node-id="I7:137;7:11" data-name="印记" />
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[5px] items-start relative shrink-0 w-[234px]" data-node-id="7:141" data-name="Book information">
+            <p className="font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[234px]" data-node-id="7:142">
+              悉达多
+            </p>
+            <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] w-[234px]" data-node-id="7:143">
+              赫尔曼·黑塞 · 已读 18%
+            </p>
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:144">
+            详情
+          </p>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[342px]" data-node-id="7:145" data-name="Rectangle" />
+        <div className="content-stretch flex gap-[16px] items-center relative shrink-0 w-[342px]" data-node-id="7:146" data-name="朝花夕拾">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[3.45px] h-[65.55px] items-start p-[5.75px] relative rounded-[4px] shrink-0 w-[46px]" data-node-id="7:147" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[9.2px] relative shrink-0 text-[3.45px] text-[color:var(--accent,#a64b2d)] w-[34.5px]" data-node-id="I7:147;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[10.925px] relative shrink-0 text-[7.47px] text-[color:var(--ink,#292d29)] w-[34.5px]" data-node-id="I7:147;7:10">
+              朝花夕拾
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[0.575px] relative shrink-0 w-[14.95px]" data-node-id="I7:147;7:11" data-name="印记" />
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[5px] items-start relative shrink-0 w-[234px]" data-node-id="7:151" data-name="Book information">
+            <p className="font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[234px]" data-node-id="7:152">
+              朝花夕拾
+            </p>
+            <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] w-[234px]" data-node-id="7:153">
+              鲁迅 · 已读 76%
+            </p>
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:154">
+            详情
+          </p>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[342px]" data-node-id="7:155" data-name="Rectangle" />
+        <div className="content-stretch flex gap-[16px] items-center relative shrink-0 w-[342px]" data-node-id="7:156" data-name="小王子">
+          <div className="bg-[var(--hero,#ebe3d2)] content-stretch flex flex-col gap-[3.45px] h-[65.55px] items-start p-[5.75px] relative rounded-[4px] shrink-0 w-[46px]" data-node-id="7:157" data-name="Margin/BookCover">
+            <p className="[word-break:break-word] font-['Noto_Sans_SC:Medium'] font-medium leading-[9.2px] relative shrink-0 text-[3.45px] text-[color:var(--accent,#a64b2d)] w-[34.5px]" data-node-id="I7:157;7:9">
+              TINGYE
+            </p>
+            <p className="[word-break:break-word] font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[10.925px] relative shrink-0 text-[7.47px] text-[color:var(--ink,#292d29)] w-[34.5px]" data-node-id="I7:157;7:10">
+              小王子
+            </p>
+            <div className="bg-[var(--accent,#a64b2d)] h-[0.575px] relative shrink-0 w-[14.95px]" data-node-id="I7:157;7:11" data-name="印记" />
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[5px] items-start relative shrink-0 w-[234px]" data-node-id="7:161" data-name="Book information">
+            <p className="font-['Noto_Serif_SC:SemiBold'] font-semibold leading-[32px] relative shrink-0 text-[17px] text-[color:var(--ink,#292d29)] w-[234px]" data-node-id="7:162">
+              小王子
+            </p>
+            <p className="font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] w-[234px]" data-node-id="7:163">
+              安托万·德·圣埃克苏佩里 · 已读 0%
+            </p>
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--accent,#a64b2d)] whitespace-nowrap" data-node-id="7:164">
+            详情
+          </p>
+        </div>
+        <div className="bg-[var(--line,#dedcd2)] h-[0.5px] relative shrink-0 w-[342px]" data-node-id="7:165" data-name="Rectangle" />
+      </div>
+      <div className="bg-[var(--surface,#fffdf8)] content-stretch flex items-start justify-between p-[8px] relative rounded-[26px] shrink-0 w-[342px]" data-node-id="7:166" data-name="Navigation / book · read · self">
+        <div className="bg-[var(--ink,#292d29)] content-stretch flex gap-[7px] items-start justify-center p-[13px] relative rounded-[20px] shrink-0 w-[102px]" data-node-id="7:167" data-name="书">
+          <div className="relative shrink-0 size-[18px]" data-node-id="8:64" data-name="TY icon / books.vertical">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconBooksVertical} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--onink,#fffdf8)] whitespace-nowrap" data-node-id="7:169">
+            书
+          </p>
+        </div>
+        <div className="content-stretch flex gap-[7px] items-start justify-center p-[13px] relative rounded-[20px] shrink-0 w-[102px]" data-node-id="7:170" data-name="读">
+          <div className="relative shrink-0 size-[18px]" data-node-id="8:69" data-name="TY icon / book">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconBook} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:172">
+            读
+          </p>
+        </div>
+        <div className="content-stretch flex gap-[7px] items-start justify-center p-[13px] relative rounded-[20px] shrink-0 w-[102px]" data-node-id="7:173" data-name="己">
+          <div className="relative shrink-0 size-[18px]" data-node-id="8:72" data-name="TY icon / person.crop.circle">
+            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgTyIconPersonCropCircle} />
+          </div>
+          <p className="[word-break:break-word] font-['Noto_Sans_SC:Regular'] font-normal leading-[19px] relative shrink-0 text-[13px] text-[color:var(--ink2,#686c63)] whitespace-nowrap" data-node-id="7:175">
+            己
+          </p>
+        </div>
+      </div>
+      <div className="content-stretch flex items-start justify-center relative shrink-0 w-[342px]" data-node-id="7:176" data-name="Home indicator safe area">
+        <div className="bg-[var(--ink,#292d29)] h-[4px] relative rounded-[2px] shrink-0 w-[124px]" data-node-id="7:177" data-name="Rectangle" />
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+Component descriptions: The following components have usage descriptions or documentation links defined in Figma. These descriptions provide important context about the intended usage, best practices, and any constraints for each component. Follow these guidelines when implementing or using these components.
+
+## Margin/BookCover
+**Node ID:** 7:12
+
+Margin app-specific component; SwiftUI token binding and Dynamic Type adaptation required.
+The generated code contains image and SVG URL constants, e.g. const image = `${assetPathPrefix}/<asset file name>`, where assetPathPrefix is declared once at the top of the code and every asset URL interpolates it. These URLs are temporary download sources and expire after 7 days. Download each asset into the project with curl -L, then replace its URL in the generated code with a reference to the downloaded asset. Never use the temporary URLs as runtime image sources.

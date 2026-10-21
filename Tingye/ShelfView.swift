@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// 专注版书架：轻量搜索与筛选，真实封面优先；保留用户选择的网格 / 列表。
+/// 余白书架：开放式书目、纸色封面与清晰的浏览工具；保留用户网格 / 列表偏好。
 struct ShelfView: View {
     /// 当前所在分组；nil 为书库根目录
     var group: String? = nil
@@ -129,7 +129,7 @@ struct ShelfView: View {
         .toolbar(isRoot && !editing ? .hidden : .visible, for: .navigationBar)
         .safeAreaInset(edge: .bottom) { if editing { editBar } }
         .toolbar(.hidden, for: .tabBar)
-        .preference(key: LibraryNavigationHiddenKey.self, value: editing)
+        .preference(key: LibraryNavigationHiddenKey.self, value: editing || searching)
         .animation(Theme.smoothSpring, value: editing)
         .bookImporter(isPresented: $importing)
         .sheet(isPresented: $showingSources) { ImportHubView().environmentObject(model).tint(Theme.accent) }
@@ -234,25 +234,28 @@ struct ShelfView: View {
 
     private var shelfSubtitle: String {
         let noun = kind == "comics" ? "漫画" : "书"
-        return "\(visibleKindEntries.count) 本\(noun) · 累计 \(totalTime)"
+        return "\(visibleKindEntries.count) 本\(noun) · \(visibleKindEntries.filter(\.started).count) 本在读"
     }
 
     private var shelfHeader: some View {
-        adaptiveRow {
-            PageMasthead(title: "书架", subtitle: shelfSubtitle)
-            if !editing {
-                HStack(spacing: 10) {
-                    Button(action: beginEditing) {
-                        Text("整理").font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
-                            .background(Theme.surface2, in: Capsule())
-                    }
-                    .buttonStyle(.plain).foregroundStyle(Theme.ink)
-                    .disabled(visibleKindEntries.isEmpty)
-                    .accessibilityLabel("整理书库")
-                    .accessibilityIdentifier("shelf.organize")
-                    addBooksMenu
-                }.fixedSize(horizontal: true, vertical: false)
+        VStack(alignment: .leading, spacing: 9) {
+            Text("MY LIBRARY / 本机书库").font(Theme.kicker).tracking(1)
+                .foregroundStyle(Theme.accent).accessibilityHidden(true)
+            adaptiveRow {
+                PageMasthead(title: "书架", subtitle: shelfSubtitle)
+                if !editing {
+                    HStack(spacing: 8) {
+                        Button(action: beginEditing) {
+                            Text("整理").font(.subheadline.weight(.medium))
+                                .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
+                        }
+                        .buttonStyle(.plain).foregroundStyle(Theme.ink2)
+                        .disabled(visibleKindEntries.isEmpty)
+                        .accessibilityLabel("整理书库")
+                        .accessibilityIdentifier("shelf.organize")
+                        addBooksMenu
+                    }.fixedSize(horizontal: true, vertical: false)
+                }
             }
         }
     }
@@ -266,9 +269,9 @@ struct ShelfView: View {
             }
         } label: {
             Label("添加", systemImage: Icon.add)
-                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accent)
-                .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.accentSoft, in: Capsule())
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.onInk)
+                .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
+                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")
@@ -277,8 +280,8 @@ struct ShelfView: View {
 
     private var searchEntry: some View {
         Button(action: startSearch) {
-            HStack(spacing: 8) {
-                ThemeIcon(symbol: Icon.search, size: 22)
+            HStack(spacing: 9) {
+                ThemeIcon(symbol: Icon.search, size: 21)
                     .foregroundStyle(Theme.ink3)
                 Text(searchText.isEmpty ? "书名、作者、分类" : searchText)
                     .font(.subheadline)
@@ -287,8 +290,8 @@ struct ShelfView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 14)
-            .frame(minHeight: 46)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .frame(minHeight: 48)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -300,7 +303,9 @@ struct ShelfView: View {
         adaptiveRow {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
+                    .padding(.vertical, 2)
                 VStack(alignment: .leading, spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
+                    .padding(.vertical, 2)
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
             libraryOptions
@@ -442,7 +447,9 @@ struct ShelfView: View {
     private func optionLabel(_ icon: String, _ text: String) -> some View {
         Label(text, systemImage: icon).font(.caption.weight(.medium))
             .fixedSize(horizontal: true, vertical: false)
-            .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .frame(minWidth: 44, minHeight: 44)
+            .background(Theme.surface2, in: Capsule()).contentShape(Rectangle())
     }
 
     private var libraryOptions: some View {
@@ -520,8 +527,8 @@ struct ShelfView: View {
                 }
                 .padding(.leading, 14)
                 .padding(.trailing, query.isEmpty ? 14 : 0)
-                .frame(minHeight: 46)
-                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                .frame(minHeight: 48)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 Button("取消", action: cancelSearch)
                     .font(.subheadline)
                     .frame(minWidth: 44, minHeight: 44)
@@ -624,7 +631,7 @@ struct ShelfView: View {
             adaptiveRow {
                 readingButton(entry, label: label)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                detailLink(entry).padding(.trailing, 10)
+                detailLink(entry).padding(.leading, 4)
             }
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -658,7 +665,7 @@ struct ShelfView: View {
                         .foregroundStyle(entry.started && entry.local ? Theme.accent : Theme.ink3)
                     Spacer(minLength: 0)
                 }
-                Text("详情").font(.caption).foregroundStyle(Theme.ink2)
+                Text("详情").font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
                 Image(systemName: Icon.disclosure).font(.caption2).foregroundStyle(Theme.ink3)
             }
             .frame(minWidth: 44, minHeight: 44)
@@ -791,7 +798,7 @@ struct ShelfView: View {
             ForEach(Array(sorted.enumerated()), id: \.element.id) { index, row in
                 bookCell(row) {
                     HStack(spacing: 14) {
-                        BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 44)
+                        BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 52)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
                                 .font(Theme.serifSemibold(17, relativeTo: .body))
@@ -821,7 +828,7 @@ struct ShelfView: View {
                 RowDivider()
             }
         }
-        .overlay(alignment: .top) { InkRule() }
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder

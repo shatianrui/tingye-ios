@@ -1,0 +1,49 @@
+{
+  "createdAt": "2026-10-21T21:02:53.306711+08:00",
+  "status": "draft-awaiting-selection",
+  "imageProvider": "OpenAI",
+  "model": "gpt-image-2.5-sunburst",
+  "generationInterface": "Figma MCP generate_image",
+  "figmaAICreditsUsed": true,
+  "generationCalls": 2,
+  "figmaFileKey": "xJdLrqBJ9bUkstoEIG1CKY",
+  "figmaSessionId": "d9993d34-ba94-42b5-973e-65741d3fb985",
+  "figmaPageId": "15:63",
+  "figmaComparisonNodeId": "15:64",
+  "artworkGeneratedByModel": true,
+  "originalPixelPostprocessing": "none; original downloaded PNG bytes retained",
+  "previewPostprocessing": "CoreGraphics only arranges images, scales them, applies corner masks and adds presentation labels",
+  "references": [
+    "../v19-margin/runtime/light-overview.jpg",
+    "../v19-margin/runtime/dark-overview.jpg",
+    "../v19-margin/DESIGN.md"
+  ],
+  "referenceInputMethod": "App screenshots reviewed by assistant; visual direction and palette supplied to the image model as text. No direct reference-image input is supported by this tool.",
+  "appIconResourcesReplaced": false,
+  "appVersionUnchanged": "1.21.0 (109)",
+  "archiveOrUploadPerformed": false,
+  "artifacts": [
+    {
+      "file": "a-paper-echo-original.png",
+      "prompt": "prompt-a-paper-echo.txt",
+      "sha256": "33db09b79e9cc7fef3f9ca79917ed8b2ececc8a9a34f03761df220049618ec04",
+      "width": 1024,
+      "height": 1024,
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "hasAlpha": false,
+      "figmaNodeId": "15:65"
+    },
+    {
+      "file": "b-night-pages-original.png",
+      "prompt": "prompt-b-night-pages.txt",
+      "sha256": "d6fa04b552a8bfac3e14560ebc82c5674923e38989a3fc3eb67bdd7d6559aec7",
+      "width": 1024,
+      "height": 1024,
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "hasAlpha": false,
+      "figmaNodeId": "15:66"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 
-/// 以正文为主的听书页：紧凑书名栏、柔和跟读、明确句序号与可拖动进度。
+/// 余白听书页：暖沙书签、衬线跟读与石墨控制台；句序号与定位始终真实。
 /// 大字号或低高度窗口改为整页滚动，确保控制区始终可达。
 struct PlayerView: View {
     @EnvironmentObject var model: AppModel
@@ -170,7 +170,7 @@ struct PlayerView: View {
             HStack(alignment: .top, spacing: 12) {
                 if !typeSize.isAccessibilitySize {
                     Button { showingCover = true } label: {
-                        BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 44)
+                        BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 52)
                     }.buttonStyle(.plain).accessibilityLabel("查看《\(book.title)》封面")
                         .accessibilityIdentifier("player.cover")
                 }
@@ -187,14 +187,15 @@ struct PlayerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(16)
+            .background(Theme.hero, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
         .foregroundStyle(content)
         .padding(.horizontal, Theme.inset).padding(.top, 10).padding(.bottom, 12)
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) { RowDivider() }
     }
 
-    // MARK: 句子流：灰紫色轻高亮当前句；上下文保持可读，轻点跳转
+    // MARK: 句子流：暖色表面与短竖线标记当前句；上下文可读，轻点定位
 
     private var sentenceStream: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -213,8 +214,9 @@ struct PlayerView: View {
             if let sentence = player.currentSentence {
                 VStack(spacing: 0) {
                     Text(sentence.text)
-                        .font(.title3).lineSpacing(8)
+                        .font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(8)
                         .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .markerHighlight()
                         .id(player.position)
                         .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
@@ -250,8 +252,8 @@ struct PlayerView: View {
     private func lyricLine(_ text: String, offset: Int) -> some View {
         Button { Haptics.light(); player.skip(offset) } label: {
             Text(text)
-                .font(.body).lineSpacing(6)
-                .foregroundStyle(Theme.ink3)
+                .font(Theme.serif(18, relativeTo: .body)).lineSpacing(6)
+                .foregroundStyle(Theme.ink2)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -269,10 +271,13 @@ struct PlayerView: View {
             transportRow
             footer
         }
-        .padding(.horizontal, Theme.inset).padding(.top, 14).padding(.bottom, 10)
+        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 12)
+        .frame(maxWidth: 560)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Theme.line.opacity(0.4), lineWidth: 0.5) }
+        .padding(.horizontal, Theme.inset).padding(.bottom, 8)
         .frame(maxWidth: 600).frame(maxWidth: .infinity)
         .background(Theme.bg.ignoresSafeArea(edges: .bottom))
-        .overlay(alignment: .top) { InkRule(height: 1.5) }
     }
 
     private var transportRow: some View {
@@ -284,9 +289,9 @@ struct PlayerView: View {
                 ZStack {
                     Circle().fill(Theme.ink)
                     if player.buffering { ProgressView().tint(Theme.onInk) }
-                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 32).foregroundStyle(Theme.onInk) }
+                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 30).foregroundStyle(Theme.onInk) }
                 }
-                .frame(width: 72, height: 72)
+                .frame(width: 68, height: 68)
             }
             .buttonStyle(PressButtonStyle(scale: 0.94))
             .accessibilityLabel(player.buffering ? "正在准备声音" : (player.playing ? "暂停朗读" : "继续朗读"))

@@ -1,0 +1,27 @@
+{
+  "sourceResultBundle": "build/v19-margin/verified-se.xcresult",
+  "sourceLog": "build/v19-margin/verified-se.log",
+  "result": "Passed",
+  "totalTestCount": 104,
+  "passedTests": 104,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "coreTests": 86,
+  "uiTests": 18,
+  "device": {
+    "architecture": "arm64",
+    "deviceId": "DBD3F316-5B81-41E3-8EFA-80A52190D0DD",
+    "deviceName": "Tingye Action Layout SE",
+    "modelName": "iPhone SE (3rd generation)",
+    "osBuildNumber": "24A434",
+    "osVersion": "27.0",
+    "platform": "iOS Simulator"
+  },
+  "runtimeWarnings": [
+    "SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active.",
+    "AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+  ],
+  "supplementalLandscapeResult": "build/v19-margin/landscape-capture.xcresult",
+  "catalystBuildLog": "build/v19-margin/catalyst-build.log",
+  "limitations": "See VALIDATION.md; simulator/offline checks are not physical-device or paid-service acceptance."
+}

@@ -1,0 +1,22 @@
+{
+  "fileKey": "xJdLrqBJ9bUkstoEIG1CKY",
+  "sessionId": "cfc7a793-61cf-46c5-83f4-f31b779fda2c",
+  "mutatedVariableIds": [
+    "VariableID:3:7",
+    "VariableID:3:9"
+  ],
+  "modeId": "3:0",
+  "values": {
+    "ink2": {
+      "from": "#686C63",
+      "to": "#62665D"
+    },
+    "accent": {
+      "from": "#A64B2D",
+      "to": "#A44A2C"
+    }
+  },
+  "reason": "4.5:1 minimum small-text contrast on hero and surface2; dark values unchanged.",
+  "verifiedScreenshot": "previews/figma-now-contrast-verified.png",
+  "nodeId": "7:13"
+}

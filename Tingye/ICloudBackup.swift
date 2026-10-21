@@ -745,12 +745,12 @@ struct ICloudBackupView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("保存整本书，也延续阅读位置")
-                    .font(.caption).foregroundStyle(Theme.ink2).padding(.bottom, 4)
+                PageMasthead(title: "安心保管。", subtitle: "你的书，始终属于你。")
+                    .padding(.bottom, 16)
                 if let transfer = model.icloud {
                     sectionTitle("当前操作")
                     ICloudTransferCard(transfer: transfer)
-                        .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                 }
 
                 sectionTitle("保存当前书库")
@@ -762,7 +762,7 @@ struct ICloudBackupView: View {
                 }
                 .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 52)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                 if let upload = model.backupUpload {
                     VStack(alignment: .leading, spacing: 8) {
                         ICloudUploadRow(status: upload)
@@ -771,7 +771,7 @@ struct ICloudBackupView: View {
                                 .frame(minHeight: 44)
                         }
                     }
-                    .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                 }
 
                 sectionTitle("恢复书库")
@@ -781,7 +781,7 @@ struct ICloudBackupView: View {
                 Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。")
                     .font(.caption).foregroundStyle(Theme.ink2)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Theme.accentSoft.opacity(0.55), in: RoundedRectangle(cornerRadius: 20))
 
                 sectionTitle("自动同步")
                 Toggle(isOn: $syncProgress) {
@@ -792,7 +792,7 @@ struct ICloudBackupView: View {
                     }
                 }
                 .tint(Theme.accent).padding(16)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                 ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
                 if syncProgress {
                     Button("立即检查进度同步") { model.refreshProgressSync() }

@@ -2,6 +2,69 @@
 
 > 本文件记录实际上传与历代设计；1.17.0（103）及更早部分保留可用性修订前 README 的原文。历史段落中的「当前版本」、导航、文件路径、验证状态仅对应各段记录当时的版本，不作为当前规范。当前说明见 [README](../README.md)，发布门槛见 [验收清单](ACCEPTANCE.md)。
 
+## GPT Image「纸间回声」图标（1.21.0 · 110，2026-10-21）
+
+用户要求按软件 UI 使用 ChatGPT 图片生成制作图标，随后要求「应用并推送 TestFlight」。按前述推荐采用 **A「纸间回声」**，B「静夜翻页」仅保留为未使用候选。UI 和业务源码不变；营销版本仍为 1.21.0，构建号递增至 **110**。
+
+- 日间图标为 **OpenAI `gpt-image-2.5-sunburst` 原图**，通过 Figma 的图片生成接口制作；正式 PNG 与所示 A 原图逐字节一致。
+- 深色 / 着色由同一 A 位图做背景选择、边缘去白边与色调适配；着色逐像素 R=G=B。不是将 B 用作深色版，也没有重新绘制书页几何。应用阶段没有新增图片生成调用。
+- 三张资源均为 **1024×1024、8-bit RGB、无 alpha**，已同步到 [Figma 正式资源](https://www.figma.com/design/xJdLrqBJ9bUkstoEIG1CKY?node-id=21-63)。原候选和 109 图标均保留。
+- 137 个构建 / 测试输入与 109 比较，仅更换 3 个 PNG 和工程 / 重建脚本的构建号；之前未提交的 UI 工作保留，未 reset、revert 或创建 Git 提交。
+
+验证：构建 110 在 iPhone SE 3 / iOS 27.0 **104 / 104 Debug 回归通过（86 核心 + 18 UI），0 失败、0 跳过**。iOS arm64、Mac Catalyst arm64 + x86_64 Release 归档成功。版本、归档签名、iCloud / Keychain 权限、dSYM、隐私清单、测试入口隔离和包内图标检查通过；编译资产中所有图标摘要都不同于 109，Mac 默认图标与 iOS 相同。原有编译告警未借图标更新改动。
+
+发布：两个平台均收到 **`Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0**。Apple 最后回执为 `Uploaded package is processing`，**尚未确认 TestFlight 已可安装**。未提交正式 App Store 审核，未更改测试组或邀请测试者。
+
+- 图标、来源、适配说明：[纸间回声](../Design/icon-margin-gpt/README.md)；[正式三变体](../Design/icon-margin-gpt/final/appearances.png)。
+- 测试：`build/Release110Tests.xcresult`、`build/release-110-tests.log`、`build/release-110-test-summary.json`。
+- 归档：`build/Tingye-110.xcarchive`、`build/Tingye-110-mac.xcarchive`；日志 `build/archive-110.log`、`build/archive-110-mac.log`。
+- 检查：`build/release-110-source-manifest.json`、`build/verify-release-110.py`、`build/release-110-{ios,mac}-checks.json`。
+- 上传：`build/upload-110.log`、`build/upload-110-mac.log`；[保留摘要](../Design/icon-margin-gpt/final/testflight-110.json)与 `build/release-110-upload-summary.json`。
+- 日志时间戳原样保留；iOS 上传日志墙钟早于归档日志，未据此推算跨进程先后或耗时。上传结论依据实际成功回执和退出码。
+- 真机、实际安装、云语音、跨设备 iCloud 与完整桌面交互不在这轮模拟器 / 包检查覆盖内。
+
+## 余白 / Margin 重设计与「折页声窗」图标（1.21.0 · 109，2026-10-21）
+
+用户在 v19 设计与原生实现交付后追加要求「推送 TestFlight」。沿用既有 iOS/iPadOS + Mac Catalyst 双端流程，将版本递增为 **1.21.0（109）**；保留此前未提交的 v18/v19 工作，没有 reset、revert 或创建 Git 提交。
+
+- 设计：[可编辑 Figma](https://www.figma.com/design/xJdLrqBJ9bUkstoEIG1CKY)，30 张界面稿、语义变量与本地组件、3 张图标母版；[实现规范](../Design/v19-margin/DESIGN.md)与[运行截图](../Design/v19-margin/runtime/README.md)。
+- 界面：暖纸 / 石墨 / 陶橙、首页左右续读卡、开放书架列表、阅读足迹与前移设置、统一的读听工具和二级面板。原有功能、导航、保存的字体和独立纸色不重置。
+- 图标：「折页声窗」，日间 / 深色 / 着色三变体；1024×1024、RGB 无 alpha。
+- 发布准备只递增工程与重建辅助脚本的版本配置；冻结 **137 个构建 / 测试输入**，再次校验 SHA-256。没有再改业务与 UI 源码。
+
+验证：构建 109 在 iPhone SE 3 / iOS 27.0 完成 **104 / 104 Debug 自动化回归（86 核心 + 18 UI），0 失败、0 跳过**。双端 Release 归档通过；版本、Bundle ID、归档签名、iCloud / Keychain 权限、dSYM UUID、隐私清单和包内图标检查通过；Release 不包含 DEBUG 演示 / 测试入口或测试 bundle。iOS 为 arm64，Mac 为 Apple Silicon / Intel 通用构建。模拟器测试使用临时书库、系统声音，未调用付费服务。
+
+| 平台 | 上传成功回执（本机时间） | 证据 |
+| --- | --- | --- |
+| iOS / iPadOS | **20:17:28** | `build/upload-109.log` |
+| Mac Catalyst | **20:24:22** | `build/upload-109-mac.log` |
+
+两个平台均返回 **`Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0**，Apple 最后回执为 `Uploaded package is processing`。这证明上传已被接收，**不证明 TestFlight 已可安装**。未提交正式 App Store 审核，未修改测试组或邀请测试者。
+
+- 测试：`build/Release109Tests.xcresult`、`build/release-109-tests.log`、`build/release-109-test-summary.json`。
+- 归档：`build/Tingye-109.xcarchive`、`build/Tingye-109-mac.xcarchive`；日志 `build/archive-109.log`、`build/archive-109-mac.log`。
+- 冻结与检查：`build/release-109-source-manifest.json`、`build/verify-release-109.py`、`build/release-109-ios-checks.json`、`build/release-109-mac-checks.json`。
+- 上传摘要：`build/release-109-upload-summary.json`；可随源码保留的副本 [testflight-109.json](../Design/v19-margin/testflight-109.json)。
+- 原设计交付的 108 测试、截图与 `validation-summary.json` 保留原版本含义，不冒充 109 的运行截图；109 已独立复跑完整测试。
+- 真机云语音、蓝牙 / 来电、跨设备 iCloud、Face ID、安装与完整 Catalyst 交互验收仍未覆盖；见 [设计验收边界](../Design/v19-margin/VALIDATION.md)。
+
+## 青听重设计与「字」图标（1.20.0 · 108，2026-10-21）
+
+用户要求调用 Figma 重新设计 UI 与图标，选定新方向 **「青听」** 并要求落地后推送 TestFlight。
+
+- 设计稿：Figma [听页 Tingye · 重设计（UI + 图标）](https://www.figma.com/design/2pbCXocDkORKA8Dl0Y5X5U)——颜色变量（日夜间双模式）、字阶与组件、读 / 书 / 听书 / 阅读 / 己五屏、图标三变体。
+- 视觉：v16 朱砂 `#A63A2E` → **青松 `#2E6B4F`**（夜间 `#8CC2A5`）全套令牌（accentSoft / onAccent / marker / readingHighlight 同步）；纸色 `#F7F4EC` / 夜 `#141619`；卡片圆角 12→16、按钮 12→14；阅读器跟读带与外观预览缩略图同步。信息架构与功能零改动（书 / 读 / 己、v15 交互契约不变）。
+- 图标：本地渲染 A「字」/ B「题签」/ C「山月」/ D「折页」四候选（`Design/render-app-icon-v15-concepts.swift`），用户选定 **A「字」**——青松渐变底、宋体「听」立骨、字下三道声弧（夜间声弧浅青 `#8CC2A5`），日间 / 深色 / 着色三变体，渲染管线 `Design/render-app-icon-v16.swift`，1024×1024 无 alpha 校验通过。旧「线装书题签」图标源稿保留于 `Design/icon-ink/`。
+
+验证：iPhone 17e / iOS 27 模拟器 **102 / 102（86 核心 + 16 UI）通过**；iOS 与 Mac Catalyst Release 归档通过（版本 1.20.0（108）、Apple Distribution 签名）。首次上传因图标含 alpha 通道被 `exportArchive` 拒绝（exit 70），改为 `noneSkipLast` 无 alpha 渲染并重新归档后通过。测试使用临时书库与系统声音，未调用付费服务。
+
+发布：iOS 于 **14:40:53**、Mac 于 **14:43:58**（本机时间）分别收到 `Upload succeeded`，两个平台均返回 `EXPORT SUCCEEDED`，退出码为 0。版本均为 **1.20.0（108）**；Apple 回执为处理中，**尚未确认 TestFlight 可安装**。未提交正式 App Store 审核，未改测试组或邀请测试者。
+
+- 归档：`build/Tingye-108.xcarchive`、`build/Tingye-108-mac.xcarchive`；日志 `build/archive-108.log`、`build/archive-108-mac.log`。
+- 上传：`build/upload-108.log`、`build/upload-108-mac.log`。
+- 测试：`build/release-108-tests.log`、`build/Release108Tests.xcresult`。
+- 真机 VoiceOver、真实蓝牙 / AirPlay、来电、付费云语音和双设备 iCloud 仍须验收，详见 [验收清单](ACCEPTANCE.md)。
+
 ## 墨 · Ink 全盘重设计与新图标（1.19.0 · 107，2026-10-21）
 
 用户要求「全部重新设计」，从 A「书房」/ B「墨」/ C「星野」三个高保真方向稿中选定 **B「墨 · Ink」**，并要求同步重设计应用图标后上传 TestFlight。

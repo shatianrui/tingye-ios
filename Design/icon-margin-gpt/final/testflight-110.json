@@ -1,0 +1,91 @@
+{
+  "version": "1.21.0",
+  "build": "110",
+  "recordedAt": "2026-10-21T21:38:13.411728+08:00",
+  "icon": "A 纸间回声 / Paper Echo",
+  "selectionContext": "Applied previously recommended A after user requested application and TestFlight upload; B is not shipped.",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "imageGenerationCallsThisReleasePhase": 0,
+  "lightIconMatchesGPTOriginal": true,
+  "darkAndTintedSource": "Same A artwork; raster background/tonal adaptation and neutral grayscale, not newly generated geometry.",
+  "figmaURL": "https://www.figma.com/design/xJdLrqBJ9bUkstoEIG1CKY?node-id=21-63",
+  "sourceManifest": "build/release-110-source-manifest.json",
+  "testFlightInstallabilityConfirmed": false,
+  "appStoreReviewSubmitted": false,
+  "testGroupsChanged": false,
+  "gitCommitCreated": false,
+  "tests": {
+    "configuration": "Debug",
+    "device": "iPhone SE (3rd generation)",
+    "os": "iOS 27.0",
+    "core": 86,
+    "ui": 18,
+    "passed": 104,
+    "failed": 0,
+    "skipped": 0,
+    "resultBundle": "build/Release110Tests.xcresult"
+  },
+  "icons": [
+    {
+      "file": "AppIcon.png",
+      "sha256": "33db09b79e9cc7fef3f9ca79917ed8b2ececc8a9a34f03761df220049618ec04",
+      "size": [
+        1024,
+        1024
+      ],
+      "bitDepth": 8,
+      "color": "RGB",
+      "hasAlpha": false,
+      "figmaNodeId": "21:64"
+    },
+    {
+      "file": "AppIcon-dark.png",
+      "sha256": "35af52869eb0b6f7ac3fceda0704877df9be8508391c6a72e47b692d5659d0e9",
+      "size": [
+        1024,
+        1024
+      ],
+      "bitDepth": 8,
+      "color": "RGB",
+      "hasAlpha": false,
+      "figmaNodeId": "21:65"
+    },
+    {
+      "file": "AppIcon-tinted.png",
+      "sha256": "ee8525b00b8c270ce937e80e103e10253b1cfc33d18996a034cbca1fe7d1a594",
+      "size": [
+        1024,
+        1024
+      ],
+      "bitDepth": 8,
+      "color": "RGB",
+      "hasAlpha": false,
+      "figmaNodeId": "21:66"
+    }
+  ],
+  "platforms": [
+    {
+      "platform": "iOS/iPadOS",
+      "uploadSucceededAtLocalLog": "2026-10-21 18:58:34.518",
+      "exitCode": 0,
+      "exportSucceeded": true,
+      "appleStatusAtReceipt": "Uploaded package is processing",
+      "archive": "build/Tingye-110.xcarchive",
+      "archiveChecks": "build/release-110-ios-checks.json",
+      "uploadLog": "build/upload-110.log",
+      "uploadLogSHA256": "fd54b8415058e04e8cc71c84ea4eeb700cc80674d35fed3e9f519037aa5a04d3"
+    },
+    {
+      "platform": "Mac Catalyst",
+      "uploadSucceededAtLocalLog": "2026-10-21 21:31:53.327",
+      "exitCode": 0,
+      "exportSucceeded": true,
+      "appleStatusAtReceipt": "Uploaded package is processing",
+      "archive": "build/Tingye-110-mac.xcarchive",
+      "archiveChecks": "build/release-110-mac-checks.json",
+      "uploadLog": "build/upload-110-mac.log",
+      "uploadLogSHA256": "d87d72a898f72a010beb2dcc027d431955ccdf82c6ac343d31f799003d50e44f"
+    }
+  ],
+  "timestampNote": "Upload timestamps are copied verbatim from local logs. The iOS upload log wall clock precedes its archive log; no cross-process duration or ordering is inferred from those timestamps."
+}

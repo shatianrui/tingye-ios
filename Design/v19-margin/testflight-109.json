@@ -1,0 +1,44 @@
+{
+  "version": "1.21.0",
+  "build": "109",
+  "design": "v19 Margin / 余白",
+  "recordedAt": "2026-10-21T20:27:16.050876+08:00",
+  "testFlightInstallabilityConfirmed": false,
+  "appStoreReviewSubmitted": false,
+  "testGroupsChanged": false,
+  "gitCommitCreated": false,
+  "sourceManifest": "build/release-109-source-manifest.json",
+  "tests": {
+    "configuration": "Debug",
+    "device": "iPhone SE (3rd generation)",
+    "os": "iOS 27.0",
+    "core": 86,
+    "ui": 18,
+    "passed": 104,
+    "failed": 0,
+    "skipped": 0,
+    "resultBundle": "build/Release109Tests.xcresult"
+  },
+  "platforms": [
+    {
+      "platform": "iOS/iPadOS",
+      "uploadSucceededAt": "2026-10-21T20:17:28.711000+08:00",
+      "exitCode": 0,
+      "exportSucceeded": true,
+      "appleStatusAtReceipt": "Uploaded package is processing",
+      "archive": "build/Tingye-109.xcarchive",
+      "uploadLog": "build/upload-109.log",
+      "uploadLogSHA256": "a09358d56ae6a42226ccca591841bb4497ba9941ad8545b2e5a7f10216302f37"
+    },
+    {
+      "platform": "Mac Catalyst",
+      "uploadSucceededAt": "2026-10-21T20:24:22.759000+08:00",
+      "exitCode": 0,
+      "exportSucceeded": true,
+      "appleStatusAtReceipt": "Uploaded package is processing",
+      "archive": "build/Tingye-109-mac.xcarchive",
+      "uploadLog": "build/upload-109-mac.log",
+      "uploadLogSHA256": "9ce7d11056fee7715c95f6d67fea540ccba9610e35090297b89fda3e7064bd48"
+    }
+  ]
+}

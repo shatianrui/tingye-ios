@@ -102,21 +102,17 @@ struct SourcesView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("从手头开始")
+                    Text("BRING YOUR BOOKS")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Theme.accent)
-                    Text("文件、电脑、书库，\n都收进这一页。")
-                        .font(Theme.serif(26, relativeTo: .title)).lineSpacing(3)
+                    Text("把书，带进来。")
+                        .scaledFont(32, weight: .semibold, relativeTo: .largeTitle).lineSpacing(3)
                         .foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("EPUB · TXT · PDF · MOBI · 漫画 · 备份")
                         .font(.caption).foregroundStyle(Theme.ink2)
                 }
-                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                .glassCard()
-                .overlay(alignment: .leading) {
-                    Capsule().fill(Theme.accent).frame(width: 3).padding(.vertical, 18)
-                }
+                .padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
 
                 if let report = model.importReport {
                     NavigationLink { ImportResultsView() } label: {
@@ -225,7 +221,7 @@ struct ImportHubView: View {
     var body: some View {
         NavigationStack {
             SourcesView()
-                .navigationTitle("把书放进书库")
+                .navigationTitle("添加书籍")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -246,7 +242,7 @@ private struct SourceActionRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ThemeIcon(symbol: icon, size: 24).foregroundStyle(Theme.ink).accessibilityHidden(true)
+            ThemeIcon(symbol: icon, size: 24).foregroundStyle(Theme.accent).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
                 Text(subtitle).font(.caption).foregroundStyle(Theme.ink2)
@@ -256,7 +252,7 @@ private struct SourceActionRow: View {
             ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink).accessibilityHidden(true)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 64)
-        .glassCard(cornerRadius: Theme.radiusSmall)
+        .glassCard(cornerRadius: 18)
         .contentShape(Rectangle())
     }
 }

@@ -10,7 +10,8 @@ final class NativeCoreTests: XCTestCase {
             let traits = UITraitCollection(userInterfaceStyle: style)
             let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
                 (Theme.accent, Theme.bg), (Theme.onAccent, Theme.accent), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
-                (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface)]
+                (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
+                (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
             for (text, background) in pairs {
                 XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5)
             }
