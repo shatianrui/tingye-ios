@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>听页 · 书房 The Study · 方向 A 设计稿 v16</title>
+<style>
+  /* ================= 页面（画框之外） ================= */
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 700px at 10% -8%, #F1EBDD 0%, transparent 55%),
+      radial-gradient(900px 620px at 100% 0%, #E9E4D4 0%, transparent 55%),
+      #E7E1D2;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+    color:#232A20; padding:56px 20px 90px;
+  }
+  h1{font-size:42px; font-weight:800; letter-spacing:-.5px; text-align:center;}
+  h1 em{font-style:normal; font-family:'Noto Serif SC','Songti SC',serif; color:#2F5D46;}
+  h1 small{display:block; font-size:15px; font-weight:600; letter-spacing:6px; color:#B07D4F; margin-top:6px;}
+  .sub{text-align:center; color:#5A6153; margin:12px 0 4px; font-size:14px;}
+  .prin{display:flex; gap:12px; justify-content:center; margin:22px auto 8px; max-width:980px; flex-wrap:wrap;}
+  .prin div{flex:1; min-width:250px; background:#FFFFFF; border:1px solid #E3DCCC; border-radius:16px; padding:14px 18px; font-size:13px; line-height:1.7; color:#3A4136; box-shadow:0 2px 8px rgba(35,42,32,.04);}
+  .prin b{color:#2F5D46; display:block; margin-bottom:2px; font-size:13.5px;}
+  .tokens{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:18px auto 44px; max-width:1100px;}
+  .tok{display:flex; align-items:center; gap:8px; background:#FFFFFF; border:1px solid #E3DCCC; border-radius:12px; padding:7px 12px 7px 8px; font-size:11px; color:#5A6153;}
+  .tok .sw{display:flex; border-radius:6px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(35,42,32,.12);}
+  .tok .sw i{width:16px; height:22px; display:block;}
+  .tok b{color:#232A20; font-weight:600;}
+
+  .grid{display:flex; flex-wrap:wrap; gap:48px; justify-content:center; align-items:flex-start;}
+  .item{display:flex; flex-direction:column;}
+  .frame{width:390px; border-radius:54px; background:#22251E; padding:10px; box-shadow:0 30px 70px rgba(52,58,44,.30), 0 4px 16px rgba(52,58,44,.16);}
+  .screen{position:relative; width:100%; height:800px; border-radius:44px; overflow:hidden; display:flex; flex-direction:column;}
+  .cap{text-align:center; color:#5A6153; font-size:13px; margin-top:16px; font-weight:600; line-height:1.6;}
+  .cap b{color:#2F5D46;}
+
+  /* ================= 令牌（日间 / 夜间） ================= */
+  .day{
+    --bg:#F6F2E9; --sf:#FFFFFF; --sf2:#EEE9DC;
+    --tx:#232A20; --tx2:#5A6153;
+    --ac:#2F5D46; --acs:#E2EBDD; --onac:#FFFFFF;
+    --oc:#B07D4F; --dg:#B5453C; --ln:#E3DCCC;
+    --sh:0 1px 2px rgba(64,58,40,.05), 0 10px 28px rgba(64,58,40,.07);
+    background:var(--bg); color:var(--tx);
+  }
+  .night{
+    --bg:#161913; --sf:#1F241C; --sf2:#282E23;
+    --tx:#EDEAE0; --tx2:#A8AE9C;
+    --ac:#8FBF9F; --acs:#24332A; --onac:#161913;
+    --oc:#B07D4F; --dg:#B5453C; --ln:#2E3428;
+    --sh:0 1px 2px rgba(0,0,0,.25), 0 10px 28px rgba(0,0,0,.32);
+    background:var(--bg); color:var(--tx);
+  }
+  .serif{font-family:'Noto Serif SC','Songti SC',serif;}
+
+  /* ================= 通用组件 ================= */
+  .sb{height:48px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:2px 28px 0 32px; font-size:14px; font-weight:600;}
+  .sb .r{display:flex; align-items:center; gap:7px;}
+  .sb svg{display:block; fill:currentColor;}
+  .home{position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; border-radius:3px; background:currentColor; opacity:.28; z-index:20;}
+
+  .hairline{height:1px; background:var(--ln); flex:none;}
+
+  .card{background:var(--sf); border-radius:18px; box-shadow:var(--sh);}
+  .card.r20{border-radius:20px;}
+  .card.r16{border-radius:16px;}
+
+  .ptitle{font-size:28px; font-weight:800; letter-spacing:-.3px;}
+  .sec-t{font-size:12.5px; font-weight:700; letter-spacing:2px; color:var(--tx2);}
+  .sec-t::before{content:""; display:inline-block; width:14px; height:2px; background:var(--oc); border-radius:1px; margin-right:8px; vertical-align:3px;}
+
+  .pl{height:3px; border-radius:2px; background:var(--sf2); overflow:hidden;}
+  .pl i{display:block; height:100%; border-radius:2px; background:var(--ac);}
+
+  .btn-p{height:46px; border-radius:23px; background:var(--ac); color:var(--onac); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; box-shadow:0 6px 16px rgba(47,93,70,.25);}
+  .night .btn-p{box-shadow:0 6px 16px rgba(0,0,0,.4);}
+  .btn-g{height:46px; border-radius:23px; border:1px solid var(--ln); color:var(--ac); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600; background:var(--sf);}
+
+  /* Tab 栏 */
+  .tabs{position:absolute; left:0; right:0; bottom:0; height:80px; background:var(--sf); border-top:1px solid var(--ln); display:flex; padding:8px 10px 22px; z-index:10;}
+  .tabs a{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--tx2); text-decoration:none; font-size:10px; font-weight:500;}
+  .tabs a svg{width:22px; height:22px;}
+  .tabs a.on{color:var(--ac); font-weight:700;}
+  .tabs a.on .tic{background:var(--acs); border-radius:12px; padding:3px 14px;}
+  .tabs a .tic{display:flex; padding:3px 14px; border-radius:12px;}
+
+  /* 迷你播放器 */
+  .mini{position:absolute; left:12px; right:12px; bottom:88px; z-index:9; height:60px; border-radius:16px; background:var(--sf); box-shadow:var(--sh); border:1px solid var(--ln); display:flex; align-items:center; gap:10px; padding:0 10px;}
+  .mini .mc{width:38px; height:52px; border-radius:2px 5px 5px 2px; position:relative; overflow:hidden; flex:none; box-shadow:1px 2px 4px rgba(35,42,32,.2);}
+  .mini .mc::before{content:""; position:absolute; left:0; top:0; bottom:0; width:2.5px; background:linear-gradient(90deg,rgba(0,0,0,.3),transparent);}
+  .mini b{font-size:13px; display:block;}
+  .mini span{font-size:10.5px; color:var(--tx2); display:block; margin-top:1px;}
+  .mini .mpp{width:44px; height:44px; margin-left:auto; border-radius:50%; background:var(--acs); color:var(--ac); display:grid; place-items:center; font-size:13px; flex:none;}
+  .mini .mex{width:44px; height:44px; border-radius:50%; color:var(--tx2); display:grid; place-items:center; font-size:12px; flex:none;}
+
+  /* ================= 书封（CSS 占位封 · 书脊阴影） ================= */
+  .cov{position:relative; flex:none; border-radius:3px 9px 9px 3px; overflow:hidden;
+    box-shadow:inset 4px 0 0 rgba(255,255,255,.14), inset 2px 0 0 rgba(0,0,0,.18), 3px 5px 12px rgba(35,42,32,.22), 1px 1px 0 rgba(35,42,32,.08);}
+  .cov::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(90deg, rgba(0,0,0,.32), rgba(0,0,0,0));}
+  .cov .t{position:absolute; left:13px; top:12px; font-family:'Noto Serif SC','Songti SC',serif; font-weight:700; font-size:13px; line-height:1.5; color:rgba(255,255,255,.96); letter-spacing:1px;}
+  .cov .a{position:absolute; left:13px; bottom:10px; font-family:'Noto Serif SC','Songti SC',serif; font-size:8.5px; color:rgba(255,255,255,.6); letter-spacing:1px;}
+  .cov.paper .t{color:#3B3527;}
+  .cov.paper .a{color:rgba(59,53,39,.55);}
+  .cov .moon{position:absolute; right:12px; top:14px; width:20px; height:20px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #F7EECB, #E4D295); box-shadow:0 0 10px rgba(247,238,203,.5);}
+  .cov .star{position:absolute; width:3px; height:3px; border-radius:50%; background:#F1E8C8; box-shadow:0 0 4px rgba(241,232,200,.8);}
+  .cov .hz{position:absolute; left:0; right:0; bottom:26%; height:1px; background:rgba(241,232,200,.5);}
+  .cov .seal{position:absolute; right:12px; bottom:12px; width:18px; height:18px; border-radius:3px; background:#B5453C; color:#F6F2E9; font-size:8px; display:grid; place-items:center; font-family:'Noto Serif SC','Songti SC',serif;}
+
+  .c-moon{background:linear-gradient(165deg,#33566B 0%,#1C3040 58%,#14222E 100%);}
+  .c-prince{background:linear-gradient(170deg,#3E5C8F 0%,#24355C 55%,#1A2440 100%);}
+  .c-land{background:linear-gradient(165deg,#A9854E 0%,#8A6535 60%,#6E4E27 100%);}
+  .c-flight{background:linear-gradient(180deg,#141F33 0%,#28384F 55%,#556C83 100%);}
+  .c-border{background:linear-gradient(165deg,#5E7D6A 0%,#3C5748 100%);}
+  .c-ci{background:linear-gradient(165deg,#EDE4D0 0%,#DCCFB2 100%);}
+  .c-ditan{background:linear-gradient(165deg,#7C8577 0%,#57604F 100%);}
+  .c-birds{background:linear-gradient(170deg,#C7D3CE 0%,#9FB3AC 100%);}
+
+  /* ================= ① 书房首页 ================= */
+  .greet{padding:6px 22px 0;}
+  .greet .d{font-size:12.5px; color:var(--tx2); letter-spacing:1px;}
+  .greet h2{font-size:28px; font-weight:800; margin-top:3px;}
+  .study-wrap{padding:12px 18px 96px; display:flex; flex-direction:column; gap:12px; overflow:hidden;}
+  .hero{padding:14px 16px; display:flex; gap:16px;}
+  .hero .cov{width:96px; height:138px; transform:rotate(-4deg) translateY(2px); margin:4px 0 6px 2px;}
+  .hero .hc{flex:1; min-width:0;}
+  .hero h3{font-family:'Noto Serif SC','Songti SC',serif; font-size:19px; font-weight:700; line-height:1.35;}
+  .hero .au{font-size:11.5px; color:var(--tx2); margin-top:3px;}
+  .hero .pg{font-size:11px; color:var(--tx2); margin-top:7px; display:flex; justify-content:space-between;}
+  .hero .pg b{color:var(--ac); font-weight:700;}
+  .hero .pl{margin-top:6px;}
+  .hero .row{display:flex; gap:8px; margin-top:10px;}
+  .hero .row .btn-p,.hero .row .btn-g{height:40px; font-size:13.5px; flex:1;}
+  .listen-row{display:flex; gap:10px; overflow:hidden;}
+  .lcard{flex:none; width:172px; padding:9px; display:flex; gap:10px; align-items:center;}
+  .lcard .cov{width:40px; height:56px; border-radius:2px 5px 5px 2px;}
+  .lcard .cov .t{display:none;}
+  .lcard b{font-size:12.5px; display:block; font-weight:600;}
+  .lcard span{font-size:10px; color:var(--tx2); display:block; margin-top:2px;}
+  .today{padding:11px 16px; display:flex; align-items:center; gap:14px;}
+  .today .tt{flex:1;}
+  .today .tt b{font-size:13px;}
+  .today .tt b i{font-style:normal; color:var(--ac);}
+  .today .pl{margin-top:8px;}
+  .stamp{flex:none; border:1.5px solid var(--oc); color:var(--oc); border-radius:8px; font-size:10.5px; font-weight:700; padding:5px 8px; transform:rotate(-6deg); font-family:'Noto Serif SC','Songti SC',serif; letter-spacing:1px; opacity:.92;}
+  .todo{padding:4px 16px;}
+  .todo .r{display:flex; align-items:center; gap:12px; padding:8px 0;}
+  .todo .r + .r{border-top:1px solid var(--ln);}
+  .todo .cov{width:30px; height:43px; border-radius:2px 4px 4px 2px;}
+  .todo .cov .t,.todo .cov .a{display:none;}
+  .todo b{font-size:14px; font-weight:600; display:block; font-family:'Noto Serif SC','Songti SC',serif;}
+  .todo span{font-size:11px; color:var(--tx2); display:block; margin-top:2px;}
+  .todo .ar{margin-left:auto; color:var(--tx2); font-size:15px;}
+
+  /* ================= ②③ 书架 ================= */
+  .shelf-head{padding:8px 22px 0; display:flex; align-items:flex-end; justify-content:space-between;}
+  .shelf-head .n{font-size:12px; color:var(--tx2); margin-top:2px;}
+  .addbtn{width:44px; height:44px; border-radius:50%; background:var(--ac); color:var(--onac); display:grid; place-items:center; font-size:21px; font-weight:400; box-shadow:0 6px 14px rgba(47,93,70,.28);}
+  .shelf-wrap{padding:14px 18px 176px; display:flex; flex-direction:column; gap:13px; overflow:hidden;}
+  .search{height:42px; border-radius:14px; background:var(--sf2); display:flex; align-items:center; gap:8px; padding:0 14px; color:var(--tx2); font-size:13px;}
+  .srow{display:flex; align-items:center; gap:10px;}
+  .seg{flex:1; display:flex; background:var(--sf2); border-radius:12px; padding:3px;}
+  .seg div{flex:1; height:30px; border-radius:9px; display:grid; place-items:center; font-size:12.5px; font-weight:600; color:var(--tx2);}
+  .seg .on{background:var(--sf); color:var(--ac); box-shadow:0 1px 4px rgba(35,42,32,.12);}
+  .vto{display:flex; background:var(--sf2); border-radius:12px; padding:3px;}
+  .vto div{width:40px; height:30px; border-radius:9px; display:grid; place-items:center; color:var(--tx2);}
+  .vto .on{background:var(--sf); color:var(--ac); box-shadow:0 1px 4px rgba(35,42,32,.12);}
+  .vto svg{width:15px; height:15px;}
+  .chips{display:flex; gap:8px;}
+  .chip{height:30px; padding:0 13px; border-radius:15px; border:1px solid var(--ln); background:var(--sf); display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--tx2);}
+  .chip b{color:var(--tx); font-weight:600;}
+  .chip.hot{border-color:var(--ac); color:var(--ac);}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px 12px;}
+  .bk{display:flex; flex-direction:column; gap:7px; min-width:0;}
+  .bk .cov{width:100%; aspect-ratio:.7;}
+  .bk .bn{font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Noto Serif SC','Songti SC',serif;}
+  .bk .bp{font-size:10px; color:var(--tx2);}
+
+  .lst{padding:2px 16px;}
+  .lst .r{display:flex; gap:13px; padding:13px 0; align-items:center;}
+  .lst .r + .r{border-top:1px solid var(--ln);}
+  .lst .cov{width:44px; height:63px; border-radius:2px 5px 5px 2px;}
+  .lst .cov .t,.lst .cov .a{display:none;}
+  .lst .li{flex:1; min-width:0;}
+  .lst b{font-size:15px; font-family:'Noto Serif SC','Songti SC',serif; font-weight:700; display:block;}
+  .lst .m{font-size:11px; color:var(--tx2); display:block; margin-top:2px;}
+  .lst .pl{margin-top:8px;}
+  .lst .pp{font-size:11px; color:var(--ac); font-weight:700; flex:none;}
+  .lst-foot{text-align:center; font-size:12px; color:var(--tx2); padding:12px 0 2px;}
+
+  /* ================= ④ 书籍详情 ================= */
+  .navbar{height:52px; flex:none; display:flex; align-items:center; padding:0 14px; gap:10px;}
+  .navbar .nb{width:44px; height:44px; display:grid; place-items:center; color:var(--tx); border-radius:50%;}
+  .navbar svg{width:20px; height:20px;}
+  .navbar .nt{flex:1; text-align:center; font-size:13px; font-weight:600; color:var(--tx2);}
+  .detail{padding:4px 24px 16px; display:flex; flex-direction:column; align-items:center; overflow:hidden;}
+  .detail .cov{width:114px; height:160px; margin-top:4px;}
+  .detail h3{font-family:'Noto Serif SC','Songti SC',serif; font-size:21px; font-weight:700; margin-top:8px;}
+  .detail .au{font-size:12px; color:var(--tx2); margin-top:4px;}
+  .detail .meta{display:flex; gap:8px; margin-top:10px;}
+  .detail .meta span{font-size:11px; color:var(--tx2); background:var(--sf2); border-radius:8px; padding:5px 10px;}
+  .detail .dpl{align-self:stretch; margin-top:14px;}
+  .detail .dpl .lb{display:flex; justify-content:space-between; font-size:11.5px; color:var(--tx2); margin-bottom:7px;}
+  .detail .dpl .lb b{color:var(--ac);}
+  .detail .row{display:flex; gap:10px; align-self:stretch; margin-top:12px;}
+  .detail .row .btn-p,.detail .row .btn-g{flex:1;}
+  .detail .intro{align-self:stretch; margin-top:11px;}
+  .detail .intro p{font-family:'Noto Serif SC','Songti SC',serif; font-size:13px; line-height:1.85; color:var(--tx); margin-top:8px;}
+  .detail .toc{align-self:stretch; margin-top:10px; padding:2px 16px;}
+  .detail .toc .r{display:flex; align-items:center; padding:8px 0; font-size:13px;}
+  .detail .toc .r + .r{border-top:1px solid var(--ln);}
+  .detail .toc .r .done{color:var(--ac); font-size:11px; margin-left:auto; font-weight:600;}
+  .detail .toc .r .cur{color:var(--oc); font-size:11px; margin-left:auto; font-weight:700;}
+  .detail .toc .r.dim{color:var(--tx2);}
+  .detail .tools{align-self:stretch; margin-top:8px; display:flex;}
+  .detail .tools div{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; color:var(--tx2); padding:8px 0;}
+  .detail .tools svg{width:19px; height:19px; color:var(--ac);}
+
+  /* ================= ⑤⑥ 阅读页 ================= */
+  .reader-top{position:absolute; top:48px; left:0; right:0; height:56px; background:var(--sf); border-bottom:1px solid var(--ln); display:flex; align-items:center; padding:0 8px; gap:2px; z-index:6;}
+  .reader-top .rb{width:44px; height:44px; display:grid; place-items:center; color:var(--tx);}
+  .reader-top svg{width:20px; height:20px;}
+  .reader-top .rt{flex:1; min-width:0; text-align:center;}
+  .reader-top .rt b{font-size:13.5px; font-family:'Noto Serif SC','Songti SC',serif; display:block; font-weight:700;}
+  .reader-top .rt span{font-size:10px; color:var(--tx2); display:block; margin-top:1px;}
+  .paper-body{flex:1; padding:124px 30px 12px; font-family:'Noto Serif SC','Songti SC',serif; font-size:18px; line-height:2.05; overflow:hidden;}
+  .paper-body p{text-indent:2em; margin-bottom:.9em;}
+  .paper-body .hl{background:var(--acs); border-radius:3px; padding:1px 2px; box-decoration-break:clone; -webkit-box-decoration-break:clone;}
+  .paper-body .ch-t{font-size:21px; font-weight:700; margin-bottom:22px; text-align:center; letter-spacing:3px;}
+  .reader-bot{flex:none; background:var(--sf); border-top:1px solid var(--ln); padding:6px 10px 30px;}
+  .reader-bot .rprog{display:flex; align-items:center; gap:10px; padding:4px 8px 8px;}
+  .reader-bot .rprog .pl{flex:1;}
+  .reader-bot .rprog span{font-size:10.5px; color:var(--tx2); white-space:nowrap;}
+  .reader-bot .rkeys{display:flex;}
+  .reader-bot .rkeys div{flex:1; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--tx);}
+  .reader-bot .rkeys svg{width:19px; height:19px;}
+  .reader-bot .rkeys .hot{color:var(--ac); font-weight:700;}
+
+  .listen-bar{flex:none; margin:0 12px 12px; background:var(--sf); border:1px solid var(--ln); border-radius:18px; box-shadow:var(--sh); padding:12px 14px;}
+  .listen-bar .ls{font-family:'Noto Serif SC','Songti SC',serif; font-size:12.5px; line-height:1.7; color:var(--tx2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .listen-bar .ls b{color:var(--ac); font-weight:700;}
+  .listen-bar .lc{display:flex; align-items:center; gap:6px; margin-top:10px;}
+  .listen-bar .lc .sk{width:44px; height:44px; border-radius:50%; display:grid; place-items:center; color:var(--tx); font-size:13px; background:var(--sf2); flex:none;}
+  .listen-bar .lc .pp{width:48px; height:48px; border-radius:50%; background:var(--ac); color:var(--onac); display:grid; place-items:center; font-size:14px; flex:none; box-shadow:0 4px 12px rgba(0,0,0,.35);}
+  .listen-bar .lc .sp{margin-left:auto; font-size:12px; font-weight:700; color:var(--ac); background:var(--acs); border-radius:14px; padding:8px 11px; flex:none;}
+  .listen-bar .lc .ex{width:44px; height:44px; display:grid; place-items:center; color:var(--tx2); flex:none;}
+  .listen-bar .lc .ex svg{width:18px; height:18px;}
+
+  /* ================= ⑦ 听书播放器 ================= */
+  .player-wrap{flex:1; display:flex; flex-direction:column; align-items:center; padding:6px 22px 34px; overflow:hidden;}
+  .player-wrap .cov{width:142px; height:204px; margin-top:10px;}
+  .player-wrap h3{font-family:'Noto Serif SC','Songti SC',serif; font-size:20px; font-weight:700; margin-top:18px;}
+  .player-wrap .pch{font-size:11.5px; color:var(--tx2); margin-top:4px;}
+  .follow{align-self:stretch; margin-top:16px; padding:14px 16px; display:flex; flex-direction:column; gap:9px;}
+  .follow .fh{font-size:10.5px; color:var(--tx2); font-weight:700; letter-spacing:1px; display:flex; justify-content:space-between;}
+  .follow .fh b{color:var(--ac);}
+  .follow p{font-family:'Noto Serif SC','Songti SC',serif; font-size:14.5px; line-height:1.75;}
+  .follow p.up,.follow p.down{color:var(--tx2); opacity:.75; font-size:12.5px;}
+  .follow p.cur{background:var(--acs); color:var(--tx); border-radius:10px; padding:9px 12px; font-weight:700; position:relative;}
+  .follow p.cur::before{content:""; position:absolute; left:-8px; top:12px; bottom:12px; width:3px; border-radius:2px; background:var(--ac);}
+  .pslider{align-self:stretch; margin-top:14px;}
+  .pslider .lb{display:flex; justify-content:space-between; font-size:10.5px; color:var(--tx2); margin-top:7px;}
+  .pslider .lb b{color:var(--ac); font-weight:600;}
+  .trans{display:flex; align-items:center; gap:30px; margin-top:14px;}
+  .trans .sk{width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:var(--sf2); color:var(--tx); font-size:15px;}
+  .trans .mn{width:72px; height:72px; border-radius:50%; display:grid; place-items:center; background:var(--ac); color:var(--onac); font-size:19px; box-shadow:0 10px 24px rgba(47,93,70,.32);}
+  .pfoot{align-self:stretch; display:flex; margin-top:16px; padding:6px 4px;}
+  .pfoot div{flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--tx2); padding:8px 0;}
+  .pfoot svg{width:19px; height:19px; color:var(--tx);}
+  .pfoot .on{color:var(--ac); font-weight:700;}
+  .pfoot .on svg{color:var(--ac);}
+
+  /* ================= ⑧ 足迹 ================= */
+  .foot-wrap{padding:12px 18px 100px; display:flex; flex-direction:column; gap:12px; overflow:hidden;}
+  .pills{display:flex; background:var(--sf2); border-radius:13px; padding:3px;}
+  .pills div{flex:1; height:32px; border-radius:10px; display:grid; place-items:center; font-size:12.5px; font-weight:600; color:var(--tx2);}
+  .pills .on{background:var(--sf); color:var(--ac); box-shadow:0 1px 4px rgba(35,42,32,.12);}
+  .bignow{padding:20px 20px 18px; position:relative;}
+  .bignow .lb{font-size:12px; color:var(--tx2);}
+  .bignow .n{font-size:50px; font-weight:800; letter-spacing:-1px; line-height:1.05; margin-top:8px;}
+  .bignow .n small{font-size:14px; font-weight:600; color:var(--tx2); margin-left:6px; letter-spacing:0;}
+  .bignow .split{font-size:12px; color:var(--ac); font-weight:700; margin-top:8px;}
+  .bignow .stamp{position:absolute; right:18px; top:20px;}
+  .goal{padding:15px 18px;}
+  .goal .gt{display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700;}
+  .goal .gt span{font-size:11.5px; color:var(--tx2); font-weight:500;}
+  .goal .gt b{color:var(--oc); font-size:11.5px;}
+  .goal .pl{margin-top:12px;}
+  .week{padding:16px 18px;}
+  .week .wt{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700;}
+  .week .wt span{color:var(--tx2); font-weight:500; font-size:11px;}
+  .bars{display:flex; align-items:flex-end; gap:9px; height:96px; margin-top:12px;}
+  .bars .b{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;}
+  .bars .b i{width:100%; border-radius:4px 4px 2px 2px; background:var(--ac); display:block;}
+  .bars .b i.o{background:var(--sf2);}
+  .bars .b span{font-size:10px; color:var(--tx2);}
+  .quote{padding:15px 20px; position:relative;}
+  .quote .qt{font-size:10.5px; color:var(--oc); font-weight:700; letter-spacing:2px;}
+  .quote p{font-family:'Noto Serif SC','Songti SC',serif; font-size:16px; line-height:1.9; margin-top:10px;}
+  .quote .qf{display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:11px; color:var(--tx2);}
+  .quote .qf b{color:var(--ac); font-weight:600;}
+
+  /* ================= ⑨ 设置 ================= */
+  .set-wrap{padding:4px 18px 94px; display:flex; flex-direction:column; gap:3px; overflow:hidden;}
+  .grp{font-size:11px; color:var(--tx2); font-weight:700; letter-spacing:2px; padding:8px 8px 5px;}
+  .set-card{overflow:hidden;}
+  .set-row{display:flex; align-items:center; gap:11px; padding:7px 14px;}
+  .set-row + .set-row{border-top:1px solid var(--ln);}
+  .sic{width:31px; height:31px; border-radius:8px; background:var(--acs); color:var(--ac); display:grid; place-items:center; font-size:14px; flex:none; font-family:'Noto Serif SC','Songti SC',serif; font-weight:700;}
+  .sic.oc{background:#F1E6D8; color:var(--oc);}
+  .set-row b{font-size:14px; font-weight:600; display:block;}
+  .set-row span{font-size:11px; color:var(--tx2); display:block; margin-top:1px;}
+  .set-row .v{margin-left:auto; font-size:12px; color:var(--tx2); display:flex; align-items:center; gap:4px;}
+  .set-row .v i{font-style:normal; color:var(--ac); font-weight:600;}
+  .toggle{width:46px; height:28px; border-radius:14px; background:var(--ac); position:relative; margin-left:auto; flex:none;}
+  .toggle::after{content:""; position:absolute; top:2px; right:2px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .night .toggle::after{background:#161913;}
+
+  @media (max-width:860px){ .frame{width:min(390px,92vw);} }
+</style>
+</head>
+<body>
+
+<h1>听页 · <em>书房</em><small>THE STUDY · 方向 A</small></h1>
+<p class="sub">日间优先的温暖纸质书房 · 四页签「书房 / 书架 / 足迹 / 设置」 · 宋体只在书与摘句上</p>
+
+<div class="prin">
+  <div><b>① 纸的温度</b>米白暖纸为底、宋体书名、发丝线分隔。界面像一间采光好的书房，安静、踏实，不用粗框和强对比色块。</div>
+  <div><b>② 书的实体感</b>书封带 2–4pt 书脊阴影与侧投影，像立在桌上的真书；首页当前书以「斜倚」姿态呈现，其余元素退后。</div>
+  <div><b>③ 克制的点缀</b>进度只用墨绿细线；赭石只出现在印章、星级与目标达成等「值得盖章」的时刻；主操作是墨绿实心胶囊。</div>
+</div>
+
+<div class="tokens">
+  <div class="tok"><span class="sw"><i style="background:#F6F2E9"></i><i style="background:#161913"></i></span><span><b>页底</b> #F6F2E9 / #161913</span></div>
+  <div class="tok"><span class="sw"><i style="background:#FFFFFF"></i><i style="background:#1F241C"></i></span><span><b>表面</b> #FFFFFF / #1F241C</span></div>
+  <div class="tok"><span class="sw"><i style="background:#EEE9DC"></i><i style="background:#282E23"></i></span><span><b>次级表面</b> #EEE9DC / #282E23</span></div>
+  <div class="tok"><span class="sw"><i style="background:#232A20"></i><i style="background:#EDEAE0"></i></span><span><b>主文字</b> #232A20 / #EDEAE0</span></div>
+  <div class="tok"><span class="sw"><i style="background:#5A6153"></i><i style="background:#A8AE9C"></i></span><span><b>次级文字</b> #5A6153 / #A8AE9C</span></div>
+  <div class="tok"><span class="sw"><i style="background:#2F5D46"></i><i style="background:#8FBF9F"></i></span><span><b>强调墨绿</b> #2F5D46 / #8FBF9F</span></div>
+  <div class="tok"><span class="sw"><i style="background:#E2EBDD"></i><i style="background:#24332A"></i></span><span><b>强调浅底</b> #E2EBDD / #24332A</span></div>
+  <div class="tok"><span class="sw"><i style="background:#B07D4F"></i><i style="background:#B07D4F"></i></span><span><b>点缀赭石</b> #B07D4F</span></div>
+  <div class="tok"><span class="sw"><i style="background:#B5453C"></i><i style="background:#B5453C"></i></span><span><b>危险</b> #B5453C</span></div>
+  <div class="tok"><span class="sw"><i style="background:#E3DCCC"></i><i style="background:#2E3428"></i></span><span><b>分隔线</b> #E3DCCC / #2E3428</span></div>
+</div>
+
+<div class="grid">
+
+<!-- ================= ① 书房首页（日间） ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="greet">
+      <div class="d">10月21日 周二 · 秋光正好</div>
+      <h2>书房</h2>
+    </div>
+    <div class="study-wrap">
+      <div>
+        <div class="sec-t">桌上在读</div>
+        <div class="card r20 hero" style="margin-top:10px">
+          <div class="cov c-moon"><span class="moon"></span><span class="t">月亮与<br>六便士</span><span class="a">毛姆 · 著</span></div>
+          <div class="hc">
+            <h3>月亮与六便士</h3>
+            <div class="au">毛姆 · 傅惟慈 译</div>
+            <div class="pg"><span>第 21 章 · 共 58 章</span><b>46%</b></div>
+            <div class="pl"><i style="width:46%"></i></div>
+            <div class="row"><div class="btn-p">继续阅读</div><div class="btn-g">听书</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-t">最近在听</div>
+        <div class="listen-row" style="margin-top:10px">
+          <div class="card r16 lcard"><div class="cov c-flight"><span class="hz"></span></div><div><b>夜航西飞</b><span>第 3 章 · 剩约 12 分钟</span></div></div>
+          <div class="card r16 lcard"><div class="cov c-prince"><span class="star" style="right:16px;top:12px"></span></div><div><b>小王子</b><span>第 8 章 · 剩约 26 分钟</span></div></div>
+          <div class="card r16 lcard"><div class="cov c-ditan"></div><div><b>我与地坛</b><span>第 2 章 · 剩约 31 分钟</span></div></div>
+        </div>
+      </div>
+      <div class="card r16 today">
+        <div class="tt"><b>今日已读 <i>32 分钟</i> · 目标 30 分钟</b><div class="pl"><i style="width:100%"></i></div></div>
+        <div class="stamp">达成 ★</div>
+      </div>
+      <div>
+        <div class="sec-t">待读清单</div>
+        <div class="card r16 todo" style="margin-top:10px">
+          <div class="r"><div class="cov c-land"></div><div><b>乡土中国</b><span>费孝通 · 6.8 万字 · 未开始</span></div><span class="ar">›</span></div>
+          <div class="r"><div class="cov c-border"></div><div><b>边城</b><span>沈从文 · 7.1 万字 · 未开始</span></div><span class="ar">›</span></div>
+          <div class="r"><div class="cov c-ci paper"></div><div><b>人间词话</b><span>王国维 · 4.2 万字 · 读到 12%</span></div><span class="ar">›</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <a class="on" href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.5 12 4l8 6.5V20h-5.4v-5.6H9.4V20H4z"/></svg></span>书房</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5h3v17H4zM9 3.5h3v17H9zM14.3 4.3l3.4-.8 3.4 16.2-3.4.8z"/></svg></span>书架</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V4M14.9 20v-5M20 20v-9"/></svg></span>足迹</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>设置</a>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>① 书房首页（日间）</b><br>问候+日期 → 桌上在读（斜倚书封 · 墨绿胶囊）→ 最近在听横滑小卡 → 今日时长条（赭石印章）→ 待读清单</div>
+</div>
+
+<!-- ================= ② 书架 · 网格 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="shelf-head">
+      <div><div class="ptitle">书架</div><div class="n">128 本 · 12 本在读</div></div>
+      <div class="addbtn">＋</div>
+    </div>
+    <div class="shelf-wrap">
+      <div class="search">🔍&nbsp; 搜索书名、作者</div>
+      <div class="srow">
+        <div class="seg"><div class="on">书籍 118</div><div>漫画 10</div></div>
+        <div class="vto">
+          <div class="on"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg></div>
+        </div>
+      </div>
+      <div class="chips">
+        <div class="chip">筛选 ▾</div>
+        <div class="chip">排序 · <b>最近阅读</b> ▾</div>
+        <div class="chip">整理</div>
+      </div>
+      <div class="grid3">
+        <div class="bk"><div class="cov c-moon"><span class="moon"></span><span class="t">月亮与<br>六便士</span><span class="a">毛姆</span></div><div class="bn">月亮与六便士</div><div class="bp">在读 · 46%</div></div>
+        <div class="bk"><div class="cov c-flight"><span class="hz"></span><span class="t">夜航西飞</span><span class="a">苏 杳 · 著</span></div><div class="bn">夜航西飞</div><div class="bp">在听 · 第 3 章</div></div>
+        <div class="bk"><div class="cov c-prince"><span class="star" style="right:18px;top:14px"></span><span class="star" style="right:34px;top:30px"></span><span class="t">小王子</span><span class="a">圣埃克苏佩里</span></div><div class="bn">小王子</div><div class="bp">已读完</div></div>
+        <div class="bk"><div class="cov c-land"><span class="t">乡土<br>中国</span><span class="a">费孝通</span></div><div class="bn">乡土中国</div><div class="bp">未开始</div></div>
+        <div class="bk"><div class="cov c-border"><span class="t">边城</span><span class="a">沈从文</span></div><div class="bn">边城</div><div class="bp">未开始</div></div>
+        <div class="bk"><div class="cov c-ci paper"><span class="t">人间<br>词话</span><span class="a">王国维</span><span class="seal">词</span></div><div class="bn">人间词话</div><div class="bp">在读 · 12%</div></div>
+      </div>
+    </div>
+    <div class="mini">
+      <div class="mc c-flight"></div>
+      <div><b>夜航西飞</b><span>正在听 · 第 3 章 · 剩约 12 分钟</span></div>
+      <div class="mpp">❚❚</div>
+      <div class="mex">︿</div>
+    </div>
+    <div class="tabs">
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.5 12 4l8 6.5V20h-5.4v-5.6H9.4V20H4z"/></svg></span>书房</a>
+      <a class="on" href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5h3v17H4zM9 3.5h3v17H9zM14.3 4.3l3.4-.8 3.4 16.2-3.4.8z"/></svg></span>书架</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V4M14.9 20v-5M20 20v-9"/></svg></span>足迹</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>设置</a>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>② 书架 · 网格视图</b><br>书封带书脊阴影像立着的实体书；筛选 / 排序 / 整理为轻量胶囊；迷你播放器的播放键与展开键各自独立</div>
+</div>
+
+<!-- ================= ③ 书架 · 列表 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="shelf-head">
+      <div><div class="ptitle">书架</div><div class="n">128 本 · 12 本在读</div></div>
+      <div class="addbtn">＋</div>
+    </div>
+    <div class="shelf-wrap" style="padding-bottom:104px">
+      <div class="search">🔍&nbsp; 搜索书名、作者</div>
+      <div class="srow">
+        <div class="seg"><div class="on">书籍 118</div><div>漫画 10</div></div>
+        <div class="vto">
+          <div><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></div>
+          <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg></div>
+        </div>
+      </div>
+      <div class="chips">
+        <div class="chip">筛选 ▾</div>
+        <div class="chip">排序 · <b>最近阅读</b> ▾</div>
+        <div class="chip">整理</div>
+      </div>
+      <div class="card r16 lst">
+        <div class="r"><div class="cov c-moon"></div><div class="li"><b>月亮与六便士</b><span class="m">毛姆 · 第 21 章 / 共 58 章</span><div class="pl"><i style="width:46%"></i></div></div><span class="pp">46%</span></div>
+        <div class="r"><div class="cov c-flight"></div><div class="li"><b>夜航西飞</b><span class="m">苏杳 · 正在听 · 第 3 章 · 剩约 12 分钟</span><div class="pl"><i style="width:18%"></i></div></div><span class="pp">18%</span></div>
+        <div class="r"><div class="cov c-ci paper"></div><div class="li"><b>人间词话</b><span class="m">王国维 · 读到第 9 则</span><div class="pl"><i style="width:12%"></i></div></div><span class="pp">12%</span></div>
+        <div class="r"><div class="cov c-prince"></div><div class="li"><b>小王子</b><span class="m">圣埃克苏佩里 · 已读完 · ★★★★★</span><div class="pl"><i style="width:100%"></i></div></div><span class="pp">100%</span></div>
+        <div class="r"><div class="cov c-land"></div><div class="li"><b>乡土中国</b><span class="m">费孝通 · 6.8 万字 · 未开始</span><div class="pl"><i style="width:0%"></i></div></div><span class="pp" style="color:var(--tx2)">—</span></div>
+        <div class="r"><div class="cov c-ditan"></div><div class="li"><b>我与地坛</b><span class="m">史铁生 · 已读完 · ★★★★</span><div class="pl"><i style="width:100%"></i></div></div><span class="pp">100%</span></div>
+      </div>
+      <div class="lst-foot">隐藏书籍 2 本 · 在「设置 › 书架」中管理 ›</div>
+    </div>
+    <div class="tabs">
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.5 12 4l8 6.5V20h-5.4v-5.6H9.4V20H4z"/></svg></span>书房</a>
+      <a class="on" href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5h3v17H4zM9 3.5h3v17H9zM14.3 4.3l3.4-.8 3.4 16.2-3.4.8z"/></svg></span>书架</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V4M14.9 20v-5M20 20v-9"/></svg></span>足迹</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>设置</a>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>③ 书架 · 列表视图</b><br>宋体书名 + 发丝线分隔 + 墨绿细进度线；星级与「已读完」用赭石系点缀；隐藏书籍入口退到页脚小字</div>
+</div>
+
+<!-- ================= ④ 书籍详情 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="navbar">
+      <div class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <div class="nt">书籍详情</div>
+      <div class="nb"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+    </div>
+    <div class="detail">
+      <div class="cov c-moon"><span class="moon"></span><span class="t" style="font-size:17px">月亮与<br>六便士</span><span class="a" style="font-size:10px">毛姆 · 著</span></div>
+      <h3>月亮与六便士</h3>
+      <div class="au">毛姆 · 傅惟慈 译</div>
+      <div class="meta"><span>EPUB</span><span>18.2 万字</span><span>已读 46%</span></div>
+      <div class="dpl">
+        <div class="lb"><span>第 21 章 · 共 58 章</span><b>剩余约 3 小时 20 分钟</b></div>
+        <div class="pl"><i style="width:46%"></i></div>
+      </div>
+      <div class="row"><div class="btn-p" style="height:44px">继续阅读</div><div class="btn-g" style="height:44px">开始听书</div></div>
+      <div class="intro">
+        <div class="sec-t">简介</div>
+        <p>银行家查尔斯·思特里克兰德人到中年，突然抛下伦敦的证券行与妻儿，只身去了巴黎。人们说他被女人拐走了，其实他只想画画。</p>
+      </div>
+      <div class="card r16 toc">
+        <div class="r"><span>第二十章 · 巴黎的画室</span><span class="done">已读</span></div>
+        <div class="r"><span>第二十一章 · 施特略夫的眼泪</span><span class="cur">读到这里 · 46%</span></div>
+        <div class="r dim"><span>第二十二章 · 塔希提来信</span><span class="done" style="color:var(--tx2)">未读</span></div>
+        <div class="r" style="justify-content:center; color:var(--ac); font-weight:600; font-size:12.5px;">查看全部 58 章 ›</div>
+      </div>
+      <div class="card r16 tools">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h12V21l-6-4.2L6 21z"/></svg>书签 3</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 17 16.5 4.5l3 3L7 20H4z"/><path d="M13.5 7.5l3 3"/></svg>划线笔记 12</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V5M14.9 20v-5M20 20v-9"/></svg>阅读统计</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4"/><path d="M4 19h16"/></svg>导出</div>
+      </div>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>④ 书籍详情</b><br>立式书封居中 · 宋体书名 · 剩余时间标「约」；读与听为两颗独立按钮，主操作取实际记录</div>
+</div>
+
+<!-- ================= ⑤ 阅读页（日间纸） ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day" style="background:#F6F2E9">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="reader-top">
+      <div class="rb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <div class="rt"><b>夜航西飞</b><span>第 3 章 · 夜色航线</span></div>
+      <div class="rb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h12V21l-6-4.2L6 21z"/></svg></div>
+      <div class="rb"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+    </div>
+    <div class="paper-body">
+      <div class="ch-t">第三章 · 夜色航线</div>
+      <p>飞机越过最后一道山脊时，海在远处亮了一下，像有人掀开信纸的一角。我把油门收小，让风声先于夜色落进座舱。</p>
+      <p>灯塔在右舷一闪而过。<span class="hl">夜航的意义不在于抵达，而在于你愿意把一整片黑暗听完。</span>我把航向交给星星，把困倦交给咖啡。</p>
+      <p>无线电里偶有同路人的呼号，断断续续，像深夜里隔壁书房传来的翻页声。我们没有见面，却都知道对方醒着。</p>
+    </div>
+    <div class="reader-bot">
+      <div class="rprog"><span>第 3 章 · 42%</span><div class="pl"><i style="width:42%"></i></div><span>本章剩余约 12 分钟</span></div>
+      <div class="rkeys">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h14M5 12h14M5 18h9"/></svg>目录</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/><path d="M9 4v3M15 14v3"/></svg>排版</div>
+        <div class="hot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="7" rx="2"/><rect x="17" y="13" width="4" height="7" rx="2"/></svg>听书</div>
+        <div><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>更多</div>
+      </div>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>⑤ 阅读页（日间 · 米白暖纸）</b><br>思源宋体正文 · 划线句用墨绿浅底；底栏固定「目录 / 排版 / 听书 / 更多」，细线进度标「约」</div>
+</div>
+
+<!-- ================= ⑥ 阅读页（夜间 + 听条） ================= -->
+<div class="item">
+  <div class="frame"><div class="screen night" style="background:#161913">
+    <div class="sb"><span>21:47</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="9" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="reader-top">
+      <div class="rb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <div class="rt"><b>夜航西飞</b><span>第 3 章 · 夜色航线</span></div>
+      <div class="rb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.5h12V21l-6-4.2L6 21z"/></svg></div>
+      <div class="rb"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+    </div>
+    <div class="paper-body" style="color:#EDEAE0; padding-bottom:8px">
+      <div class="ch-t">第三章 · 夜色航线</div>
+      <p>飞机越过最后一道山脊时，海在远处亮了一下，像有人掀开信纸的一角。我把油门收小，让风声先于夜色落进座舱。</p>
+      <p>灯塔在右舷一闪而过。<span class="hl">夜航的意义不在于抵达，而在于你愿意把一整片黑暗听完。</span>我把航向交给星星，把困倦交给咖啡。</p>
+      <p style="opacity:.8">无线电里偶有同路人的呼号，断断续续，像深夜里隔壁书房传来的翻页声……</p>
+    </div>
+    <div class="listen-bar">
+      <div class="ls">正在朗读 · <b>第 12 / 86 句</b> · 本章剩余约 8 分钟</div>
+      <div class="lc">
+        <div class="sk">⏮</div>
+        <div class="pp">▶</div>
+        <div class="sk">⏭</div>
+        <div class="sp">1.2×</div>
+        <div class="ex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 14l6-6 6 6"/></svg></div>
+      </div>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>⑥ 阅读页（夜间 · 底部听条）</b><br>夜色纸面 #161913 + 夜间墨绿 #8FBF9F；播放键是实心圆，展开键是独立箭头，二者不互替</div>
+</div>
+
+<!-- ================= ⑦ 听书播放器 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="navbar">
+      <div class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 10l6 6 6-6"/></svg></div>
+      <div class="nt">正在听</div>
+      <div class="nb"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+    </div>
+    <div class="player-wrap">
+      <div class="cov c-flight"><span class="hz"></span><span class="t" style="font-size:17px">夜航<br>西飞</span><span class="a" style="font-size:10px">苏 杳 · 著</span></div>
+      <h3>夜航西飞</h3>
+      <div class="pch">第 3 章 · 夜色航线 · 苏杳随笔集</div>
+      <div class="card r16 follow">
+        <div class="fh"><span>逐句跟读</span><b>第 12 / 86 句</b></div>
+        <p class="up">灯塔在右舷一闪而过。</p>
+        <p class="cur">夜航的意义不在于抵达，而在于你愿意把一整片黑暗听完。</p>
+        <p class="down">我把航向交给星星，把困倦交给咖啡。</p>
+      </div>
+      <div class="pslider">
+        <div class="pl"><i style="width:14%"></i></div>
+        <div class="lb"><span>12:04 / 本章</span><b>本章剩余约 6 分钟</b></div>
+      </div>
+      <div class="trans">
+        <div class="sk">⏮</div>
+        <div class="mn">❚❚</div>
+        <div class="sk">⏭</div>
+      </div>
+      <div class="card r16 pfoot">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h14M5 12h14M5 18h9"/></svg>章节</div>
+        <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 14a8 8 0 1 1 16 0"/><path d="M12 14l3.5-3.5"/></svg>1.2×</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>声音</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/></svg>定时</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3.5h12V21l-6-4.2L6 21z"/></svg>书签</div>
+      </div>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>⑦ 听书播放器（逐句跟读）</b><br>封面居中 · 上一句 / 当前句（墨绿浅底高亮 + 左侧细条）/ 下一句；滑杆松手才跳转，固定「章节 / 语速 / 声音 / 定时」</div>
+</div>
+
+<!-- ================= ⑧ 足迹统计 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="shelf-head">
+      <div><div class="ptitle">足迹</div><div class="n">读与听的时间，都留在纸上</div></div>
+      <div class="addbtn" style="width:40px;height:40px;font-size:15px;background:var(--sf2);color:var(--tx2);box-shadow:none">⚲</div>
+    </div>
+    <div class="foot-wrap">
+      <div class="pills"><div class="on">日</div><div>周</div><div>月</div><div>年</div><div>全部</div></div>
+      <div class="card r20 bignow">
+        <div class="lb">今天 · 慢慢读</div>
+        <div class="n">48<small>分钟</small></div>
+        <div class="split">阅读 32 分钟 · 听书 16 分钟</div>
+        <div class="stamp">连续 12 天</div>
+      </div>
+      <div class="card r16 goal">
+        <div class="gt"><span>每日目标 · 30 分钟</span><b>✓ 已达成</b></div>
+        <div class="pl"><i style="width:100%"></i></div>
+      </div>
+      <div class="card r16 week">
+        <div class="wt"><span>阅读节奏</span><span>本周 · 分钟</span></div>
+        <div class="bars">
+          <div class="b"><i style="height:34%"></i><span>一</span></div>
+          <div class="b"><i style="height:58%"></i><span>二</span></div>
+          <div class="b"><i style="height:26%"></i><span>三</span></div>
+          <div class="b"><i style="height:80%"></i><span>四</span></div>
+          <div class="b"><i style="height:64%"></i><span>五</span></div>
+          <div class="b"><i class="o" style="height:16%"></i><span>六</span></div>
+          <div class="b"><i class="o" style="height:10%"></i><span>日</span></div>
+        </div>
+      </div>
+      <div class="card r16 quote">
+        <div class="qt">今日摘读 · 夜航西飞</div>
+        <p>“把一本书读完，就像送走一位久坐的老友——门口有风，屋里有光。”</p>
+        <div class="qf"><span>第 3 章 · 第 12 句</span><b>从这句继续读 ›</b></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.5 12 4l8 6.5V20h-5.4v-5.6H9.4V20H4z"/></svg></span>书房</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5h3v17H4zM9 3.5h3v17H9zM14.3 4.3l3.4-.8 3.4 16.2-3.4.8z"/></svg></span>书架</a>
+      <a class="on" href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V4M14.9 20v-5M20 20v-9"/></svg></span>足迹</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>设置</a>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>⑧ 足迹 · 统计</b><br>日 / 周 / 月 / 年分段；目标达成盖赭石印章、连续天数斜戳；摘句用宋体卡片，可从句子回到书</div>
+</div>
+
+<!-- ================= ⑨ 设置 ================= -->
+<div class="item">
+  <div class="frame"><div class="screen day">
+    <div class="sb"><span>9:41</span><div class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.6" y="4.8" width="3" height="7.2" rx="1"/><rect x="9.2" y="2.4" width="3" height="9.6" rx="1"/><rect x="13.8" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M1.6 4.6a10 10 0 0 1 12.8 0"/><path d="M4.2 7.2a6.6 6.6 0 0 1 7.6 0"/><circle cx="8" cy="9.7" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="20" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.8"/><path d="M22.6 4v4a2.2 2.2 0 0 0 0-4z" opacity=".5"/></svg>
+    </div></div>
+    <div class="shelf-head">
+      <div><div class="ptitle">设置</div><div class="n">阅读、声音，以及这台设备上的书</div></div>
+    </div>
+    <div class="set-wrap">
+      <div class="grp">阅读</div>
+      <div class="card r16 set-card">
+        <div class="set-row"><div class="sic">排</div><div><b>阅读排版</b><span>字号、行距、翻页方式与七种纸色</span></div><span class="v">米白暖纸 ›</span></div>
+        <div class="set-row"><div class="sic">字</div><div><b>字体管理</b><span>思源宋体、文楷与导入字体</span></div><span class="v">宋体 ›</span></div>
+        <div class="set-row"><div class="sic oc">印</div><div><b>书架与整理</b><span>默认视图、隐藏书籍与待读清单</span></div><span class="v">›</span></div>
+      </div>
+      <div class="grp">听书与外观</div>
+      <div class="card r16 set-card">
+        <div class="set-row"><div class="sic">声</div><div><b>声音与朗读</b><span>语音服务、音色、默认语速 1.2×</span></div><span class="v">系统 ›</span></div>
+        <div class="set-row"><div class="sic">◐</div><div><b>外观模式</b><span>跟随系统 / 日间书房 / 夜间书房</span></div><span class="v"><i>跟随系统</i> ›</span></div>
+      </div>
+      <div class="grp">数据与同步</div>
+      <div class="card r16 set-card">
+        <div class="set-row"><div class="sic">云</div><div><b>iCloud 备份与同步</b><span>书库备份 · 阅读位置双端同步</span></div><div class="toggle"></div></div>
+        <div class="set-row"><div class="sic">传</div><div><b>导入与传书</b><span>文件 / WiFi 传书 / WebDAV / OPDS</span></div><span class="v">›</span></div>
+        <div class="set-row"><div class="sic" style="color:var(--dg);background:#F3E3DF">出</div><div><b>导出阅读数据</b><span>时长、目标与阅读记录</span></div><span class="v">›</span></div>
+      </div>
+      <div class="grp">关于</div>
+      <div class="card r16 set-card">
+        <div class="set-row"><div class="sic oc">页</div><div><b>关于听页</b><span>版本 1.19.0 · 书房方向 A</span></div><span class="v">›</span></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 10.5 12 4l8 6.5V20h-5.4v-5.6H9.4V20H4z"/></svg></span>书房</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 3.5h3v17H4zM9 3.5h3v17H9zM14.3 4.3l3.4-.8 3.4 16.2-3.4.8z"/></svg></span>书架</a>
+      <a href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 20v-8M9.7 20V4M14.9 20v-5M20 20v-9"/></svg></span>足迹</a>
+      <a class="on" href="#"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg></span>设置</a>
+    </div>
+    <div class="home"></div>
+  </div></div>
+  <div class="cap"><b>⑨ 设置</b><br>分组卡片 + 发丝线行分隔；图标为墨绿浅底宋体字戳，赭石仅用于书房气质相关的点缀入口</div>
+</div>
+
+</div>
+</body>
+</html>

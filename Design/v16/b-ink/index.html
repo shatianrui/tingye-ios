@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>听页 · 墨 Ink — 方向 B 设计稿 v16</title>
+<style>
+  /* ============ 色彩令牌（与 DESIGN.md 表格一致，日夜两套） ============ */
+  :root{
+    --paper:#FAF7EF;   /* 页底·宣纸 */
+    --surface:#FFFFFF; /* 表面 */
+    --surface2:#F1ECDF;/* 次级表面 */
+    --ink:#1C1B18;     /* 主文字·墨 */
+    --ink2:#6B6759;    /* 次级文字 */
+    --cinnabar:#A63A2E;/* 强调·朱砂 */
+    --cinnabar-soft:#F3E4DE; /* 强调浅底 */
+    --line:#E6E0D0;    /* 分隔线·发丝 */
+    --gold:#9B7B4A;    /* 金·仅精装标识 */
+    --serif:'Noto Serif SC','Songti SC','STSong',serif;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  }
+  .night{
+    --paper:#101012;
+    --surface:#1A1A1E;
+    --surface2:#232329;
+    --ink:#EFEDE6;
+    --ink2:#A5A296;
+    --cinnabar:#D97B6C;
+    --cinnabar-soft:#33221F;
+    --line:#2C2C33;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:#EFECE4;
+    background-image:radial-gradient(900px 600px at 15% 0%, #F7F3E8 0%, transparent 60%),
+                     radial-gradient(800px 600px at 95% 100%, #E9E4D6 0%, transparent 55%);
+    font-family:var(--sans); color:#3A372F; padding:56px 24px 96px;
+  }
+
+  /* ============ 页头：方向名 / 原则 / 令牌 ============ */
+  header{max-width:1240px; margin:0 auto 48px;}
+  .brand{display:flex; align-items:baseline; gap:18px;}
+  .brand h1{font-family:var(--serif); font-size:44px; font-weight:600; letter-spacing:2px; color:#1C1B18;}
+  .brand h1 .seal{display:inline-grid; place-items:center; width:40px; height:40px; background:#A63A2E; color:#FAF7EF;
+    font-family:var(--serif); font-size:22px; border-radius:6px; transform:translateY(-4px); margin-right:10px;}
+  .brand .en{font-size:13px; letter-spacing:4px; color:#6B6759; text-transform:uppercase;}
+  .brand .dir{margin-left:auto; font-size:12px; color:#6B6759; border:1px solid #D8D1BE; border-radius:20px; padding:6px 14px;}
+  .principles{display:flex; gap:32px; margin:22px 0 26px; flex-wrap:wrap;}
+  .principles div{font-size:13px; color:#57544A; line-height:1.6; max-width:340px;}
+  .principles b{display:block; font-family:var(--serif); font-size:15px; color:#1C1B18; margin-bottom:4px; font-weight:600;}
+  .principles b i{display:inline-block; width:7px; height:7px; background:#A63A2E; border-radius:2px; margin-right:8px; font-style:normal;}
+  .tokens{display:flex; gap:0; border:1px solid #D8D1BE; border-radius:12px; overflow:hidden; flex-wrap:wrap; background:#fff;}
+  .tokens .tk{display:flex; align-items:center; gap:9px; padding:10px 14px; border-right:1px solid #EDE8DA; font-size:11px; color:#6B6759;}
+  .tokens .sw{width:26px; height:26px; border-radius:6px; border:1px solid rgba(28,27,24,.12); flex:none;}
+  .tokens b{color:#1C1B18; font-weight:600; display:block; font-size:11.5px;}
+
+  /* ============ 机框 ============ */
+  .grid{display:flex; flex-wrap:wrap; gap:44px; justify-content:center; align-items:flex-start; max-width:1360px; margin:0 auto;}
+  .col{display:flex; flex-direction:column; gap:44px;}
+  .frame{width:390px; border-radius:56px; background:#141311; padding:11px;
+    box-shadow:0 32px 80px rgba(60,50,30,.25), 0 4px 18px rgba(60,50,30,.15);}
+  .scr{position:relative; width:100%; height:800px; border-radius:45px; overflow:hidden;
+    display:flex; flex-direction:column; background:var(--paper); color:var(--ink);}
+  .cap{text-align:center; color:#57544A; font-size:13px; margin-top:16px; line-height:1.7; max-width:360px;}
+  .cap b{font-family:var(--serif); color:#1C1B18; font-size:14px;}
+  .cap .no{display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%;
+    background:#1C1B18; color:#FAF7EF; font-size:11px; margin-right:7px; font-family:var(--sans);}
+
+  /* ============ 通用件 ============ */
+  .status{height:54px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 30px 6px;
+    font-size:15px; font-weight:600; flex:none;}
+  .status .sic{display:flex; gap:6px; align-items:center;}
+  .status svg{display:block;}
+  .hr{height:.5px; background:var(--line); border:none;}
+  .vtext{writing-mode:vertical-rl; font-family:var(--serif); letter-spacing:6px;}
+  .navtitle{display:flex; align-items:flex-end; justify-content:space-between; padding:10px 26px 0; flex:none;}
+  .navtitle h2{font-family:var(--serif); font-size:34px; font-weight:600; letter-spacing:1px; line-height:1.15;}
+  .navtitle .sub{font-size:11.5px; color:var(--ink2); margin-top:6px;}
+  .navtitle .acts{display:flex; gap:10px; align-items:center; padding-bottom:4px;}
+  .iconbtn{width:44px; height:44px; display:grid; place-items:center; color:var(--ink); position:relative;}
+  .iconbtn svg{width:21px; height:21px;}
+  .seal-dot{width:8px; height:8px; background:var(--cinnabar); border-radius:2px; display:inline-block; flex:none;}
+  .seal-sq{display:inline-grid; place-items:center; width:30px; height:30px; background:var(--cinnabar); color:var(--paper);
+    font-family:var(--serif); font-size:15px; border-radius:5px; flex:none;}
+
+  /* Tab 栏：图 + 宋体小字 */
+  .tabbar{position:absolute; left:0; right:0; bottom:0; height:86px; background:var(--paper);
+    border-top:.5px solid var(--line); display:flex; padding:8px 30px 24px; z-index:6;}
+  .tabbar .tb{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink2); padding-top:4px;}
+  .tabbar .tb svg{width:22px; height:22px;}
+  .tabbar .tb span{font-family:var(--serif); font-size:11px; letter-spacing:2px;}
+  .tabbar .tb.on{color:var(--ink);}
+  .tabbar .tb.on i{width:5px; height:5px; border-radius:50%; background:var(--cinnabar); display:block;}
+  .tabbar .tb i{width:5px; height:5px; display:block;}
+
+  /* 主按钮 / 次按钮 / 印章钮 */
+  .btn-ink{height:48px; border-radius:12px; background:var(--ink); color:var(--paper);
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600; letter-spacing:2px;}
+  .btn-line{height:48px; border-radius:12px; border:1px solid var(--line); color:var(--ink); background:transparent;
+    display:flex; align-items:center; justify-content:center; font-size:15px; letter-spacing:2px;}
+  .btn-seal{width:48px; height:48px; border-radius:10px; background:var(--cinnabar); color:#FAF7EF;
+    display:grid; place-items:center; font-family:var(--serif); font-size:17px; flex:none;}
+
+  /* 题签式占位封面：线装书 */
+  .cov{position:relative; background:var(--surface2); border:.5px solid var(--line); border-radius:3px; overflow:hidden; flex:none;}
+  .cov::before{content:""; position:absolute; left:0; top:0; bottom:0; width:7%; background:var(--cinnabar-soft); border-right:.5px solid var(--line);}
+  .cov .tag{position:absolute; top:9%; right:12%; background:var(--paper); border:.5px solid var(--line);
+    writing-mode:vertical-rl; font-family:var(--serif); color:var(--ink); padding:8% 4%; letter-spacing:2px; line-height:1;}
+  .cov .auth{position:absolute; bottom:6%; right:12%; writing-mode:vertical-rl; font-family:var(--serif); color:var(--ink2); letter-spacing:1px;}
+  .cov .yin{position:absolute; bottom:6%; left:14%; width:12%; aspect-ratio:1; background:var(--cinnabar); border-radius:2px;
+    display:grid; place-items:center; color:#FAF7EF; font-family:var(--serif);}
+
+  /* 题录式书行 */
+  .brow{display:flex; align-items:center; gap:14px; padding:15px 0; position:relative;}
+  .brow + .brow{border-top:.5px solid var(--line);}
+  .brow .tt{font-family:var(--serif); font-size:17px; font-weight:600; letter-spacing:.5px;}
+  .brow .mt{font-size:11.5px; color:var(--ink2); margin-top:5px; display:flex; gap:8px; align-items:center;}
+  .brow .right{margin-left:auto; text-align:right; font-size:11px; color:var(--ink2); line-height:1.6; flex:none;}
+  .jing{display:inline-block; font-size:9px; color:var(--ink); border:.5px solid var(--gold); border-radius:3px; padding:1px 4px; letter-spacing:1px;}
+
+  /* 文本段标签（宋体小标题 + 朱砂点） */
+  .sect{display:flex; align-items:center; gap:9px; padding:0 2px;}
+  .sect b{font-family:var(--serif); font-size:16px; font-weight:600; letter-spacing:2px;}
+  .sect span{margin-left:auto; font-size:11.5px; color:var(--ink2);}
+  .sect .more{color:var(--cinnabar); font-size:11.5px; letter-spacing:1px;}
+
+  .pad{padding:16px 26px 120px; display:flex; flex-direction:column; gap:22px; overflow:hidden; flex:1;}
+
+  /* 迷你听条（阅读页底部 / Tab 上方） */
+  .listenbar{position:absolute; left:16px; right:16px; bottom:100px; z-index:5; background:var(--surface);
+    border:.5px solid var(--line); border-radius:14px; height:62px; display:flex; align-items:center; gap:12px; padding:0 8px 0 16px;
+    box-shadow:0 8px 24px rgba(28,27,24,.08);}
+  .listenbar .tx{flex:1; min-width:0;}
+  .listenbar b{font-size:13px; display:block; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .listenbar span{font-size:10.5px; color:var(--ink2); display:block; margin-top:2px;}
+  .listenbar .lb-btn{width:44px; height:44px; display:grid; place-items:center; color:var(--ink); flex:none;}
+  .listenbar .lb-play{width:40px; height:40px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; flex:none; font-size:12px;}
+
+  @media (max-width:880px){ .frame{width:min(390px,94vw);} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1><span class="seal">墨</span>听页 · 墨</h1>
+    <span class="en">Ink — Direction B</span>
+    <span class="dir">方向 B · 现代东方书卷 · v16 设计稿</span>
+  </div>
+  <div class="principles">
+    <div><b><i></i>纸墨为体</b>宣纸为底、墨色为文、朱砂为印。全书只有一处红，用在当前句、印章点与主操作。</div>
+    <div><b><i></i>留白分区</b>几乎无卡片。用呼吸感与 0.5pt 发丝线分隔信息，如一册排版精良的现代线装书。</div>
+    <div><b><i></i>宋体立骨</b>书名、页题、摘句用宋体；正文与控件用系统字体。书架侧边竖排小印，只作点缀。</div>
+  </div>
+  <div class="tokens">
+    <div class="tk"><span class="sw" style="background:#FAF7EF"></span><span><b>宣纸 · 页底</b>#FAF7EF / 夜 #101012</span></div>
+    <div class="tk"><span class="sw" style="background:#FFFFFF"></span><span><b>表面</b>#FFFFFF / 夜 #1A1A1E</span></div>
+    <div class="tk"><span class="sw" style="background:#F1ECDF"></span><span><b>次级表面</b>#F1ECDF / 夜 #232329</span></div>
+    <div class="tk"><span class="sw" style="background:#1C1B18"></span><span><b>墨 · 主文字</b>#1C1B18 / 夜 #EFEDE6</span></div>
+    <div class="tk"><span class="sw" style="background:#6B6759"></span><span><b>次级文字</b>#6B6759 / 夜 #A5A296</span></div>
+    <div class="tk"><span class="sw" style="background:#A63A2E"></span><span><b>朱砂 · 强调</b>#A63A2E / 夜 #D97B6C</span></div>
+    <div class="tk"><span class="sw" style="background:#F3E4DE"></span><span><b>强调浅底</b>#F3E4DE / 夜 #33221F</span></div>
+    <div class="tk"><span class="sw" style="background:#E6E0D0"></span><span><b>发丝线</b>#E6E0D0 / 夜 #2C2C33</span></div>
+    <div class="tk"><span class="sw" style="background:#9B7B4A"></span><span><b>金 · 仅精装</b>#9B7B4A</span></div>
+  </div>
+</header>
+
+<div class="grid">
+
+<!-- ================= 列 1 ================= -->
+<div class="col">
+
+  <!-- ① 读 · 首页（日间） -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div class="navtitle">
+      <div><h2>读</h2><div class="sub">腊月初八 · 今日已读 42 分钟</div></div>
+      <div class="acts">
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg></div>
+      </div>
+    </div>
+    <div class="pad">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="sect"><span class="seal-dot"></span><b>续读</b><span>第 12 章 · 52%</span></div>
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+          <div class="cov" style="width:74px;height:106px;">
+            <span class="tag" style="font-size:11px;">月亮与六便士</span>
+            <span class="yin" style="font-size:6px;">月</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.5px;">月亮与六便士</div>
+            <div style="font-size:11.5px;color:var(--ink2);margin-top:6px;">毛姆 · 傅惟慈 译 · EPUB</div>
+            <div style="height:.5px;background:var(--line);margin:14px 0 6px;position:relative;">
+              <i style="position:absolute;left:0;top:0;bottom:0;width:52%;background:var(--cinnabar);"></i>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink2);"><span>读到 52%</span><span>余下约 3 小时</span></div>
+            <div style="display:flex;gap:10px;margin-top:14px;">
+              <div class="btn-ink" style="flex:1;height:44px;font-size:14px;">继续阅读</div>
+              <div class="btn-seal" style="width:44px;height:44px;">听</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr class="hr">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="sect"><b>七日</b><span>分钟 · 读与听</span></div>
+        <div style="display:flex;align-items:flex-end;gap:14px;height:64px;padding:0 6px;">
+          <i style="flex:1;height:38%;background:var(--ink);opacity:.85;"></i>
+          <i style="flex:1;height:62%;background:var(--ink);opacity:.85;"></i>
+          <i style="flex:1;height:28%;background:var(--ink);opacity:.85;"></i>
+          <i style="flex:1;height:80%;background:var(--ink);opacity:.85;"></i>
+          <i style="flex:1;height:55%;background:var(--ink);opacity:.85;"></i>
+          <i style="flex:1;height:100%;background:var(--cinnabar);"></i>
+          <i style="flex:1;height:12%;background:var(--line);"></i>
+        </div>
+        <div style="display:flex;gap:14px;padding:0 6px;font-size:10px;color:var(--ink2);">
+          <span style="flex:1;text-align:center;">一</span><span style="flex:1;text-align:center;">二</span><span style="flex:1;text-align:center;">三</span>
+          <span style="flex:1;text-align:center;">四</span><span style="flex:1;text-align:center;">五</span>
+          <span style="flex:1;text-align:center;color:var(--cinnabar);">六</span><span style="flex:1;text-align:center;">日</span>
+        </div>
+      </div>
+      <hr class="hr">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div class="sect" style="margin-bottom:8px;"><b>待读</b><span class="more">全部 ›</span></div>
+        <div class="brow" style="padding:11px 0;">
+          <span class="seal-dot" style="width:6px;height:6px;"></span>
+          <div><div class="tt" style="font-size:15px;">夜航西飞</div></div>
+          <div class="right">柏瑞尔·马卡姆</div>
+        </div>
+        <div class="brow" style="padding:11px 0;">
+          <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+          <div><div class="tt" style="font-size:15px;">乡土中国</div></div>
+          <div class="right">费孝通</div>
+        </div>
+        <div class="brow" style="padding:11px 0;">
+          <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+          <div><div class="tt" style="font-size:15px;">山茶文具店</div></div>
+          <div class="right">小川糸</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">1</span><b>「读」首页 · 日间</b><br>大号宋体页题 + 朱砂小方点起章。续读不用卡片：一幅题签封、一根发丝进度线、墨实心主钮与朱砂印章「听」钮。七日记录为素色细柱，今日柱以朱砂收。</div>
+  </div>
+
+  <!-- ④ 书籍详情 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 0;flex:none;">
+      <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <span style="font-size:11px;color:var(--ink2);letter-spacing:2px;">书 目</span>
+      <div class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></div>
+    </div>
+    <div class="pad" style="padding-top:18px;">
+      <div style="display:flex;gap:20px;">
+        <div class="cov" style="width:112px;height:160px;box-shadow:0 10px 26px rgba(28,27,24,.14);">
+          <span class="tag" style="font-size:14px;">月亮与六便士</span>
+          <span class="auth" style="font-size:8px;">毛姆 著</span>
+          <span class="yin" style="font-size:7px;">月</span>
+        </div>
+        <div style="flex:1;padding-top:6px;">
+          <div style="font-family:var(--serif);font-size:23px;font-weight:600;line-height:1.4;letter-spacing:1px;">月亮与六便士</div>
+          <div style="font-size:12px;color:var(--ink2);margin-top:8px;">毛姆 · 傅惟慈 译</div>
+          <div style="font-size:11px;color:var(--ink2);margin-top:14px;line-height:2;">EPUB · 21.4 万字<br>读到第 12 章 · 52%<br>去年三月入库</div>
+          <div style="margin-top:10px;"><span class="jing">精 排</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="btn-ink" style="flex:1;">继续阅读</div>
+        <div class="btn-seal">听</div>
+      </div>
+      <div style="display:flex;gap:26px;border-bottom:.5px solid var(--line);padding:0 2px;">
+        <div style="padding:10px 0 12px;font-size:13px;font-weight:600;position:relative;">目录<span style="position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--cinnabar);"></span></div>
+        <div style="padding:10px 0 12px;font-size:13px;color:var(--ink2);">书签 3</div>
+        <div style="padding:10px 0 12px;font-size:13px;color:var(--ink2);">笔记 12</div>
+        <div style="padding:10px 0 12px;font-size:13px;color:var(--ink2);">书摘</div>
+      </div>
+      <div style="display:flex;flex-direction:column;">
+        <div class="brow" style="padding:12px 2px;"><div class="tt" style="font-size:14px;font-weight:400;">第十一章</div><div class="right">12 分钟</div></div>
+        <div class="brow" style="padding:12px 2px;">
+          <span class="seal-dot" style="width:6px;height:6px;"></span>
+          <div class="tt" style="font-size:14px;">第十二章</div><div class="right" style="color:var(--cinnabar);">在读 · 52%</div>
+        </div>
+        <div class="brow" style="padding:12px 2px;"><div class="tt" style="font-size:14px;font-weight:400;">第十三章</div><div class="right">14 分钟</div></div>
+        <div class="brow" style="padding:12px 2px;"><div class="tt" style="font-size:14px;font-weight:400;">第十四章</div><div class="right">11 分钟</div></div>
+        <div class="brow" style="padding:12px 2px;"><div class="tt" style="font-size:14px;font-weight:400;">第十五章</div><div class="right">13 分钟</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">4</span><b>书籍详情</b><br>题签封在左、题录在右：宋体书名、小字版本与进度，「精排」用金标（全界面唯一用金处）。目录页签以朱砂圆点标示当前，在读章节左侧一点朱砂。</div>
+  </div>
+
+  <!-- ⑦ 听书播放器 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 0;flex:none;">
+      <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div style="text-align:center;"><div style="font-family:var(--serif);font-size:14px;font-weight:600;">月亮与六便士</div><div style="font-size:10px;color:var(--ink2);margin-top:2px;">第十二章 · 第 34 / 96 句</div></div>
+      <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:14px 30px 26px;gap:0;overflow:hidden;">
+      <div class="cov" style="width:118px;height:168px;box-shadow:0 14px 34px rgba(28,27,24,.18);">
+        <span class="tag" style="font-size:14px;">月亮与六便士</span>
+        <span class="auth" style="font-size:8px;">毛姆 著</span>
+        <span class="yin" style="font-size:7px;">月</span>
+      </div>
+      <div style="align-self:stretch;margin-top:26px;text-align:center;">
+        <p style="font-family:var(--serif);font-size:19px;line-height:2.05;color:var(--ink);">我承认这种生活的社会价值，我也看到它井然有序的幸福，<span style="border-bottom:2px solid var(--cinnabar);padding-bottom:2px;">但是我的血液里却有一种强烈的愿望，渴望一种更狂放不羁的旅途。</span></p>
+      </div>
+      <div style="align-self:stretch;margin-top:auto;">
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink2);margin-bottom:8px;">
+          <span>第 34 句</span><span>本章余下 <b style="color:var(--ink);font-weight:600;">约 12 分钟</b></span>
+        </div>
+        <div style="height:2px;background:var(--line);border-radius:1px;position:relative;">
+          <i style="position:absolute;left:0;top:0;bottom:0;width:35%;background:var(--ink);border-radius:1px;"></i>
+          <i style="position:absolute;left:35%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--cinnabar);"></i>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:34px;margin-top:24px;">
+          <div style="width:48px;height:48px;display:grid;place-items:center;color:var(--ink);"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.5v14H6zM18.5 5v14L9.5 12z"/></svg></div>
+          <div style="width:68px;height:68px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></div>
+          <div style="width:48px;height:48px;display:grid;place-items:center;color:var(--ink);"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 5H18v14h-2.5zM5.5 5v14l9-7z"/></svg></div>
+        </div>
+        <div style="display:flex;border-top:.5px solid var(--line);margin-top:24px;padding-top:6px;">
+          <div style="flex:1;display:grid;place-items:center;gap:4px;padding:8px 0;color:var(--ink2);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span style="font-size:10px;">目录</span></div>
+          <div style="flex:1;display:grid;place-items:center;gap:4px;padding:8px 0;color:var(--ink);"><span style="font-size:13px;font-weight:600;">1.0×</span><span style="font-size:10px;">语速</span></div>
+          <div style="flex:1;display:grid;place-items:center;gap:4px;padding:8px 0;color:var(--ink2);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" stroke-linecap="round"/></svg><span style="font-size:10px;">声音</span></div>
+          <div style="flex:1;display:grid;place-items:center;gap:4px;padding:8px 0;color:var(--ink2);"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span style="font-size:10px;">定时</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">7</span><b>听书播放器 · 逐句跟读</b><br>封面以册页形式居中偏上，跟读文字宋体，当前句以朱砂下划线标示（不用底色块）。进度是句子不是音频时间，余下必标「约」。播放键为墨圆，上一句 / 下一句独立成键，底部目录 / 语速 / 声音 / 定时。</div>
+  </div>
+
+</div>
+
+<!-- ================= 列 2 ================= -->
+<div class="col">
+
+  <!-- ② 书 · 书架列表（题录式） -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div class="navtitle">
+      <div style="display:flex;align-items:flex-start;gap:10px;"><h2>书</h2><span class="vtext" style="font-size:10px;color:var(--ink2);border:.5px solid var(--line);border-radius:3px;padding:4px 2px;letter-spacing:3px;margin-top:2px;">书架</span><div class="sub" style="align-self:flex-end;">藏书 128 本 · 在读 3 本</div></div>
+      <div class="acts">
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;padding:18px 26px 0;flex:none;">
+      <div style="font-size:13px;font-weight:600;position:relative;padding-bottom:8px;">书籍 118<span style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--cinnabar);"></span></div>
+      <div style="font-size:13px;color:var(--ink2);padding-bottom:8px;">漫画 10</div>
+      <div style="margin-left:auto;display:flex;gap:16px;font-size:12px;color:var(--ink2);padding-bottom:8px;">
+        <span>筛选</span><span>排序 · 最近</span><span style="color:var(--cinnabar);">整理</span>
+      </div>
+    </div>
+    <hr class="hr" style="margin:0 26px;">
+    <div style="flex:1;padding:2px 26px 110px;overflow:hidden;">
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;"></span>
+        <div style="min-width:0;"><div class="tt">月亮与六便士 <span class="jing">精 排</span></div><div class="mt"><span>毛姆 · EPUB</span><span>·</span><span style="color:var(--cinnabar);">读到 52%</span></div></div>
+        <div class="right">今日<br>再读</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;"></span>
+        <div style="min-width:0;"><div class="tt">小王子</div><div class="mt"><span>圣埃克苏佩里 · EPUB</span><span>·</span><span style="color:var(--cinnabar);">读到 78%</span></div></div>
+        <div class="right">昨日<br>读过</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+        <div style="min-width:0;"><div class="tt">乡土中国</div><div class="mt"><span>费孝通 · TXT</span><span>·</span><span>未读</span></div></div>
+        <div class="right">待读</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+        <div style="min-width:0;"><div class="tt">我与地坛</div><div class="mt"><span>史铁生 · EPUB</span><span>·</span><span>已读完</span></div></div>
+        <div class="right">十月<br>读完</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+        <div style="min-width:0;"><div class="tt">夜航西飞</div><div class="mt"><span>柏瑞尔·马卡姆 · MOBI</span><span>·</span><span>未读</span></div></div>
+        <div class="right">待读</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+        <div style="min-width:0;"><div class="tt">山茶文具店</div><div class="mt"><span>小川糸 · EPUB</span><span>·</span><span>读到 12%</span></div></div>
+        <div class="right">上周<br>读过</div>
+      </div>
+      <div class="brow">
+        <span class="seal-dot" style="width:6px;height:6px;background:var(--line);"></span>
+        <div style="min-width:0;"><div class="tt">红楼梦</div><div class="mt"><span>曹雪芹 · PDF</span><span>·</span><span>读到 34%</span></div></div>
+        <div class="right">上月<br>读过</div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">2</span><b>「书」书架 · 题录式列表</b><br>细线分隔、宋体书名、小字作者与版本；在读的书左侧一点朱砂，不用底色块。右侧页缘竖排「书架」小印。筛选 / 排序 / 整理为纯文字，当前项以朱砂小圆点收。</div>
+  </div>
+
+  <!-- ⑤ 阅读页 · 宣纸日间 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div style="flex:none;text-align:center;padding:4px 0 0;font-size:10.5px;color:var(--ink2);letter-spacing:3px;">月亮与六便士</div>
+    <div style="flex:1;padding:34px 38px 20px;overflow:hidden;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:4px;">第十二章</div>
+        <div style="width:8px;height:8px;background:var(--cinnabar);border-radius:2px;margin:14px auto 0;"></div>
+      </div>
+      <p style="font-family:var(--serif);font-size:17px;line-height:2.15;text-indent:2em;margin-bottom:1.1em;">我承认这种生活的社会价值，我也看到它井然有序的幸福，但是我的血液里却有一种强烈的愿望，渴望一种更狂放不羁的旅途。</p>
+      <p style="font-family:var(--serif);font-size:17px;line-height:2.15;text-indent:2em;margin-bottom:1.1em;"><span style="border-bottom:2px solid var(--cinnabar);padding-bottom:2px;">这种安详宁静的快乐好像有一种叫我惊惧不安的东西。</span>我的心渴望一种更加惊险的生活，只要在我的生活中能有变迁——变迁和无法预见的刺激，我是准备踏上怪石嶙峋的山崖，奔赴暗礁满布的海滩的。</p>
+    </div>
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 38px 34px;font-size:10.5px;color:var(--ink2);">
+      <span>52%</span>
+      <span class="vtext" style="font-size:10px;letter-spacing:3px;opacity:.8;">第十二章</span>
+      <span>121 / 232</span>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">5</span><b>阅读页 · 宣纸日间</b><br>默认沉浸态，无工具栏。章节题宋体居中，题下一枚朱砂小方；页边距放宽，页脚仅百分比、竖排章名与页码。当前句（边读边听时）以朱砂下划线呈现。</div>
+  </div>
+
+  <!-- ⑥ 阅读页 · 夜间 + 底部听条 -->
+  <div>
+  <div class="frame"><div class="scr night">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div style="flex:none;text-align:center;padding:4px 0 0;font-size:10.5px;color:var(--ink2);letter-spacing:3px;">月亮与六便士</div>
+    <div style="flex:1;padding:30px 38px 20px;overflow:hidden;">
+      <p style="font-family:var(--serif);font-size:17px;line-height:2.15;text-indent:2em;margin-bottom:1.1em;color:var(--ink);">我承认这种生活的社会价值，我也看到它井然有序的幸福，但是我的血液里却有一种强烈的愿望，渴望一种更狂放不羁的旅途。</p>
+      <p style="font-family:var(--serif);font-size:17px;line-height:2.15;text-indent:2em;margin-bottom:1.1em;color:var(--ink);"><span style="border-bottom:2px solid var(--cinnabar);padding-bottom:2px;">这种安详宁静的快乐好像有一种叫我惊惧不安的东西。</span>我的心渴望一种更加惊险的生活，只要在我的生活中能有变迁——变迁和无法预见的刺激。</p>
+    </div>
+    <div class="listenbar">
+      <div class="tx"><b>正在听 · 第十二章</b><span>第 34 / 96 句 · 1.0× · 余下约 12 分钟</span></div>
+      <div class="lb-btn" title="展开播放器"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 15l6-6 6 6"/></svg></div>
+      <div class="lb-play"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></div>
+    </div>
+    <div class="tabbar">
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">6</span><b>阅读页 · 夜间 + 底部听条</b><br>夜间宣纸转为 #101012，朱砂转 #D97B6C。听条只两件操作：展开键（上箭头）与播放 / 暂停键，职责不互替；阅读位置与跟读句位各自保存，互不覆盖。</div>
+  </div>
+
+</div>
+
+<!-- ================= 列 3 ================= -->
+<div class="col">
+
+  <!-- ③ 书架网格 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div class="navtitle">
+      <div><h2>书</h2><div class="sub">藏书 128 本 · 在读 3 本</div></div>
+      <div class="acts">
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg></div>
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;padding:18px 26px 0;flex:none;">
+      <div style="font-size:13px;font-weight:600;position:relative;padding-bottom:8px;">书籍 118<span style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--cinnabar);"></span></div>
+      <div style="font-size:13px;color:var(--ink2);padding-bottom:8px;">漫画 10</div>
+      <div style="margin-left:auto;display:flex;gap:16px;font-size:12px;color:var(--ink2);padding-bottom:8px;">
+        <span>筛选</span><span>排序 · 最近</span><span style="display:flex;align-items:center;gap:5px;color:var(--ink);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>网格</span>
+      </div>
+    </div>
+    <hr class="hr" style="margin:0 26px;">
+    <div style="flex:1;padding:20px 26px 110px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px 16px;">
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">月亮与六便士</span><span class="yin" style="font-size:6px;">月</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">月亮与六便士</div>
+          <div style="height:.5px;background:var(--line);margin-top:6px;position:relative;"><i style="position:absolute;left:0;top:0;bottom:0;width:52%;background:var(--cinnabar);"></i></div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">小王子</span><span class="yin" style="font-size:6px;">王</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">小王子</div>
+          <div style="height:.5px;background:var(--line);margin-top:6px;position:relative;"><i style="position:absolute;left:0;top:0;bottom:0;width:78%;background:var(--cinnabar);"></i></div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">乡土中国</span><span class="yin" style="font-size:6px;">乡</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">乡土中国</div>
+          <div style="font-size:10px;color:var(--ink2);margin-top:6px;">未读</div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">我与地坛</span><span class="yin" style="font-size:6px;">坛</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">我与地坛</div>
+          <div style="font-size:10px;color:var(--ink2);margin-top:6px;">已读完</div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">夜航西飞</span><span class="yin" style="font-size:6px;">航</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">夜航西飞</div>
+          <div style="font-size:10px;color:var(--ink2);margin-top:6px;">未读</div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">山茶文具店</span><span class="yin" style="font-size:6px;">茶</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">山茶文具店</div>
+          <div style="height:.5px;background:var(--line);margin-top:6px;position:relative;"><i style="position:absolute;left:0;top:0;bottom:0;width:12%;background:var(--cinnabar);"></i></div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">红楼梦</span><span class="yin" style="font-size:6px;">梦</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">红楼梦 <span class="jing" style="font-size:8px;">精</span></div>
+          <div style="height:.5px;background:var(--line);margin-top:6px;position:relative;"><i style="position:absolute;left:0;top:0;bottom:0;width:34%;background:var(--cinnabar);"></i></div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">活着</span><span class="yin" style="font-size:6px;">活</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">活着</div>
+          <div style="font-size:10px;color:var(--ink2);margin-top:6px;">已读完</div></div>
+        <div><div class="cov" style="width:100%;aspect-ratio:.68;"><span class="tag" style="font-size:11px;">百年孤独</span><span class="yin" style="font-size:6px;">独</span></div>
+          <div style="font-family:var(--serif);font-size:12px;margin-top:8px;">百年孤独</div>
+          <div style="height:.5px;background:var(--line);margin-top:6px;position:relative;"><i style="position:absolute;left:0;top:0;bottom:0;width:61%;background:var(--cinnabar);"></i></div></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">3</span><b>「书」书架 · 网格</b><br>封面为 CSS 绘制的线装书题签：左侧朱砂浅底书脊、右上竖排题签、左下一枚小印。书名下不用色块，一根发丝进度线即可。</div>
+  </div>
+
+  <!-- ⑧ 己 · 统计 + 设置入口 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div class="navtitle">
+      <div><h2>己</h2><div class="sub">这一年，读了 46 本 · 312 小时</div></div>
+      <div class="acts">
+        <div class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="16" cy="8" r="2.2"/><circle cx="10" cy="16" r="2.2"/></svg></div>
+      </div>
+    </div>
+    <div class="pad" style="gap:20px;">
+      <div style="display:flex;gap:22px;align-items:center;padding:0 2px;">
+        <div style="font-size:13px;color:var(--ink2);"><span style="color:var(--ink);font-weight:600;border-bottom:2px solid var(--cinnabar);padding-bottom:3px;">日</span></div>
+        <div style="font-size:13px;color:var(--ink2);">周</div>
+        <div style="font-size:13px;color:var(--ink2);">月</div>
+        <div style="font-size:13px;color:var(--ink2);">年</div>
+        <div style="margin-left:auto;font-size:11px;color:var(--ink2);">今日 · 腊月初八</div>
+      </div>
+      <div style="display:flex;gap:0;border-top:.5px solid var(--line);border-bottom:.5px solid var(--line);">
+        <div style="flex:1;padding:16px 2px;">
+          <div style="font-size:11px;color:var(--ink2);">今日共读听</div>
+          <div style="font-family:var(--serif);font-size:30px;font-weight:600;margin-top:6px;">42<span style="font-size:12px;color:var(--ink2);font-weight:400;margin-left:4px;">分钟</span></div>
+          <div style="font-size:10.5px;color:var(--ink2);margin-top:6px;">读 30 · 听 12</div>
+        </div>
+        <div style="width:.5px;background:var(--line);"></div>
+        <div style="flex:1;padding:16px 2px 16px 18px;">
+          <div style="font-size:11px;color:var(--ink2);">每日目标</div>
+          <div style="font-family:var(--serif);font-size:30px;font-weight:600;margin-top:6px;">30<span style="font-size:12px;color:var(--ink2);font-weight:400;margin-left:4px;">分钟</span></div>
+          <div style="font-size:10.5px;margin-top:6px;color:var(--cinnabar);">已达成 · 连续 26 天</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div class="sect" style="margin-bottom:6px;"><b>摘句</b><span>来自《月亮与六便士》</span></div>
+        <p style="font-family:var(--serif);font-size:15px;line-height:2;color:var(--ink);padding:0 2px;">“我的心渴望一种更加惊险的生活。”</p>
+        <div style="display:flex;gap:18px;font-size:11.5px;padding:0 2px;"><span style="color:var(--cinnabar);">从这句读 ›</span><span style="color:var(--ink2);">听这本书 ›</span></div>
+      </div>
+      <hr class="hr">
+      <div style="display:flex;flex-direction:column;">
+        <div class="brow" style="padding:13px 2px;"><div class="tt" style="font-size:14px;font-family:var(--sans);font-weight:600;">外观与纸色</div><div class="right">宣纸 · 跟随系统 ›</div></div>
+        <div class="brow" style="padding:13px 2px;"><div class="tt" style="font-size:14px;font-family:var(--sans);font-weight:600;">阅读排版</div><div class="right">字号 · 行距 · 翻页 ›</div></div>
+        <div class="brow" style="padding:13px 2px;"><div class="tt" style="font-size:14px;font-family:var(--sans);font-weight:600;">声音与朗读</div><div class="right">系统声音 ›</div></div>
+        <div class="brow" style="padding:13px 2px;"><div class="tt" style="font-size:14px;font-family:var(--sans);font-weight:600;">传书与导入</div><div class="right">WiFi · WebDAV · OPDS ›</div></div>
+        <div class="brow" style="padding:13px 2px;"><div class="tt" style="font-size:14px;font-family:var(--sans);font-weight:600;">备份与同步</div><div class="right">iCloud 已开启 ›</div></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">8</span><b>「己」统计 + 设置入口</b><br>数字克制：宋体数字、小字说明，不用海报式大字与色块。日 / 周 / 月 / 年为文字切换，当前项朱砂下划线。设置是题录式清单，一行一事、右侧小字现值。</div>
+  </div>
+
+  <!-- ⑨ 搜索态 -->
+  <div>
+  <div class="frame"><div class="scr">
+    <div class="status"><span>9:41</span><span class="sic">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 9.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM8 5.4c-1.8 0-3.4.7-4.6 1.9l1.4 1.4A4.2 4.2 0 0 1 8 7.4c1.2 0 2.3.5 3.2 1.3l1.4-1.4A6.2 6.2 0 0 0 8 5.4zM8 1C5 1 2.3 2.2.4 4.2l1.4 1.4A8.7 8.7 0 0 1 8 3c2.4 0 4.6 1 6.2 2.6l1.4-1.4A10.7 10.7 0 0 0 8 1z"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" stroke="currentColor"><rect x=".5" y=".5" width="21" height="11" rx="3"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" stroke="none"/><path d="M23.5 4v4" stroke-linecap="round"/></svg>
+    </span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 26px 0;flex:none;">
+      <div style="flex:1;height:44px;border:.5px solid var(--line);border-radius:10px;background:var(--surface);display:flex;align-items:center;gap:9px;padding:0 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--ink2);"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+        <span style="font-size:14.5px;">六便士</span>
+        <span style="width:1px;height:18px;background:var(--cinnabar);"></span>
+      </div>
+      <span style="font-size:14px;color:var(--cinnabar);">取消</span>
+    </div>
+    <div style="flex:1;padding:18px 26px 110px;overflow:hidden;display:flex;flex-direction:column;gap:18px;">
+      <div>
+        <div style="font-size:11px;color:var(--ink2);letter-spacing:2px;padding:0 2px 4px;">书架 · 2 本</div>
+        <div class="brow">
+          <div class="cov" style="width:34px;height:48px;"><span class="tag" style="font-size:6px;padding:6% 5%;">月亮与六便士</span></div>
+          <div style="min-width:0;"><div class="tt" style="font-size:15px;">月亮与<b style="color:var(--cinnabar);font-weight:600;">六便士</b></div><div class="mt"><span>毛姆 · EPUB</span><span>·</span><span>读到 52%</span></div></div>
+          <div class="right">在读</div>
+        </div>
+        <div class="brow">
+          <div class="cov" style="width:34px;height:48px;"><span class="tag" style="font-size:6px;padding:6% 5%;">六便士之歌</span></div>
+          <div style="min-width:0;"><div class="tt" style="font-size:15px;"><b style="color:var(--cinnabar);font-weight:600;">六便士</b>之歌</div><div class="mt"><span>佚名 · TXT</span><span>·</span><span>未读</span></div></div>
+          <div class="right">待读</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--ink2);letter-spacing:2px;padding:0 2px 4px;">笔记与划线 · 3 处</div>
+        <div class="brow" style="align-items:flex-start;">
+          <span class="seal-dot" style="width:6px;height:6px;margin-top:8px;"></span>
+          <div style="min-width:0;"><div style="font-family:var(--serif);font-size:13.5px;line-height:1.8;">“满地都是<b style="color:var(--cinnabar);font-weight:600;">六便士</b>，他却抬头看见了月亮。”</div><div class="mt" style="margin-top:6px;"><span>月亮与六便士 · 第八章</span></div></div>
+        </div>
+        <div class="brow" style="align-items:flex-start;">
+          <span class="seal-dot" style="width:6px;height:6px;margin-top:8px;background:var(--line);"></span>
+          <div style="min-width:0;"><div style="font-family:var(--serif);font-size:13.5px;line-height:1.8;">“为天上的月亮神魂颠倒，对脚下的<b style="color:var(--cinnabar);font-weight:600;">六便士</b>视而不见。”</div><div class="mt" style="margin-top:6px;"><span>月亮与六便士 · 书摘</span></div></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--ink2);letter-spacing:2px;padding:0 2px 4px;">最近搜索</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:8px;">
+          <span style="font-size:12.5px;color:var(--ink2);border:.5px solid var(--line);border-radius:16px;padding:7px 14px;">小王子</span>
+          <span style="font-size:12.5px;color:var(--ink2);border:.5px solid var(--line);border-radius:16px;padding:7px 14px;">乡土中国</span>
+          <span style="font-size:12.5px;color:var(--ink2);border:.5px solid var(--line);border-radius:16px;padding:7px 14px;">毛姆</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM10.5 4h4v16h-4zM16 4l3.5 1-3.8 15.5-3.5-1z"/></svg><i></i><span>书</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5C6.5 4 9.5 4 12 5.5c2.5-1.5 5.5-1.5 8 0V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0z"/><path d="M12 5.5V19"/></svg><i></i><span>读</span></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c1.2-3.6 3.6-5.5 6.5-5.5s5.3 1.9 6.5 5.5"/></svg><i></i><span>己</span></div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="no">9</span><b>搜索态</b><br>搜索沿用书架的同一份查询状态，不分两套。结果分「书架 / 笔记与划线」两组，命中词以朱砂标出；最近搜索为细线胶囊，不用色块。</div>
+  </div>
+
+</div>
+</div>
+
+<footer style="max-width:1240px;margin:64px auto 0;text-align:center;color:#8A8578;font-size:12px;line-height:2;">
+  听页 · 墨 Ink — 方向 B 高保真设计稿 · 仅 HTML/CSS 自包含，无外部依赖<br>
+  朱砂仅用于：当前句下划线 · 印章点 · 主按钮 · 选中态 — 其余皆墨。
+</footer>
+
+</body>
+</html>
