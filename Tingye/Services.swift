@@ -103,15 +103,51 @@ enum CloudSpeech {
 
     static func synthesize(_ text: String, provider: String, model: String, voice: String, key: String, groupID: String) async throws -> Result {
         let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !key.isEmpty else { throw ReaderError.message("请先在「听书与声音」中填写自己的 \(VoiceOptions.providerName(provider)) API Key，或改用系统声音。") }
+        guard !key.isEmpty || provider == "custom" else { throw ReaderError.message("请先在「听书与声音」中填写自己的 \(VoiceOptions.providerName(provider)) API Key，或改用系统声音。") }
         let voice = voice.trimmingCharacters(in: .whitespacesAndNewlines), model = model.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !voice.isEmpty, voice.count <= 200 else { throw ReaderError.message("请选择有效音色。") }
         switch provider {
         case "glm": return try await glm(text, model: model.isEmpty ? "glm-tts" : model, voice: voice, key: key)
         case "azure": return try await azure(text, voice: voice, key: key, region: groupID)
         case "elevenlabs": return try await elevenLabs(text, model: model.isEmpty ? "eleven_multilingual_v2" : model, voice: voice, key: key)
+        case "custom": return try await openAICompatible(text, model: model.isEmpty ? "tts-1" : model, voice: voice, key: key, base: groupID)
         default: return try await minimax(text, model: model.isEmpty ? "speech-2.8-hd" : model, voice: voice, key: key, groupID: groupID)
         }
+    }
+
+    // MARK: 自定义 TTS（OpenAI 兼容 /audio/speech）
+
+    /// 规范化服务地址：接受 `…/v1`、`…/v1/` 或完整的 `…/audio/speech`；只允许 https，或局域网 / 本机的 http。
+    static func customSpeechEndpoint(_ base: String) -> URL? {
+        var text = base.trimmingCharacters(in: .whitespacesAndNewlines)
+        while text.hasSuffix("/") { text.removeLast() }
+        guard !text.isEmpty else { return nil }
+        if !text.hasSuffix("/audio/speech") { text += "/audio/speech" }
+        guard let url = URL(string: text), let scheme = url.scheme?.lowercased(), let host = url.host?.lowercased(), !host.isEmpty else { return nil }
+        if scheme == "https" { return url }
+        guard scheme == "http" else { return nil }
+        let local = host == "localhost" || host.hasSuffix(".local") || host == "127.0.0.1" || host == "::1"
+            || host.hasPrefix("192.168.") || host.hasPrefix("10.") || host.range(of: #"^172\.(1[6-9]|2\d|3[01])\."#, options: .regularExpression) != nil
+        return local ? url : nil
+    }
+
+    private static func openAICompatible(_ text: String, model: String, voice: String, key: String, base: String) async throws -> Result {
+        guard let endpoint = customSpeechEndpoint(base) else {
+            throw ReaderError.message("自定义 TTS 地址无效：请填写 https 地址，或局域网 / 本机的 http 地址。")
+        }
+        let body: [String: JSONValue] = ["model": .string(model), "input": .string(text), "voice": .string(voice), "response_format": .string("mp3")]
+        var request = URLRequest(url: endpoint); request.httpMethod = "POST"
+        if !key.isEmpty { request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization") }
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try Integrity.encoder().encode(body)
+        let (data, http) = try await send(request)
+        guard (200..<300).contains(http.statusCode) else { throw failure(http.statusCode, detail: detail(data)) }
+        let type = http.value(forHTTPHeaderField: "Content-Type") ?? ""
+        guard !data.isEmpty, !type.contains("json"), !type.hasPrefix("text/") else {
+            let extra = detail(data).map { "（服务返回：\($0)）" } ?? ""
+            throw ReaderError.message("自定义 TTS 没有返回音频，请检查模型与音色名。" + extra)
+        }
+        return Result(audio: type.contains("wav") ? try normalizedWav(data) : data, words: [])
     }
 
     // MARK: Microsoft Azure Speech（REST + SSML，MP3）

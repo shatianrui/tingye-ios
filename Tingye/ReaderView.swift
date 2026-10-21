@@ -80,6 +80,7 @@ final class ReaderDocument: ObservableObject {
 private struct UncheckedBox<T>: @unchecked Sendable { let value: T }
 
 struct ReaderView: View {
+    @AppStorage(GeneralSettings.hideHomeIndicatorKey) private var hideHomeIndicator = true
     @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -219,6 +220,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(!chrome)
+        .persistentSystemOverlays(!chrome && hideHomeIndicator ? .hidden : .automatic)
         .background(WindowAppearance(style: prefs.kind.dark ? .dark : UIUserInterfaceStyle(appearance: appearance), restore: UIUserInterfaceStyle(appearance: appearance)))
         .animation(.snappy(duration: 0.25), value: chrome)
         .animation(Theme.smoothSpring, value: active)
@@ -496,7 +498,7 @@ struct ReaderView: View {
     private func readerActionLabel(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 6) {
             ThemeIcon(symbol: icon, size: 24)
-            Text(title).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(selected ? readerAccent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
@@ -1129,11 +1131,11 @@ private struct ChapterScrubber: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) {
                 ThemeIcon(symbol: name, size: 18)
-                Text(title).font(.caption)
+                Text(L(title)).font(.caption)
             }.fixedSize(horizontal: true, vertical: true)
             VStack(spacing: 4) {
                 ThemeIcon(symbol: name, size: 18)
-                Text(title).font(.caption).fixedSize(horizontal: false, vertical: true)
+                Text(L(title)).font(.caption).fixedSize(horizontal: false, vertical: true)
             }
         }
         .foregroundStyle(tint).padding(.horizontal, 8).frame(minHeight: 44).contentShape(Rectangle())
@@ -1311,7 +1313,7 @@ struct ReadingPreferencesView: View {
 
     private func fontChip(_ key: String, _ title: String) -> some View {
         Button { Haptics.selection(); font = key } label: {
-            Text(title).font(Theme.sans(12 * uiScale))
+            Text(L(title)).font(Theme.sans(12 * uiScale))
                 .foregroundStyle(font == key ? Theme.accent : Theme.ink3)
                 .padding(.horizontal, 6)
                 .frame(maxWidth: .infinity, minHeight: 44)

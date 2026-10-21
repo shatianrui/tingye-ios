@@ -127,7 +127,7 @@ struct BookDetailView: View {
     private func fact(_ value: String, unit: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(value + " " + unit).font(.subheadline.weight(.medium)).monospacedDigit().foregroundStyle(Theme.ink)
-            Text(label).font(.caption).foregroundStyle(Theme.ink3)
+            Text(L(label)).font(.caption).foregroundStyle(Theme.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -227,6 +227,9 @@ struct BookDetailView: View {
             }
             if !entry.sample {
                 if entry.local { Button { repair = true } label: { Label("修复图文与封面", systemImage: Icon.repair) } }
+                if entry.local && entry.format.uppercased() == "TXT" {
+                    Button { model.run("正在重新分章") { try await model.resplit(entryID) } } label: { Label("按分章规则重新分章", systemImage: Icon.contents) }
+                }
                 Divider()
                 Button(role: .destructive) { removal = true } label: { Label("移除书籍…", systemImage: Icon.delete) }
             }
@@ -240,8 +243,8 @@ struct BookDetailView: View {
         HStack(spacing: 12) {
             ThemeIcon(symbol: icon, size: 24).foregroundStyle(Theme.ink)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                Text(subtitle).font(.caption).foregroundStyle(Theme.ink3)
+                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink3)
@@ -426,7 +429,7 @@ struct ChapterManagerView: View {
 
 /// 设置目的地：己页签与「更多设置」页共用。
 enum SettingsDestination: String, Hashable {
-    case reading, fonts, voice, appearance, backup, notes, privacy, licenses, profile
+    case reading, fonts, voice, appearance, backup, notes, privacy, licenses, profile, txtRules, general, storage, menu
 }
 
 @ViewBuilder
@@ -441,6 +444,10 @@ func settingsDestinationView(_ route: SettingsDestination) -> some View {
     case .privacy: PrivacyPolicyView()
     case .licenses: FontLicenseView()
     case .profile: ProfileView()
+    case .txtRules: TxtRulesView()
+    case .general: GeneralSettingsView()
+    case .storage: StorageView()
+    case .menu: MenuSettingsView()
     }
 }
 
@@ -616,11 +623,11 @@ struct ProfileView: View {
                 SettingsIcon(systemName: icon, color: color)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(Theme.ink3) }
+                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if let value { Text(value).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+            if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
             if disclosure { ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3) }
         }
     }
@@ -696,10 +703,10 @@ struct AppearanceView: View {
             HStack(spacing: 18) {
                 appearancePreview(value)
                 VStack(alignment: .leading, spacing: 7) {
-                    Text(title)
+                    Text(L(title))
                         .font(.headline)
                         .foregroundStyle(Theme.ink)
-                    Text(subtitle)
+                    Text(L(subtitle))
                         .font(.caption)
                         .foregroundStyle(Theme.ink3)
                 }

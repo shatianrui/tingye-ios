@@ -7,7 +7,7 @@ final class DesignFlowTests: XCTestCase {
 
     private func launch(_ scene: String, largeType: Bool = false, appearance: String = "light") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-ui-fixture", "-ui-reset-preferences", "-uireview", scene, "-ui-reduce-motion", "-ui-appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.original", "NO", "-reader.scrolling", "NO", "-shelf.kind", "books", "-voice.rate", "1.0"]
+        app.launchArguments = ["-ui-fixture", "-ui-reset-preferences", "-uireview", scene, "-ui-reduce-motion", "-ui-appearance", appearance, "-privacy.appLock", "NO", "-reader.font", "system", "-reader.original", "NO", "-reader.scrolling", "NO", "-shelf.kind", "books", "-voice.rate", "1.0", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         if largeType { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
         app.launch()
         return app

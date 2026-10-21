@@ -32,7 +32,7 @@ enum BookImporter {
         if ["html", "htm", "xhtml"].contains(ext) { chapters = [HTMLText.chapter(text, title: title)] }
         // Markdown 的原书图文由正文同源生成，保证开关原书图文时句级高亮与进度一致。
         else if ["md", "markdown"].contains(ext) { chapters = splitText(markdown(text), title: title).map(withOriginalDocument) }
-        else if ["txt", "text", ""].contains(ext) { chapters = splitText(text, title: title) }
+        else if ["txt", "text", ""].contains(ext) { chapters = splitTextWithUserRules(text, title: title) }
         else { throw ReaderError.message("支持 EPUB、MOBI、AZW3、TXT、PDF、HTML、Markdown、DOCX、CBZ 和听页备份 JSON。") }
         guard chapters.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else { throw ReaderError.message("未找到可阅读的文字。") }
         return Imported(book: try Book(title: title, format: ext.uppercased(), chapters: chapters).validated())
@@ -47,10 +47,39 @@ enum BookImporter {
     static func normalize(_ text: String) -> String { text.replacingOccurrences(of: "\u{FEFF}", with: "").replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n") }
     private static let headingRegex = try! NSRegularExpression(pattern: #"(?m)^(?:第[零〇一二三四五六七八九十百千万两\d]+[章回卷部篇节].{0,65}|Chapter\s+\d+.{0,65}|#{1,3}\s+.{1,65})$"#, options: [.caseInsensitive])
     private static let linkRegex = try! NSRegularExpression(pattern: #"(?i)<link\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>"#)
-    static func splitText(_ source: String, title: String) -> [Chapter] {
+    /// 按标题行分章；`rule` 为用户自定义正则（nil 用内置规则）。超过 `maxLength` 字的章节在段落处继续切分。
+    static func splitText(_ source: String, title: String, rule: NSRegularExpression? = nil, maxLength: Int = TxtChapterRules.defaultMaxLength) -> [Chapter] {
+        limitLength(splitByHeadings(source, title: title, regex: rule ?? headingRegex), maxLength: maxLength)
+    }
+    /// 导入 TXT 时使用用户在「TXT 分章规则」里选用的规则与最大字数。
+    static func splitTextWithUserRules(_ source: String, title: String) -> [Chapter] {
+        splitText(source, title: title, rule: TxtChapterRules.activeRegex(), maxLength: TxtChapterRules.maxLength)
+    }
+    static func limitLength(_ chapters: [Chapter], maxLength: Int) -> [Chapter] {
+        guard maxLength >= 1000 else { return chapters }
+        return chapters.flatMap { chapter -> [Chapter] in
+            guard chapter.text.count > maxLength else { return [chapter] }
+            var parts: [String] = [], current = ""
+            for paragraph in chapter.text.components(separatedBy: "\n") {
+                if !current.isEmpty && current.count + paragraph.count + 1 > maxLength { parts.append(current); current = "" }
+                if paragraph.count > maxLength {
+                    var rest = Substring(paragraph)
+                    while rest.count > maxLength { parts.append((current.isEmpty ? "" : current + "\n") + rest.prefix(maxLength)); current = ""; rest = rest.dropFirst(maxLength) }
+                    current = String(rest)
+                } else {
+                    current += (current.isEmpty ? "" : "\n") + paragraph
+                }
+            }
+            if !current.isEmpty { parts.append(current) }
+            return parts.enumerated().map { index, text in
+                Chapter(title: parts.count > 1 ? "\(chapter.title)（\(index + 1)）" : chapter.title, text: text)
+            }
+        }
+    }
+    private static func splitByHeadings(_ source: String, title: String, regex: NSRegularExpression) -> [Chapter] {
         let text = normalize(source)
         let ns = text as NSString
-        let headings = headingRegex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+        let headings = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
         guard !headings.isEmpty else { return [Chapter(title: title, text: text)] }
         var chapters: [Chapter] = []
         if headings[0].range.location > 0 {
@@ -253,5 +282,41 @@ enum HTMLText {
         }
         for (entity, value) in [("&nbsp;", " "), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&apos;", "'"), ("&amp;", "&")] { text = text.replacingOccurrences(of: entity, with: value) }
         return text
+    }
+}
+
+
+// MARK: - TXT 自定义分章规则
+
+/// 用户自定义的 TXT 分章正则：只影响之后导入或「重新分章」的 TXT，不改动已有书籍。
+enum TxtChapterRules {
+    static let rulesKey = "txt.rules"
+    static let activeKey = "txt.activeRule"
+    static let maxLengthKey = "txt.maxChapterLength"
+    static let defaultMaxLength = 50_000
+    /// 常用预设，供一键加入。
+    static let presets: [(name: String, pattern: String)] = [
+        ("第X章 / 回 / 卷", #"^\s*第[零〇一二三四五六七八九十百千万两\d]+[章回卷部篇节].{0,40}$"#),
+        ("纯数字标题", #"^\s*\d{1,4}[\.、\s].{0,40}$"#),
+        ("Chapter N", #"^\s*Chapter\s+\d+.{0,60}$"#),
+        ("【标题】", #"^\s*【.{1,40}】\s*$"#),
+    ]
+    static var rules: [String] {
+        get { UserDefaults.standard.stringArray(forKey: rulesKey) ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: rulesKey) }
+    }
+    static var maxLength: Int {
+        let value = UserDefaults.standard.integer(forKey: maxLengthKey)
+        return value >= 1000 ? value : defaultMaxLength
+    }
+    /// 校验并编译；多行匹配，行首行尾锚定。非法正则返回 nil。
+    static func compile(_ pattern: String) -> NSRegularExpression? {
+        let trimmed = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return try? NSRegularExpression(pattern: trimmed, options: [.anchorsMatchLines, .caseInsensitive])
+    }
+    static func activeRegex() -> NSRegularExpression? {
+        guard let pattern = UserDefaults.standard.string(forKey: activeKey) else { return nil }
+        return compile(pattern)
     }
 }

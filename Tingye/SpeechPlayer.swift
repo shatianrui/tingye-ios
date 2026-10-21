@@ -107,7 +107,9 @@ struct VoiceOptions {
         let provider = d.string(forKey: "voice.provider") ?? "system"
         let rate = d.float(forKey: "voice.rate")
         let chosen = sanitized(provider: provider, model: d.string(forKey: modelKey(provider)), voice: d.string(forKey: voiceKey(provider)))
-        let group = provider == "azure" ? (d.string(forKey: "voice.azureRegion") ?? "") : (d.string(forKey: "voice.groupID") ?? "")
+        let group = provider == "azure" ? (d.string(forKey: "voice.azureRegion") ?? "")
+            : provider == "custom" ? (d.string(forKey: customURLKey) ?? "")
+            : (d.string(forKey: "voice.groupID") ?? "")
         var options = VoiceOptions(provider: provider, model: chosen.model, voice: chosen.voice, rate: min(2, max(0.5, rate == 0 ? 1 : rate)), key: apiKey(provider), groupID: group)
         options.roles = d.bool(forKey: "voice.roles")
         options.maleVoice = sanitizedRoleVoice(provider: provider, voice: d.string(forKey: roleKey("male", provider)))
@@ -115,8 +117,10 @@ struct VoiceOptions {
         return options
     }
     static func roleKey(_ role: String, _ provider: String) -> String { "voice.role.\(role).\(provider)" }
+    /// 自定义 TTS 的服务地址（OpenAI 兼容，如 https://example.com/v1 或局域网 http://192.168.1.2:8000/v1）。
+    static let customURLKey = "voice.customURL"
     static func providerName(_ provider: String) -> String {
-        ["system": "系统声音", "glm": "智谱 GLM", "minimax": "MiniMax", "azure": "Microsoft Azure", "elevenlabs": "ElevenLabs"][provider] ?? provider
+        ["system": "系统声音", "glm": "智谱 GLM", "minimax": "MiniMax", "azure": "Microsoft Azure", "elevenlabs": "ElevenLabs", "custom": "自定义 TTS"][provider] ?? provider
     }
     /// 某一句实际使用的配置：开启分角色时，对话句换成对应角色的音色
     func forRole(_ role: DialogueRole) -> VoiceOptions {
@@ -143,10 +147,10 @@ struct VoiceOptions {
     private static let minimaxPresetPrefixes = ["male-qn-", "female-", "presenter_", "audiobook_"]
     private static let elevenPresetVoices: Set<String> = ["21m00Tcm4TlvDq8ikWAM", "pNInz6obpgDQGcFmaJgB", "EXAVITQu4vr4xnSDxMaL", "onwK4e9ZLuTAKqWW03F9"]
     static func defaultModel(_ provider: String) -> String {
-        ["minimax": "speech-2.8-hd", "glm": "glm-tts", "elevenlabs": "eleven_multilingual_v2"][provider] ?? ""
+        ["minimax": "speech-2.8-hd", "glm": "glm-tts", "elevenlabs": "eleven_multilingual_v2", "custom": "tts-1"][provider] ?? ""
     }
     static func defaultVoice(_ provider: String) -> String {
-        ["minimax": "male-qn-qingse", "glm": "tongtong", "azure": "zh-CN-XiaoxiaoNeural", "elevenlabs": "21m00Tcm4TlvDq8ikWAM"][provider] ?? ""
+        ["minimax": "male-qn-qingse", "glm": "tongtong", "azure": "zh-CN-XiaoxiaoNeural", "elevenlabs": "21m00Tcm4TlvDq8ikWAM", "custom": "alloy"][provider] ?? ""
     }
     /// 两家的模型与音色不通用：GLM 只用 glm 开头的模型及其系统/复刻音色；MiniMax 不接受 GLM 的模型或音色。
     /// 已经串用的旧值在这里回到各自的默认值，避免把 GLM 的模型发给 MiniMax（或反过来）导致合成失败。
@@ -167,6 +171,10 @@ struct VoiceOptions {
         case "azure":
             model = ""
             if !voice.hasSuffix("Neural") { voice = defaultVoice("azure") }
+        case "custom":
+            // 自建服务的模型与音色名由服务决定，只补空值。
+            if model.isEmpty { model = defaultModel("custom") }
+            if voice.isEmpty || voice.hasPrefix("com.apple.") { voice = defaultVoice("custom") }
         case "elevenlabs":
             if !model.hasPrefix("eleven_") { model = defaultModel("elevenlabs") }
             if voice.isEmpty || voice.hasPrefix("com.apple.") || voice.hasSuffix("Neural") || glmVoices.contains(voice) { voice = defaultVoice("elevenlabs") }

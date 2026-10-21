@@ -19,6 +19,8 @@
 		3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */; };
 		36892EC415D1296C7AD84679 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = A839E16D3CC3AB497E0E251A /* Fixtures */; };
 		3A3585E4BA3A02D48C9CF7FB /* ZIPFoundation-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 266F9903D721064C5690ACCF /* ZIPFoundation-LICENSE.txt */; };
+		5A1C0B2E8F4D6A7B9C3E1D26 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0B2E8F4D6A7B9C3E1D25 /* Localizable.xcstrings */; };
+		5A1C0B2E8F4D6A7B9C3E1D24 /* SMBClient-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0B2E8F4D6A7B9C3E1D23 /* SMBClient-LICENSE.txt */; };
 		437B2D6AB6E116EA8CD40993 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A96F10061380F5BBA4FB87B /* StatsView.swift */; };
 		4F6F92C0AC6DD7A98EEB6A04 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */; };
 		66E47CFD1A5399FEAB44C89B /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2255049BA084F3A2D5C0E5 /* AppModel.swift */; };
@@ -33,10 +35,17 @@
 		B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */; };
 		BA57495726CA809E81AA3395 /* NotoSerifCJKsc-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */; };
 		BCF3BAC600CD04C4DB63EAB9 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB162FC79480EE85CABD24A7 /* Typography.swift */; };
+		F84D5CD0E488C13BD4487558 /* TxtRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A12D2702195593AF21B10 /* TxtRulesView.swift */; };
+		864340936656DC6654CCB4EF /* ReadingCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BD6E154F7D2825F0316ABFC /* ReadingCalendarView.swift */; };
+		5C1C07FF4DEA72D348F0BA55 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE2C01E67FCC9B7463FE3F1 /* GeneralSettingsView.swift */; };
+		763FAEFD4078AF334245A5D1 /* StorageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF89903BE781F47D4DDB3481 /* StorageView.swift */; };
+		693010A666BA4C7060B0C0E5 /* MenuSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003EF4A62C49A538468D3907 /* MenuSettingsView.swift */; };
+		1FFE62ACD7268291B5FA3C21 /* SMBBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779AA8586C04D85834E606AC /* SMBBrowser.swift */; };
 		BED77CC9D34013668A3A6B39 /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */; };
 		A1B2C3D4E5F6071829304A5B /* NowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6071829304A5B6C /* NowView.swift */; };
 		C55BE1C7BCD4A86B59B1F27D /* samples.json in Resources */ = {isa = PBXBuildFile; fileRef = 371FB21F4691205F1F79CA34 /* samples.json */; };
 		C6445530EE283916136190B5 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 31276E7AB39C1785F675F44F /* ZIPFoundation */; };
+		5A1C0B2E8F4D6A7B9C3E1D22 /* SMBClient in Frameworks */ = {isa = PBXBuildFile; productRef = 5A1C0B2E8F4D6A7B9C3E1D21 /* SMBClient */; };
 		CEB5DC2B54A1F6DBFB3DF06C /* LXGW-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = DD2AE6F7DFFDF0B7F18CCF21 /* LXGW-OFL.txt */; };
 		CF16399775D2CE0E50A07621 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = 592AEADDD9E4899FEBD06BFE /* Services.swift */; };
 		D06882DB410C35EFAB4BA492 /* LXGWWenKaiLite-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FDB79BAE9C9561CDBD833C2 /* LXGWWenKaiLite-Regular.ttf */; };
@@ -65,6 +74,8 @@
 		16CECC27AA836CF92CEA7F18 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		19276B899D183EF8BB8323BF /* Noto-OFL.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Noto-OFL.txt"; sourceTree = "<group>"; };
 		247E674DABAB45B90D02083D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		5A1C0B2E8F4D6A7B9C3E1D25 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		5A1C0B2E8F4D6A7B9C3E1D23 /* SMBClient-LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "SMBClient-LICENSE.txt"; sourceTree = "<group>"; };
 		266F9903D721064C5690ACCF /* ZIPFoundation-LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "ZIPFoundation-LICENSE.txt"; sourceTree = "<group>"; };
 		311DDC45B3489BB0BC48AFCA /* TingyeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TingyeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		33C867C8C5F27D5ADC91367E /* ReaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
@@ -93,6 +104,12 @@
 		CEFB1F2F5AE3E65F32A73D18 /* ComicReaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComicReaderView.swift; sourceTree = "<group>"; };
 		DD2AE6F7DFFDF0B7F18CCF21 /* LXGW-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LXGW-OFL.txt"; sourceTree = "<group>"; };
 		DE2255049BA084F3A2D5C0E5 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		030A12D2702195593AF21B10 /* TxtRulesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TxtRulesView.swift; sourceTree = "<group>"; };
+		6BD6E154F7D2825F0316ABFC /* ReadingCalendarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadingCalendarView.swift; sourceTree = "<group>"; };
+		5BE2C01E67FCC9B7463FE3F1 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		AF89903BE781F47D4DDB3481 /* StorageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StorageView.swift; sourceTree = "<group>"; };
+		003EF4A62C49A538468D3907 /* MenuSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuSettingsView.swift; sourceTree = "<group>"; };
+		779AA8586C04D85834E606AC /* SMBBrowser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SMBBrowser.swift; sourceTree = "<group>"; };
 		DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6071829304A5B6C /* NowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
 		F4305A23D2945C6E717F6482 /* MobiReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobiReader.swift; sourceTree = "<group>"; };
@@ -107,6 +124,7 @@
 			files = (
 				84F6F8D1F3CC8CDFF9B4456A /* Foundation.framework in Frameworks */,
 				C6445530EE283916136190B5 /* ZIPFoundation in Frameworks */,
+				5A1C0B2E8F4D6A7B9C3E1D22 /* SMBClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +150,8 @@
 				CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */,
 				7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */,
 				266F9903D721064C5690ACCF /* ZIPFoundation-LICENSE.txt */,
+				5A1C0B2E8F4D6A7B9C3E1D23 /* SMBClient-LICENSE.txt */,
+				5A1C0B2E8F4D6A7B9C3E1D25 /* Localizable.xcstrings */,
 				371FB21F4691205F1F79CA34 /* samples.json */,
 				FA30DD38307FD4F000C4C5F7 /* Lucide-LICENSE.txt */,
 			);
@@ -168,6 +188,12 @@
 				7A96F10061380F5BBA4FB87B /* StatsView.swift */,
 				83D6639CBAAFE961F7F6D147 /* Library.swift */,
 				DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */,
+				779AA8586C04D85834E606AC /* SMBBrowser.swift */,
+				003EF4A62C49A538468D3907 /* MenuSettingsView.swift */,
+				AF89903BE781F47D4DDB3481 /* StorageView.swift */,
+				5BE2C01E67FCC9B7463FE3F1 /* GeneralSettingsView.swift */,
+				6BD6E154F7D2825F0316ABFC /* ReadingCalendarView.swift */,
+				030A12D2702195593AF21B10 /* TxtRulesView.swift */,
 				B2C3D4E5F6071829304A5B6C /* NowView.swift */,
 				162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */,
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
@@ -262,6 +288,7 @@
 			name = Tingye;
 			packageProductDependencies = (
 				31276E7AB39C1785F675F44F /* ZIPFoundation */,
+				5A1C0B2E8F4D6A7B9C3E1D21 /* SMBClient */,
 			);
 			productName = Tingye;
 			productReference = C7D54437CCEED905AA440076 /* Tingye.app */;
@@ -278,15 +305,19 @@
 			};
 			buildConfigurationList = 261CAAF983D60E5E44AFDC2A /* Build configuration list for PBXProject "Tingye" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				"zh-Hant",
+				ja,
 			);
 			mainGroup = FBDEE520922B511C813A3B26;
 			packageReferences = (
 				1E964A218AB648A323745C7F /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				5A1C0B2E8F4D6A7B9C3E1D20 /* XCRemoteSwiftPackageReference "SMBClient" */,
 			);
 			productRefGroup = 6D8230328C08195A4C088D81 /* Products */;
 			projectDirPath = "";
@@ -320,6 +351,8 @@
 				D06882DB410C35EFAB4BA492 /* LXGWWenKaiLite-Regular.ttf in Resources */,
 				4F6F92C0AC6DD7A98EEB6A04 /* PrivacyInfo.xcprivacy in Resources */,
 				3A3585E4BA3A02D48C9CF7FB /* ZIPFoundation-LICENSE.txt in Resources */,
+				5A1C0B2E8F4D6A7B9C3E1D24 /* SMBClient-LICENSE.txt in Resources */,
+				5A1C0B2E8F4D6A7B9C3E1D26 /* Localizable.xcstrings in Resources */,
 				C55BE1C7BCD4A86B59B1F27D /* samples.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -359,6 +392,12 @@
 				437B2D6AB6E116EA8CD40993 /* StatsView.swift in Sources */,
 				28F78F0A9FC4C2BE75B014E7 /* Library.swift in Sources */,
 				BED77CC9D34013668A3A6B39 /* DailyQuoteCard.swift in Sources */,
+				1FFE62ACD7268291B5FA3C21 /* SMBBrowser.swift in Sources */,
+				693010A666BA4C7060B0C0E5 /* MenuSettingsView.swift in Sources */,
+				763FAEFD4078AF334245A5D1 /* StorageView.swift in Sources */,
+				5C1C07FF4DEA72D348F0BA55 /* GeneralSettingsView.swift in Sources */,
+				864340936656DC6654CCB4EF /* ReadingCalendarView.swift in Sources */,
+				F84D5CD0E488C13BD4487558 /* TxtRulesView.swift in Sources */,
 				A1B2C3D4E5F6071829304A5B /* NowView.swift in Sources */,
 				3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */,
 				D92714EFB66508E9A82461EA /* Theme.swift in Sources */,
@@ -672,6 +711,14 @@
 				version = 0.9.20;
 			};
 		};
+		5A1C0B2E8F4D6A7B9C3E1D20 /* XCRemoteSwiftPackageReference "SMBClient" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/SMBClient.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.3.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -679,6 +726,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1E964A218AB648A323745C7F /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		5A1C0B2E8F4D6A7B9C3E1D21 /* SMBClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5A1C0B2E8F4D6A7B9C3E1D20 /* XCRemoteSwiftPackageReference "SMBClient" */;
+			productName = SMBClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

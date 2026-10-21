@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import UserNotifications
 
 /// 统计（参照 PureLibro）：日 / 周 / 月 / 年 / 总；概览数字、阅读目标、时长图表、阅读时段、按书排行。
 /// 按日的总时长来自 `readingSeconds`（旧版本也有）；时段与排行来自 1.14 起记录的 `sessions`。
@@ -8,6 +9,11 @@ struct StatsView: View {
     /// 余白：阅读足迹与设置题录共用己页签；独立统计入口保持可用。
     var ji = false
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
+    @AppStorage(ReadingReminder.enabledKey) private var reminderEnabled = false
+    @AppStorage(ReadingReminder.minutesKey) private var reminderMinutes = ReadingReminder.defaultMinutes
+    @State private var reminderDraft = false
+    @State private var reminderTime = Date()
+    @State private var reminderDenied = false
     @AppStorage("app.appearance") private var appearance = "system"
     @State private var period: Period = .day
     @State private var offset = 0
@@ -16,6 +22,7 @@ struct StatsView: View {
     @State private var export: ExportedBook?
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
+    @State private var showingCalendar = false
     @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 52
     @Environment(\.dynamicTypeSize) private var typeSize
     private var summaryLayout: AnyLayout {
@@ -63,6 +70,10 @@ struct StatsView: View {
                     .padding(.bottom, -16)
                 HStack(alignment: .center, spacing: 8) {
                     PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。")
+                    Button("日历") { showingCalendar = true }
+                        .font(.subheadline.weight(.medium))
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("stats.calendar")
                     Button("目标") { editGoal() }
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 44)
@@ -77,7 +88,7 @@ struct StatsView: View {
                 HStack(spacing: 6) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
-                            Text(item.rawValue).font(.subheadline.weight(period == item ? .bold : .regular))
+                            Text(L(item.rawValue)).font(.subheadline.weight(period == item ? .bold : .regular))
                                 .foregroundStyle(period == item ? Theme.ink : Theme.ink3)
                                 .frame(maxWidth: .infinity, minHeight: 44)
                                 .overlay(alignment: .bottom) { Rectangle().fill(period == item ? Theme.clay : Theme.line).frame(height: period == item ? 3 : 1) }
@@ -126,6 +137,7 @@ struct StatsView: View {
         .task { if UIReview.screen == "stats-goal" { editGoal() } }
         #endif
         .sheet(isPresented: $editingGoal) { goalEditor }
+        .sheet(isPresented: $showingCalendar) { ReadingCalendarView().environmentObject(model).tint(Theme.accent) }
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
     }
 
@@ -188,21 +200,25 @@ struct StatsView: View {
 
     private func editGoal() {
         goalDraft = goalMinutes
+        reminderDraft = reminderEnabled
+        reminderDenied = false
+        reminderTime = Calendar.current.date(byAdding: .minute, value: reminderMinutes, to: Calendar.current.startOfDay(for: Date())) ?? Date()
         editingGoal = true
     }
 
     private var intervalLabel: String {
         let i = interval
-        let f = DateFormatter(); f.locale = Locale(identifier: "zh_CN")
+        // 日期格式跟随界面语言（简中仍为「2026年10月22日 星期四」）。
+        let f = DateFormatter(); f.locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "zh-Hans")
         switch period {
-        case .day: f.dateFormat = "yyyy 年 M 月 d 日 EEEE"; return f.string(from: i.start)
+        case .day: f.setLocalizedDateFormatFromTemplate("yMMMdEEEE"); return f.string(from: i.start)
         case .week:
-            f.dateFormat = "M 月 d 日"
+            f.setLocalizedDateFormatFromTemplate("MMMd")
             return f.string(from: i.start) + " – " + f.string(from: i.end.addingTimeInterval(-1))
-        case .month: f.dateFormat = "yyyy 年 M 月"; return f.string(from: i.start)
-        case .year: f.dateFormat = "yyyy 年"; return f.string(from: i.start)
+        case .month: f.setLocalizedDateFormatFromTemplate("yMMMM"); return f.string(from: i.start)
+        case .year: f.setLocalizedDateFormatFromTemplate("y"); return f.string(from: i.start)
         case .all:
-            f.dateFormat = "yyyy 年 M 月 d 日"
+            f.setLocalizedDateFormatFromTemplate("yMMMd")
             return "自 " + f.string(from: i.start) + " 起 · \(dayTotals.filter { $0.seconds > 0 }.count) 天"
         }
     }
@@ -224,18 +240,25 @@ struct StatsView: View {
                     metric("本期阅读", periodSessions.count, "次", icon: Icon.duration)
                     metric("全部笔记书摘", model.noteCount, "条", icon: Icon.noteStat)
                 }
+                RowDivider().gridCellColumns(2)
+                GridRow {
+                    let streak = AppModel.readingStreak(model.readingSeconds)
+                    metric("连续阅读", streak.current, "天", icon: Icon.autoTurn)
+                        .accessibilityIdentifier("stats.streak")
+                    metric("最长连续", streak.longest, "天", icon: Icon.markRead)
+                }
             }
         }
     }
 
     private func metric(_ title: String, _ value: Int, _ unit: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 6) { ThemeIcon(symbol: icon, size: 16); Text(title) }
+            HStack(spacing: 6) { ThemeIcon(symbol: icon, size: 16); Text(L(title)) }
                 .font(.caption)
                 .foregroundStyle(Theme.ink2)
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text("\(value)").scaledFont(28, weight: .medium, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
-                Text(unit).font(.caption).foregroundStyle(Theme.ink3)
+                Text(L(unit)).font(.caption).foregroundStyle(Theme.ink3)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,6 +292,21 @@ struct StatsView: View {
         .accessibilityHint("轻点调整每日目标")
     }
 
+    private func saveGoal() {
+        goalMinutes = goalDraft
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+        reminderMinutes = (comps.hour ?? 21) * 60 + (comps.minute ?? 0)
+        reminderEnabled = reminderDraft
+        let (enabled, minutes, goal) = (reminderDraft, reminderMinutes, goalDraft)
+        let today = model.readingSeconds[AppModel.dayKey(Date())] ?? 0
+        Task {
+            let granted = await ReadingReminder.reschedule(enabled: enabled, minutes: minutes, goalMinutes: goal, todaySeconds: today)
+            if enabled && !granted { reminderDenied = true; reminderEnabled = false; reminderDraft = false }
+            else { reminderDenied = false; editingGoal = false }
+        }
+        if !enabled { editingGoal = false }
+    }
+
     private var goalEditor: some View {
         NavigationStack {
             Form {
@@ -277,6 +315,18 @@ struct StatsView: View {
                         HStack { Text("每日目标"); Spacer(); Text("\(goalDraft) 分钟").monospacedDigit().foregroundStyle(Theme.ink3) }
                     }
                 } footer: { Text("阅读和听书的时间都会计入。") }
+                .listRowBackground(Theme.surface)
+                Section {
+                    Toggle("每日阅读提醒", isOn: $reminderDraft.animation())
+                        .tint(Theme.clay)
+                        .accessibilityIdentifier("goal.reminder")
+                    if reminderDraft {
+                        DatePicker("提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    }
+                } footer: {
+                    Text(reminderDenied ? "通知权限未开启，请在系统设置 › 通知 › 听页中允许。" : "当天读够目标就不再提醒。提醒只在本机生成。")
+                        .foregroundStyle(reminderDenied ? Theme.danger : Theme.ink3)
+                }
                 .listRowBackground(Theme.surface)
                 Section("常用") {
                     ForEach([15, 30, 60, 120], id: \.self) { value in
@@ -294,7 +344,7 @@ struct StatsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { editingGoal = false } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { goalMinutes = goalDraft; editingGoal = false }.fontWeight(.semibold)
+                    Button("保存") { saveGoal() }.fontWeight(.semibold)
                 }
             }
         }
@@ -442,10 +492,18 @@ struct StatsView: View {
             settingsEntry(icon: Icon.voice, title: "声音与朗读", subtitle: "语音服务、音色与朗读设置") { settingsRoute = .voice }
             settingsEntry(icon: Icon.appearance, title: "外观模式", value: appearanceName) { settingsRoute = .appearance }
                 .accessibilityIdentifier("profile.appearance")
+            settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
+                .accessibilityIdentifier("profile.general")
+            settingsEntry(icon: Icon.list, title: "菜单", subtitle: "选中文字后面板的顺序与显示") { settingsRoute = .menu }
+                .accessibilityIdentifier("profile.menu")
+            settingsEntry(icon: Icon.contents, title: "TXT 分章规则", subtitle: "自定义正则与章节最大字数") { settingsRoute = .txtRules }
+                .accessibilityIdentifier("profile.txtRules")
             settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
             settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
                 .accessibilityIdentifier("profile.backup")
             settingsEntry(icon: Icon.highlight, title: "全部书摘与笔记", value: "\(model.noteCount) 条") { settingsRoute = .notes }
+            settingsEntry(icon: Icon.server, title: "空间整理", subtitle: "查看占用、清理缓存、修复书库索引") { settingsRoute = .storage }
+                .accessibilityIdentifier("profile.storage")
             settingsEntry(icon: Icon.settings, title: "更多设置", subtitle: "应用锁、隐藏书籍、隐私与关于") { settingsRoute = .profile }
         }
         .padding(.horizontal, 16).padding(.bottom, 10)
@@ -461,11 +519,11 @@ struct StatsView: View {
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                    if let subtitle { Text(subtitle).font(.caption).foregroundStyle(Theme.ink3) }
+                    Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                    if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if let value { Text(value).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+                if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
                 ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
             }
             .frame(minHeight: 56)
@@ -490,7 +548,7 @@ struct StatsView: View {
         let minutes = Int(seconds / 60)
         return minutes >= 600 ? String(format: "%.1f", Double(minutes) / 60) : "\(minutes)"
     }
-    static func durationUnit(_ seconds: Double) -> String { Int(seconds / 60) >= 600 ? "小时" : "分钟" }
+    static func durationUnit(_ seconds: Double) -> String { L(Int(seconds / 60) >= 600 ? "小时" : "分钟") }
     static func durationText(_ seconds: Double) -> String {
         let minutes = Int(seconds / 60)
         return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分" : "\(max(1, minutes)) 分钟"
@@ -512,5 +570,62 @@ struct StatsView: View {
 private struct TightLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 5) { configuration.icon; configuration.title }
+    }
+}
+
+// MARK: - 每日阅读提醒
+
+/// 本地每日提醒：排未来 7 天的单次通知（不用重复触发器），这样当天读够目标后能只撤掉当天那条。
+/// App 回到前台或进入后台时重排，提醒内容只用本地数据，不联网。
+enum ReadingReminder {
+    static let enabledKey = "reminder.enabled"
+    static let minutesKey = "reminder.minutes"
+    static let defaultMinutes = 21 * 60
+    private static let prefix = "tingye.reminder."
+
+    /// 计划的提醒时刻：今天的时刻已过或今天已达标则从明天开始，共 `days` 条。
+    static func plannedDates(now: Date, minutes: Int, todayMet: Bool, days: Int = 7, calendar: Calendar = .current) -> [Date] {
+        let start = calendar.startOfDay(for: now)
+        return (0..<(days + 1)).compactMap { offset -> Date? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: start),
+                  let fire = calendar.date(byAdding: .minute, value: minutes, to: day) else { return nil }
+            if offset == 0 && (todayMet || fire <= now) { return nil }
+            return fire
+        }
+        .prefix(days).map { $0 }
+    }
+
+    /// 重排提醒；关闭时只清除。返回是否已获得通知权限。
+    @discardableResult @MainActor
+    static func reschedule(enabled: Bool, minutes: Int, goalMinutes: Int, todaySeconds: Double, now: Date = Date()) async -> Bool {
+        let center = UNUserNotificationCenter.current()
+        let pending = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
+        center.removePendingNotificationRequests(withIdentifiers: pending)
+        guard enabled else { return false }
+        let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+        guard granted else { return false }
+        let calendar = Calendar.current
+        for date in plannedDates(now: now, minutes: minutes, todayMet: todaySeconds >= Double(goalMinutes * 60), calendar: calendar) {
+            let content = UNMutableNotificationContent()
+            content.title = "今天读一页？"
+            content.body = "离 \(goalMinutes) 分钟的阅读目标还差一点。翻开书，或者合上眼睛听一段。"
+            content.sound = .default
+            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+            let request = UNNotificationRequest(identifier: prefix + AppModel.dayKey(date),
+                                                content: content,
+                                                trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false))
+            try? await center.add(request)
+        }
+        return true
+    }
+
+    /// 用当前设置与今日时长重排，供 App 前后台切换时调用。
+    @MainActor static func refresh(model: AppModel) {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: enabledKey) else { return }
+        let minutes = defaults.object(forKey: minutesKey) as? Int ?? defaultMinutes
+        let goal = defaults.object(forKey: "goal.dailyMinutes") as? Int ?? 30
+        let today = model.readingSeconds[AppModel.dayKey(Date())] ?? 0
+        Task { await reschedule(enabled: true, minutes: minutes, goalMinutes: goal, todaySeconds: today) }
     }
 }

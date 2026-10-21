@@ -23,6 +23,7 @@ struct NowView: View {
         Array(model.visibleEntries.filter { !$0.started && $0.id != focus?.id }
             .sorted { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }.prefix(3))
     }
+    private var streak: Int { AppModel.readingStreak(model.readingSeconds).current }
     private var todayMinutes: Int { Int((model.readingSeconds[AppModel.dayKey(Date())] ?? 0) / 60) }
     private var week: [Date] {
         (-6...0).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: Date()) }
@@ -64,7 +65,7 @@ struct NowView: View {
             .accessibilityHidden(true)
             Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
             HStack(alignment: .center, spacing: 12) {
-                Text(headline)
+                Text(L(headline))
                     .font(Theme.serifBold(38, relativeTo: .largeTitle))
                     .foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
@@ -75,7 +76,7 @@ struct NowView: View {
                 }.accessibilityIdentifier("now.search")
             }
             Rectangle().fill(Theme.rulePaint).frame(height: Theme.rule).accessibilityHidden(true)
-            Text(Date().formatted(.dateTime.year().month().day().weekday(.wide).locale(Locale(identifier: "zh_CN"))) + " · 今日已读 \(todayMinutes) 分钟")
+            Text(Date().formatted(.dateTime.year().month().day().weekday(.wide).locale(Locale.app)) + " · " + String(format: L("今日已读 %lld 分钟"), todayMinutes) + (streak > 0 ? " · " + String(format: L("连续 %lld 天"), streak) : ""))
                 .font(.caption).foregroundStyle(Theme.ink2)
         }
     }
@@ -134,7 +135,7 @@ struct NowView: View {
     private func readButton(_ entry: ShelfEntry, title: String, compact: Bool = false) -> some View {
         Button { Haptics.light(); model.open(entry) } label: {
             if compact { alternateIcon(Icon.read) }
-            else { HStack(spacing: 8) { Text(title); ThemeIcon(symbol: Icon.disclosure, size: 16) } }
+            else { HStack(spacing: 8) { Text(L(title)); ThemeIcon(symbol: Icon.disclosure, size: 16) } }
         }
         .accessibilityIdentifier("continue.reading")
         .accessibilityLabel("\(title)《\(entry.title)》")
@@ -199,7 +200,7 @@ struct NowView: View {
     private func bookRows(_ title: String, _ rows: [ShelfEntry]) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(title).font(.subheadline.weight(.bold)).tracking(0.8).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                Text(L(title)).font(.subheadline.weight(.bold)).tracking(0.8).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Button { model.tab = 0 } label: {
                     Text("全部 →").font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minWidth: 44, minHeight: 44)

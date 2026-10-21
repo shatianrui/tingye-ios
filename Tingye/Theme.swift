@@ -204,6 +204,17 @@ private struct ReducedMotionPolicy: ViewModifier {
     }
 }
 
+// MARK: - 本地化
+
+/// 运行时文字的本地化查找：组件收到的是普通字符串（标题、说明、提示、错误），
+/// 用它在 Localizable.xcstrings 里查译文；找不到时原样返回中文。
+func L(_ key: String) -> String { NSLocalizedString(key, comment: "") }
+
+extension Locale {
+    /// 与界面语言一致的区域格式（日期、星期），而不是固定的 zh_CN。
+    static var app: Locale { Locale(identifier: Bundle.main.preferredLocalizations.first ?? "zh-Hans") }
+}
+
 // MARK: - Color 扩展
 
 extension Color {
@@ -404,7 +415,7 @@ struct SealBadge: View {
     var background: Color? = nil
     var filled: Bool = false
     var body: some View {
-        Text(text)
+        Text(L(text))
             .font(.caption2.weight(.semibold))
             .foregroundStyle(filled ? Theme.onAccent : color)
             .padding(.horizontal, 7)
@@ -534,8 +545,8 @@ struct PressButtonStyle: ButtonStyle {
 
 /// 触感反馈集中入口
 enum Haptics {
-    static func light() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
-    static func selection() { UISelectionFeedbackGenerator().selectionChanged() }
+    static func light() { if GeneralSettings.hapticsEnabled { UIImpactFeedbackGenerator(style: .light).impactOccurred() } }
+    static func selection() { if GeneralSettings.hapticsEnabled { UISelectionFeedbackGenerator().selectionChanged() } }
 }
 
 // MARK: - 卡片、线与区块标题
@@ -578,11 +589,11 @@ struct SettingsRow: View {
                 SettingsIcon(systemName: icon, color: destructive ? Theme.danger : color)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(destructive ? Theme.danger : Theme.ink)
-                if let subtitle { Text(subtitle).font(.caption).foregroundStyle(Theme.ink3) }
+                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(destructive ? Theme.danger : Theme.ink)
+                if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
             }
             Spacer(minLength: 8)
-            if let value { Text(value).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+            if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
         }
         .contentShape(Rectangle())
     }
@@ -620,7 +631,7 @@ struct SectionTitle: View {
             if rule { Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleMedium).accessibilityHidden(true) }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 if let number { Text(number).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(Theme.accent) }
-                Text(text).font(.headline.weight(.bold)).tracking(0.6).foregroundStyle(Theme.ink)
+                Text(L(text)).font(.headline.weight(.bold)).tracking(0.6).foregroundStyle(Theme.ink)
                 if let badge { SealBadge(text: badge) }
             }
         }
@@ -643,22 +654,22 @@ struct PageMasthead: View {
         VStack(alignment: .leading, spacing: 8) {
             if kicker != nil || issue != nil {
                 HStack {
-                    if let kicker { Text(kicker).foregroundStyle(Theme.ink) }
+                    if let kicker { Text(L(kicker)).foregroundStyle(Theme.ink) }
                     Spacer()
-                    if let issue { Text(issue).foregroundStyle(Theme.accent) }
+                    if let issue { Text(L(issue)).foregroundStyle(Theme.accent) }
                 }
                 .font(Theme.masthead).tracking(1.2)
                 .accessibilityHidden(true)
             }
             if rule && hasKicker { Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true) }
-            Text(title)
+            Text(L(title))
                 .font(Theme.serifBold(40, relativeTo: .largeTitle))
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
             if rule && hasKicker { Rectangle().fill(Theme.rulePaint).frame(height: Theme.rule).accessibilityHidden(true) }
             if let subtitle, !subtitle.isEmpty {
-                Text(subtitle)
+                Text(L(subtitle))
                     .font(.footnote)
                     .foregroundStyle(Theme.ink3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -722,7 +733,7 @@ struct BookCoverView: View {
         ZStack(alignment: .leading) {
             Theme.coverColor(color)
             Rectangle().fill(Theme.clay).frame(width: max(2, width * 0.07))
-            Text(title)
+            Text(L(title))
                 .font(Theme.serif(max(8, width * 0.15)))
                 .foregroundStyle(fg)
                 .lineLimit(3)
@@ -738,7 +749,7 @@ struct BookCoverView: View {
             Rectangle().fill(fg.opacity(0.09)).frame(width: max(2, width * 0.035))
             VStack(alignment: .leading, spacing: max(7, width * 0.085)) {
                 Rectangle().fill(fg).frame(height: max(1, width * 0.014))
-                Text(title)
+                Text(L(title))
                     .font(Theme.serifBold(titleSize)).foregroundStyle(fg)
                     .lineLimit(4).minimumScaleFactor(0.72).multilineTextAlignment(.leading)
                 Spacer(minLength: 0)

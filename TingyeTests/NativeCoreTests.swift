@@ -18,6 +18,140 @@ final class NativeCoreTests: XCTestCase {
         }
     }
 
+    func testSMBAddressParsing() {
+        XCTAssertEqual(SMBAccess.target("smb://192.168.1.10"), .init(host: "192.168.1.10", port: 445))
+        XCTAssertEqual(SMBAccess.target("nas.local:1445"), .init(host: "nas.local", port: 1445))
+        XCTAssertEqual(SMBAccess.target(" smb://NAS/Books "), .init(host: "NAS", port: 445))
+        XCTAssertNil(SMBAccess.target("https://nas.local"))
+        XCTAssertNil(SMBAccess.target("smb://"))
+    }
+
+    func testManualShelfOrderPutsNewBooksFirstAndMovesWithinVisible() {
+        func entry(_ id: String, added: Double) -> ShelfEntry {
+            var e = ShelfEntry(book: Book(id: id, title: id, format: "TXT", chapters: [Chapter(title: "一", text: "文")]))
+            e.addedAt = added; return e
+        }
+        let rows = [entry("a", added: 1), entry("b", added: 2), entry("c", added: 3), entry("new", added: 9)]
+        XCTAssertEqual(ManualShelfOrder.sorted(rows, kind: "books", order: ["c", "a", "b"]).map(\.id), ["new", "c", "a", "b"])
+    }
+
+    func testSelectionToolOrderAndVisibility() {
+        XCTAssertEqual(SelectionTool.ordered(nil), [.mark, .note, .quote])
+        XCTAssertEqual(SelectionTool.ordered(["引用", "未知", "标注"]), [.quote, .mark, .note], "未知项忽略，缺失项补在末尾")
+        XCTAssertEqual(SelectionTool.visible(order: [.quote, .mark, .note], hidden: ["标注"]), [.quote, .note])
+        XCTAssertEqual(SelectionTool.visible(order: [.mark, .note, .quote], hidden: ["标注", "笔记", "引用"]), [.mark, .note, .quote], "全部隐藏时退回全部显示")
+    }
+
+    func testStorageSizeCountsNestedFiles() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("storage-test-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("a/b"), withIntermediateDirectories: true)
+        try Data(count: 10_000).write(to: folder.appendingPathComponent("a/b/x.bin"))
+        try Data(count: 5_000).write(to: folder.appendingPathComponent("y.bin"))
+        defer { try? FileManager.default.removeItem(at: folder) }
+        XCTAssertGreaterThanOrEqual(StorageUsage.size(of: folder), 15_000)
+        XCTAssertEqual(StorageUsage.size(of: folder.appendingPathComponent("missing")), 0)
+        XCTAssertFalse(StorageUsage.Kind.library.clearable, "书库不能在空间整理里一键清掉")
+    }
+
+    func testCustomTTSEndpointAcceptsHttpsAndLocalHttpOnly() {
+        XCTAssertEqual(CloudSpeech.customSpeechEndpoint("https://api.example.com/v1/")?.absoluteString, "https://api.example.com/v1/audio/speech")
+        XCTAssertEqual(CloudSpeech.customSpeechEndpoint("https://api.example.com/v1/audio/speech")?.absoluteString, "https://api.example.com/v1/audio/speech")
+        XCTAssertNotNil(CloudSpeech.customSpeechEndpoint("http://192.168.1.20:8000/v1"))
+        XCTAssertNotNil(CloudSpeech.customSpeechEndpoint("http://localhost:8880/v1"))
+        XCTAssertNotNil(CloudSpeech.customSpeechEndpoint("http://172.20.0.5/v1"))
+        XCTAssertNil(CloudSpeech.customSpeechEndpoint("http://api.example.com/v1"), "公网明文 http 会泄露密钥")
+        XCTAssertNil(CloudSpeech.customSpeechEndpoint("http://172.40.0.5/v1"))
+        XCTAssertNil(CloudSpeech.customSpeechEndpoint("ftp://x/v1"))
+        XCTAssertNil(CloudSpeech.customSpeechEndpoint("  "))
+        let options = VoiceOptions.sanitized(provider: "custom", model: "", voice: "")
+        XCTAssertEqual(options.model, "tts-1"); XCTAssertEqual(options.voice, "alloy")
+        XCTAssertEqual(VoiceOptions.sanitized(provider: "custom", model: "kokoro", voice: "zf_xiaobei").voice, "zf_xiaobei")
+    }
+
+    @MainActor func testReadingCalendarPadsMonthToMonday() {
+        var calendar = Calendar(identifier: .gregorian); calendar.firstWeekday = 2
+        // 2026-10-01 是周四：前面补 3 个空位，共 31 天。
+        let october = calendar.date(from: DateComponents(year: 2026, month: 10, day: 15))!
+        let days = ReadingCalendarView.monthDays(october, calendar: calendar)
+        XCTAssertEqual(days.prefix(3).filter { $0 == nil }.count, 3)
+        XCTAssertNotNil(days[3])
+        XCTAssertEqual(days.compactMap { $0 }.count, 31)
+        XCTAssertEqual(ReadingCalendarView.intensity(minutes: 0, goal: 30), 0.25)
+        XCTAssertEqual(ReadingCalendarView.intensity(minutes: 90, goal: 30), 1)
+    }
+
+    func testTxtCustomRuleAndMaxLengthSplitting() throws {
+        let text = "【楔子】\n开篇。\n【其一】\n春。\n【其二】\n" + String(repeating: "很长的一段话。\n", count: 400)
+        // 内置规则不认识【】标题：整本一章，但超长部分被切开。
+        let builtIn = BookImporter.splitText(text, title: "书", maxLength: 1000)
+        XCTAssertGreaterThan(builtIn.count, 1)
+        XCTAssertTrue(builtIn.allSatisfy { $0.text.count <= 1000 })
+        // 自定义规则按【】分章，最后一章超长再切。
+        let rule = try XCTUnwrap(TxtChapterRules.compile(#"^\s*【.{1,40}】\s*$"#))
+        let custom = BookImporter.splitText(text, title: "书", rule: rule, maxLength: 1000)
+        XCTAssertEqual(Array(custom.prefix(3).map(\.title)), ["【楔子】", "【其一】", "【其二】（1）"])
+        XCTAssertEqual(custom.filter { $0.title.hasPrefix("【其二】") }.map(\.text).joined(separator: "\n").count,
+                       String(repeating: "很长的一段话。\n", count: 400).trimmingCharacters(in: .whitespacesAndNewlines).count)
+        XCTAssertNil(TxtChapterRules.compile("第(章"), "非法正则不应编译通过")
+        XCTAssertNil(TxtChapterRules.compile("   "))
+    }
+
+    func testReadingReminderSkipsTodayWhenGoalMetOrTimePassed() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 10, day: 22, hour: 9))!
+        let night = calendar.date(from: DateComponents(year: 2026, month: 10, day: 22, hour: 22))!
+        let at21 = 21 * 60
+        // 早上、未达标：从今天 21:00 起排 7 天。
+        var dates = ReadingReminder.plannedDates(now: morning, minutes: at21, todayMet: false, calendar: calendar)
+        XCTAssertEqual(dates.count, 7)
+        XCTAssertEqual(calendar.component(.day, from: dates[0]), 22)
+        XCTAssertEqual(calendar.component(.hour, from: dates[0]), 21)
+        // 今天已读够：今天不提醒，仍排满 7 天。
+        dates = ReadingReminder.plannedDates(now: morning, minutes: at21, todayMet: true, calendar: calendar)
+        XCTAssertEqual(dates.count, 7)
+        XCTAssertEqual(calendar.component(.day, from: dates[0]), 23)
+        // 今天时刻已过：从明天开始。
+        dates = ReadingReminder.plannedDates(now: night, minutes: at21, todayMet: false, calendar: calendar)
+        XCTAssertEqual(calendar.component(.day, from: dates[0]), 23)
+        XCTAssertEqual(calendar.component(.day, from: dates[6]), 29)
+    }
+
+    @MainActor func testQuoteShareCardRendersFixedWidthImage() throws {
+        let card = QuoteShareCard(text: "真正重要的东西，用眼睛是看不见的。", title: "小王子", author: "圣埃克苏佩里", chapter: "第二十一章")
+        let image = try XCTUnwrap(card.render())
+        XCTAssertEqual(image.size.width, 900, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(image.size.height, 1125)
+        XCTAssertEqual(image.scale, 2)
+        // 超长摘句向下延展，不截断。
+        let long = try XCTUnwrap(QuoteShareCard(text: String(repeating: "很长的一句话，", count: 40), title: "长").render())
+        XCTAssertGreaterThan(long.size.height, image.size.height)
+        if let dir = ProcessInfo.processInfo.environment["SIMULATOR_HOST_HOME"] {
+            try? image.pngData()?.write(to: URL(fileURLWithPath: dir).appendingPathComponent("Desktop/tingye-ios/build/quote-card-sample.png"))
+        }
+    }
+
+    @MainActor func testReadingStreakCountsConsecutiveDaysAndKeepsTodayOpen() {
+        let calendar = Calendar(identifier: .gregorian)
+        let today = calendar.date(from: DateComponents(year: 2026, month: 10, day: 22, hour: 9))!
+        func key(_ offset: Int) -> String { AppModel.dayKey(calendar.date(byAdding: .day, value: offset, to: today)!) }
+        // 昨天、前天连续；今天未读：当前连续 2 天，不归零。
+        var seconds = [key(-1): 600.0, key(-2): 120, key(-4): 900, key(-5): 900, key(-6): 900, key(-7): 30]
+        var streak = AppModel.readingStreak(seconds, today: today, calendar: calendar)
+        XCTAssertEqual(streak.current, 2)
+        XCTAssertEqual(streak.longest, 3, "不足一分钟的那天不计入")
+        // 今天读满一分钟后连续变 3 天。
+        seconds[key(0)] = 60
+        streak = AppModel.readingStreak(seconds, today: today, calendar: calendar)
+        XCTAssertEqual(streak.current, 3)
+        XCTAssertEqual(streak.longest, 3)
+        // 断档两天：当前为 0，最长保留。
+        streak = AppModel.readingStreak([key(-3): 300, key(-4): 300], today: today, calendar: calendar)
+        XCTAssertEqual(streak.current, 0)
+        XCTAssertEqual(streak.longest, 2)
+        XCTAssertEqual(AppModel.readingStreak([:], today: today, calendar: calendar).longest, 0)
+    }
+
     @MainActor func testFocusReadingPapersHaveReadableTextInBothAppearances() {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let traits = UITraitCollection(userInterfaceStyle: style)

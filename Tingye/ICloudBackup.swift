@@ -835,7 +835,7 @@ struct ICloudBackupView: View {
         }
     }
     private func sectionTitle(_ title: String) -> some View {
-        Text(title).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
+        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
     }
 
 }
@@ -970,8 +970,8 @@ private struct ProgressSyncStatusRows: View {
     private func time(_ date: Date) -> String { date.formatted(date: Calendar.current.isDateInToday(date) ? .omitted : .abbreviated, time: .shortened) }
     private func row(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.footnote).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.caption).foregroundStyle(.secondary)
+            Text(L(value)).font(.footnote).fixedSize(horizontal: false, vertical: true)
         }.accessibilityElement(children: .combine)
     }
 }

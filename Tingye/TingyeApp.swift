@@ -141,6 +141,8 @@ struct RootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var navigationHidden = false
+    @State private var resumedOnLaunch = false
+    @AppStorage(GeneralSettings.resumeOnLaunchKey) private var resumeOnLaunch = false
     var body: some View {
         VStack(spacing: 0) {
         TabView(selection: $model.tab) {
@@ -161,11 +163,19 @@ struct RootView: View {
         .paperBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
         .onChange(of: model.tab) { _, _ in Haptics.selection() }
+        .onChange(of: model.entries.count, initial: true) { _, count in
+            // 书架首次载入后只续读一次；之后切页、回前台都不再自动打开。
+            guard !resumedOnLaunch, count > 0 else { return }
+            resumedOnLaunch = true
+            if resumeOnLaunch, model.selectedBook == nil, let last = model.lastBook, last.started, !last.isComic { model.open(last) }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 model.refreshProgressSync()
+                ReadingReminder.refresh(model: model)
             } else {
                 model.flushPendingSaves()
+                if phase == .background { ReadingReminder.refresh(model: model) }
                 if phase == .background { model.hiddenUnlocked = false; model.notice = nil }
             }
         }
@@ -200,7 +210,7 @@ struct RootView: View {
         }
         .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
             Button("关闭", role: .cancel) { model.message = nil }
-        } message: { Text(model.message ?? "") }
+        } message: { Text(L(model.message ?? "")) }
         .feedbackOverlay()
         .modifier(AppLockGate())
         .respectReducedMotion()
@@ -291,7 +301,7 @@ private struct LibraryNavigationBar: View {
                             Text(String(format: "%02d", index + 1))
                                 .font(.system(size: 10, weight: .bold)).tracking(1)
                                 .foregroundStyle(selected ? Theme.accent : Theme.ink3)
-                            Text(items[index].0).font(Theme.serif(20, relativeTo: .title3))
+                            Text(L(items[index].0)).font(Theme.serif(20, relativeTo: .title3))
                                 .fontWeight(selected ? .bold : .regular)
                                 .foregroundStyle(selected ? Theme.ink : Theme.ink3)
                             Rectangle().fill(selected ? Theme.clay : .clear).frame(width: 22, height: 3)
@@ -301,7 +311,7 @@ private struct LibraryNavigationBar: View {
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.96))
                     .accessibilityAddTraits(selected ? .isSelected : [])
-                    .accessibilityLabel(items[index].0)
+                    .accessibilityLabel(L(items[index].0))
                     .accessibilityIdentifier("navigation.tab.\(index)")
                 }
             }
@@ -420,7 +430,7 @@ private struct FeedbackOverlay: ViewModifier {
             if let notice = model.notice {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top, spacing: 8) {
-                        Text(notice.text).font(.subheadline).foregroundStyle(Theme.ink)
+                        Text(L(notice.text)).font(.subheadline).foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
                         Button { model.notice = nil } label: {
                             ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)

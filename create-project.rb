@@ -26,6 +26,13 @@ project.root_object.package_references << package
 product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
 product.product_name = 'ZIPFoundation'; product.package = package; app.package_product_dependencies << product
 framework = project.new(Xcodeproj::Project::Object::PBXBuildFile); framework.product_ref = product; app.frameworks_build_phase.files << framework
+smb_package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+smb_package.repositoryURL = 'https://github.com/kishikawakatsumi/SMBClient.git'
+smb_package.requirement = { 'kind' => 'exactVersion', 'version' => '0.3.1' }
+project.root_object.package_references << smb_package
+smb_product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+smb_product.product_name = 'SMBClient'; smb_product.package = smb_package; app.package_product_dependencies << smb_product
+smb_framework = project.new(Xcodeproj::Project::Object::PBXBuildFile); smb_framework.product_ref = smb_product; app.frameworks_build_phase.files << smb_framework
 project.build_configurations.each do |config|
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'

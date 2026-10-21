@@ -49,12 +49,25 @@ struct DailyQuoteCard: View {
                     .buttonStyle(SecondaryButtonStyle(height: 44))
                 }
                 .padding(.top, 2)
+                if let quote, quote.entryID == entry.id {
+                    QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
+                        HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享摘句卡片") }
+                            .font(.footnote.weight(.medium)).foregroundStyle(Theme.accent)
+                            .frame(minHeight: 44)
+                    }
+                    .accessibilityIdentifier("quote.share")
+                }
             }
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }
+                if let quote, quote.entryID == entry.id {
+                    QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
+                        Label("分享摘句卡片", systemImage: Icon.share)
+                    }
+                }
             }
             .task(id: entry.id + AppModel.dayKey(Date())) { await loadQuote(entry) }
         }
@@ -99,5 +112,75 @@ struct DailyQuote: Equatable, Sendable {
         }
         guard !candidates.isEmpty else { return nil }
         return candidates[abs(seed &* 7919) % candidates.count]
+    }
+}
+
+// MARK: - 摘句卡片（分享图）
+
+/// 刊式摘句卡：象牙纸、报头双线、陶土引号与题条。导出为图片分享，始终使用日间配色。
+struct QuoteShareCard: View {
+    let text: String
+    let title: String
+    var author = ""
+    var chapter = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("TINGYE · 听页")
+                Spacer()
+                Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
+            }
+            .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
+            .foregroundStyle(Color(hex: 0x141413))
+            Rectangle().fill(Color(hex: 0x141413)).frame(height: 4).padding(.top, 10)
+            Rectangle().fill(Color(hex: 0x141413)).frame(height: 1).padding(.top, 4)
+            Spacer(minLength: 48)
+            Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
+                .frame(height: 80, alignment: .top).offset(x: -6)
+            Text(text)
+                .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
+                .foregroundStyle(Color(hex: 0x141413))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 48)
+            Rectangle().fill(Theme.clay).frame(width: 120, height: 12)
+            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x141413)).padding(.top, 20)
+            let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
+            if !byline.isEmpty {
+                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x5E5D59)).padding(.top, 6)
+            }
+            Rectangle().fill(Color(hex: 0x141413)).frame(height: 1).padding(.top, 28)
+        }
+        .padding(64)
+        .frame(width: 900, alignment: .leading)
+        .frame(minHeight: 1125, alignment: .top)
+        .background(Color(hex: 0xFAF9F5))
+        .environment(\.colorScheme, .light)
+    }
+
+    /// 渲染为分享图；失败返回 nil（调用方退回纯文字分享）。
+    /// 短句放大成海报字号，长句回落，保证一屏内可读。
+    private var quoteSize: CGFloat { text.count <= 24 ? 52 : text.count <= 60 ? 42 : 34 }
+
+    @MainActor func render() -> UIImage? {
+        let renderer = ImageRenderer(content: self)
+        renderer.scale = 2
+        return renderer.uiImage
+    }
+}
+
+/// 分享摘句：有图时分享卡片图片，否则分享纯文字。
+struct QuoteShareLink<Label: View>: View {
+    let text: String
+    let title: String
+    var author = ""
+    var chapter = ""
+    @ViewBuilder var label: Label
+    var body: some View {
+        let card = QuoteShareCard(text: text, title: title, author: author, chapter: chapter)
+        if let image = card.render() {
+            ShareLink(item: Image(uiImage: image), preview: SharePreview("《\(title)》摘句", image: Image(uiImage: image))) { label }
+        } else {
+            ShareLink(item: "“\(text)”——《\(title)》") { label }
+        }
     }
 }

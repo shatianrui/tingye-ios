@@ -48,6 +48,23 @@ final class AppModel: ObservableObject {
     private var cacheOrder: [String] = []
     private static let dayFormatter: DateFormatter = { let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f }()
     static func dayKey(_ date: Date) -> String { dayFormatter.string(from: date) }
+    /// 连续阅读天数：每天至少 `minimum` 秒（读或听）算一天。今天还没读时从昨天往回数，不让连续记录在当天清零。
+    static func readingStreak(_ seconds: [String: Double], today: Date = Date(), minimum: Double = 60, calendar: Calendar = .current) -> (current: Int, longest: Int) {
+        let days = Set(seconds.filter { $0.value >= minimum }.keys)
+        var current = 0
+        var cursor = calendar.startOfDay(for: today)
+        if !days.contains(dayKey(cursor)), let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) { cursor = yesterday }
+        while days.contains(dayKey(cursor)), let previous = calendar.date(byAdding: .day, value: -1, to: cursor) {
+            current += 1; cursor = previous
+        }
+        var longest = 0, run = 0
+        var last: Date?
+        for date in days.compactMap({ dayFormatter.date(from: $0) }).sorted() {
+            if let last, calendar.dateComponents([.day], from: last, to: date).day == 1 { run += 1 } else { run = 1 }
+            longest = max(longest, run); last = date
+        }
+        return (current, max(longest, current))
+    }
     let player = SpeechPlayer()
     let sync: ProgressSync
     /// 手动 iCloud 备份 / 还原的当前阶段；存于模型中，离开再进入页面仍可看到。
@@ -482,6 +499,42 @@ final class AppModel: ObservableObject {
         if player.book?.id == id { player.stop() }
         notify("原书图文与封面已修复，书籍标识、书签和阅读进度已保留。")
     }
+    /// 用当前「TXT 分章规则」重新分章：把现有章节拼回原文再切分，阅读进度按字数映射到新章节开头。
+    func resplit(_ id: String) async throws {
+        try requireWritableLibrary()
+        activeBookWrites += 1; defer { activeBookWrites -= 1 }
+        guard let row = entries.first(where: { $0.id == id }), row.format.uppercased() == "TXT" else {
+            throw ReaderError.message("只有 TXT 书籍可以重新分章。")
+        }
+        let old = try await loadBook(id)
+        let rule = TxtChapterRules.activeRegex(), maxLength = TxtChapterRules.maxLength
+        let (value, counts, newChapter) = try await Task.detached(priority: .userInitiated) { [disk] () -> (Book, [Int], Int) in
+            let source = old.chapters.map { $0.title == old.title || $0.title == "卷首" ? $0.text : $0.title + "\n" + $0.text }.joined(separator: "\n")
+            var next = old
+            next.fields["chapters"] = .array(BookImporter.splitText(source, title: old.title, rule: rule, maxLength: maxLength).map { .object($0.fields) })
+            guard next.chapters.count <= 3000 else { throw ReaderError.message("新规则切出的章节超过 3000 章，请换一条更严格的规则。") }
+            next.fields["nativeReadChapters"] = nil
+            let offset = old.chapters.prefix(max(0, row.progress.chapter)).reduce(0) { $0 + $1.text.count }
+            var total = 0, target = 0
+            for (index, chapter) in next.chapters.enumerated() {
+                if total + chapter.text.count > offset { target = index; break }
+                total += chapter.text.count; target = index
+            }
+            try disk?.write(next)
+            return (next, next.chapters.map { Sentence.split($0.text).count }, target)
+        }.value
+        forget(id); remember(value); indexLibrary()
+        if let index = entries.firstIndex(where: { $0.id == id }) {
+            var next = entries
+            next[index].chapterCount = value.chapters.count
+            next[index].sentenceCounts = counts
+            catalogSaveTask?.cancel(); catalogDirty = false
+            try disk?.saveCatalog(next); entries = next
+        }
+        if player.book?.id == id { player.stop() }
+        saveProgress(id, chapter: newChapter, position: 0)
+        notify("已重新分为 \(value.chapters.count) 章，阅读位置移到相近章节开头。")
+    }
     /// 阅读页关闭（已保存最终位置）后，合并阅读期间被搁置的远端进度。
     func readerClosed(_ id: String) {
         flushPendingSaves()
@@ -491,7 +544,9 @@ final class AppModel: ObservableObject {
     /// 记一段阅读或听书时间：按日累计（统计图表），并合并进这本书的当前阅读记录。
     func recordReading(seconds: Double, bookID: String? = nil, title: String = "", listening: Bool = false) {
         guard seconds > 0, seconds <= 30 else { return }
+        let before = readingSeconds[Self.dayKey(Date())] ?? 0
         readingSeconds[Self.dayKey(Date()), default: 0] += seconds
+        GeneralSettings.celebrateIfGoalReached(before: before, after: before + seconds, model: self)
         if let bookID { appendSession(seconds: seconds, bookID: bookID, title: title, listening: listening) }
         else { scheduleSessionsSave() }
     }

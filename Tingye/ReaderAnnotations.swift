@@ -114,11 +114,12 @@ struct SelectionPanel: View {
     @AppStorage("highlight.lastColor") private var lastColor = "clay"
     @AppStorage("highlight.lastStyle") private var lastStyle = "background"
 
-    @State private var tool: Tool = .mark
+    @State private var tool: Tool = SelectionTool.visible().first ?? .mark
     @State private var chosenColor = "clay"
     @State private var chosenStyle = "background"
     @State private var removing = false
-    private enum Tool: String, CaseIterable, Hashable { case mark = "标注", note = "笔记", quote = "引用" }
+    private typealias Tool = SelectionTool
+    private let tools = SelectionTool.visible()
 
     var body: some View {
         ViewThatFits(in: .vertical) {
@@ -168,7 +169,7 @@ struct SelectionPanel: View {
                 .font(Theme.serif(16)).lineLimit(3).lineSpacing(5)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Picker("选段操作", selection: $tool) {
-                ForEach(Tool.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                ForEach(tools, id: \.self) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             Group {
@@ -260,7 +261,7 @@ struct SelectionPanel: View {
         Button(action: run) {
             HStack(spacing: 8) {
                 ThemeIcon(symbol: icon, size: 20)
-                Text(title)
+                Text(L(title))
             }
                 .font(Theme.sans(15 * uiScale, weight: .medium))
                 .foregroundStyle(prominent ? accent : tint)
@@ -328,6 +329,8 @@ struct NotesList: View {
     @EnvironmentObject var model: AppModel
     @State private var editing: Highlight?
     @State private var removing: Highlight?
+    private var bookTitle: String { model.entries.first { $0.id == entryID }?.title ?? "" }
+    private var bookAuthor: String { model.entries.first { $0.id == entryID }?.author ?? "" }
     private var notes: [Highlight] {
         (model.entries.first { $0.id == entryID }?.notes ?? []).filter {
             query.isEmpty || $0.text.localizedCaseInsensitiveContains(query) || ($0.note ?? "").localizedCaseInsensitiveContains(query)
@@ -352,6 +355,9 @@ struct NotesList: View {
                             Section("引用") {
                                 Button { UIPasteboard.general.string = note.text } label: { Label("复制原文", systemImage: Icon.copy) }
                                 ShareLink(item: note.text) { Label("分享原文", systemImage: Icon.share) }
+                                QuoteShareLink(text: note.text, title: bookTitle, author: bookAuthor, chapter: chapterTitle(note.chapter)) {
+                                    Label("分享摘句卡片", systemImage: Icon.quote)
+                                }
                             }
                             Section {
                                 Button(role: .destructive) { removing = note } label: { Label("删除标注…", systemImage: Icon.delete) }

@@ -60,6 +60,7 @@ struct ShelfView: View {
         case "title": filtered.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
         case "author": filtered.sorted { $0.author.localizedStandardCompare($1.author) == .orderedAscending }
         case "added": filtered.sorted { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }
+        case "manual": ManualShelfOrder.sorted(filtered, kind: kind)
         default: filtered.sorted { $0.progress.updatedAt > $1.progress.updatedAt }
         }
     }
@@ -68,7 +69,7 @@ struct ShelfView: View {
         return model.subgroups(of: group).filter { path in model.books(inGroup: path).contains { kind == "comics" ? $0.isComic : !$0.isComic } }
     }
     private var sortLabel: String {
-        ["title": "书名", "author": "作者", "added": "添加时间"][model.sortOrder] ?? "最近阅读"
+        ["title": "书名", "author": "作者", "added": "添加时间", "manual": "手动"][model.sortOrder] ?? "最近阅读"
     }
     private var totalTime: String {
         let minutes = Int(model.readingSeconds.values.reduce(0, +) / 60)
@@ -327,7 +328,7 @@ struct ShelfView: View {
             withAnimation(Theme.pressSpring) { kind = value; category = nil }
         } label: {
             HStack(spacing: 5) {
-                Text(title)
+                Text(L(title))
                 Text("\(count)").monospacedDigit()
             }.fixedSize(horizontal: true, vertical: false)
         }
@@ -426,6 +427,7 @@ struct ShelfView: View {
                 Label("书名", systemImage: Icon.sortTitle).tag("title")
                 Label("作者", systemImage: Icon.sortAuthor).tag("author")
                 Label("添加时间", systemImage: Icon.sortAdded).tag("added")
+                Label("手动排序", systemImage: Icon.list).tag("manual")
             }
         } label: { optionLabel(Icon.sort, sortLabel) }
         .foregroundStyle(Theme.ink2)
@@ -842,6 +844,14 @@ struct ShelfView: View {
         Button { model.open(entry) } label: {
             Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read)
         }
+        if model.sortOrder == "manual" {
+            Section("手动排序") {
+                Button { ManualShelfOrder.move(entry.id, in: sorted, kind: kind, by: -1); model.objectWillChange.send() } label: { Label("前移一位", systemImage: "arrow.up") }
+                Button { ManualShelfOrder.move(entry.id, in: sorted, kind: kind, by: 1); model.objectWillChange.send() } label: { Label("后移一位", systemImage: "arrow.down") }
+                Button { ManualShelfOrder.move(entry.id, in: sorted, kind: kind, to: 0); model.objectWillChange.send() } label: { Label("移到最前", systemImage: "arrow.up.to.line") }
+                Button { ManualShelfOrder.move(entry.id, in: sorted, kind: kind, to: .max); model.objectWillChange.send() } label: { Label("移到最后", systemImage: "arrow.down.to.line") }
+            }
+        }
         if !entry.isComic {
             Button {
                 if model.player.book?.id == entry.id { model.showingPlayer = true }
@@ -898,7 +908,7 @@ struct ShelfView: View {
         Button(action: action) {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.system(size: 18))
-                Text(title).font(.caption.weight(.medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                Text(L(title)).font(.caption.weight(.medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 54)
@@ -1092,4 +1102,27 @@ struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController { UIActivityViewController(activityItems: items, applicationActivities: nil) }
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+
+/// 书架手动排序：书籍与漫画各自保存一份顺序；不在顺序里的新书排在最前（按添加时间）。
+enum ManualShelfOrder {
+    static func key(_ kind: String) -> String { "shelf.manualOrder." + (kind == "comics" ? "comics" : "books") }
+    static func saved(_ kind: String) -> [String] { UserDefaults.standard.stringArray(forKey: key(kind)) ?? [] }
+    static func sorted(_ entries: [ShelfEntry], kind: String, order: [String]? = nil) -> [ShelfEntry] {
+        let order = order ?? saved(kind)
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        let fresh = entries.filter { rank[$0.id] == nil }.sorted { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }
+        let known = entries.filter { rank[$0.id] != nil }.sorted { rank[$0.id]! < rank[$1.id]! }
+        return fresh + known
+    }
+    /// 移动后把当前看到的完整顺序写回（隐藏或其他分组里的书保持原相对位置，排在后面）。
+    static func move(_ id: String, in visible: [ShelfEntry], kind: String, by offset: Int = 0, to target: Int? = nil) {
+        var ids = visible.map(\.id)
+        guard let from = ids.firstIndex(of: id) else { return }
+        let destination = max(0, min(ids.count - 1, target ?? (from + offset)))
+        ids.remove(at: from); ids.insert(id, at: destination)
+        let rest = saved(kind).filter { !ids.contains($0) }
+        UserDefaults.standard.set(ids + rest, forKey: key(kind))
+    }
 }

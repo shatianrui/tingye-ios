@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// 已保存的远程书库。密码不在这里，存在钥匙串（键 `source.<id>`）。
 struct RemoteSource: Codable, Identifiable, Hashable, Sendable {
-    enum Kind: String, Codable, Sendable { case webdav, opds }
+    enum Kind: String, Codable, Sendable { case webdav, opds, smb }
     var id = UUID().uuidString
     var kind: Kind
     var name: String
@@ -137,10 +137,13 @@ struct SourcesView: View {
                     ForEach(sources) { source in
                         HStack(spacing: 0) {
                             NavigationLink {
-                                if source.kind == .webdav { WebDAVBrowser(source: source, path: "") }
-                                else { OPDSBrowser(source: source, url: source.baseURL, title: source.name) }
+                                switch source.kind {
+                                case .webdav: WebDAVBrowser(source: source, path: "")
+                                case .smb: SMBBrowser(source: source, share: nil, path: "")
+                                case .opds: OPDSBrowser(source: source, url: source.baseURL, title: source.name)
+                                }
                             } label: {
-                                SourceActionRow(icon: source.kind == .webdav ? Icon.server : Icon.catalog,
+                                SourceActionRow(icon: source.kind == .opds ? Icon.catalog : Icon.server,
                                                 title: source.name, subtitle: source.baseURL?.host() ?? source.url)
                             }
                             Menu {
@@ -162,6 +165,10 @@ struct SourcesView: View {
                     Button { editing = RemoteSource(kind: .webdav, name: "", url: "https://") } label: {
                         SourceActionRow(icon: Icon.server, title: "连接 WebDAV", subtitle: "坚果云、群晖、Nextcloud 等文件服务器")
                     }
+                    Button { editing = RemoteSource(kind: .smb, name: "", url: "smb://") } label: {
+                        SourceActionRow(icon: Icon.server, title: "连接 SMB", subtitle: "局域网 NAS、电脑共享文件夹")
+                    }
+                    .accessibilityIdentifier("sources.addSMB")
                     Button { editing = RemoteSource(kind: .opds, name: "", url: "https://") } label: {
                         SourceActionRow(icon: Icon.catalog, title: "连接 OPDS", subtitle: "Calibre-Web、Talebook 等书目服务")
                     }
@@ -205,7 +212,7 @@ struct SourcesView: View {
         } message: { Text("将移除「\(removing?.name ?? "")」的地址和本机登录凭据。服务器文件及已导入书籍会保留。") }
     }
     private func sourceSectionTitle(_ title: String) -> some View {
-        Text(title).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2)
+        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2)
     }
 
     private func remove(_ source: RemoteSource) {
@@ -244,8 +251,8 @@ private struct SourceActionRow: View {
         HStack(spacing: 12) {
             ThemeIcon(symbol: icon, size: 24).foregroundStyle(Theme.accent).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                Text(subtitle).font(.caption).foregroundStyle(Theme.ink2)
+                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -263,18 +270,19 @@ private struct SourceEditor: View {
     @Environment(\.dismiss) var dismiss
     @State private var password = ""
     private var validAddress: Bool {
-        ["http", "https"].contains(source.baseURL?.scheme?.lowercased() ?? "") && source.baseURL?.host() != nil
+        if source.kind == .smb { return SMBAccess.target(source.url) != nil }
+        return ["http", "https"].contains(source.baseURL?.scheme?.lowercased() ?? "") && source.baseURL?.host() != nil
     }
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(source.kind == .webdav ? "连接自己的文件书库" : "连接远程书目服务")
+                    Text(source.kind == .opds ? "连接远程书目服务" : "连接自己的文件书库")
                         .font(.caption).foregroundStyle(Theme.ink2)
                     fieldSection("书库信息")
                     field("名称") { TextField("为书库取一个名字", text: $source.name) }
-                    field(source.kind == .webdav ? "服务器地址" : "书目地址") {
-                        TextField("https://", text: $source.url)
+                    field(source.kind == .opds ? "书目地址" : "服务器地址") {
+                        TextField(source.kind == .smb ? "smb://192.168.1.10" : "https://", text: $source.url)
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                     }
                     fieldSection("访问凭据 · 选填")
@@ -282,14 +290,14 @@ private struct SourceEditor: View {
                         TextField("选填", text: $source.username).textInputAutocapitalization(.never).autocorrectionDisabled()
                     }
                     field("密码 / 应用密码") { SecureField("选填", text: $password) }
-                    Text(source.kind == .webdav ? "填写完整的 http:// 或 https:// 地址。坚果云请使用第三方应用管理中生成的应用密码。" : "填写完整的 http:// 或 https:// 书目地址。多数 OPDS 服务无需登录，开启登录的书库请填写账号。")
+                    Text(source.kind == .smb ? "填写 smb:// 加 NAS 或电脑的局域网地址，共享文件夹在连接后选择。不填用户名则以访客登录。" : source.kind == .webdav ? "填写完整的 http:// 或 https:// 地址。坚果云请使用第三方应用管理中生成的应用密码。" : "填写完整的 http:// 或 https:// 书目地址。多数 OPDS 服务无需登录，开启登录的书库请填写账号。")
                         .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 24)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
             }
             .background(Theme.bg)
-            .navigationTitle(source.kind == .webdav ? "连接 WebDAV" : "连接 OPDS")
+            .navigationTitle(["webdav": "连接 WebDAV", "smb": "连接 SMB", "opds": "连接 OPDS"][source.kind.rawValue] ?? "连接书库")
             .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
             .toolbar(.visible, for: .navigationBar)
@@ -298,7 +306,7 @@ private struct SourceEditor: View {
                 HStack(spacing: 12) {
                     Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle())
                     Button("保存连接") {
-                        if source.name.trimmingCharacters(in: .whitespaces).isEmpty { source.name = source.baseURL?.host() ?? (source.kind == .webdav ? "WebDAV" : "OPDS") }
+                        if source.name.trimmingCharacters(in: .whitespaces).isEmpty { source.name = SMBAccess.target(source.url)?.host ?? source.baseURL?.host() ?? source.kind.rawValue.uppercased() }
                         onSave(source, password); dismiss()
                     }
                     .buttonStyle(PrimaryButtonStyle()).disabled(!validAddress)
@@ -310,11 +318,11 @@ private struct SourceEditor: View {
         }
     }
     private func fieldSection(_ title: String) -> some View {
-        Text(title).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
+        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
     }
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(Theme.ink2)
+            Text(L(title)).font(.caption).foregroundStyle(Theme.ink2)
             content().font(.subheadline).foregroundStyle(Theme.ink).frame(minHeight: 24)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)

@@ -9,7 +9,12 @@ struct ComicReaderView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.scenePhase) var scenePhase
-    @AppStorage("comic.mode") private var mode = "ltr"
+    /// 每部漫画单独记住阅读方式；没设置过的用「漫画默认阅读方式」。
+    @State private var mode: String
+    init(book: Book) {
+        self.book = book
+        _mode = State(initialValue: ComicPreset.mode(for: book.id))
+    }
     @State private var page = 0
     @State private var chrome = false
     @State private var scrubbing: Double?
@@ -156,12 +161,13 @@ struct ComicReaderView: View {
             page = min(max(0, saved), max(0, count - 1))
         }
         .onChange(of: page) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
+        .onChange(of: mode) { _, value in ComicPreset.save(value, for: book.id) }
         .task { while !Task.isCancelled { do { try await Task.sleep(for: .seconds(5)) } catch { return }; if scenePhase == .active { model.recordReading(seconds: 5, bookID: book.id, title: book.title) } } }
     }
     private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 6) {
             ThemeIcon(symbol: icon, size: 24)
-            Text(title).font(Theme.sans(12 * uiScale)).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(Theme.sans(12 * uiScale)).fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(selected ? Theme.accent : Theme.ink)
         .frame(maxWidth: .infinity, minHeight: 58)
@@ -372,4 +378,15 @@ private struct ZoomableComicImage: UIViewRepresentable {
             }
         }
     }
+}
+
+
+/// 漫画阅读方式：全局默认（新加入的漫画使用）+ 每部漫画自己的选择。
+enum ComicPreset {
+    static let defaultKey = "comic.mode"
+    static let modes: [(value: String, label: String)] = [("ltr", "左右翻页（从左到右）"), ("rtl", "左右翻页（日漫，从右到左）"), ("vertical", "上下滚动（条漫）")]
+    static func key(_ id: String) -> String { "comic.mode." + id }
+    static var defaultMode: String { UserDefaults.standard.string(forKey: defaultKey) ?? "ltr" }
+    static func mode(for id: String) -> String { UserDefaults.standard.string(forKey: key(id)) ?? defaultMode }
+    static func save(_ mode: String, for id: String) { UserDefaults.standard.set(mode, forKey: key(id)) }
 }

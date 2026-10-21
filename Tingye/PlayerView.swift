@@ -347,7 +347,7 @@ struct PlayerView: View {
         VStack(spacing: 4) {
             Text(numeral).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(Theme.accent)
                 .frame(height: 26)
-            Text(title).font(.footnote.weight(highlighted ? .bold : .regular)).foregroundStyle(highlighted ? Theme.accent : content)
+            Text(L(title)).font(.footnote.weight(highlighted ? .bold : .regular)).foregroundStyle(highlighted ? Theme.accent : content)
                 .underline(highlighted, color: Theme.clay)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
@@ -403,7 +403,7 @@ private struct TransportButton: View {
         Button { action(); Haptics.light() } label: {
             VStack(spacing: 2) {
                 ThemeIcon(symbol: systemName, size: 28).frame(minHeight: 44)
-                Text(label).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                Text(L(label)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(enabled ? Theme.ink : Theme.ink3)
             .frame(minWidth: size, minHeight: size)
@@ -599,6 +599,7 @@ struct VoiceSettingsView: View {
     @State private var provider = UserDefaults.standard.string(forKey: "voice.provider") ?? "system"
     @State private var rate = Double(VoiceOptions.load().rate)
     @State private var groupID = UserDefaults.standard.string(forKey: "voice.groupID") ?? ""
+    @State private var customURL = UserDefaults.standard.string(forKey: VoiceOptions.customURLKey) ?? ""
     @State private var azureRegion = UserDefaults.standard.string(forKey: "voice.azureRegion") ?? ""
     @State private var roles = UserDefaults.standard.bool(forKey: "voice.roles")
     @State private var maleVoice = ""
@@ -644,7 +645,7 @@ struct VoiceSettingsView: View {
                 Text(auditionHint)
                     .font(.caption).foregroundStyle(Theme.ink2)
                 if let error { Text(error).font(.caption).foregroundStyle(Theme.danger) }
-                if !notice.isEmpty { Text(notice).font(.caption).foregroundStyle(Theme.ink2) }
+                if !notice.isEmpty { Text(L(notice)).font(.caption).foregroundStyle(Theme.ink2) }
             } header: { Text("3 · 试听与保存") }
         }
         .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
@@ -684,6 +685,7 @@ struct VoiceSettingsView: View {
                 Text("MiniMax").tag("minimax")
                 Text("Microsoft Azure").tag("azure")
                 Text("ElevenLabs").tag("elevenlabs")
+                Text("自定义 TTS（OpenAI 兼容）").tag("custom")
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("voice.provider")
@@ -699,7 +701,12 @@ struct VoiceSettingsView: View {
     @ViewBuilder private var connectionSection: some View {
         if provider != "system" {
             Section {
-                SecureField(provider == "azure" ? "Speech Key（必填）" : "API Key（必填）", text: $apiKey)
+                if provider == "custom" {
+                    TextField("服务地址，如 https://example.com/v1", text: $customURL)
+                        .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .accessibilityIdentifier("voice.customURL")
+                }
+                SecureField(provider == "azure" ? "Speech Key（必填）" : provider == "custom" ? "API Key（自建服务可留空）" : "API Key（必填）", text: $apiKey)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if provider == "azure" {
                     TextField("区域，例如 eastasia", text: $azureRegion).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -795,6 +802,13 @@ struct VoiceSettingsView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             }
+        } else if provider == "custom" {
+            Picker("音色", selection: $voice) {
+                ForEach(customVoices, id: \.value) { Text($0.label).tag($0.value) }
+                if !customVoices.contains(where: { $0.value == voice }) { Text(voice.isEmpty ? "未填写" : voice).tag(voice) }
+            }
+            TextField("音色名（以你的服务为准）", text: $voice)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
         } else if provider == "azure" {
             Picker("音色", selection: $voice) {
                 ForEach(AzureVoices.all, id: \.value) { v in Text(v.label).tag(v.value) }
@@ -830,6 +844,7 @@ struct VoiceSettingsView: View {
         case "system": return "使用设备自带声音，无需联网、免费。可在系统设置 → 辅助功能 → 朗读内容 → 声音中下载更多声音。"
         case "azure": return "使用你自己的 Azure 语音资源（Speech Key + 区域），提供大量中文神经网络音色，有免费额度。"
         case "elevenlabs": return "使用你自己的 ElevenLabs API Key，多语言音色自然，带逐字时间戳。"
+        case "custom": return "连接任何兼容 OpenAI /audio/speech 接口的朗读服务，包括自建或本机运行的 TTS。"
         default: return "使用你自己的 API Key 直连服务商，音质更自然，按服务商计费。"
         }
     }
@@ -839,6 +854,7 @@ struct VoiceSettingsView: View {
         case "minimax": return "支持 MiniMax 国内版按量付费与 Token Plan（sk-cp- 开头）密钥，自动连接 api.minimax.cn。追求低延迟可选 speech-2.8-turbo。" + privacy
         case "azure": return "区域必须与 Azure 语音资源所在区域一致（在 Azure 门户的「密钥和终结点」中查看）。" + privacy
         case "elevenlabs": return "Flash 与 Turbo 模型延迟更低，Multilingual 适合长篇听书。" + privacy
+        case "custom": return "只接受 https 地址，或局域网 / 本机的 http 地址。模型与音色名以你的服务为准。" + privacy
         default: return "不经过听页服务器。" + privacy
         }
     }
@@ -846,8 +862,12 @@ struct VoiceSettingsView: View {
         switch provider {
         case "glm": return ["glm-tts"]
         case "elevenlabs": return ["eleven_multilingual_v2", "eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_v3"]
+        case "custom": return ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
         default: return ["speech-2.8-hd", "speech-2.8-turbo", "speech-2.6-hd", "speech-2.6-turbo", "speech-02-hd", "speech-02-turbo", "speech-01-hd", "speech-01-turbo", "t2a-01-hd", "t2a-01"]
         }
+    }
+    private var customVoices: [CloudVoice] {
+        ["alloy", "echo", "fable", "onyx", "nova", "shimmer"].map { CloudVoice(value: $0, label: $0) }
     }
     private var elevenVoices: [CloudVoice] {
         if !fetchedVoices.isEmpty { return fetchedVoices }
@@ -866,6 +886,7 @@ struct VoiceSettingsView: View {
             return glmVoices
         case "azure": return AzureVoices.all
         case "elevenlabs": return elevenVoices
+        case "custom": return customVoices
         default: return minimaxVoices
         }
     }
@@ -908,6 +929,7 @@ struct VoiceSettingsView: View {
     }
 
     private var configurationIssue: String? {
+        if provider == "custom" { return CloudSpeech.customSpeechEndpoint(customURL) == nil ? "请填写有效的自定义 TTS 地址（https，或局域网 / 本机 http）。" : nil }
         if provider != "system" && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请先填写提供方密钥，或选择系统声音。" }
         if provider == "azure" && azureRegion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请填写 Azure 语音资源所在区域。" }
         return nil
@@ -923,7 +945,7 @@ struct VoiceSettingsView: View {
         stopPreview(); error = nil
         if app.player.playing { app.player.pause(); pausedBookForPreview = true }
         let chosen = VoiceOptions.sanitized(provider: provider, model: modelName, voice: voice)
-        let config = (provider, chosen.model, chosen.voice, apiKey, provider == "azure" ? azureRegion : groupID)
+        let config = (provider, chosen.model, chosen.voice, apiKey, provider == "azure" ? azureRegion : provider == "custom" ? customURL : groupID)
         let speed = rate, revision = previewRevision
         previewing = true
         previewTask = Task { @MainActor in
@@ -985,6 +1007,7 @@ struct VoiceSettingsView: View {
         }
         d.set(provider, forKey: "voice.provider"); d.set(rate, forKey: "voice.rate")
         d.set(groupID, forKey: "voice.groupID"); d.set(azureRegion, forKey: "voice.azureRegion"); d.set(roles, forKey: "voice.roles")
+        d.set(customURL.trimmingCharacters(in: .whitespacesAndNewlines), forKey: VoiceOptions.customURLKey)
         if provider == "elevenlabs", let label = elevenVoices.first(where: { $0.value == voice })?.label { d.set(label, forKey: "voice.label.elevenlabs." + voice) }
         stopPreview(); app.player.applyOptions(); dismiss()
     }
