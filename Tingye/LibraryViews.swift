@@ -103,7 +103,7 @@ struct BookDetailView: View {
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
+                    Text(entry.title).font(Theme.serifBold(28, relativeTo: .title)).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
                     Text(model.category(entry) + " · " + entry.format).font(.caption).foregroundStyle(Theme.ink3)
@@ -114,11 +114,11 @@ struct BookDetailView: View {
                 fact("\(max(1, entry.chapterCount))", unit: "章", label: "篇幅")
                 fact("\(entry.progress.chapter + 1)", unit: "章", label: "读到")
             }
-            ProgressBar(value: entry.readFraction, height: 2)
+            ProgressBar(value: entry.readFraction, height: 3)
         }
-        .padding(20)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.hero, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .columnRule(Theme.ruleHeavy)
     }
 
     private var detailLayout: AnyLayout {
@@ -499,7 +499,7 @@ struct ProfileView: View {
     private var settingsList: some View {
         List {
             Section {
-                PageMasthead(title: "你的听页", subtitle: "只属于你的阅读方式。")
+                PageMasthead(title: "你的听页", subtitle: "只属于你的阅读方式。", kicker: "PROFILE · 设置", issue: "TINGYE")
                 .padding(.top, 12)
                 .listRowInsets(EdgeInsets(top: 0, leading: 2, bottom: 8, trailing: 2))
                 .listRowBackground(Color.clear)

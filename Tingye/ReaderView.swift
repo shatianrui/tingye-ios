@@ -189,7 +189,7 @@ struct ReaderView: View {
                                 Label("自动翻页 · 每 \(autoTurn) 秒 · 轻点停止", systemImage: Icon.autoTurn)
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 12).frame(minHeight: 44)
-                                    .glassSurface(in: Capsule(), interactive: true)
+                                    .glassSurface(in: Rectangle(), interactive: true)
                             }
                             .buttonStyle(.plain).foregroundStyle(prefs.secondary)
                         }
@@ -500,7 +500,7 @@ struct ReaderView: View {
         }
         .foregroundStyle(selected ? readerAccent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? readerAccent.opacity(0.09) : .clear, in: RoundedRectangle(cornerRadius: 12))
+        .background(selected ? readerAccent.opacity(0.09) : .clear, in: Rectangle())
         .contentShape(Rectangle())
     }
 
@@ -1059,7 +1059,7 @@ struct ContentsView: View {
                 if index == currentChapter {
                     Text("在读").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.accent)
                         .padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(Theme.accent.opacity(0.09), in: Capsule())
+                        .background(Theme.accent.opacity(0.09), in: Rectangle())
                 }
             }.padding(.vertical, 9)
         }
@@ -1147,8 +1147,8 @@ private struct IllustrationRow: View {
     @State private var image: UIImage?
     var body: some View {
         Group {
-            if let image { Image(uiImage: image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 8)) }
-            else { RoundedRectangle(cornerRadius: 8).fill(Theme.surface2).aspectRatio(16 / 10, contentMode: .fit) }
+            if let image { Image(uiImage: image).resizable().scaledToFit().clipShape(Rectangle()) }
+            else { Rectangle().fill(Theme.surface2).aspectRatio(16 / 10, contentMode: .fit) }
         }
         .accessibilityLabel("本章插图")
         .task(id: ref) {
@@ -1188,7 +1188,7 @@ struct ReadingPreferencesView: View {
                         .foregroundStyle(ReaderPreferences(paper: paper).foreground)
                         .padding(20)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(paper == "paper" ? Theme.surface : ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: 16))
+                        .background(paper == "paper" ? Theme.surface : ReaderPreferences(paper: paper).background, in: Rectangle())
                         .accessibilityLabel("排版预览")
                 }
 
@@ -1204,7 +1204,7 @@ struct ReadingPreferencesView: View {
                         .accessibilityLabel("字号").accessibilityValue("\(Int(size))")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.surface, in: Rectangle())
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -1242,11 +1242,11 @@ struct ReadingPreferencesView: View {
                     HStack(spacing: 12) {
                         ForEach(mainPapers) { item in
                             Button { Haptics.selection(); paper = item.rawValue } label: {
-                                RoundedRectangle(cornerRadius: 12)
+                                Rectangle()
                                     .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
                                     .frame(maxWidth: .infinity).frame(height: 58)
                                     .overlay {
-                                        RoundedRectangle(cornerRadius: 12)
+                                        Rectangle()
                                             .strokeBorder(paper == item.rawValue ? Theme.accent : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
                                     }
                                     .overlay {
@@ -1283,7 +1283,7 @@ struct ReadingPreferencesView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(16)
                     .frame(minHeight: 64)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .background(Theme.surface, in: Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -1315,7 +1315,7 @@ struct ReadingPreferencesView: View {
                 .foregroundStyle(font == key ? Theme.accent : Theme.ink3)
                 .padding(.horizontal, 6)
                 .frame(maxWidth: .infinity, minHeight: 44)
-                .background(font == key ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: 8))
+                .background(font == key ? Theme.accentSoft : Theme.surface, in: Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(font == key ? .isSelected : [])

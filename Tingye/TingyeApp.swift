@@ -269,7 +269,7 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 余白导航：三个稳定页签，选中项由石墨胶囊和字重共同标记。
+/// 刊导航：顶部墨线 + 编号与宋体页签，选中项由墨色、字重与陶土下划线共同标记。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -287,15 +287,16 @@ private struct LibraryNavigationBar: View {
                 ForEach(items.indices, id: \.self) { index in
                     let selected = model.tab == index
                     Button { Haptics.selection(); model.tab = index } label: {
-                        HStack(spacing: 7) {
-                            ThemeIcon(symbol: items[index].1, size: 21, weight: selected ? .semibold : .regular)
-                            Text(items[index].0).font(.caption.weight(selected ? .semibold : .regular))
-                                .fixedSize(horizontal: false, vertical: true)
+                        VStack(spacing: 2) {
+                            Text(String(format: "%02d", index + 1))
+                                .font(.system(size: 10, weight: .bold)).tracking(1)
+                                .foregroundStyle(selected ? Theme.accent : Theme.ink3)
+                            Text(items[index].0).font(Theme.serif(20, relativeTo: .title3))
+                                .fontWeight(selected ? .bold : .regular)
+                                .foregroundStyle(selected ? Theme.ink : Theme.ink3)
+                            Rectangle().fill(selected ? Theme.clay : .clear).frame(width: 22, height: 3)
                         }
-                        .foregroundStyle(selected ? Theme.onInk : Theme.ink2)
-                        .frame(maxWidth: .infinity, minHeight: 46)
-                        .padding(.vertical, 2)
-                        .background(selected ? Theme.ink : .clear, in: Capsule())
+                        .frame(maxWidth: .infinity, minHeight: 50)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.96))
@@ -304,13 +305,11 @@ private struct LibraryNavigationBar: View {
                     .accessibilityIdentifier("navigation.tab.\(index)")
                 }
             }
-            .padding(7)
+            .padding(.top, 8)
             .frame(maxWidth: 560)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(Theme.line.opacity(0.45), lineWidth: 0.5) }
             .padding(.horizontal, Theme.inset)
-            .padding(.top, 4)
             .frame(maxWidth: .infinity)
+            .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleMedium) }
             .background(Theme.bg.ignoresSafeArea(edges: .bottom))
         }
         .animation(Theme.smoothSpring, value: player.book?.id)
@@ -381,14 +380,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.onInk)
+                                ProgressView().controlSize(.small).tint(Theme.onClay)
                             } else {
                                 ThemeIcon(symbol: Icon.playback(player.playing), size: 24)
                             }
                         }
-                        .foregroundStyle(Theme.onInk)
-                        .frame(width: 44, height: 44)
-                        .background(Theme.ink, in: Circle())
+                        .foregroundStyle(Theme.onClay)
+                        .frame(width: 48, height: 44)
+                        .background(Theme.clay, in: Rectangle())
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -398,12 +397,11 @@ struct MiniPlayer: View {
                 .padding(.leading, 8)
                 .padding(.trailing, 4)
                 .padding(.vertical, 7)
-                ProgressBar(value: player.progress, tint: Theme.accent, height: 2)
+                ProgressBar(value: player.progress, tint: Theme.clay, height: 2)
                     .accessibilityHidden(true)
             }
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.line, lineWidth: 0.5) }
+            .background(Theme.surface, in: Rectangle())
+            .overlay { Rectangle().strokeBorder(Theme.rulePaint, lineWidth: 1) }
         }
     }
     private var subtitle: String {

@@ -239,8 +239,13 @@ struct ShelfView: View {
 
     private var shelfHeader: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("MY LIBRARY / 本机书库").font(Theme.kicker).tracking(1)
-                .foregroundStyle(Theme.accent).accessibilityHidden(true)
+            HStack {
+                Text("LIBRARY · 藏书").foregroundStyle(Theme.ink)
+                Spacer()
+                Text("\(visibleKindEntries.count) VOL.").foregroundStyle(Theme.accent)
+            }
+            .font(Theme.masthead).tracking(1.2).accessibilityHidden(true)
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
             adaptiveRow {
                 PageMasthead(title: "书架", subtitle: shelfSubtitle)
                 if !editing {
@@ -257,6 +262,7 @@ struct ShelfView: View {
                     }.fixedSize(horizontal: true, vertical: false)
                 }
             }
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.rule).accessibilityHidden(true)
         }
     }
 
@@ -269,9 +275,9 @@ struct ShelfView: View {
             }
         } label: {
             Label("添加", systemImage: Icon.add)
-                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.onInk)
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.onClay)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .background(Theme.clay, in: Rectangle())
                 .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")
@@ -289,9 +295,9 @@ struct ShelfView: View {
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 2)
             .frame(minHeight: 48)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.rulePaint).frame(height: 1) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -449,7 +455,7 @@ struct ShelfView: View {
             .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 12)
             .frame(minWidth: 44, minHeight: 44)
-            .background(Theme.surface2, in: Capsule()).contentShape(Rectangle())
+            .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: 1) }.contentShape(Rectangle())
     }
 
     private var libraryOptions: some View {
@@ -528,7 +534,7 @@ struct ShelfView: View {
                 .padding(.leading, 14)
                 .padding(.trailing, query.isEmpty ? 14 : 0)
                 .frame(minHeight: 48)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.surface, in: Rectangle())
                 Button("取消", action: cancelSearch)
                     .font(.subheadline)
                     .frame(minWidth: 44, minHeight: 44)
@@ -701,7 +707,7 @@ struct ShelfView: View {
                     .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 }
             }
-            .glassCard(cornerRadius: 12)
+            .glassCard()
             .padding(.bottom, 10)
             HStack(spacing: 5) {
                 Image(systemName: Icon.folderFill)
@@ -882,7 +888,7 @@ struct ShelfView: View {
             }
         }
         .padding(12)
-        .floatingPanel(cornerRadius: 22)
+        .floatingPanel(cornerRadius: Theme.radius)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -896,7 +902,7 @@ struct ShelfView: View {
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .background(destructive ? Theme.danger.opacity(0.09) : Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+            .background(destructive ? Theme.danger.opacity(0.09) : Theme.surface2, in: Rectangle())
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

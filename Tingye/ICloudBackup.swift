@@ -745,7 +745,7 @@ struct ICloudBackupView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                PageMasthead(title: "安心保管。", subtitle: "你的书，始终属于你。")
+                PageMasthead(title: "安心保管。", subtitle: "你的书，始终属于你。", kicker: "ARCHIVE · 备份", issue: "ICLOUD")
                     .padding(.bottom, 16)
                 if let transfer = model.icloud {
                     sectionTitle("当前操作")

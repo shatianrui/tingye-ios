@@ -52,6 +52,15 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    Text("REPORT · 足迹").foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text(verbatim: "\(Calendar.current.component(.year, from: Date())) · W\(calendar.component(.weekOfYear, from: Date()))").foregroundStyle(Theme.accent)
+                }
+                .font(Theme.masthead).tracking(1.2).accessibilityHidden(true)
+                .padding(.bottom, -16)
+                Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
+                    .padding(.bottom, -16)
                 HStack(alignment: .center, spacing: 8) {
                     PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。")
                     Button("目标") { editGoal() }
@@ -68,10 +77,10 @@ struct StatsView: View {
                 HStack(spacing: 6) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
-                            Text(item.rawValue).font(.subheadline.weight(period == item ? .semibold : .regular))
-                                .foregroundStyle(period == item ? Theme.onInk : Theme.ink3)
+                            Text(item.rawValue).font(.subheadline.weight(period == item ? .bold : .regular))
+                                .foregroundStyle(period == item ? Theme.ink : Theme.ink3)
                                 .frame(maxWidth: .infinity, minHeight: 44)
-                                .background(period == item ? Theme.ink : Theme.surface2, in: Capsule())
+                                .overlay(alignment: .bottom) { Rectangle().fill(period == item ? Theme.clay : Theme.line).frame(height: period == item ? 3 : 1) }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -131,15 +140,15 @@ struct StatsView: View {
                 .font(Theme.kicker).tracking(0.6).foregroundStyle(Theme.ink3)
             HStack(alignment: .firstTextBaseline, spacing: 7) {
                 Text(Self.durationNumber(totalSeconds))
-                    .font(.system(size: durationSize, weight: .regular)).monospacedDigit()
+                    .font(Theme.serifBold(durationSize * 1.6, relativeTo: .largeTitle)).monospacedDigit()
                     .minimumScaleFactor(0.5).lineLimit(1)
                 Text(Self.durationUnit(totalSeconds)).font(.body).foregroundStyle(Theme.ink2)
             }
             .foregroundStyle(Theme.ink).accessibilityElement(children: .combine)
             summaryLayout {
-                Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Circle().fill(Theme.ink).frame(width: 8, height: 8) }
+                Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Rectangle().fill(Theme.ink).frame(width: 8, height: 8) }
                     .foregroundStyle(Theme.ink)
-                Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Circle().fill(Theme.accent).frame(width: 8, height: 8) }
+                Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Rectangle().fill(Theme.clay).frame(width: 8, height: 8) }
                     .foregroundStyle(Theme.accent)
             }
             .font(.subheadline)
@@ -243,17 +252,16 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title: "每日目标", number: "02")
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(Int(today / 60))").scaledFont(30, weight: .medium, relativeTo: .title2).monospacedDigit()
+                    Text("\(Int(today / 60))").font(Theme.serifBold(34, relativeTo: .title)).monospacedDigit()
                     Text("/ \(goalMinutes) 分钟").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink2)
                     Spacer(minLength: 4)
                     Text(fraction >= 1 ? "已完成 ✓" : "还差 \(remaining) 分钟")
                         .font(.system(size: 14, weight: .medium)).foregroundStyle(fraction >= 1 ? Theme.accent : Theme.ink2)
                 }
                 .foregroundStyle(Theme.ink)
-                ProgressBar(value: fraction, track: Theme.surface, tint: Theme.accent, height: 6)
+                ProgressBar(value: fraction, track: Theme.line, tint: Theme.clay, height: 6)
             }
-            .padding(18)
-            .background(Theme.hero, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -324,7 +332,7 @@ struct StatsView: View {
             }
             Chart(points, id: \.date) { point in
                 BarMark(x: .value("日期", point.date, unit: unit), y: .value("分钟", point.minutes))
-                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.accent : Theme.hero)
+                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.clay : Theme.ink.opacity(0.18))
                     .cornerRadius(6)
             }
             .chartXScale(domain: displayed.start...displayed.end)

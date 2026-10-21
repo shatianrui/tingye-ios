@@ -2,6 +2,8 @@
 
 纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。当前工程及最新 TestFlight 上传版本为 **1.21.0（110）· v19「余白 / Margin」+ GPT Image「纸间回声」图标**。iOS/iPadOS 与 Mac Catalyst 均已收到 Apple 上传成功回执，回执为处理中；**尚未确认 TestFlight 可安装**，未提交正式 App Store 审核。
 
+2026-10-22 完成 **v20「刊 · Folio」杂志排版重设计**（用户选定方向，主色指定为 Claude 陶土橙 `#D97757`）：象牙纸 `#FAF9F5` / 炭黑 `#141413`、报头双线与编号、宋体大标题、直角块状按钮；页签改为 `01/02/03` 编号 + 宋体「书 / 读 / 己」与陶土下划线；听书页为大号引语 + 陶土播放块 + Ⅰ–Ⅳ 工具栏。**应用图标改为报头式「听」**（双线 + 宋体「听」+ 陶土题条 + NO.20，日间 / 深色 / 着色三变体，1024px 无 alpha）。[Figma 原稿](https://www.figma.com/design/evqePR3n5p2o0ToOVKtfKX)、[设计说明](Design/v20-folio/DESIGN.md)、[日间](Design/v20-folio/runtime/light-overview.jpg) / [深色](Design/v20-folio/runtime/dark-overview.jpg)运行截图。功能、导航、数据协议与已保存的阅读偏好不变；未改版本号、未归档上传、未提交。以下为历史记录。
+
 2026-10-21 按用户要求应用前述推荐的 **A「纸间回声」** 并推送 TestFlight。日间图标与 OpenAI GPT Image 原图逐字节一致；深色、着色版从同一幅图做背景与色调适配，未混用 B 候选。三张图均为 1024×1024、RGB 无 alpha。与 109 相比，137 个构建 / 测试输入仅改变三个 PNG 和两个构建号配置文件；未改业务或 UI 源码。构建 110 **104 项 Debug 回归全部通过**，双端 Release 归档、签名 / 权限 / dSYM / 包内新图标检查通过；两端均返回 `Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0。未改测试组、未提交正式审核、未创建 Git 提交。见 [新图标与适配说明](Design/icon-margin-gpt/README.md)、[最终三变体](Design/icon-margin-gpt/final/appearances.png)、[110 上传证据](Design/icon-margin-gpt/final/testflight-110.json)。
 
 2026-10-21 完成 **v19「余白」Figma 设计与 SwiftUI 实现**：[可编辑 Figma 原稿](https://www.figma.com/design/xJdLrqBJ9bUkstoEIG1CKY) 包含 30 张界面稿、语义变量与本地组件、3 张图标母版。界面改为暖纸 / 石墨 / 陶橙，首页采用左右并列的续读书签卡，书架采用开放列表，阅读足迹与设置重新分层，阅读／听书工具与二级面板统一换新；该次交付的初版图标为 **「折页声窗」**（109；110 已另换为上述 GPT 图标），当时替换三种 1024px 无 alpha 资源。保留原有功能、导航、保存的字体与纸色，不覆盖起始工作区。iPhone SE 3 完整 **86 核心 + 18 UI = 104 项测试通过**，iOS Debug 与 Mac Catalyst 无签名构建通过；含日夜、小屏、最大字号、横屏与外观不重置纸色验证。详见 [设计说明](Design/v19-margin/DESIGN.md)、[实际验收记录](Design/v19-margin/VALIDATION.md)、[运行截图](Design/v19-margin/runtime/README.md)。随后按用户要求递增为 **1.21.0（109）**，重新完成 104 项 Debug 回归、双端 Release 归档和包检查，并于本机时间 **20:17:28 / 20:24:22** 分别收到 iOS / Mac 的 `Upload succeeded`。没有更改测试组或提交正式审核；[上传证据](Design/v19-margin/testflight-109.json)及[发布历史](docs/RELEASE_HISTORY.md)已记录。以下 v18 及更早内容为历史记录。
@@ -18,7 +20,7 @@
 
 ## 当前实现与设计基线
 
-当前 UI 实现为 v19 **「余白 / Margin」**：暖纸 / 石墨 / 陶橙、低饱和封面、开放列表与轻边界，采用系统 UI 字体与文学衬线。当前应用图标为构建 110 的 [GPT「纸间回声」](Design/icon-margin-gpt/README.md)。以 [Figma](https://www.figma.com/design/xJdLrqBJ9bUkstoEIG1CKY)、[实现规范](Design/v19-margin/DESIGN.md) 与源码为准。v18「静蓝」、v17「青听」、v16「墨」及 v15「专注」的视觉稿保留作历史，交互契约继续沿用。
+当前 UI 实现为 v20 **「刊 · Folio」**：杂志排版、象牙 / 炭黑 / Claude 陶土橙，图标为报头式「听」。以 [Figma](https://www.figma.com/design/evqePR3n5p2o0ToOVKtfKX)、[实现规范](Design/v20-folio/DESIGN.md) 与源码为准；v19「余白」及更早稿件为历史。v18「静蓝」、v17「青听」、v16「墨」及 v15「专注」的视觉稿保留作历史，交互契约继续沿用。
 
 三个页签：**书 / 读 / 己**。
 

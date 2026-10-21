@@ -20,8 +20,8 @@ struct DailyQuoteCard: View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
                 SectionTitle(text: "今日一句", number: number)
-                ThemeIcon(symbol: Icon.quote, size: 22, weight: .regular)
-                    .foregroundStyle(Theme.accent)
+                Text("“").font(Theme.serifBold(52, relativeTo: .largeTitle)).foregroundStyle(Theme.clay)
+                    .frame(height: 30, alignment: .top)
                     .accessibilityHidden(true)
                 Group {
                     if let quote, quote.entryID == entry.id {
@@ -50,9 +50,8 @@ struct DailyQuoteCard: View {
                 }
                 .padding(.top, 2)
             }
-            .padding(20)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.hero, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }

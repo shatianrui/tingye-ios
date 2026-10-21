@@ -167,6 +167,11 @@ struct PlayerView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, -10)
+            if !typeSize.isAccessibilitySize {
+                Text("NOW READING ALOUD").font(Theme.masthead).tracking(1.2).foregroundStyle(Theme.accent)
+                    .accessibilityHidden(true)
+            }
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
             HStack(alignment: .top, spacing: 12) {
                 if !typeSize.isAccessibilitySize {
                     Button { showingCover = true } label: {
@@ -179,7 +184,7 @@ struct PlayerView: View {
                         .font(.caption).foregroundStyle(tertiary).monospacedDigit()
                         .accessibilityIdentifier("player.currentChapter")
                     Text(book.title)
-                        .font(Theme.serifSemibold(19, relativeTo: .title3))
+                        .font(Theme.serifBold(22, relativeTo: .title3))
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                     Text([book.author, player.chapterTitle].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.caption).foregroundStyle(secondary)
@@ -187,8 +192,8 @@ struct PlayerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(16)
-            .background(Theme.hero, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.vertical, 6)
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.rule).accessibilityHidden(true)
         }
         .foregroundStyle(content)
         .padding(.horizontal, Theme.inset).padding(.top, 10).padding(.bottom, 12)
@@ -212,9 +217,11 @@ struct PlayerView: View {
                 }
             }
             if let sentence = player.currentSentence {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("“").font(Theme.serifBold(56, relativeTo: .largeTitle)).foregroundStyle(Theme.clay)
+                        .frame(height: 40, alignment: .top).accessibilityHidden(true)
                     Text(sentence.text)
-                        .font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(8)
+                        .font(Theme.serifBold(24, relativeTo: .title2)).lineSpacing(10)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .markerHighlight()
@@ -271,10 +278,9 @@ struct PlayerView: View {
             transportRow
             footer
         }
-        .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 12)
+        .padding(.top, 14).padding(.bottom, 8)
         .frame(maxWidth: 560)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Theme.line.opacity(0.4), lineWidth: 0.5) }
+        .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleMedium) }
         .padding(.horizontal, Theme.inset).padding(.bottom, 8)
         .frame(maxWidth: 600).frame(maxWidth: .infinity)
         .background(Theme.bg.ignoresSafeArea(edges: .bottom))
@@ -287,11 +293,11 @@ struct PlayerView: View {
                 .accessibilityIdentifier("player.previousSentence")
             Button { Haptics.light(); player.toggle() } label: {
                 ZStack {
-                    Circle().fill(Theme.ink)
-                    if player.buffering { ProgressView().tint(Theme.onInk) }
-                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 30).foregroundStyle(Theme.onInk) }
+                    Rectangle().fill(Theme.clay)
+                    if player.buffering { ProgressView().tint(Theme.onClay) }
+                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 30).foregroundStyle(Theme.onClay) }
                 }
-                .frame(width: 68, height: 68)
+                .frame(width: 96, height: 64)
             }
             .buttonStyle(PressButtonStyle(scale: 0.94))
             .accessibilityLabel(player.buffering ? "正在准备声音" : (player.playing ? "暂停朗读" : "继续朗读"))
@@ -306,7 +312,7 @@ struct PlayerView: View {
 
     private var footer: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 12) {
-            Button { chaptersSheet = true } label: { footerItem(Icon.contents, "目录") }
+            Button { chaptersSheet = true } label: { footerItem("Ⅰ", "目录") }
                 .accessibilityLabel("听书目录，第 \(player.chapter + 1) 章")
                 .accessibilityIdentifier("player.contents")
             Menu {
@@ -315,10 +321,10 @@ struct PlayerView: View {
                         Text(value.rateText + "×").tag(value)
                     }
                 }
-            } label: { footerItem(Icon.rate, "语速 \(player.rate.rateText)×", highlighted: player.rate != 1.0) }
+            } label: { footerItem("Ⅱ", "语速 \(player.rate.rateText)×", highlighted: player.rate != 1.0) }
             .accessibilityLabel("语速，当前 \(player.rate.rateText) 倍")
             .accessibilityIdentifier("player.rate")
-            Button { settings = true } label: { footerItem(Icon.voice, "声音") }
+            Button { settings = true } label: { footerItem("Ⅲ", "声音") }
                 .accessibilityLabel("声音设置，当前 \(player.voiceLabel)")
                 .accessibilityIdentifier("player.voice")
             TimelineView(.periodic(from: .now, by: 30)) { context in
@@ -327,7 +333,7 @@ struct PlayerView: View {
                     ForEach([15, 30, 45, 60], id: \.self) { minutes in
                         Button("\(minutes) 分钟后停止") { player.setSleep(minutes: minutes) }
                     }
-                } label: { footerItem(Icon.sleepTimer, sleepLabel(at: context.date), highlighted: player.sleepUntil != nil) }
+                } label: { footerItem("Ⅳ", sleepLabel(at: context.date), highlighted: player.sleepUntil != nil) }
                 .accessibilityLabel("定时停止")
                 .accessibilityValue(player.sleepUntil == nil ? "未开启" : sleepLabel(at: context.date))
                 .accessibilityIdentifier("player.sleep")
@@ -336,11 +342,13 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    private func footerItem(_ icon: String, _ title: String, highlighted: Bool = false) -> some View {
-        VStack(spacing: 0) {
-            ThemeIcon(symbol: icon, size: 24).frame(height: 40)
-                .foregroundStyle(highlighted ? Theme.accent : content)
-            Text(title).font(.caption).foregroundStyle(highlighted ? Theme.accent : secondary)
+    /// 杂志式罗马编号工具栏：编号为陶土橙，开启状态加粗并下划线。
+    private func footerItem(_ numeral: String, _ title: String, highlighted: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            Text(numeral).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(Theme.accent)
+                .frame(height: 26)
+            Text(title).font(.footnote.weight(highlighted ? .bold : .regular)).foregroundStyle(highlighted ? Theme.accent : content)
+                .underline(highlighted, color: Theme.clay)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, minHeight: 60, alignment: .top).contentShape(Rectangle())
@@ -436,7 +444,7 @@ private struct SentenceProgressControl: View {
                     dragging = false
                 }
             }
-            .tint(Theme.accent).frame(minHeight: 44).disabled(player.count <= 1)
+            .tint(Theme.clay).frame(minHeight: 44).disabled(player.count <= 1)
             .accessibilityLabel("本章句子进度")
             .accessibilityValue(sentenceLabel)
             .accessibilityHint("左右拖动选择句子，松手跳转")

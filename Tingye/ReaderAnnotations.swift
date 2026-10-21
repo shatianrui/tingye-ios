@@ -192,7 +192,7 @@ struct SelectionPanel: View {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                                    .background(tint.opacity(0.06), in: Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -206,7 +206,7 @@ struct SelectionPanel: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(maxWidth: 520)
-        .glassSurface(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .glassSurface(in: Rectangle())
     }
 
     private var markTools: some View {
@@ -224,7 +224,7 @@ struct SelectionPanel: View {
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(chosenColor == item.key ? tint.opacity(0.06) : .clear, in: RoundedRectangle(cornerRadius: 10))
+                        .background(chosenColor == item.key ? tint.opacity(0.06) : .clear, in: Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
@@ -240,7 +240,7 @@ struct SelectionPanel: View {
                         Label(title, systemImage: icon).font(.caption.weight(.medium))
                             .foregroundStyle(chosenStyle == style ? accent : tint)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
@@ -265,7 +265,7 @@ struct SelectionPanel: View {
                 .font(Theme.sans(15 * uiScale, weight: .medium))
                 .foregroundStyle(prominent ? accent : tint)
                 .frame(maxWidth: .infinity, minHeight: 46)
-                .background(prominent ? accent.opacity(0.14) : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                .background(prominent ? accent.opacity(0.14) : tint.opacity(0.06), in: Rectangle())
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -293,9 +293,9 @@ struct NoteEditor: View {
                     .focused($focused)
                     .scrollContentBackground(.hidden)
                     .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.surface))
+                    .background(Rectangle().fill(Theme.surface))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        Rectangle()
                             .strokeBorder(Theme.line, lineWidth: 0.6)
                     }
                     .overlay(alignment: .topLeading) {
@@ -419,7 +419,7 @@ struct NoteRow: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.wash, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(Theme.wash, in: Rectangle())
                     .padding(.top, 2)
             }
         }
