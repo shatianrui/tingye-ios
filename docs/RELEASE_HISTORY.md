@@ -2,6 +2,23 @@
 
 > 本文件记录实际上传与历代设计；1.17.0（103）及更早部分保留可用性修订前 README 的原文。历史段落中的「当前版本」、导航、文件路径、验证状态仅对应各段记录当时的版本，不作为当前规范。当前说明见 [README](../README.md)，发布门槛见 [验收清单](ACCEPTANCE.md)。
 
+## 墨 · Ink 全盘重设计与新图标（1.19.0 · 107，2026-10-21）
+
+用户要求「全部重新设计」，从 A「书房」/ B「墨」/ C「星野」三个高保真方向稿中选定 **B「墨 · Ink」**，并要求同步重设计应用图标后上传 TestFlight。
+
+- 视觉：宣纸 `#FAF7EF` / 墨 `#1C1B18` / 朱砂 `#A63A2E` 全套令牌（含夜间），宋体承担页标题 / 书名 / Tab 小字 / 统计数字；朱砂严格预算（当前句下划线、印章点、选中态、主按钮之外不用）；无封面书改为线装书题签占位封（书脊、竖排题签、朱砂小印，日夜随纸色切换，超长 / 非中文标题横排回退）。
+- 信息架构：四页签并为 **书 / 读 / 己**——「读」为默认首页（原今日），「己」= 统计 + 今日摘句 + 设置题录清单，原设置页归「更多设置」；功能入口零删减，v15 全部交互契约保留。
+- 图标：同步重设计为「线装书题签」（宣纸底、竖排宋体「听页」、朱砂闲章），日间 / 夜间 / 着色三变体，1024×1024 不透明校验通过，源稿与渲染管线见 [图标说明](../Design/icon-ink/README.md)。
+
+验证：iPhone 17e / iOS 27 模拟器 **102 / 102（86 核心 + 16 UI）通过**；Mac Catalyst Debug 编译通过。两端 Release 归档通过（版本 1.19.0（107）、Apple Distribution 签名、资产目录校验）。测试使用临时书库与系统声音，未调用付费服务。
+
+发布：按用户要求完成 iOS 与 Mac Catalyst Release 归档及 App Store Connect 上传。iOS 于 **11:29:26**、Mac 于 **11:31:24**（本机时间）分别收到 `Upload succeeded`，两个平台均返回 `EXPORT SUCCEEDED`，退出码为 0。版本均为 **1.19.0（107）**；Apple 回执为处理中，**尚未确认 TestFlight 可安装**。未提交正式 App Store 审核，未改测试组或邀请测试者。
+
+- 规范与截图：[墨 Ink 设计说明](../Design/v16/b-ink/DESIGN.md)、[运行截图](../Design/v16/b-ink/previews/)、[图标预览](../Design/icon-ink/index.html)。
+- 归档：`build/Tingye-107.xcarchive`、`build/Tingye-107-mac.xcarchive`；日志 `build/archive-107.log`、`build/archive-107-mac.log`。
+- 上传：`build/upload-107.log`、`build/upload-107-mac.log`、`build/release-107-upload-summary.json`。
+- 真机 VoiceOver、真实蓝牙 / AirPlay、来电、付费云语音和双设备 iCloud 仍须验收，详见 [验收清单](ACCEPTANCE.md)。
+
 ## 功能键分层重设计（1.18.0 · 106，2026-10-20）
 
 保留用户选定的「极简·专注」配色与 02「抱书的小王子」图标，重新组织功能键：

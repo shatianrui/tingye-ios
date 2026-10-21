@@ -1,8 +1,8 @@
 # 听页 · 原生 iOS / Mac Catalyst
 
-纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。当前工程及最新 TestFlight 上传版本为 **1.18.0（106）**：功能键分层重设计，阅读四键固定、读听定位分离、听书常用工具集中、书架筛选 / 排序 / 显示分开。
+纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。当前工程及最新 TestFlight 上传版本为 **1.19.0（107）**：v16「墨 · Ink」全盘重设计与「线装书题签」新图标。
 
-2026-10-21 完成 **v16「墨 · Ink」全盘重设计**（用户从 A「书房」/ B「墨」/ C「星野」三方向中选定 B）：宣纸为底、墨色为文、朱砂为印，宋体承担页标题 / 书名 / Tab 小字，四页签并为 **书 / 读 / 己**，无封面书改用线装书题签占位封；**应用图标同步重设计为「线装书题签」**（与界面同源的宣纸 / 宋体竖签 / 朱砂闲章，含日间 / 夜间 / 着色三变体），见 [图标说明](Design/icon-ink/README.md) 与 [预览](Design/icon-ink/index.html)。界面设计规范见 [墨 Ink 设计说明](Design/v16/b-ink/DESIGN.md)，运行截图见 [previews](Design/v16/b-ink/previews/)。功能与 v15 交互契约零删减；iPhone 17e 模拟器 **86 项核心 + 16 项 UI 回归全部通过**。未递增版本号，未重新归档上传。
+2026-10-21 完成 **v16「墨 · Ink」全盘重设计**（用户从 A「书房」/ B「墨」/ C「星野」三方向中选定 B）：宣纸为底、墨色为文、朱砂为印，宋体承担页标题 / 书名 / Tab 小字，四页签并为 **书 / 读 / 己**，无封面书改用线装书题签占位封；**应用图标同步重设计为「线装书题签」**（与界面同源的宣纸 / 宋体竖签 / 朱砂闲章，含日间 / 夜间 / 着色三变体），见 [图标说明](Design/icon-ink/README.md) 与 [预览](Design/icon-ink/index.html)。界面设计规范见 [墨 Ink 设计说明](Design/v16/b-ink/DESIGN.md)，运行截图见 [previews](Design/v16/b-ink/previews/)。功能与 v15 交互契约零删减；iPhone 17e 模拟器 **86 项核心 + 16 项 UI 回归全部通过**。同日完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect（11:29 / 11:31 收到 `Upload succeeded`），回执为 Apple 正在处理，**尚未确认 TestFlight 可安装**；未提交正式审核、未更改测试组。
 
 2026-10-20 已完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect：iPhone 17e **102 项回归通过**，iPhone SE 3 **16 项 UI 回归通过**。两个平台均收到上传成功回执，回执状态为 Apple 正在处理，**尚未确认 TestFlight 可安装**；未提交正式 App Store 审核、未更改测试组。证据见 [验收记录](docs/ACCEPTANCE.md) 与 [发布历史](docs/RELEASE_HISTORY.md)。
 
