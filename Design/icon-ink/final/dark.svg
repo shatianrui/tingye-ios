@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">听页图标 · 墨 Ink · 线装书题签</title>
+  <desc id="desc">宣纸底，一册线装书：左侧书脊与订线，右上竖排题签「听页」，题签下一方朱砂小印。与 v16「墨 · Ink」界面同源。</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="36%" r="88%"><stop stop-color="#17171B"/><stop offset="1" stop-color="#101012"/></radialGradient>
+    <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2B2721"/><stop offset="1" stop-color="#211E18"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" seed="9" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+    <clipPath id="bookClip"><rect x="252" y="176" width="520" height="672" rx="13"/></clipPath>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <ellipse cx="512" cy="880" rx="282" ry="20" fill="#000000" opacity=".18" filter="url(#soft)"/>
+  <!-- 线装书 -->
+  <rect x="252" y="176" width="520" height="672" rx="13" fill="url(#cover)"/>
+  <g clip-path="url(#bookClip)">
+    <!-- 书脊与订线 -->
+    <rect x="252" y="176" width="66" height="672" fill="#1C1A15"/>
+    <rect x="283" y="286" width="7" height="58" rx="3.5" fill="#463F32"/>
+    <rect x="283" y="680" width="7" height="58" rx="3.5" fill="#463F32"/>
+    <rect x="318" y="176" width="2" height="672" fill="#3A352A"/>
+  </g>
+  <rect x="252" y="176" width="520" height="672" rx="13" fill="none" stroke="#3A352A" stroke-width="2"/>
+  <!-- 题签：竖排「听页」 -->
+  <rect x="390" y="256" width="124" height="392" rx="6" fill="#353026" stroke="#4C4638" stroke-width="2"/>
+  <text x="452" y="402" font-family="'Songti SC','Noto Serif CJK SC','Source Han Serif SC',serif" font-size="98" font-weight="600" fill="#EDE9DC" text-anchor="middle" dominant-baseline="central">听</text>
+  <text x="452" y="540" font-family="'Songti SC','Noto Serif CJK SC','Source Han Serif SC',serif" font-size="98" font-weight="600" fill="#EDE9DC" text-anchor="middle" dominant-baseline="central">页</text>
+  <!-- 朱砂小印（闲章） -->
+  <rect x="414" y="672" width="76" height="76" rx="13" fill="#D97B6C"/>
+  <rect width="1024" height="1024" filter="url(#grain)" opacity=".05" style="mix-blend-mode:multiply"/>
+</svg>
