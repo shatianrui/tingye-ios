@@ -2,6 +2,21 @@
 
 > 本文件记录实际上传与历代设计；1.17.0（103）及更早部分保留可用性修订前 README 的原文。历史段落中的「当前版本」、导航、文件路径、验证状态仅对应各段记录当时的版本，不作为当前规范。当前说明见 [README](../README.md)，发布门槛见 [验收清单](ACCEPTANCE.md)。
 
+## 参照 PureLibro 补齐功能（1.23.0 · 112，2026-10-22）
+
+用户要求「参照 PureLibro 的所有功能」，实现后提交（`20106de`），随后要求推送 TestFlight。营销版本递增为 **1.23.0**，构建号 **112**。
+
+新增：TXT 自定义分章规则（正则、最大字数、重新分章）、阅读日历、连续阅读、摘句分享卡片、每日阅读提醒、通用设置（启动续读、达标提示、震动反馈、隐藏 Home 指示条、漫画默认阅读方式、语言）、自定义 TTS（OpenAI 兼容）、空间整理与书库索引修复、选中文字面板菜单、每部漫画独立阅读方向与书架手动排序、内置 SMB（SMBClient 0.3.1，MIT）、简 / 繁 / 英 / 日四种界面语言。未做：百度网盘 / 阿里云盘（需开放平台 App Key）、漫画超分辨率、独立分享扩展、专业版内购。
+
+验证：提交前 iPhone 17e / iOS 27.0 Debug **114 / 114 通过（96 核心 + 18 UI）**，Mac Catalyst Debug 编译通过；版本号改动后未重跑测试。iOS 归档版本 1.23.0（112），含 zh-Hans / zh-Hant / en / ja 四个语言包。
+
+| 平台 | 本机日志 `Upload succeeded` | 日志 |
+| --- | --- | --- |
+| iOS / iPadOS | **03:17:11** | `build/upload-112.log`（归档 `build/Tingye-112.xcarchive`） |
+| Mac Catalyst | **03:26:58** | `build/upload-112-mac.log`（归档 `build/Tingye-112-mac.xcarchive`） |
+
+两端 `EXPORT SUCCEEDED`、退出码 0；Apple 回执后处于处理中，**尚未确认 TestFlight 可安装**。未提交正式审核、未更改测试组。
+
 ## v20「刊 · Folio」杂志排版（1.22.0 · 111，2026-10-22）
 
 用户选定杂志排版方向、指定 Claude 陶土橙为主色，确认后实现并提交（`df98bca`），随后要求「推送 TestFlight」。营销版本递增为 **1.22.0**，构建号 **111**。设计见 [Design/v20-folio/DESIGN.md](../Design/v20-folio/DESIGN.md)。
