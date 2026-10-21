@@ -39,4 +39,4 @@
 ## 已知限制
 
 - 仅打包思源宋体 Regular，`serifBold` 的粗细由系统合成，实际效果弱于 Figma 稿的 Black 字重。
-- 本次未改版本号、未归档上传、未提交。
+- 1.22.0（111）已上传 iOS 与 Mac Catalyst（两端 `Upload succeeded`，Apple 处理中，未确认可安装）。

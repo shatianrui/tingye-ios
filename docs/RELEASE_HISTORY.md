@@ -2,6 +2,19 @@
 
 > 本文件记录实际上传与历代设计；1.17.0（103）及更早部分保留可用性修订前 README 的原文。历史段落中的「当前版本」、导航、文件路径、验证状态仅对应各段记录当时的版本，不作为当前规范。当前说明见 [README](../README.md)，发布门槛见 [验收清单](ACCEPTANCE.md)。
 
+## v20「刊 · Folio」杂志排版（1.22.0 · 111，2026-10-22）
+
+用户选定杂志排版方向、指定 Claude 陶土橙为主色，确认后实现并提交（`df98bca`），随后要求「推送 TestFlight」。营销版本递增为 **1.22.0**，构建号 **111**。设计见 [Design/v20-folio/DESIGN.md](../Design/v20-folio/DESIGN.md)。
+
+验证：提交前 iPhone 17e / iOS 27.0 Debug **104 / 104 通过（86 核心 + 18 UI）**；版本号改动后未重跑测试（仅改 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`）。iOS 归档内 `CFBundleShortVersionString` 1.22.0、`CFBundleVersion` 111，含 dSYM。
+
+| 平台 | 本机日志 `Upload succeeded` | 日志 |
+| --- | --- | --- |
+| iOS / iPadOS | **00:29:15** | `build/upload-111.log`（归档 `build/Tingye-111.xcarchive`） |
+| Mac Catalyst | **00:32:48** | `build/upload-111-mac.log`（归档 `build/Tingye-111-mac.xcarchive`） |
+
+两端 `EXPORT SUCCEEDED`、退出码 0；Apple 回执后处于处理中，**尚未确认 TestFlight 可安装**。未提交正式审核、未更改测试组。
+
 ## GPT Image「纸间回声」图标（1.21.0 · 110，2026-10-21）
 
 用户要求按软件 UI 使用 ChatGPT 图片生成制作图标，随后要求「应用并推送 TestFlight」。按前述推荐采用 **A「纸间回声」**，B「静夜翻页」仅保留为未使用候选。UI 和业务源码不变；营销版本仍为 1.21.0，构建号递增至 **110**。
