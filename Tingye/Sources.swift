@@ -825,7 +825,8 @@ struct WiFiTransferView: View {
     }
 }
 
-/// 极简 HTTP 服务：GET / 返回上传页；POST /upload 以原始请求体接收单个文件（文件名在 X-File-Name 头）。
+/// 极简 HTTP 服务：GET /<口令> 返回上传页；POST /<口令>/upload 以原始请求体接收单个文件（文件名在 X-File-Name 头）。
+/// 口令每次开启随机生成并显示在地址里，同一局域网里不知道地址的人无法上传。
 @MainActor
 final class WiFiTransferServer: ObservableObject {
     @Published private(set) var address: String?
@@ -835,11 +836,19 @@ final class WiFiTransferServer: ObservableObject {
     var onFile: ((URL) async -> String)?
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "tingye.wifi-transfer")
-    static let maxBytes = 100 * 1024 * 1024
+    nonisolated static let maxBytes = 100 * 1024 * 1024
+    /// 本次服务的访问口令（去掉易混淆字符，便于手输）。
+    private(set) var token = ""
+
+    nonisolated static func makeToken(length: Int = 6) -> String {
+        let alphabet = Array("abcdefghjkmnpqrstuvwxyz23456789")
+        return String((0..<length).map { _ in alphabet.randomElement()! })
+    }
 
     func start() {
         guard listener == nil else { return }
         error = nil
+        token = Self.makeToken()
         do {
             let parameters = NWParameters.tcp
             parameters.allowLocalEndpointReuse = true
@@ -870,14 +879,14 @@ final class WiFiTransferServer: ObservableObject {
         case .ready:
             running = true
             guard let ip = Self.wifiAddress() else { error = "没有连接 WiFi。请连接 WiFi 后重新进入此页。"; address = nil; return }
-            address = "http://\(ip):\(listener?.port?.rawValue ?? 8080)"
+            address = "http://\(ip):\(listener?.port?.rawValue ?? 8080)/\(token)"
         case .failed(let failure): running = false; error = "传书服务已停止：" + failure.localizedDescription
         default: break
         }
     }
 
     private func accept(_ connection: NWConnection) {
-        let session = TransferConnection(connection: connection, queue: queue) { [weak self] url in
+        let session = TransferConnection(connection: connection, queue: queue, token: token) { [weak self] url in
             guard let self else { return "" }
             let line = await self.onFile?(url) ?? ""
             self.received.append(line)
@@ -909,10 +918,25 @@ final class WiFiTransferServer: ObservableObject {
     }
 }
 
+enum TransferRoute: Equatable {
+    case page, upload, forbidden
+
+    /// 按去掉查询串与末尾斜杠后的路径分流；口令不符一律拒绝。
+    static func resolve(_ path: String, token: String) -> TransferRoute {
+        let bare = String(path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first ?? "")
+        let trimmed = bare.hasSuffix("/") && bare.count > 1 ? String(bare.dropLast()) : bare
+        guard !token.isEmpty else { return .forbidden }
+        if trimmed == "/" + token { return .page }
+        if trimmed == "/" + token + "/upload" { return .upload }
+        return .forbidden
+    }
+}
+
 /// 一个 HTTP 连接：读请求头，GET 返回页面，POST 把请求体流式写入临时文件后交给书库导入。
 private final class TransferConnection: @unchecked Sendable {
     let connection: NWConnection
     let queue: DispatchQueue
+    let token: String
     let onFile: @MainActor (URL) async -> String
     private var header = Data()
     private var file: FileHandle?
@@ -920,9 +944,10 @@ private final class TransferConnection: @unchecked Sendable {
     private var remaining = 0
     private var retain: TransferConnection?
 
-    init(connection: NWConnection, queue: DispatchQueue, onFile: @escaping @MainActor (URL) async -> String) {
-        self.connection = connection; self.queue = queue; self.onFile = onFile
+    init(connection: NWConnection, queue: DispatchQueue, token: String, onFile: @escaping @MainActor (URL) async -> String) {
+        self.connection = connection; self.queue = queue; self.token = token; self.onFile = onFile
     }
+
 
     func start() {
         retain = self
@@ -961,9 +986,12 @@ private final class TransferConnection: @unchecked Sendable {
             guard let colon = line.firstIndex(of: ":") else { continue }
             headers[line[..<colon].lowercased()] = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
         }
-        if method == "GET" {
+        let route = TransferRoute.resolve(path, token: token)
+        if route == .forbidden {
+            respond(403, type: "text/plain; charset=utf-8", body: Data("地址不完整。请在浏览器中输入手机传书页上显示的完整地址（含末尾口令）。".utf8))
+        } else if method == "GET", route == .page {
             respond(200, type: "text/html; charset=utf-8", body: Data(Self.page.utf8))
-        } else if method == "POST", path.hasPrefix("/upload") {
+        } else if method == "POST", route == .upload {
             let length = Int(headers["content-length"] ?? "") ?? 0
             let rawName = headers["x-file-name"].flatMap { $0.removingPercentEncoding } ?? "upload.txt"
             let name = (rawName as NSString).lastPathComponent
@@ -1003,7 +1031,7 @@ private final class TransferConnection: @unchecked Sendable {
     }
 
     private func respond(_ status: Int, type: String, body: Data) {
-        let reason = [200: "OK", 404: "Not Found", 413: "Payload Too Large", 415: "Unsupported Media Type", 422: "Unprocessable"][status] ?? "OK"
+        let reason = [200: "OK", 403: "Forbidden", 404: "Not Found", 413: "Payload Too Large", 415: "Unsupported Media Type", 422: "Unprocessable"][status] ?? "OK"
         var head = "HTTP/1.1 \(status) \(reason)\r\nContent-Type: \(type)\r\nContent-Length: \(body.count)\r\nConnection: close\r\nCache-Control: no-store\r\n\r\n"
         if status == 200 && type.hasPrefix("text/html") { head = head.replacingOccurrences(of: "Cache-Control: no-store", with: "Cache-Control: no-cache") }
         connection.send(content: Data(head.utf8) + body, completion: .contentProcessed { [weak self] _ in self?.connection.cancel() })
@@ -1036,7 +1064,7 @@ private final class TransferConnection: @unchecked Sendable {
     clear.onclick=()=>{list.querySelectorAll('li[data-done="true"]').forEach(li=>li.remove());clear.hidden=true};
     function send(files){for(const f of files){const li=document.createElement('li');li.innerHTML='<div style="flex:1"><div></div><div class="bar"><i></i></div></div><div class="result"><span>等待传输</span><button class="secondary" type="button" hidden>重试</button></div>';li.querySelector('div div').textContent=f.name;list.append(li);const retry=li.querySelector('button');retry.onclick=()=>{retry.hidden=true;li.querySelector('span').textContent='等待重试';queue.push([f,li]);drain()};queue.push([f,li])}drain()}
     async function drain(){if(active)return;active=true;while(queue.length){const [f,li]=queue.shift();await up(f,li)}active=false}
-    function up(f,li){return new Promise(r=>{const x=new XMLHttpRequest(),status=li.querySelector('span'),retry=li.querySelector('button');status.textContent='传输中';status.className='';li.querySelector('i').style.width='0%';x.open('POST','/upload');x.timeout=180000;x.setRequestHeader('X-File-Name',encodeURIComponent(f.name));
+    function up(f,li){return new Promise(r=>{const x=new XMLHttpRequest(),status=li.querySelector('span'),retry=li.querySelector('button');status.textContent='传输中';status.className='';li.querySelector('i').style.width='0%';x.open('POST',location.pathname.replace(/\\/$/,'')+'/upload');x.timeout=180000;x.setRequestHeader('X-File-Name',encodeURIComponent(f.name));
     const fail=message=>{status.textContent=message;status.className='err';retry.hidden=false;r()};
     x.upload.onprogress=e=>{if(e.lengthComputable){li.querySelector('i').style.width=(e.loaded/e.total*100)+'%';if(e.loaded===e.total)status.textContent='正在加入书架'}};
     x.onload=()=>{if(x.status===200){status.textContent='已加入书架';status.className='ok';li.dataset.done='true';clear.hidden=false;r()}else fail(x.responseText||'传输失败')};

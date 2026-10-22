@@ -759,7 +759,7 @@ struct ShelfView: View {
                     }
                 }
             Text(entry.title)
-                .font(.subheadline.weight(.semibold))
+                .font(Theme.serifBold(15, relativeTo: .subheadline)).serifEmbolden(15)
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .padding(.top, 8)
@@ -805,7 +805,7 @@ struct ShelfView: View {
                         BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 52)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
-                                .font(.body.weight(.semibold))
+                                .font(Theme.serifBold(18, relativeTo: .body)).serifEmbolden(18)
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                             Text(row.author + " · " + model.category(row))

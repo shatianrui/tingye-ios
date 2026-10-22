@@ -1,34 +1,38 @@
 import SwiftUI
 import UIKit
 import CoreImage
+import Pow
 
-/// 听页 · 瑞士网格 Swiss Grid（v21）。苏黎世白：纯白画布、炭黑文字、单一信号蓝 #0057FF。
-/// 国际主义网格：1px 描边分层、克制的圆角（2/8/12）、等宽 mono 标签（大写、宽字距）建立秩序。
-/// 设计稿与令牌：Design/v21-swiss/colors_and_type.css 与 pages/*.html。
+/// 听页 · 报刊 Times（v22）。借鉴《纽约时报》：白纸黑字、宋体粗标题、1px 细线分栏、居中报头。
+/// 几乎不用颜色：强调靠墨色与字重，唯一的彩色是报纸蓝链接 #326891；按钮直角黑底，无阴影无渐变。
+/// 设计稿：Figma「听页 Tingye · v22 Redesign」Direction D。
 enum Theme {
-    static let bg = dynamic(0xFFFFFF, 0x0B0B0C)
-    static let surface = dynamic(0xFFFFFF, 0x141416)
-    static let surface2 = dynamic(0xF4F4F5, 0x1B1B1E)
-    static let ink = dynamic(0x111112, 0xF5F5F6)
-    static let ink2 = dynamic(0x6E6E73, 0x9C9CA3)
+    static let bg = dynamic(0xFFFFFF, 0x121212)
+    static let surface = dynamic(0xFFFFFF, 0x121212)
+    /// 新闻纸底：迷你播放器、引文框等次级面。
+    static let surface2 = dynamic(0xF7F5F0, 0x1D1D1D)
+    static let ink = dynamic(0x121212, 0xF2F2F2)
+    static let ink2 = dynamic(0x5A5A5A, 0xA8A8A8)
     static let ink3 = ink2
-    /// 发丝分隔线：静态面一律 1px 描边分层，阴影 alpha ≤ 0.05。
-    static let line = dynamic(0xE4E4E7, 0x26262B)
-    /// 强描边（选中框、按钮描边）用墨色；普通分层一律 `line`。
+    /// 细线：栏目之间一律 1px 浅灰；报头双线与栏目首线用墨色 `rulePaint`。
+    static let line = dynamic(0xDFDFDF, 0x333333)
     static let rulePaint = ink
-    static let onInk = dynamic(0xFFFFFF, 0x0B0B0C)
+    static let onInk = dynamic(0xFFFFFF, 0x121212)
     static let cardEdge = line
-    /// 信号蓝·填充面：按钮、进度、选中态的底色。日夜同值 #0057FF，白字对比 5.5:1。
-    static let clay = dynamic(0x0057FF, 0x0057FF)
-    static let onClay = Color(hex: 0xFFFFFF)
-    /// 信号蓝·文字/图标：浅色 #0057FF；深色提亮 #4D7CFE 以保证深色面上 ≥4.5:1。
-    static let accent = dynamic(0x0057FF, 0x4D7CFE)
-    /// 蓝色浅底：深色压暗至 #0F1A33，使 accent 文字在其上 ≥4.5:1。
-    static let accentSoft = dynamic(0xEEF3FF, 0x0F1A33)
-    static let onAccent = Color(hex: 0xFFFFFF)
+    /// 墨·填充面：主按钮、进度、播放键。深色模式反转为白底黑字。
+    static let clay = ink
+    static let onClay = onInk
+    /// 强调即墨色：选中态、编号、图标高亮都用墨，不引入第二种颜色。
+    static let accent = ink
+    /// 选中浅底：浅灰新闻纸。
+    static let accentSoft = dynamic(0xEFEDE8, 0x262626)
+    static let onAccent = onInk
+    /// 报纸蓝：仅用于文字链接（「全部书架」「看原文」）。
+    static let link = dynamic(0x326891, 0x8DB6D8)
     static let marker = clay
     static let onMarker = onClay
-    static let readingHighlight = accentSoft
+    /// 跟读当前句：报纸荧光笔的淡黄。
+    static let readingHighlight = dynamic(0xFBF1C7, 0x3A3320)
     static let hero = surface2
     static let heroInk = ink
     static let forest = accent
@@ -53,11 +57,11 @@ enum Theme {
 
     static let inset: CGFloat = 24
     static let pageWidth: CGFloat = 720
-    /// 瑞士尺度：卡片 8、小徽章 2、按钮 8。
-    static let radius: CGFloat = 8
-    static let radiusSmall: CGFloat = 2
-    static let buttonRadius: CGFloat = 8
-    static let buttonHeight: CGFloat = 48
+    /// 报刊尺度：近乎直角——卡片 2、徽章 0、按钮 3。
+    static let radius: CGFloat = 2
+    static let radiusSmall: CGFloat = 0
+    static let buttonRadius: CGFloat = 3
+    static let buttonHeight: CGFloat = 46
     static let iconButtonSize: CGFloat = 44
     static let ruleHeavy: CGFloat = 3
     static let ruleMedium: CGFloat = 2
@@ -83,25 +87,28 @@ enum Theme {
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)
     }
-    /// 瑞士标签：等宽、大写、宽字距，用于元数据/编号/刻度，如 `TINGYE / READ`、`8 BOOKS · GRID 03`。
-    static let masthead = Font.system(size: 11, weight: .medium, design: .monospaced)
+    /// 栏目标签：黑体粗、宽字距（报纸的版面眉题），如「继续阅读」「最近在读」。
+    static let masthead = Font.system(size: 11, weight: .bold)
     /// 统计大数字：无衬线粗体 + 等宽数字，不用宋体；调用方负责字号缩放。
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle) -> Font {
         .system(size: size, weight: .bold, design: .default)
     }
-    /// 瑞士标签（同 masthead）：mono 11px 中字重。
-    static let kicker = Font.system(size: 11, weight: .medium, design: .monospaced)
-    static func headline(_ size: CGFloat) -> Font { .system(size: size, weight: .semibold) }
+    /// 栏目标签（同 masthead）。
+    static let kicker = Font.system(size: 11, weight: .bold)
+    /// 报刊标题：宋体粗，书名、页面标题、报头都用它。
+    static func headline(_ size: CGFloat) -> Font { serifBold(size, relativeTo: .title) }
 
     // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
 
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
     /// 占位封使用低饱和书刊纸色，随日夜切换；真实导入书封不反色。
     static func coverUIColor(_ color: String) -> UIColor {
-        // v21 占位封一律中性纸面（白卡 / 深灰卡），色彩身份只由蓝色书脊承担。
-        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x141416) : UIColor(hex: 0xFFFFFF) }
+        // v22 占位封：三种低饱和新闻纸色，按书的色名稳定分配；深色模式统一压暗。
+        let papers: [UInt32] = [0xEDE7DA, 0xE3E6E1, 0xE9E2DF]
+        let light = papers[color.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % papers.count]
+        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x262626) : UIColor(hex: light) }
     }
-    static func coverForeground(_ color: String) -> Color { dynamic(0x111112, 0xF5F5F6) }
+    static func coverForeground(_ color: String) -> Color { dynamic(0x121212, 0xF2F2F2) }
 
     /// 纯色色块（保留渐变签名，便于沿用调用处）。
     static func coverGradient(_ color: String) -> LinearGradient {
@@ -160,6 +167,9 @@ extension View {
         glassSurface(in: AnyShape(shape), interactive: interactive)
     }
 
+    /// 内置思源宋体只有常规字重：标题用两层亚像素位移叠印加粗，得到报纸标题的粗宋分量。
+    func serifEmbolden(_ size: CGFloat) -> some View { modifier(SerifEmbolden(amount: max(0.3, size * 0.026))) }
+
     func paperBackground() -> some View {
         self.background { Theme.bg.ignoresSafeArea() }
     }
@@ -188,6 +198,14 @@ private struct ScaledSystemFont: ViewModifier {
         self.weight = weight; self.width = width
     }
     func body(content: Content) -> some View { content.font(.system(size: size, weight: weight).width(width)) }
+}
+private struct SerifEmbolden: ViewModifier {
+    let amount: CGFloat
+    func body(content: Content) -> some View {
+        content
+            .overlay { content.offset(x: amount).accessibilityHidden(true).allowsHitTesting(false) }
+            .overlay { content.offset(x: amount / 2, y: amount / 2).accessibilityHidden(true).allowsHitTesting(false) }
+    }
 }
 private struct ReducedMotionPolicy: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -408,7 +426,7 @@ struct SealBadge: View {
     var filled: Bool = false
     var body: some View {
         Text(L(text))
-            .font(.system(size: 10, weight: .medium, design: .monospaced)).tracking(0.8)
+            .font(.system(size: 10, weight: .bold)).tracking(0.8)
             .foregroundStyle(filled ? Theme.onClay : color)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
@@ -416,9 +434,9 @@ struct SealBadge: View {
     }
 }
 
-// MARK: - 按钮（柔和圆角，主次明确）
+// MARK: - 按钮（报刊直角，主次明确）
 
-/// 信号蓝圆角主操作、描边次操作：瑞士网格的 8px 圆角按钮。
+/// 墨底直角主操作、墨线次操作：报刊的 3px 圆角按钮。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -434,9 +452,9 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(foreground)
             .background(fill, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
             .opacity(configuration.isPressed ? 0.85 : 1)
             .animation(Theme.pressSpring, value: configuration.isPressed)
+            .conditionalEffect(.pushDown, condition: configuration.isPressed && !reduceMotion)
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : 0.4)
     }
@@ -455,7 +473,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(emphasized ? Theme.accent : Theme.ink)
             .background(configuration.isPressed ? Theme.surface2 : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(emphasized ? Theme.accent : Theme.line, lineWidth: 1) }
+            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(emphasized ? Theme.accent : Theme.rulePaint, lineWidth: 1) }
             .animation(Theme.pressSpring, value: configuration.isPressed)
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : 0.4)
@@ -522,7 +540,7 @@ struct ListenLabel: View {
     }
 }
 
-/// 统一按压反馈：轻缩 + 微透明。
+/// 统一按压反馈：按调用方给的比例轻缩 + 微透明（整行卡片 0.99、图标按钮 0.92–0.94）；主按钮的 Pow 下陷见 PrimaryButtonStyle。
 struct PressButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var scale: CGFloat = 0.96
@@ -605,7 +623,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, 0.5)).accessibilityHidden(true) }
 }
 
-/// 瑞士区块标题：mono 大写宽字距标签（可带蓝色编号），下方不需要分栏粗线。
+/// 报刊栏目标题：黑体粗宽字距眉题（可带编号），墨色。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -620,7 +638,7 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             if let number { Text(number).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.accent) }
-            Text(L(text).localUppercased).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink2)
+            Text(L(text).localUppercased).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink)
             if let badge { SealBadge(text: badge) }
         }
         .accessibilityElement(children: .combine)
@@ -628,7 +646,7 @@ struct SectionTitle: View {
     }
 }
 
-/// 各主页面共用的页眉：mono 眉题行 + 无衬线粗体大标题 + 可选说明，支持 Dynamic Type。
+/// 各主页面共用的页眉：眉题行 + 宋体粗大标题 + 可选说明，支持 Dynamic Type。
 struct PageMasthead: View {
     let title: String
     var subtitle: String? = nil
@@ -650,8 +668,7 @@ struct PageMasthead: View {
                 .accessibilityHidden(true)
             }
             Text(L(title))
-                .scaledFont(40, weight: .bold, relativeTo: .largeTitle)
-                .tracking(-0.8)
+                .font(Theme.serifBold(34, relativeTo: .largeTitle)).serifEmbolden(34)
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -687,7 +704,7 @@ struct ProgressBar: View {
 
 // MARK: - 书籍封面
 
-/// 真实书封完整显示；无图时使用瑞士网格占位封：白卡 + 1px 描边 + 左侧蓝色书脊 + mono 编号。
+/// 真实书封完整显示；无图时使用报刊占位封：新闻纸色 + 宋体粗书名 + 底部一道墨线。
 struct BookCoverView: View {
     let title: String
     var color = "ink"
@@ -701,18 +718,20 @@ struct BookCoverView: View {
         self.image = image ?? data.flatMap(UIImage.init(data:))
         self.index = index
     }
-    private var spineWidth: CGFloat { max(3, min(6, width * 0.045)) }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         let fg = Theme.coverForeground(color)
         Group {
             if let image {
                 Image(uiImage: image).resizable().scaledToFit().background(Theme.surface2)
+                    .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 8))
             } else if width < 52 {
                 tinyPlaceholder(fg)
             } else {
                 slipPlaceholder(fg)
             }
         }
+        .animation(.easeOut(duration: 0.35), value: image != nil)
         .frame(width: width, height: width / 0.75)
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
@@ -722,13 +741,12 @@ struct BookCoverView: View {
     private func tinyPlaceholder(_ fg: Color) -> some View {
         ZStack(alignment: .leading) {
             Theme.coverColor(color)
-            Rectangle().fill(Theme.clay).frame(width: spineWidth)
             Text(L(title))
-                .font(.system(size: max(8, width * 0.15), weight: .semibold))
+                .font(Theme.serifBold(max(8, width * 0.17))).serifEmbolden(max(8, width * 0.17))
                 .foregroundStyle(fg)
                 .lineLimit(3)
                 .minimumScaleFactor(0.7)
-                .padding(.leading, max(6, width * 0.15)).padding(.trailing, 4)
+                .padding(.horizontal, 4)
                 .frame(width: width, height: width / 0.75, alignment: .center)
         }
     }
@@ -736,15 +754,9 @@ struct BookCoverView: View {
         let titleSize = min(24, max(11, width * 0.14))
         return ZStack(alignment: .leading) {
             Theme.coverColor(color)
-            Rectangle().fill(Theme.clay).frame(width: spineWidth)
             VStack(alignment: .leading, spacing: 0) {
-                Text(index.map { String(format: "%02d", $0) } ?? "TINGYE")
-                    .font(.system(size: max(8, width * 0.08), weight: .medium, design: .monospaced))
-                    .tracking(1)
-                    .foregroundStyle(Theme.ink2)
-                Spacer(minLength: 0)
                 Text(L(title))
-                    .font(.system(size: titleSize, weight: .semibold)).foregroundStyle(fg)
+                    .font(Theme.serifBold(titleSize)).foregroundStyle(fg).serifEmbolden(titleSize)
                     .lineLimit(3).minimumScaleFactor(0.72).multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 if width >= 72 && !author.isEmpty {
@@ -752,8 +764,15 @@ struct BookCoverView: View {
                         .foregroundStyle(Theme.ink2).lineLimit(1)
                         .padding(.top, max(3, width * 0.04))
                 }
+                Spacer(minLength: 0)
+                Rectangle().fill(fg).frame(height: 1).accessibilityHidden(true)
+                if let index {
+                    Text(String(format: "%02d", index))
+                        .font(.system(size: max(8, width * 0.08), weight: .bold)).monospacedDigit()
+                        .foregroundStyle(Theme.ink2).padding(.top, max(3, width * 0.04))
+                }
             }
-            .padding(.leading, spineWidth + max(7, width * 0.09))
+            .padding(.leading, max(8, width * 0.12))
             .padding(.trailing, max(7, width * 0.08))
             .padding(.vertical, max(9, width * 0.1))
         }
@@ -873,12 +892,12 @@ struct ReaderPreferences: Equatable {
         case .paper:   return ReaderPaper.xuanSecondary
         }
     }
-    /// 原生分页与原书图文共用信号蓝跟读标记，纸色设置不变。
-    var highlightBand: UIColor { UIColor(hex: 0x0057FF) }
-    /// 连续滚动模式整句铺底：低饱和半透明信号蓝
+    /// 原生分页与原书图文共用荧光笔黄跟读标记，纸色设置不变。
+    var highlightBand: UIColor { UIColor(hex: 0xE0B400) }
+    /// 连续滚动模式整句铺底：半透明荧光笔黄
     var highlight: UIColor {
         let band = highlightBand, darkPaper = kind.dark
-        return UIColor { band.resolvedColor(with: $0).withAlphaComponent($0.userInterfaceStyle == .dark || darkPaper ? 0.20 : 0.14) }
+        return UIColor { band.resolvedColor(with: $0).withAlphaComponent($0.userInterfaceStyle == .dark || darkPaper ? 0.26 : 0.22) }
     }
     /// serif 思源宋体 / kai 霞鹜文楷 / hansans 思源黑体 / xixihei 霞鹜新晰黑 / system 系统字体 / custom:<PostScript 名> 导入的字体
     var uiFont: UIFont {

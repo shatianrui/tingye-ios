@@ -25,11 +25,59 @@ enum SMBAccess {
     }
 }
 
+/// 一次浏览共用的 SMB 会话：首次使用时登录，之后逐层进入文件夹不再重复登录；
+/// 操作串行执行（共享连接是会话级状态），任何一步出错都登出作废，下次重新登录。浏览页全部退出后登出。
+@MainActor
+final class SMBConnection: ObservableObject {
+    let source: RemoteSource
+    private var client: SMBClient?
+    private var busy = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    init(source: RemoteSource) { self.source = source }
+
+    deinit {
+        if let client { Task { _ = try? await client.logoff() } }
+    }
+
+    /// 在已登录的会话上执行；给了 share 时先连接共享，结束后断开。
+    func perform<T>(share: String? = nil, _ body: (SMBClient) async throws -> T) async throws -> T {
+        await acquire(); defer { release() }
+        do {
+            let client: SMBClient
+            if let existing = self.client { client = existing } else { client = try await SMBAccess.client(source); self.client = client }
+            guard let share else { return try await body(client) }
+            _ = try await client.connectShare(share)
+            let result = try await body(client)
+            _ = try? await client.disconnectShare()
+            return result
+        } catch {
+            await invalidate()
+            throw error
+        }
+    }
+
+    private func invalidate() async {
+        guard let client else { return }
+        self.client = nil
+        _ = try? await client.logoff()
+    }
+
+    private func acquire() async {
+        if busy { await withCheckedContinuation { waiters.append($0) } } else { busy = true }
+    }
+
+    private func release() {
+        if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() }
+    }
+}
+
 struct SMBBrowser: View {
     let source: RemoteSource
     /// nil 表示列出全部共享。
     let share: String?
     let path: String
+    @StateObject private var connection: SMBConnection
     @EnvironmentObject var model: AppModel
     @State private var shares: [String] = []
     @State private var files: [SMBEntry] = []
@@ -39,6 +87,12 @@ struct SMBBrowser: View {
     private var shownFiles: [SMBEntry] { query.isEmpty ? files : files.filter { $0.name.localizedCaseInsensitiveContains(query) } }
 
     struct SMBEntry: Identifiable, Hashable { let name: String; let isFolder: Bool; let size: UInt64; var id: String { name } }
+
+    /// 根页面新建会话，子文件夹沿用上层的 `connection`。
+    init(source: RemoteSource, share: String?, path: String, connection: SMBConnection? = nil) {
+        self.source = source; self.share = share; self.path = path
+        _connection = StateObject(wrappedValue: connection ?? SMBConnection(source: source))
+    }
 
     var body: some View {
         List {
@@ -50,7 +104,7 @@ struct SMBBrowser: View {
             }
             if share == nil {
                 ForEach(shares, id: \.self) { name in
-                    NavigationLink { SMBBrowser(source: source, share: name, path: "") } label: {
+                    NavigationLink { SMBBrowser(source: source, share: name, path: "", connection: connection) } label: {
                         Label(name, systemImage: Icon.folderFill).foregroundStyle(Theme.ink)
                     }
                 }
@@ -58,7 +112,7 @@ struct SMBBrowser: View {
             } else {
                 ForEach(shownFiles) { item in
                     if item.isFolder {
-                        NavigationLink { SMBBrowser(source: source, share: share, path: join(item.name)) } label: { row(item) }
+                        NavigationLink { SMBBrowser(source: source, share: share, path: join(item.name), connection: connection) } label: { row(item) }
                     } else {
                         Button { download(item) } label: { row(item) }
                             .disabled(!ImportableFile.accepts(item.name) || model.busy)
@@ -105,38 +159,36 @@ struct SMBBrowser: View {
     private func load() async {
         loading = true; defer { loading = false }
         do {
-            let client = try await SMBAccess.client(source)
             if let share {
-                try await client.connectShare(share)
-                files = try await client.listDirectory(path: path)
-                    .filter { !$0.isHidden && $0.name != "." && $0.name != ".." }
-                    .map { SMBEntry(name: $0.name, isFolder: $0.isDirectory, size: $0.size) }
-                    .sorted { $0.isFolder != $1.isFolder ? $0.isFolder : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-                try? await client.disconnectShare()
+                let path = path
+                files = try await connection.perform(share: share) { client in
+                    try await client.listDirectory(path: path)
+                        .filter { !$0.isHidden && $0.name != "." && $0.name != ".." }
+                        .map { SMBEntry(name: $0.name, isFolder: $0.isDirectory, size: $0.size) }
+                        .sorted { $0.isFolder != $1.isFolder ? $0.isFolder : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                }
             } else {
-                shares = try await client.listShares()
-                    .filter { $0.type.contains(.diskTree) && !$0.type.contains(.special) && !$0.name.hasSuffix("$") }
-                    .map(\.name)
+                shares = try await connection.perform { client in
+                    try await client.listShares()
+                        .filter { $0.type.contains(.diskTree) && !$0.type.contains(.special) && !$0.name.hasSuffix("$") }
+                        .map(\.name)
+                }
             }
-            try? await client.logoff()
             error = nil
         } catch { self.error = error.localizedDescription }
     }
 
     private func download(_ item: SMBEntry) {
         guard let share else { return }
-        let remote = join(item.name), source = source
+        let remote = join(item.name)
         guard item.size <= 100 * 1024 * 1024 else { model.message = "文件超过 100 MB，无法导入。"; return }
-        model.run("正在下载《\((item.name as NSString).deletingPathExtension)》") { [model] in
-            let client = try await SMBAccess.client(source)
-            try await client.connectShare(share)
-            let data = try await client.download(path: remote)
-            try? await client.disconnectShare(); try? await client.logoff()
+        model.run("正在下载《\((item.name as NSString).deletingPathExtension)》") { [model, connection] in
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("smb-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: folder) }
             let target = folder.appendingPathComponent((item.name as NSString).lastPathComponent)
-            try data.write(to: target)
+            // 直接流式写入临时文件，不把整本书读进内存。
+            try await connection.perform(share: share) { client in try await client.download(path: remote, localPath: target) }
             try await model.importWithFeedback([target])
         }
     }

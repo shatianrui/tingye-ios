@@ -1,6 +1,6 @@
 # 听页 · 原生 iOS / Mac Catalyst
 
-纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。当前工程及最新 TestFlight 上传版本为 **1.23.0（112）· v20「刊 · Folio」+ 参照 PureLibro 补齐的功能与四种界面语言**（见[发布历史](docs/RELEASE_HISTORY.md)）。iOS/iPadOS 与 Mac Catalyst 均已收到 Apple 上传成功回执，回执为处理中；**尚未确认 TestFlight 可安装**，未提交正式 App Store 审核。
+纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。最新 TestFlight 上传版本为 **1.23.0（118）· v21「瑞士网格 Swiss Grid」+ [Pow](https://github.com/EmergeTools/Pow) 1.0.6 动效**（翻页动画可选 滑动 / 淡入 / 模糊 / 无且仅手动翻页触发、书签点亮、封面与漫画页载入过渡、主按钮按压下陷，均遵循「减少动态效果」；另含 SMB 会话复用与 WiFi 传书口令，见[发布历史](docs/RELEASE_HISTORY.md)）。iOS/iPadOS 与 Mac Catalyst 均已收到 Apple 上传成功回执，回执为处理中；**尚未确认 TestFlight 可安装**，未提交正式 App Store 审核。
 
 2026-10-22 完成 **v20「刊 · Folio」杂志排版重设计**（用户选定方向，主色指定为 Claude 陶土橙 `#D97757`）：象牙纸 `#FAF9F5` / 炭黑 `#141413`、报头双线与编号、宋体大标题、直角块状按钮；页签改为 `01/02/03` 编号 + 宋体「书 / 读 / 己」与陶土下划线；听书页为大号引语 + 陶土播放块 + Ⅰ–Ⅳ 工具栏。**应用图标改为报头式「听」**（双线 + 宋体「听」+ 陶土题条 + NO.20，日间 / 深色 / 着色三变体，1024px 无 alpha）。[Figma 原稿](https://www.figma.com/design/evqePR3n5p2o0ToOVKtfKX)、[设计说明](Design/v20-folio/DESIGN.md)、[日间](Design/v20-folio/runtime/light-overview.jpg) / [深色](Design/v20-folio/runtime/dark-overview.jpg)运行截图。功能、导航、数据协议与已保存的阅读偏好不变。随后按用户要求以 **1.22.0（111）** 归档并上传 iOS 与 Mac Catalyst，两端均收到 `Upload succeeded`，**尚未确认 TestFlight 可安装**，未提交正式审核（见[发布历史](docs/RELEASE_HISTORY.md)）。以下为历史记录。
 
@@ -20,7 +20,7 @@
 
 ## 当前实现与设计基线
 
-当前 UI 实现为 v20 **「刊 · Folio」**：杂志排版、象牙 / 炭黑 / Claude 陶土橙，图标为报头式「听」。以 [Figma](https://www.figma.com/design/evqePR3n5p2o0ToOVKtfKX)、[实现规范](Design/v20-folio/DESIGN.md) 与源码为准；v19「余白」及更早稿件为历史。v18「静蓝」、v17「青听」、v16「墨」及 v15「专注」的视觉稿保留作历史，交互契约继续沿用。
+当前 UI 实现为 v21 **「瑞士网格 Swiss Grid」**：苏黎世白画布、炭黑文字、单一信号蓝 `#0057FF`，1px 描边分层、2 / 8 / 12 圆角与等宽大写标签。以 [设计稿](Design/v21-swiss/) 与源码为准；v20「刊 · Folio」、v19「余白」及更早稿件为历史。v18「静蓝」、v17「青听」、v16「墨」及 v15「专注」的视觉稿保留作历史，交互契约继续沿用。
 
 三个页签：**书 / 读 / 己**。
 

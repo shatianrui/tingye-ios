@@ -103,7 +103,7 @@ struct BookDetailView: View {
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(entry.title).scaledFont(28, weight: .bold, relativeTo: .title).tracking(-0.5).foregroundStyle(Theme.ink)
+                    Text(entry.title).font(Theme.serifBold(28, relativeTo: .title)).serifEmbolden(28).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
                     Text(model.category(entry) + " · " + entry.format).font(.caption).foregroundStyle(Theme.ink3)
@@ -300,7 +300,7 @@ struct ChapterManagerView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(book.title).scaledFont(23, weight: .semibold, relativeTo: .title2).foregroundStyle(Theme.ink)
+                    Text(book.title).font(Theme.serifBold(23, relativeTo: .title2)).serifEmbolden(23).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
                         .font(.caption).foregroundStyle(Theme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")

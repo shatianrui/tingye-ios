@@ -279,7 +279,7 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 瑞士网格页签：56px 高，顶部发丝线；图标 + 11px 标签，选中项由信号蓝与字重共同标记。
+/// 报刊页签：顶部一道墨线；图标 + 11px 标签，选中项由墨色与宋体粗字共同标记。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -288,9 +288,6 @@ private struct LibraryNavigationBar: View {
         VStack(spacing: 0) {
             if player.book != nil {
                 MiniPlayer(player: player)
-                    .frame(maxWidth: 560)
-                    .padding(.horizontal, Theme.inset)
-                    .padding(.bottom, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             HStack(spacing: 6) {
@@ -300,7 +297,7 @@ private struct LibraryNavigationBar: View {
                         VStack(spacing: 3) {
                             ThemeIcon(symbol: items[index].1, size: 20, weight: .medium)
                             Text(L(items[index].0))
-                                .font(.system(size: 11, weight: selected ? .semibold : .regular))
+                                .font(selected ? Theme.serifBold(11) : .system(size: 11))
                         }
                         .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 50)
@@ -316,7 +313,7 @@ private struct LibraryNavigationBar: View {
             .frame(maxWidth: 560)
             .padding(.horizontal, Theme.inset)
             .frame(maxWidth: .infinity)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+            .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: 1) }
             .background(Theme.bg.ignoresSafeArea(edges: .bottom))
         }
         .animation(Theme.smoothSpring, value: player.book?.id)
@@ -362,10 +359,10 @@ struct MiniPlayer: View {
                 layout {
                     Button { model.showingPlayer = true } label: {
                         HStack(spacing: 12) {
-                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 34)
+                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 30)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(Theme.serifBold(15, relativeTo: .subheadline)).serifEmbolden(15)
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
@@ -403,15 +400,18 @@ struct MiniPlayer: View {
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
-                .padding(.leading, 8)
-                .padding(.trailing, 4)
-                .padding(.vertical, 7)
-                ProgressBar(value: player.progress, tint: Theme.clay, height: 2)
+                .padding(.leading, Theme.inset - 4)
+                .padding(.trailing, Theme.inset - 8)
+                .padding(.vertical, 6)
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity)
+            }
+            // 新闻纸色通栏：顶部细线兼作进度线，墨色部分为已听进度。
+            .background(Theme.surface2)
+            .overlay(alignment: .top) {
+                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink, height: 2)
                     .accessibilityHidden(true)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
         }
     }
     private var subtitle: String {

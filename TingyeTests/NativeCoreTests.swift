@@ -26,6 +26,19 @@ final class NativeCoreTests: XCTestCase {
         XCTAssertNil(SMBAccess.target("smb://"))
     }
 
+    func testWiFiTransferRequiresToken() {
+        let token = WiFiTransferServer.makeToken()
+        XCTAssertEqual(token.count, 6)
+        XCTAssertFalse(token.contains { "0o1il".contains($0) })
+        XCTAssertEqual(TransferRoute.resolve("/\(token)", token: token), .page)
+        XCTAssertEqual(TransferRoute.resolve("/\(token)/?from=qr", token: token), .page)
+        XCTAssertEqual(TransferRoute.resolve("/\(token)/upload", token: token), .upload)
+        XCTAssertEqual(TransferRoute.resolve("/", token: token), .forbidden)
+        XCTAssertEqual(TransferRoute.resolve("/upload", token: token), .forbidden)
+        XCTAssertEqual(TransferRoute.resolve("/wrong1/upload", token: token), .forbidden)
+        XCTAssertEqual(TransferRoute.resolve("/", token: ""), .forbidden)
+    }
+
     func testManualShelfOrderPutsNewBooksFirstAndMovesWithinVisible() {
         func entry(_ id: String, added: Double) -> ShelfEntry {
             var e = ShelfEntry(book: Book(id: id, title: id, format: "TXT", chapters: [Chapter(title: "一", text: "文")]))

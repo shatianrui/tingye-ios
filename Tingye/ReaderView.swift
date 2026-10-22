@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreText
 import PDFKit
+import Pow
 
 enum NativeTypesetter {
     static func attributed(_ chapter: Chapter, preferences: ReaderPreferences) -> NSAttributedString {
@@ -98,6 +99,8 @@ struct ReaderView: View {
     @State private var sentencePosition = 0
     @State private var jumpRevision = 0
     @State private var pageIndex = 0
+    /// 最近一次翻页方向，决定滑动动画进出场边。
+    @State private var turnDelta = 1
     @State private var pages: [NSRange] = []
     @State private var attributed = NSAttributedString(string: "")
     @State private var sheet: ReaderSheet?
@@ -115,6 +118,7 @@ struct ReaderView: View {
     @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
     @AppStorage("reader.scrolling") private var scrolling = false
+    @AppStorage("reader.pageTurn") private var pageTurn = "slide"
     @AppStorage("reader.paragraphSpacing") private var paragraphSpacing = 15.0
     @AppStorage("reader.margin") private var margin = 24.0
     @AppStorage("reader.indent") private var indent = true
@@ -134,10 +138,9 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
-    /// 按实际纸色选择深浅信号蓝，固定浅纸不会误用夜间浅色控件。
-    /// 深纸用更亮的 #5C95FF：#4D8BFF 在深蓝纸（0x1A2C3A）上对比 4.40 不达标，#5C95FF 全部深纸 ≥ 4.9。
-    private var readerAccent: Color { isDarkPaper ? Color(hex: 0x5C95FF) : Color(hex: 0x0057FF) }
-    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x0B0B0C) : .white }
+    /// 报刊风格：强调色就是当前纸上的墨色，与听书页的黑色播放键、墨线一致；任何纸色都天然有足够对比。
+    private var readerAccent: Color { prefs.foreground }
+    private var readerOnAccent: Color { prefs.background }
     private var readerPanelPaper: Color { paper == "paper" ? Theme.surface : prefs.background }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
@@ -157,6 +160,20 @@ struct ReaderView: View {
         if document.isPDF || scrolling || originalHTML != nil { return "第 \(chapter + 1) / \(chapters.count) 章" }
         let shown = doublePage ? min(pages.count, pageIndex + 2) : pageIndex + 1
         return "\(shown) / \(max(1, pages.count))"
+    }
+
+    /// 翻页动画：slide 按翻页方向平移，fade/blur 对称过渡，none 直切；开启减弱动态效果时全部直切。
+    private var pageTurnTransition: AnyTransition {
+        guard !reduceMotion else { return .identity }
+        let forward = turnDelta >= 0
+        switch pageTurn {
+        case "fade": return .opacity
+        case "blur": return .movingParts.blur(radius: 14)
+        case "none": return .identity
+        default: return .asymmetric(
+            insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+        }
     }
 
     /// 听条占用的高度：正在听时正文底部让出这块，高亮句不会被听条盖住（只在开始 / 结束听书时重新分页一次）。
@@ -300,9 +317,9 @@ struct ReaderView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Text(book.title)
-                    .font(.caption2)
+                    .font(Theme.kicker).tracking(1.5)
                     .lineLimit(1)
-                    .foregroundStyle(prefs.secondary)
+                    .foregroundStyle(prefs.foreground)
                 Text("·")
                     .foregroundStyle(prefs.secondary.opacity(0.5))
                 Text(current.title)
@@ -315,9 +332,10 @@ struct ReaderView: View {
                         Image(systemName: Icon.listening)
                             .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
                         Text("正在朗读")
-                            .font(.caption2)
+                            .font(Theme.kicker).tracking(1.5)
                     }
                     .foregroundStyle(readerAccent)
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel("正在朗读")
                 }
             }
@@ -326,8 +344,8 @@ struct ReaderView: View {
             .padding(.bottom, 10)
             .overlay(alignment: .bottom) {
                 Rectangle()
-                    .fill(prefs.secondary.opacity(0.14))
-                    .frame(height: 0.5)
+                    .fill(prefs.foreground.opacity(0.85))
+                    .frame(height: 1)
             }
             .opacity(chrome ? 0 : 1)
             .accessibilityHidden(chrome)
@@ -373,6 +391,9 @@ struct ReaderView: View {
                             else if location.x < width * 0.28 { turn(-1) } else if location.x > width * 0.72 { turn(1) } else { toggleChrome() }
                         }
                         .gesture(DragGesture(minimumDistance: 30).onEnded { gesture in if abs(gesture.translation.width) > abs(gesture.translation.height) { turn(gesture.translation.width < 0 ? 1 : -1) } })
+                        // 章 + 页共同决定身份；只有 turn() 里的手动翻页带动画，跟读、跳转、重排直接切换。
+                        .id("\(chapter)-\(pageIndex)")
+                        .transition(pageTurnTransition)
                         .accessibilityAction(named: "下一页") { turn(1) }.accessibilityAction(named: "上一页") { turn(-1) }
                         .accessibilityAction(named: "显示阅读工具") { chrome = true }
                     }
@@ -389,6 +410,7 @@ struct ReaderView: View {
             .font(.caption2)
             .foregroundStyle(prefs.secondary)
             .frame(minHeight: 26)
+            .overlay(alignment: .top) { Rectangle().fill(prefs.secondary.opacity(0.18)).frame(height: 0.5) }
             .opacity(chrome ? 0 : 1)
             .accessibilityHidden(chrome)
         }
@@ -403,16 +425,22 @@ struct ReaderView: View {
             Button { dismiss() } label: { barIcon(Icon.back) }
                 .accessibilityLabel("返回书架")
                 .accessibilityIdentifier("reader.back")
-            VStack(alignment: .leading, spacing: 4) {
-                Text(current.title).font(Theme.sans(17 * uiScale, weight: .medium)).lineLimit(1)
-                Text(book.title).font(Theme.sans(12 * uiScale)).foregroundStyle(prefs.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(book.title).font(Theme.kicker).tracking(1.5).foregroundStyle(prefs.secondary).lineLimit(1)
+                Text(current.title).font(Theme.serifBold(18 * uiScale)).serifEmbolden(18 * uiScale).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
             Button {
                 Haptics.selection()
                 model.bookmark(book.id, chapter: chapter, position: sentencePosition, excerpt: sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].text : String(current.text.prefix(80)))
-            } label: { barIcon(Icon.bookmark(marked)).foregroundStyle(marked ? readerAccent : prefs.foreground) }
+            } label: {
+                barIcon(Icon.bookmark(marked))
+                    .foregroundStyle(marked ? readerAccent : prefs.foreground)
+                    .id(marked)
+                    .transition(marked ? .movingParts.pop(readerAccent) : .identity)
+                    .animation(.easeOut(duration: 0.25), value: marked)
+            }
             .accessibilityLabel(marked ? "移除当前位置的书签" : "为当前位置添加书签")
             .accessibilityAddTraits(marked ? .isSelected : [])
             .accessibilityIdentifier("reader.bookmark")
@@ -421,7 +449,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
+        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, rule: .bottom)
         .padding(.horizontal, 12)
         .frame(maxWidth: 760)
         .padding(.top, 4)
@@ -435,7 +463,7 @@ struct ReaderView: View {
     private var chapterBar: some View {
         VStack(spacing: 4) {
             HStack {
-                Text(document.isPDF ? "页码进度" : "章节进度")
+                Text(document.isPDF ? "页码进度" : "章节进度").font(Theme.kicker).tracking(1.5).foregroundStyle(prefs.foreground)
                 Spacer()
                 Text("\(chapter + 1) / \(chapters.count)").monospacedDigit()
                     .accessibilityIdentifier("reader.currentChapter")
@@ -461,13 +489,13 @@ struct ReaderView: View {
                 moreMenu
             }
             if active {
-                Rectangle().fill(prefs.secondary.opacity(0.14)).frame(height: 0.5).padding(.horizontal, 8)
+                Rectangle().fill(prefs.secondary.opacity(0.2)).frame(height: 0.5).padding(.horizontal, 8)
                 listeningControls(showsPlayerLink: false)
             }
         }
         .padding(.horizontal, 8).padding(.bottom, 8)
         .foregroundStyle(prefs.foreground)
-        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
+        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
     }
 
     private var moreMenu: some View {
@@ -498,13 +526,13 @@ struct ReaderView: View {
     }
 
     private func readerActionLabel(_ icon: String, _ title: String, selected: Bool = false) -> some View {
-        VStack(spacing: 6) {
-            ThemeIcon(symbol: icon, size: 24)
-            Text(L(title)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 5) {
+            ThemeIcon(symbol: icon, size: 21)
+            Text(L(title)).font(.caption.weight(selected ? .bold : .regular)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(selected ? readerAccent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? readerAccent.opacity(0.09) : .clear, in: Rectangle())
+        .overlay(alignment: .bottom) { if selected { Rectangle().fill(readerAccent).frame(width: 24, height: 2) } }
         .contentShape(Rectangle())
     }
 
@@ -516,7 +544,7 @@ struct ReaderView: View {
     /// 阅读中的听条只承担播放状态与切换；精细控制统一在听书页。
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
-            .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, radius: 8)
+            .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
     }
 
@@ -548,8 +576,8 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 64)
         .overlay(alignment: .top) {
-            ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 2.5)
-                .padding(.horizontal, 22).accessibilityHidden(true)
+            ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 2)
+                .accessibilityHidden(true)
         }
         .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
             if value.translation.height < -24 { sheet = .focus }
@@ -559,7 +587,7 @@ struct ReaderView: View {
     private var listeningStatus: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(player.buffering ? "正在准备声音…" : (player.playing ? "边读边听" : "朗读已暂停"))
-                .font(.subheadline.weight(.semibold))
+                .font(Theme.kicker).tracking(1.5)
             Text(player.error ?? "第 \(player.chapter + 1) 章 · \(player.rate.rateText)× · \(player.timingLabel)")
                 .font(.caption).foregroundStyle(player.error == nil ? prefs.secondary : Theme.danger)
                 .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
@@ -570,12 +598,12 @@ struct ReaderView: View {
     private var returnPill: some View {
         Button { following = true; followSpeech() } label: {
             Label(player.chapter == chapter ? "回到朗读处" : "回到朗读处 · 第 \(player.chapter + 1) 章", systemImage: Icon.listening)
-                .font(.caption.weight(.semibold)).foregroundStyle(readerAccent)
+                .font(.caption.weight(.semibold)).foregroundStyle(readerOnAccent)
                 .padding(.horizontal, 16).frame(minHeight: 44)
+                .background(readerAccent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("reader.returnToSpeech")
-        .readerPaperPanel(paper: prefs.background, ink: prefs.foreground, radius: 8)
     }
 
     private func openListening() {
@@ -714,12 +742,15 @@ struct ReaderView: View {
     }
     private func turn(_ delta: Int) {
         following = false
+        turnDelta = delta
         if document.isPDF || scrolling || originalHTML != nil { jump(chapter: chapter + delta, position: 0); return }
         let next = pageIndex + delta * (doublePage ? 2 : 1)
         if next < 0, chapter > 0 { jump(chapter: chapter - 1, position: max(0, document.sentences(chapter - 1).count - 1)) }
         else if next >= pages.count, chapter + 1 < chapters.count { jump(chapter: chapter + 1, position: 0) }
         else if pages.indices.contains(next) {
-            pageIndex = next; sentencePosition = Sentence.index(at: pages[next].location, in: sentences)
+            if reduceMotion || pageTurn == "none" { pageIndex = next }
+            else { withAnimation(.easeInOut(duration: 0.3)) { pageIndex = next } }
+            sentencePosition = Sentence.index(at: pages[next].location, in: sentences)
             // 手动翻回正在朗读的那一页时恢复自动跟随。
             if let spoken = active && player.chapter == chapter ? player.followOffset : nil,
                (next..<min(pages.count, next + (doublePage ? 2 : 1))).contains(where: { NSLocationInRange(spoken, pages[$0]) }) { following = true; followSpeech() }
@@ -1178,6 +1209,7 @@ struct ReadingPreferencesView: View {
     @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
     @AppStorage("reader.scrolling") private var scrolling = false
+    @AppStorage("reader.pageTurn") private var pageTurn = "slide"
     private let mainPapers: [ReaderPaper] = [.paper, .white, .mist, .ancient, .night]
 
     var body: some View {
@@ -1272,6 +1304,17 @@ struct ReadingPreferencesView: View {
                     Text("上下滚动").tag(true)
                 }
                 .pickerStyle(.segmented)
+
+                if !scrolling {
+                    Picker("翻页动画", selection: $pageTurn) {
+                        Text("滑动").tag("slide")
+                        Text("淡入").tag("fade")
+                        Text("模糊").tag("blur")
+                        Text("无").tag("none")
+                    }
+                    .pickerStyle(.segmented)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
                 NavigationLink { MoreTypographyView() } label: {
                     HStack(spacing: 12) {
@@ -1420,10 +1463,11 @@ private struct MoreTypographyView: View {
 }
 
 private extension View {
-    /// 工具条保持用户纸色，以细边界而非重投影分层，正文不受工具显隐影响。
-    func readerPaperPanel(paper: Color, ink: Color, radius: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: max(24, radius), style: .continuous)
+    /// 工具条保持用户纸色：方角细边，靠正文一侧压一条墨线，与听书页的报刊栏线一致。
+    func readerPaperPanel(paper: Color, ink: Color, rule: VerticalEdge = .top) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Theme.radius)
         return self.background(shape.fill(paper))
             .overlay(shape.strokeBorder(ink.opacity(0.12), lineWidth: 0.5))
+            .overlay(alignment: rule == .top ? .top : .bottom) { Rectangle().fill(ink).frame(height: 1) }
     }
 }

@@ -1,5 +1,6 @@
 import SwiftUI
 import ImageIO
+import Pow
 
 /// 漫画模式（参照 PureLibro）：左→右翻页、右→左（日漫）、上下条漫三种；轻点中间显示工具栏，双击放大。
 /// 每页对应一个章节，进度按页保存，与书籍的「章 + 句」进度、iCloud 同步一致。
@@ -84,6 +85,9 @@ struct ComicReaderView: View {
                         ThemeIcon(symbol: Icon.bookmark(marked), size: 24)
                             .foregroundStyle(marked ? Theme.accent : Theme.ink)
                             .frame(width: 44, height: 44).contentShape(Rectangle())
+                            .id(marked)
+                            .transition(marked ? .movingParts.pop(Theme.accent) : .identity)
+                            .animation(.easeOut(duration: 0.25), value: marked)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(marked ? "移除本页书签" : "为本页添加书签")
@@ -247,19 +251,23 @@ private struct ComicPage: View {
     let fit: Fit
     var onTap: (() -> Void)? = nil
     @State private var image: UIImage?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Group {
             if let image {
                 if fit == .width {
                     Image(uiImage: image).resizable().scaledToFit()
+                        .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 10))
                 } else {
                     ZoomableComicImage(image: image, onTap: onTap)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 10))
                 }
             } else {
                 ProgressView().tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
             }
         }
+        .animation(.easeOut(duration: 0.3), value: image != nil)
         .accessibilityLabel("第 \(index + 1) 页")
         .task(id: index) {
             guard image == nil else { return }

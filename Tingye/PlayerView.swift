@@ -145,7 +145,7 @@ struct PlayerView: View {
     private func hero(_ book: Book) -> some View {
         let meta = "第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章"
         return VStack(alignment: .leading, spacing: 8) {
-            // v21 顶栏：左收起、中间 mono 眉题、右侧低频操作与章节列表
+            // v22 顶栏：左收起、报纸蓝「看原文」、右侧目录与低频操作；眉题另起一栏，不与按钮叠放
             HStack(spacing: 4) {
                 Button { dismiss() } label: {
                     ThemeIcon(symbol: Icon.collapse, size: 22)
@@ -159,8 +159,9 @@ struct PlayerView: View {
                     if fromReader { dismiss() }
                     else { dismiss(); model.showingPlayer = false; model.selectedBook = book }
                 } label: {
-                    Label("看原文", systemImage: Icon.read)
-                        .font(.caption.weight(.medium)).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+                    Text("看原文")
+                        .font(.subheadline.weight(.medium)).foregroundStyle(Theme.link)
+                        .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityLabel("看原文")
                 .accessibilityIdentifier("player.backToReader")
@@ -185,11 +186,17 @@ struct PlayerView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, -10)
-            .overlay {
-                if !typeSize.isAccessibilitySize {
-                    Text("NOW PLAYING").font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink2)
-                        .accessibilityHidden(true)
+            // 报刊栏目条：墨线 + 眉题与章节 + 细线
+            VStack(spacing: 0) {
+                Rectangle().fill(Theme.rulePaint).frame(height: 1)
+                HStack {
+                    Text("听书 · 正在朗读").font(Theme.kicker).tracking(1.5)
+                    Spacer(minLength: 8)
+                    Text(meta).font(.caption2).foregroundStyle(Theme.ink2)
+                        .accessibilityIdentifier("player.currentChapter")
                 }
+                .padding(.vertical, 7)
+                Rectangle().fill(Theme.line).frame(height: 1)
             }
             VStack(spacing: 6) {
                 if !typeSize.isAccessibilitySize {
@@ -199,14 +206,13 @@ struct PlayerView: View {
                         .accessibilityIdentifier("player.cover")
                 }
                 Text(book.title)
-                    .font(.title3.weight(.semibold))
+                    .font(Theme.serifBold(24, relativeTo: .title2)).serifEmbolden(24)
                     .multilineTextAlignment(.center)
                     .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                Text(meta)
-                    .font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink2)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                    .accessibilityIdentifier("player.currentChapter")
+                if !book.author.isEmpty {
+                    Text(book.author).font(.caption).foregroundStyle(Theme.ink2)
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
@@ -312,7 +318,7 @@ struct PlayerView: View {
         }
         .padding(.top, 14).padding(.bottom, 8)
         .frame(maxWidth: 560)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: 1) }
         .padding(.horizontal, Theme.inset).padding(.bottom, 8)
         .frame(maxWidth: 600).frame(maxWidth: .infinity)
         .background(Theme.bg.ignoresSafeArea(edges: .bottom))
@@ -345,7 +351,7 @@ struct PlayerView: View {
 
     private var footer: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 12) {
-            Button { chaptersSheet = true } label: { footerItem("01", "目录") }
+            Button { chaptersSheet = true } label: { footerItem(Icon.contents, "目录") }
                 .accessibilityLabel("听书目录，第 \(player.chapter + 1) 章")
                 .accessibilityIdentifier("player.contents")
             Menu {
@@ -354,10 +360,10 @@ struct PlayerView: View {
                         Text(value.rateText + "×").tag(value)
                     }
                 }
-            } label: { footerItem("02", "语速 \(player.rate.rateText)×", highlighted: player.rate != 1.0) }
+            } label: { footerItem(Icon.rate, "\(player.rate.rateText)×", highlighted: player.rate != 1.0) }
             .accessibilityLabel("语速，当前 \(player.rate.rateText) 倍")
             .accessibilityIdentifier("player.rate")
-            Button { settings = true } label: { footerItem("03", "声音") }
+            Button { settings = true } label: { footerItem(Icon.speaker, "声音") }
                 .accessibilityLabel("声音设置，当前 \(player.voiceLabel)")
                 .accessibilityIdentifier("player.voice")
             TimelineView(.periodic(from: .now, by: 30)) { context in
@@ -366,7 +372,7 @@ struct PlayerView: View {
                     ForEach([15, 30, 45, 60], id: \.self) { minutes in
                         Button("\(minutes) 分钟后停止") { player.setSleep(minutes: minutes) }
                     }
-                } label: { footerItem("04", sleepLabel(at: context.date), highlighted: player.sleepUntil != nil) }
+                } label: { footerItem(Icon.sleepTimer, sleepLabel(at: context.date), highlighted: player.sleepUntil != nil) }
                 .accessibilityLabel("定时停止")
                 .accessibilityValue(player.sleepUntil == nil ? "未开启" : sleepLabel(at: context.date))
                 .accessibilityIdentifier("player.sleep")
@@ -375,20 +381,18 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    /// v21 胶囊工具 chip：mono 编号为信号蓝，开启状态加粗并保留下划线。
-    private func footerItem(_ numeral: String, _ title: String, highlighted: Bool = false) -> some View {
-        HStack(spacing: 6) {
-            Text(numeral).font(Theme.masthead).foregroundStyle(Theme.accent)
-            Text(L(title)).font(.subheadline.weight(highlighted ? .semibold : .regular))
-                .foregroundStyle(highlighted ? Theme.accent : content)
-                .underline(highlighted, color: Theme.clay)
+    /// v22 报刊工具：线性图标在上、小字在下，无边框；开启状态加粗并加下划线。
+    private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            ThemeIcon(symbol: symbol, size: 21)
+            Text(L(title)).font(.caption.weight(highlighted ? .bold : .regular))
+                .foregroundStyle(highlighted ? Theme.ink : Theme.ink2)
+                .underline(highlighted, color: Theme.ink)
                 .lineLimit(1).minimumScaleFactor(0.8)
         }
-        .padding(.horizontal, 12)
-        .frame(maxWidth: .infinity, minHeight: 32)
-        .overlay { Capsule().strokeBorder(Theme.line, lineWidth: 1) }
-        .contentShape(Capsule())
-        .frame(minHeight: 44)
+        .foregroundStyle(content)
+        .frame(maxWidth: .infinity, minHeight: 50)
+        .contentShape(Rectangle())
     }
 
     private func errorNotice(_ error: String) -> some View {

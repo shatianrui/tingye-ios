@@ -1,9 +1,11 @@
 import SwiftUI
+import Pow
 
 /// 今日一句：每天从书库轮换一本，摘出其中一句；「从这句读」一次性定位到原文（`AppModel.readerJump`）。
 /// 显示在统计页的「日」视图。
 struct DailyQuoteCard: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 兼容历史调用；专注版不显示装饰编号。
     var number: String? = nil
     @State private var quote: DailyQuote?
@@ -34,6 +36,7 @@ struct DailyQuoteCard: View {
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.ink)
+                .changeEffect(.shine(duration: 1.0), value: quote == nil, isEnabled: !reduceMotion)
                 Text("—— " + sourceLine(entry))
                     .font(Theme.serif(13, relativeTo: .caption))
                     .foregroundStyle(Theme.ink2)
