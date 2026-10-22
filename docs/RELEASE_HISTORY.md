@@ -8,7 +8,14 @@
 
 - 图标：UnifrakturMaguntia（OFL 开源哥特体，非 NYT 商标字）写 "Tingye"，占宽 84%，下接细线与 Inter Bold "LISTEN · READ"。浅色白底 #121212 字、深色 #121212 底 #F2F2F2 字、着色黑底白字；1024 px 无透明通道。Figma 导出画板 11:146 / 11:150 / 11:154，预览见 `Design/icon-en-*.png`。
 
-验证：模拟器主屏（浅色）显示正常；深色与着色主屏未切换主题检查。小尺寸下 "LISTEN · READ" 基本不可读。未重跑测试（仅换图标资源与构建号）。
+验证：模拟器主屏（浅色）显示正常；深色与着色主屏未切换主题检查。小尺寸下 "LISTEN · READ" 基本不可读。未重跑测试（仅换图标资源与构建号）。归档内 `CFBundleVersion` 120。
+
+| 平台 | 本机日志 `Upload succeeded` | 日志 |
+| --- | --- | --- |
+| iOS / iPadOS | **16:12:16** | `build/upload-120.log`（归档 `build/Tingye-120.xcarchive`） |
+| Mac Catalyst | **16:14:07** | `build/upload-120-mac.log`（归档 `build/Tingye-120-mac.xcarchive`） |
+
+两端 `EXPORT SUCCEEDED`、退出码 0；Apple 回执后处于处理中，**尚未确认 TestFlight 可安装**。未提交正式审核、未更改测试组。
 
 ## v22「报刊 · Times」（1.23.0 · 119，2026-10-22）
 
