@@ -12,7 +12,7 @@ struct StorageView: View {
             Section {
                 HStack(alignment: .firstTextBaseline) {
                     Text(StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
-                        .font(Theme.serifBold(34, relativeTo: .largeTitle)).monospacedDigit()
+                        .font(Theme.display(34, relativeTo: .largeTitle)).monospacedDigit()
                     Spacer()
                     if scanning { ProgressView() }
                 }

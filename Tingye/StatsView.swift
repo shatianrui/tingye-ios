@@ -59,17 +59,8 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                HStack {
-                    Text("REPORT · 足迹").foregroundStyle(Theme.ink)
-                    Spacer()
-                    Text(verbatim: "\(Calendar.current.component(.year, from: Date())) · W\(calendar.component(.weekOfYear, from: Date()))").foregroundStyle(Theme.accent)
-                }
-                .font(Theme.masthead).tracking(1.2).accessibilityHidden(true)
-                .padding(.bottom, -16)
-                Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
-                    .padding(.bottom, -16)
                 HStack(alignment: .center, spacing: 8) {
-                    PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。")
+                    PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。", kicker: "TINGYE / YOU", issue: "\(Calendar.current.component(.year, from: Date())) · W\(calendar.component(.weekOfYear, from: Date()))")
                     Button("日历") { showingCalendar = true }
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 44)
@@ -152,7 +143,7 @@ struct StatsView: View {
                 .font(Theme.kicker).tracking(0.6).foregroundStyle(Theme.ink3)
             HStack(alignment: .firstTextBaseline, spacing: 7) {
                 Text(Self.durationNumber(totalSeconds))
-                    .font(Theme.serifBold(durationSize * 1.6, relativeTo: .largeTitle)).monospacedDigit()
+                    .font(Theme.display(durationSize * 1.6, relativeTo: .largeTitle)).monospacedDigit()
                     .minimumScaleFactor(0.5).lineLimit(1)
                 Text(Self.durationUnit(totalSeconds)).font(.body).foregroundStyle(Theme.ink2)
             }
@@ -275,7 +266,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title: "每日目标", number: "02")
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(Int(today / 60))").font(Theme.serifBold(34, relativeTo: .title)).monospacedDigit()
+                    Text("\(Int(today / 60))").font(Theme.display(34, relativeTo: .title)).monospacedDigit()
                     Text("/ \(goalMinutes) 分钟").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink2)
                     Spacer(minLength: 4)
                     Text(fraction >= 1 ? "已完成 ✓" : "还差 \(remaining) 分钟")

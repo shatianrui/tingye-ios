@@ -1,0 +1,124 @@
+{
+  "success": true,
+  "outcome": "passed",
+  "repairable": true,
+  "terminalViolations": [],
+  "terminalBlockingSummary": null,
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": "2026.10.13.09.48.16",
+    "version_source": "skill-release-manifest.json",
+    "runtime_skill_dir": null,
+    "recorded_at": null,
+    "expected_version": "2026.10.13.09.48.16",
+    "status": "matched",
+    "read_status": "ok"
+  },
+  "operatingMode": "free-explore",
+  "renderBlockingErrorCount": 0,
+  "softWarningCount": 4,
+  "renderBlockingErrors": [],
+  "errorSignatures": [],
+  "softWarnings": [
+    "[mobile-navigation-consistency] 7 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--ty-radius-large: var(--ty-radius-lg)). Do not use 20px+ radii unless the user explicitly requested large rounded shapes.",
+    "[html-quality] icon-board.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] profile.html: Tailwind named color utilities are forbidden (bg-neutral-200). Use brand CSS variables instead."
+  ],
+  "repairPlanHints": [
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "icon-board.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    }
+  ],
+  "repairActionTable": [],
+  "errorCount": 0,
+  "warningCount": 4,
+  "errors": [],
+  "warnings": [
+    "[mobile-navigation-consistency] 7 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--ty-radius-large: var(--ty-radius-lg)). Do not use 20px+ radii unless the user explicitly requested large rounded shapes.",
+    "[html-quality] icon-board.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] profile.html: Tailwind named color utilities are forbidden (bg-neutral-200). Use brand CSS variables instead."
+  ],
+  "validationRunDisciplineStatus": {
+    "declared": true,
+    "restoreMode": false,
+    "maxFullValidationRuns": 2,
+    "validationHistoryCount": 0,
+    "repairLedgerCount": 0,
+    "softWarningsTriggerRepair": false,
+    "terminalState": null,
+    "nextAction": null,
+    "violations": [],
+    "success": true
+  },
+  "terminalState": null,
+  "nextCheck": {
+    "type": "finish-readiness",
+    "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v21-swiss' --check=all",
+    "fullValidationAllowed": false,
+    "reason": "workspace validation passed; run complete finish readiness before final delivery"
+  },
+  "repairBatch": [],
+  "repairContextPacket": {
+    "schema_version": "1.0",
+    "purpose": "small-context repair packet; read this before full validation-report.json",
+    "success": true,
+    "terminalState": null,
+    "skillProvenance": {
+      "name": "solo-design",
+      "version": "2026.10.13.09.48.16",
+      "version_source": "skill-release-manifest.json",
+      "runtime_skill_dir": null,
+      "recorded_at": null,
+      "expected_version": "2026.10.13.09.48.16",
+      "status": "matched",
+      "read_status": "ok"
+    },
+    "renderBlockingErrorCount": 0,
+    "softWarningCount": 4,
+    "renderBlockingErrors": [],
+    "repairActionTable": [],
+    "nextCheck": {
+      "type": "finish-readiness",
+      "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v21-swiss' --check=all",
+      "fullValidationAllowed": false,
+      "reason": "workspace validation passed; run complete finish readiness before final delivery"
+    },
+    "forbidden": [
+      "do not read validator source",
+      "do not rerun full validation when nextCheck.fullValidationAllowed=false",
+      "do not start preview/browser unless user explicitly asks",
+      "do not hand-edit repair ledger fields"
+    ]
+  },
+  "projectFileHashes": {
+    "v21-swiss.design": "ea17c079976ae28c3badc168c28801d8f3eb5ff30aa78072569ecc208023c4b7",
+    "colors_and_type.css": "8eee66d413c4c9ba3224bc63f026fef508b2eb1e5bad58d223c8da0e110ce4af",
+    "runtime-orchestration-summary.json": "7015170fcd58191b2e18f487a335b3f107c6294ffcbfe15b97cffc72eed53e07",
+    "pages/book-detail.html": "5d576939ce6723eea450620f41bfae4161e4b91aa4d34d3c71ec1a201716e252",
+    "pages/home.html": "c38d52381894860b4db6a3c7350b2ee09decc63b269d8a4a86dc3f0fabdb714f",
+    "pages/icon-board.html": "ed81476f20fd8f788443e64be193ea836885feb1df854cc93c10c28389fc56dc",
+    "pages/import.html": "8f04b008a44dd29ebae7c692c2d7085809bc4ddecbbc55d686687eb350f5cd46",
+    "pages/library.html": "7feb1c9611d7adde8f7d0aaa3b27e696b66eb39a8ace48f7660704d3d7bb78e3",
+    "pages/player.html": "699a33b43b4e76078e3f83c1182155ea06e6da44c73ad61133a8b63b6181b22a",
+    "pages/profile.html": "fd339e089fae5e5e7f717bb4da66b9920fccab20709c4c51ed122c3fb6cd5dc2",
+    "pages/reader.html": "48f8ac7b0b701a4fff422eab53f360ac3c462b17520558a47b7e7b29917a3824",
+    "pages/search.html": "a259e200636dd0e3dbefe600e99cabd609cddb0219db80dfc97d1e0931095a31",
+    "pages/settings.html": "db292683077e5c5394a6fe0077ca2a980c70fe72472f845d541077e56239476f"
+  },
+  "designDir": "/Users/a1234/Desktop/tingye-ios/Design/v21-swiss",
+  "expectedPages": null,
+  "requireInteractions": null,
+  "checkedAt": "2026-10-21T20:44:50.811Z"
+}

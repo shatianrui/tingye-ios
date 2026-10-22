@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   听页 Tingye · v21 瑞士网格 / 苏黎世白 (Swiss Grid · Zurich White)
+   Brand prefix: ty
+   国际主义网格 · 无衬线 · 黑白灰 + 单一信号蓝
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：信号蓝） ---------- */
+  --ty-primary-50:  #EEF3FF;
+  --ty-primary-100: #DCE7FF;
+  --ty-primary-200: #B8CFFF;
+  --ty-primary-300: #85AFFF;
+  --ty-primary-400: #4D8BFF;
+  --ty-primary-500: #0057FF;
+  --ty-primary-600: #0048DB;
+  --ty-primary-700: #003AB0;
+
+  /* ---------- 中性阶（黑白灰） ---------- */
+  --ty-neutral-0:   #FFFFFF;
+  --ty-neutral-50:  #FAFAFA;
+  --ty-neutral-100: #F4F4F5;
+  --ty-neutral-200: #E4E4E7;
+  --ty-neutral-300: #D4D4D8;
+  --ty-neutral-400: #A1A1AA;
+  --ty-neutral-500: #71717A;
+  --ty-neutral-700: #3F3F46;
+  --ty-neutral-900: #18181B;
+  --ty-neutral-950: #0B0B0C;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #16A34A;
+  --state-warning: #D97706;
+  --state-error:   #DC2626;
+  --state-info:    #0057FF;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-0);
+  --ty-foreground:         #111112;
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    #111112;
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: #111112;
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FFFFFF;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   #6E6E73;
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-50);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（克制的瑞士尺度） ---------- */
+  --ty-radius-sm:    2px;
+  --ty-radius-md:    8px;
+  --ty-radius-lg:    12px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-sans: "Inter", "PingFang SC", "Noto Sans SC", -apple-system, "Helvetica Neue", "Helvetica", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（静态面以描边为主，阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(17, 17, 18, 0.04);
+  --ty-shadow-float:   0 8px 24px rgba(17, 17, 18, 0.10), 0 2px 6px rgba(17, 17, 18, 0.06);
+}
+
+/* ---------- 语义别名 · 深色 ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #F5F5F6;
+  --ty-card:               #141416;
+  --ty-card-foreground:    #F5F5F6;
+  --ty-popover:            #141416;
+  --ty-popover-foreground: #F5F5F6;
+  --ty-primary:            #4D7CFE;
+  --ty-primary-foreground: #FFFFFF;
+  --ty-muted:              #1B1B1E;
+  --ty-muted-foreground:   #9C9CA3;
+  --ty-border:             #26262B;
+  --ty-input:              #26262B;
+  --ty-ring:               #4D7CFE;
+
+  --ty-surface-sunken:     #0F0F11;
+  --ty-hairline:           #26262B;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（瑞士网格字体阶梯） ---------- */
+.ty-display {
+  font-family: var(--ty-font-sans);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.ty-body {
+  font-family: var(--ty-font-sans);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.65;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 瑞士标签：等宽、大写、宽字距，用于元数据/编号/刻度 */
+.ty-label {
+  font-family: var(--ty-font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+<style id="critical-layout">
+  .page-col { max-width: 28rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+  .row { display: flex; align-items: center; height: 3rem; gap: 0.75rem; border-bottom: 1px solid var(--ty-hairline); }
+  .row:last-child { border-bottom: none; }
+  .row-icon { width: 1.25rem; height: 1.25rem; color: var(--ty-muted-foreground); flex-shrink: 0; }
+  .row-label { flex: 1; font-size: 15px; color: var(--ty-foreground); }
+  .row-value { font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-muted-foreground); letter-spacing: 0.02em; }
+  .chev { width: 1rem; height: 1rem; color: var(--ty-neutral-400); flex-shrink: 0; }
+  .switch { position: relative; width: 2.75rem; height: 1.5rem; border-radius: 9999px; border: 1px solid var(--ty-border); background: var(--ty-neutral-100); flex-shrink: 0; }
+  .switch .knob { position: absolute; top: 1px; width: 1.25rem; height: 1.25rem; border-radius: 9999px; }
+  .switch.on .knob { right: 1px; background: var(--ty-primary); }
+  .switch.off .knob { left: 1px; background: var(--ty-neutral-400); }
+  .group-head { margin-bottom: 0.5rem; }
+  .group-block { margin-top: 2rem; }
+</style>
+
+<div class="page-col pt-4 pb-16">
+
+  <!-- 页眉 -->
+  <header class="flex items-center gap-2 pt-2 pb-6">
+    <a href="#" data-dom-id="back-profile" aria-label="返回" class="inline-flex items-center justify-center -ml-2 w-9 h-9 text-foreground">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <h1 class="ty-h1 text-[28px]">设置</h1>
+  </header>
+
+  <!-- 阅读 -->
+  <section class="group-block" style="margin-top:0.5rem;">
+    <h2 class="ty-label text-muted-foreground group-head">阅读 READING</h2>
+    <div>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
+        <span class="row-label">字体大小</span>
+        <span class="row-value">标准</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <span class="row-label">深色模式</span>
+        <button type="button" role="switch" aria-checked="true" aria-label="深色模式" class="switch on"><span class="knob"></span></button>
+      </div>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="row-label">翻页动画</span>
+        <span class="row-value">滑动</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- 听书 -->
+  <section class="group-block mt-8">
+    <h2 class="ty-label text-muted-foreground group-head">听书 LISTENING</h2>
+    <div>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <span class="row-label">默认语速</span>
+        <span class="row-value ty-numeric">1.25x</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>
+        <span class="row-label">定时关闭</span>
+        <span class="row-value ty-numeric">30 MIN</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+        <span class="row-label">蓝牙控制</span>
+        <button type="button" role="switch" aria-checked="false" aria-label="蓝牙控制" class="switch off"><span class="knob"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 同步 -->
+  <section class="group-block mt-8">
+    <h2 class="ty-label text-muted-foreground group-head">同步 SYNC</h2>
+    <div>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>
+        <span class="row-label">WiFi 传书</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+        <span class="row-label">WebDAV</span>
+        <span class="row-value">未连接</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- 关于 -->
+  <section class="group-block mt-8">
+    <h2 class="ty-label text-muted-foreground group-head">关于 ABOUT</h2>
+    <div>
+      <div class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span class="row-label">版本</span>
+        <span class="row-value ty-numeric">v2.1.0 (43)</span>
+      </div>
+      <a href="#" class="row">
+        <svg class="row-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+        <span class="row-label">隐私政策</span>
+        <svg class="chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="mt-12 text-center">
+    <p class="ty-label text-muted-foreground">TINGYE · SWISS GRID EDITION</p>
+  </footer>
+
+</div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

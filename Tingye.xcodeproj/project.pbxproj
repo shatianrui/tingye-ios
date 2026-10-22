@@ -34,6 +34,8 @@
 		AE75465C480DC32013DD5422 /* Noto-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 19276B899D183EF8BB8323BF /* Noto-OFL.txt */; };
 		B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */; };
 		BA57495726CA809E81AA3395 /* NotoSerifCJKsc-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */; };
+		BEEF202610220001 /* NotoSansCJKsc-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = BEEF202610220002 /* NotoSansCJKsc-Regular.otf */; };
+		BEEF202610220005 /* LXGWNeoXiHei.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BEEF202610220006 /* LXGWNeoXiHei.ttf */; };
 		BCF3BAC600CD04C4DB63EAB9 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB162FC79480EE85CABD24A7 /* Typography.swift */; };
 		F84D5CD0E488C13BD4487558 /* TxtRulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030A12D2702195593AF21B10 /* TxtRulesView.swift */; };
 		864340936656DC6654CCB4EF /* ReadingCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BD6E154F7D2825F0316ABFC /* ReadingCalendarView.swift */; };
@@ -101,6 +103,8 @@
 		C15A38E84FB682C79AE6A338 /* ShelfView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
 		C7D54437CCEED905AA440076 /* Tingye.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tingye.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "NotoSerifCJKsc-Regular.otf"; sourceTree = "<group>"; };
+		BEEF202610220002 /* NotoSansCJKsc-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "NotoSansCJKsc-Regular.otf"; sourceTree = "<group>"; };
+		BEEF202610220006 /* LXGWNeoXiHei.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "LXGWNeoXiHei.ttf"; sourceTree = "<group>"; };
 		CEFB1F2F5AE3E65F32A73D18 /* ComicReaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComicReaderView.swift; sourceTree = "<group>"; };
 		DD2AE6F7DFFDF0B7F18CCF21 /* LXGW-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LXGW-OFL.txt"; sourceTree = "<group>"; };
 		DE2255049BA084F3A2D5C0E5 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -145,9 +149,11 @@
 			children = (
 				DD2AE6F7DFFDF0B7F18CCF21 /* LXGW-OFL.txt */,
 				9FDB79BAE9C9561CDBD833C2 /* LXGWWenKaiLite-Regular.ttf */,
+				BEEF202610220006 /* LXGWNeoXiHei.ttf */,
 				921F5AEFBF09987B82FBB36B /* Assets.xcassets */,
 				19276B899D183EF8BB8323BF /* Noto-OFL.txt */,
 				CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */,
+				BEEF202610220002 /* NotoSansCJKsc-Regular.otf */,
 				7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */,
 				266F9903D721064C5690ACCF /* ZIPFoundation-LICENSE.txt */,
 				5A1C0B2E8F4D6A7B9C3E1D23 /* SMBClient-LICENSE.txt */,
@@ -346,6 +352,8 @@
 				9F41B840A63E3ECAE4D447F3 /* Assets.xcassets in Resources */,
 				AE75465C480DC32013DD5422 /* Noto-OFL.txt in Resources */,
 				BA57495726CA809E81AA3395 /* NotoSerifCJKsc-Regular.otf in Resources */,
+				BEEF202610220001 /* NotoSansCJKsc-Regular.otf in Resources */,
+				BEEF202610220005 /* LXGWNeoXiHei.ttf in Resources */,
 				FA30DD39307FD4F000C4C5F7 /* Lucide-LICENSE.txt in Resources */,
 				CEB5DC2B54A1F6DBFB3DF06C /* LXGW-OFL.txt in Resources */,
 				D06882DB410C35EFAB4BA492 /* LXGWWenKaiLite-Regular.ttf in Resources */,
@@ -456,7 +464,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 112;
+				CURRENT_PROJECT_VERSION = 114;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -541,7 +549,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 112;
+				CURRENT_PROJECT_VERSION = 114;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -569,7 +577,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 112;
+				CURRENT_PROJECT_VERSION = 114;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -648,7 +656,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 112;
+				CURRENT_PROJECT_VERSION = 114;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

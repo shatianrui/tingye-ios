@@ -103,7 +103,7 @@ struct BookDetailView: View {
                         .accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(entry.title).font(Theme.serifBold(28, relativeTo: .title)).foregroundStyle(Theme.ink)
+                    Text(entry.title).scaledFont(28, weight: .bold, relativeTo: .title).tracking(-0.5).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
                     Text(model.category(entry) + " · " + entry.format).font(.caption).foregroundStyle(Theme.ink3)
@@ -118,7 +118,7 @@ struct BookDetailView: View {
         }
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .columnRule(Theme.ruleHeavy)
+        .columnRule()
     }
 
     private var detailLayout: AnyLayout {
@@ -300,7 +300,7 @@ struct ChapterManagerView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(book.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
+                    Text(book.title).scaledFont(23, weight: .semibold, relativeTo: .title2).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
                         .font(.caption).foregroundStyle(Theme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")
@@ -667,17 +667,17 @@ struct AppearanceView: View {
             VStack(alignment: .leading, spacing: 26) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("让界面，合你的光。")
-                        .font(Theme.serifSemibold(23, relativeTo: .title2))
+                        .scaledFont(23, weight: .semibold, relativeTo: .title2)
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("暖纸与石墨，顺应每一刻的光。")
+                    Text("白纸与信号蓝，顺应每一刻的光。")
                         .font(.subheadline)
                         .foregroundStyle(Theme.ink3)
                 }
                 VStack(spacing: 12) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "暖纸底色，石墨文字与陶橙标记")
-                    appearanceOption("dark", title: "夜间", subtitle: "柔和石墨底，安静地读入夜色")
+                    appearanceOption("light", title: "日间", subtitle: "白纸底色，墨色文字与信号蓝标记")
+                    appearanceOption("dark", title: "夜间", subtitle: "近黑墨底，安静地读入夜色")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)
@@ -727,16 +727,16 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x191B1A) : Color(hex: 0xF6F3EC)
-        let foreground = dark ? Color(hex: 0xF2EFE6) : Color(hex: 0x292D29)
+        let background = dark ? Color(hex: 0x0B0B0C) : Color(hex: 0xFFFFFF)
+        let foreground = dark ? Color(hex: 0xF5F5F6) : Color(hex: 0x111112)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
                 Circle().fill(foreground.opacity(0.55)).frame(width: 4, height: 4)
                 Capsule().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            RoundedRectangle(cornerRadius: 4).fill(Color(hex: dark ? 0x333A32 : 0xEBE3D2)).frame(height: 25)
+            RoundedRectangle(cornerRadius: 4).fill(Color(hex: dark ? 0x27272A : 0xF4F4F5)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 1).fill(Color(hex: dark ? 0xF0AD88 : 0xA44A2C)).frame(width: 11, height: 15).padding(.leading, 6)
+                    RoundedRectangle(cornerRadius: 1).fill(Color(hex: dark ? 0x4D7CFE : 0x0057FF)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Capsule().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Capsule().fill(foreground.opacity(0.18)).frame(height: 3)
@@ -747,12 +747,12 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x191B1A)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF0AD88)) }
+                Rectangle().fill(Color(hex: 0x0B0B0C)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0x4D7CFE)) }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(foreground.opacity(0.1), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(foreground.opacity(0.1), lineWidth: 1))
         .accessibilityHidden(true)
     }
 }

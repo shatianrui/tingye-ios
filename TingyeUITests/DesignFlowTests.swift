@@ -115,24 +115,36 @@ final class DesignFlowTests: XCTestCase {
 
     func testPlayerCanScrubSentencesAndKeepPaused() {
         let app = launch("player")
-        let slider = app.sliders["player.sentence-progress"]
-        XCTAssertTrue(slider.waitForExistence(timeout: 15))
+        // 句子进度是自定义刻度轨（非系统 Slider），用与真实手指相同的坐标拖动手势验证。
+        let scrubber = app.descendants(matching: .any)["player.sentence-progress"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 15))
         let toggle = app.buttons["player.toggle"]
         XCTAssertTrue(toggle.label.contains("继续朗读"))
-        let original = slider.value as? String
-        slider.adjust(toNormalizedSliderPosition: 0.65)
-        XCTAssertNotEqual(slider.value as? String, original)
-        XCTAssertTrue((slider.value as? String)?.contains("句") == true)
+        let original = scrubber.value as? String
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
+            .press(forDuration: 0.2, thenDragTo: scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.5)))
+        XCTAssertTrue(waitForValueChange(of: scrubber, from: original), "拖动后句子标签应离开 \(original ?? "nil")")
+        let scrubbed = scrubber.value as? String
+        XCTAssertTrue(scrubbed?.contains("句") == true)
         XCTAssertTrue(toggle.label.contains("继续朗读"), "拖动不能擅自恢复已暂停的朗读")
-        let scrubbed = slider.value as? String
         app.buttons["player.nextSentence"].tap()
-        XCTAssertNotEqual(slider.value as? String, scrubbed)
+        XCTAssertTrue(waitForValueChange(of: scrubber, from: scrubbed))
         toggle.tap()
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertTrue(toggle.label.contains("暂停朗读"))
         toggle.tap()
         XCTAssertTrue(toggle.label.contains("继续朗读"))
         screenshot(app, "播放器-句子拖动与暂停")
+    }
+
+    /// 等无障碍值真正刷新，避免手势完成后立刻读取到旧快照。
+    private func waitForValueChange(of element: XCUIElement, from old: String?, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if (element.value as? String) != old { return true }
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        return (element.value as? String) != old
     }
 
     func testLargestTypePlayerControlsRemainReachable() {

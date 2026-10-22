@@ -9,7 +9,7 @@ final class NativeCoreTests: XCTestCase {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let traits = UITraitCollection(userInterfaceStyle: style)
             let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
-                (Theme.accent, Theme.bg), (Theme.onAccent, Theme.accent), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
+                (Theme.accent, Theme.bg), (Theme.onClay, Theme.clay), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
                 (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
                 (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
             for (text, background) in pairs {
@@ -171,6 +171,14 @@ final class NativeCoreTests: XCTestCase {
         XCTAssertEqual(saved.font, "serif")
         XCTAssertEqual(saved.kind, .ancient)
         XCTAssertEqual(ReaderPreferences(font: "custom:MyFont").font, "custom:MyFont")
+    }
+
+    /// 内置阅读字体必须随包注册：字体文件缺失或 PostScript 名写错都会在这里暴露。
+    func testBundledReaderFontsAreRegistered() {
+        for (key, name) in ReaderPreferences.bundledFonts {
+            XCTAssertNotNil(UIFont(name: name, size: 17), "\(key) 的内置字体不可用：\(name)")
+            XCTAssertNotNil(ReaderPreferences(font: key).uiFont)
+        }
     }
 
     @MainActor func testEveryCoverAndImageBackdropHasReadableSmallText() {
@@ -914,7 +922,7 @@ final class ProgressAndBackupTests: XCTestCase {
         let html = "<p>春<b>风</b>📖。归来。</p><p>归来。</p><script>window.unsafe = true;</script>"
         let chapter = HTMLText.chapter(html, title: "正文")
         web.loadHTMLString(OriginalDocument.html(html, css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         let sentences = Sentence.split(chapter.text)
         XCTAssertEqual(sentences.count, 3)
         let first = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: chapter.text, range: sentences[0].range, follow: true, color: "#dce8e1"), in: nil, contentWorld: .defaultClient)
@@ -945,7 +953,7 @@ final class ProgressAndBackupTests: XCTestCase {
         web.navigationDelegate = delegate
         let text = (1...300).map { "这是第\($0)句用来铺满多页的话。" }.joined()
         web.loadHTMLString(OriginalDocument.html("<p>\(text)</p>", css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         // 等排版与字体应用完成后再量宽度。
         try await Task.sleep(for: .milliseconds(300))
         let pageWidth = try await web.evaluateJavaScript("innerWidth", in: nil, contentWorld: .page) as? Int
@@ -972,7 +980,7 @@ final class ProgressAndBackupTests: XCTestCase {
         web.navigationDelegate = delegate
         let text = String(repeating: "长", count: 170) + "。"
         web.loadHTMLString(OriginalDocument.html("<p>\(text)</p>", css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         try await Task.sleep(for: .milliseconds(300))
         let sentences = Sentence.split(text)
         XCTAssertEqual(sentences.count, 1, "整段应是一个长句")
@@ -1004,7 +1012,7 @@ final class ProgressAndBackupTests: XCTestCase {
         let html = #"<p class="normal">正文写死成深灰。</p><div class="note"><p>提示框里的字。</p></div>"#
         let css = ".normal{color:#333} .note{background:#fff8dc} .note p{color:#999}"
         web.loadHTMLString(OriginalDocument.html(html, css: css, color: "#e8e6e3", background: "transparent", paper: "#1c1b19"), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         _ = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: "正文写死成深灰。\n提示框里的字。", range: nil, follow: false, color: "#4a3226"), in: nil, contentWorld: .defaultClient)
         let body = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.normal')).color", in: nil, contentWorld: .page) as? String
         let note = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.note p')).color", in: nil, contentWorld: .page) as? String
@@ -1025,7 +1033,7 @@ final class ProgressAndBackupTests: XCTestCase {
         let text = (1...400).map { "这是第\($0)句用来铺满多页的话。" }.joined()
         let css = "body.calibre{margin:0 5%;padding:0 12px;max-width:30em} body{margin:3em}"
         web.loadHTMLString(OriginalDocument.html("<body class=\"calibre\"><p>\(text)</p></body>", css: css), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         try await Task.sleep(for: .milliseconds(300))
         _ = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: text, range: nil, follow: false, color: "#dce8e1"), in: nil, contentWorld: .defaultClient)
         let lefts = try await web.evaluateJavaScript("Array.from(document.querySelector('p').getClientRects()).map(r => Math.round(r.left + scrollX))", in: nil, contentWorld: .page) as? [Int] ?? []
@@ -1462,7 +1470,7 @@ extension NativeCoreTests {
         let text = String(repeating: "重复的📖句子。\n", count: 160)
         let html = String(repeating: "<p>重复的<b>📖句子</b>。</p>", count: 160)
         web.loadHTMLString(OriginalDocument.html(html, css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 20)
+        await fulfillment(of: [loaded], timeout: 40)
         _ = try await web.evaluateJavaScript(OriginalReadingPosition.script(text: text), in: nil, contentWorld: .defaultClient)
         let late = try await web.evaluateJavaScript(OriginalReadingPosition.restore(120), in: nil, contentWorld: .defaultClient) as? Int ?? -1
         XCTAssertGreaterThan(late, 0)

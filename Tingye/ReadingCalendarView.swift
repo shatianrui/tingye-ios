@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 阅读日历：按月查看每天的阅读 / 听书时长，陶土色深浅表示时长，达到每日目标的日子加粗下划线。
+/// 阅读日历：按月查看每天的阅读 / 听书时长，信号蓝深浅表示时长，达到每日目标的日子加粗下划线。
 struct ReadingCalendarView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -16,7 +16,7 @@ struct ReadingCalendarView: View {
                     header
                     weekdayRow
                     grid
-                    Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleMedium)
+                    Rectangle().fill(Theme.line).frame(height: 1)
                     dayDetail
                     monthSummary
                 }
@@ -36,7 +36,7 @@ struct ReadingCalendarView: View {
                 .accessibilityLabel("上个月")
             Spacer()
             Text(month.formatted(.dateTime.year().month(.wide).locale(Locale.app)))
-                .font(Theme.serifBold(24, relativeTo: .title2))
+                .font(Theme.display(24, relativeTo: .title2))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             Button { shift(1) } label: { ThemeIcon(symbol: Icon.disclosure, size: 18).frame(width: 44, height: 44) }
@@ -76,7 +76,7 @@ struct ReadingCalendarView: View {
             .foregroundStyle(minutes > 0 ? Theme.onClay : (future ? Theme.ink3.opacity(0.5) : Theme.ink))
             .frame(maxWidth: .infinity, minHeight: 48)
             .background(minutes > 0 ? Theme.clay.opacity(Self.intensity(minutes: minutes, goal: goalMinutes)) : Theme.surface2.opacity(0.5))
-            .overlay { if isSelected { Rectangle().strokeBorder(Theme.rulePaint, lineWidth: 2) } }
+            .overlay { if isSelected { Rectangle().strokeBorder(Theme.accent, lineWidth: 2) } }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -93,7 +93,7 @@ struct ReadingCalendarView: View {
             Text(selected.formatted(.dateTime.month().day().weekday(.wide).locale(Locale.app)))
                 .font(.caption.weight(.bold)).tracking(0.6).foregroundStyle(Theme.accent)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(minutes)").font(Theme.serifBold(40, relativeTo: .largeTitle)).monospacedDigit()
+                Text("\(minutes)").font(Theme.display(40, relativeTo: .largeTitle)).monospacedDigit()
                 Text("分钟").font(.subheadline).foregroundStyle(Theme.ink2)
                 Spacer()
                 if minutes >= goalMinutes { Text("达成目标").font(.caption.weight(.bold)).foregroundStyle(Theme.accent) }
@@ -124,7 +124,7 @@ struct ReadingCalendarView: View {
     }
     private func summary(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(Theme.serifBold(26, relativeTo: .title2)).monospacedDigit().foregroundStyle(Theme.ink)
+            Text(value).font(Theme.display(26, relativeTo: .title2)).monospacedDigit().foregroundStyle(Theme.ink)
             Text(L(label)).font(.caption).foregroundStyle(Theme.ink3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -1,0 +1,164 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>听页图标候选</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<style>
+/* 听页 v21 图标候选预览 —— 页面即 v21 瑞士网格语言：纯白 / 近黑 / 信号蓝，mono 眉题，网格卡片 */
+:root {
+  --paper: #FFFFFF;
+  --card: #FAFAFA;
+  --ink: #18181B;
+  --mut: #71717A;
+  --line: #E4E4E7;
+  --signal: #0057FF;
+  --chip-dark: #18181B;
+  --chip-light: #F4F4F5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0B0B0C;
+    --card: #141415;
+    --ink: #FAFAFA;
+    --mut: #A1A1AA;
+    --line: #2E2E32;
+    --signal: #4D8BFF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0B0B0C;
+  --card: #141415;
+  --ink: #FAFAFA;
+  --mut: #A1A1AA;
+  --line: #2E2E32;
+  --signal: #4D8BFF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.14em; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px; }
+header .eyebrow { color: var(--signal); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+header h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; margin: 10px 0 0; text-wrap: balance; }
+header .rule { height: 4px; background: var(--ink); margin-top: 18px; }
+header p.intro { color: var(--mut); font-size: 15px; line-height: 1.7; max-width: 62ch; margin: 14px 0 0; }
+.current {
+  display: flex; align-items: center; gap: 16px; margin-top: 28px;
+  padding: 14px 16px; border: 1px solid var(--line); background: var(--card);
+}
+.current img { width: 56px; height: 56px; border-radius: 22.37%; display: block; }
+.current .label { font-size: 13px; color: var(--mut); }
+.current .name { font-size: 15px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 28px; }
+.card { border: 1px solid var(--line); background: var(--card); padding: 20px; }
+.card .no { color: var(--signal); font-size: 12px; font-weight: 600; }
+.card h2 { font-size: 18px; font-weight: 800; margin: 6px 0 0; letter-spacing: -0.01em; }
+.card .why { color: var(--mut); font-size: 13.5px; line-height: 1.65; margin: 8px 0 0; min-height: 2.6em; }
+.icon-stage { display: flex; justify-content: center; padding: 22px 0 8px; }
+.icon-stage img { width: 176px; height: 176px; border-radius: 22.37%; display: block;
+  box-shadow: 0 0 0 1px rgba(127,127,127,0.18); }
+.sizes { display: flex; margin-top: 16px; border: 1px solid var(--line); }
+.sizes > div { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 8px; min-width: 0; }
+.sizes .on-light { background: var(--chip-light); }
+.sizes .on-dark { background: var(--chip-dark); }
+.sizes img { display: block; border-radius: 22.37%; }
+footer { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 18px; color: var(--mut); font-size: 13.5px; line-height: 1.7; }
+footer strong { color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: border-color 0.15s ease; }
+  .card:hover { border-color: var(--signal); }
+}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow mono">TINGYE / APP ICON · V21 SWISS GRID</div>
+  <h1>应用图标候选</h1>
+  <div class="rule"></div>
+  <p class="intro">六个候选均与软件内 v21「瑞士网格」界面同源：苏黎世白、近黑墨、单一信号蓝 #0057FF、无渐变与装饰圆角。每张卡按 iOS 实际效果预览：大图带 22.37% 圆角遮罩，下方为 64 / 44 / 32px 小尺寸在浅色与深色桌面上的辨识度检查。全部为 1024×1024 无 alpha PNG。</p>
+  <div class="current">
+    <img src="{{CURRENT}}" alt="当前图标">
+    <div>
+      <div class="name">当前 · v20 报头「听」</div>
+      <div class="label">象牙纸 / 宋体 / 陶土橙 —— 属于 Folio 设计，与 v21 界面已不同源</div>
+    </div>
+  </div>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <div class="no mono">A / OFFICIAL</div>
+    <h2>翻页成声 · 白</h2>
+    <div class="icon-stage"><img src="{{TURNING_LIGHT}}" alt="白底蓝符号"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TURNING_LIGHT}}" alt=""><img width="44" src="{{TURNING_LIGHT}}" alt=""><img width="32" src="{{TURNING_LIGHT}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TURNING_LIGHT}}" alt=""><img width="44" src="{{TURNING_LIGHT}}" alt=""><img width="32" src="{{TURNING_LIGHT}}" alt=""></div>
+    </div>
+    <p class="why">v21 设计稿官方符号的浅底变体。白底在主屏幕最安静，蓝符号在白底下最锐利；书页化成声弧，读与听一个动作。</p>
+  </section>
+
+  <section class="card">
+    <div class="no mono">B / BOARD PRIMARY</div>
+    <h2>翻页成声 · 蓝</h2>
+    <div class="icon-stage"><img src="{{TURNING_BLUE}}" alt="蓝底白符号"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TURNING_BLUE}}" alt=""><img width="44" src="{{TURNING_BLUE}}" alt=""><img width="32" src="{{TURNING_BLUE}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TURNING_BLUE}}" alt=""><img width="44" src="{{TURNING_BLUE}}" alt=""><img width="32" src="{{TURNING_BLUE}}" alt=""></div>
+    </div>
+    <p class="why">设计板标注的 PRIMARY：信号蓝满版 + 白符号，饱和度最高、桌面跳脱感最强，是 v21 的主打方案。小尺寸下符号依然清楚。</p>
+  </section>
+
+  <section class="card">
+    <div class="no mono">C / DARK-READY</div>
+    <h2>翻页成声 · 墨</h2>
+    <div class="icon-stage"><img src="{{TURNING_DARK}}" alt="墨底亮蓝符号"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TURNING_DARK}}" alt=""><img width="44" src="{{TURNING_DARK}}" alt=""><img width="32" src="{{TURNING_DARK}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TURNING_DARK}}" alt=""><img width="44" src="{{TURNING_DARK}}" alt=""><img width="32" src="{{TURNING_DARK}}" alt=""></div>
+    </div>
+    <p class="why">炭黑底 + 亮蓝符号。若选 A 或 B 为主图标，此版可直接作为深色外观变体；单独使用也成立。</p>
+  </section>
+
+  <section class="card">
+    <div class="no mono">D / PLAYER MOTIF</div>
+    <h2>刻度 · 白</h2>
+    <div class="icon-stage"><img src="{{TICKS_LIGHT}}" alt="白底刻度"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TICKS_LIGHT}}" alt=""><img width="44" src="{{TICKS_LIGHT}}" alt=""><img width="32" src="{{TICKS_LIGHT}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TICKS_LIGHT}}" alt=""><img width="44" src="{{TICKS_LIGHT}}" alt=""><img width="32" src="{{TICKS_LIGHT}}" alt=""></div>
+    </div>
+    <p class="why">取自 v21 听书页的句子刻度轨：6 根信号蓝「已播」高刻度 + 5 根灰「未播」矮刻度，一条正在进行的听书进度。最克制，但小尺寸下灰刻度会隐去。</p>
+  </section>
+
+  <section class="card">
+    <div class="no mono">E / PLAYER MOTIF</div>
+    <h2>刻度 · 蓝</h2>
+    <div class="icon-stage"><img src="{{TICKS_BLUE}}" alt="蓝底刻度"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TICKS_BLUE}}" alt=""><img width="44" src="{{TICKS_BLUE}}" alt=""><img width="32" src="{{TICKS_BLUE}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TICKS_BLUE}}" alt=""><img width="44" src="{{TICKS_BLUE}}" alt=""><img width="32" src="{{TICKS_BLUE}}" alt=""></div>
+    </div>
+    <p class="why">刻度母题的满版蓝变体：白色已播刻度 + 半透明未播刻度，像电平表。比 D 更响亮，仍完全是界面语言。</p>
+  </section>
+
+  <section class="card">
+    <div class="no mono">F / TYPOGRAPHIC</div>
+    <h2>字标 · 听</h2>
+    <div class="icon-stage"><img src="{{TYPE_LIGHT}}" alt="字标听"></div>
+    <div class="sizes">
+      <div class="on-light"><img width="64" src="{{TYPE_LIGHT}}" alt=""><img width="44" src="{{TYPE_LIGHT}}" alt=""><img width="32" src="{{TYPE_LIGHT}}" alt=""></div>
+      <div class="on-dark"><img width="64" src="{{TYPE_LIGHT}}" alt=""><img width="44" src="{{TYPE_LIGHT}}" alt=""><img width="32" src="{{TYPE_LIGHT}}" alt=""></div>
+    </div>
+    <p class="why">瑞士海报排版：mono 眉题 + 粗墨线、超大无衬线「听」、信号蓝方块句号、「READ · LISTEN — NO.21」版号署名。延续 v16–v20 以「听」立骨的传统，但完全换成 v21 的骨架。</p>
+  </section>
+</div>
+
+<footer>
+  <strong>怎么选</strong>：回复编号（如「B」）即可。选定后我会为该方案补齐日间 / 深色 / 着色三变体（C 已是深色候选），写入 AppIcon.appiconset，跑回归并归档上传 TestFlight。渲染管线保留在 <span class="mono">Design/v21-swiss/icon/render-app-icon-v21.swift</span>，与历代图标一致可随时复现或微调。
+</footer>
+</div>

@@ -7,6 +7,7 @@ enum GeneralSettings {
     static let hapticsKey = "haptics.enabled"
     static let goalNoticeKey = "goal.notice"
     static let hideHomeIndicatorKey = "reader.hideHomeIndicator"
+    static let keepAwakeKey = "reader.keepAwake"
     static var hapticsEnabled: Bool { UserDefaults.standard.object(forKey: hapticsKey) as? Bool ?? true }
     static var goalNoticeEnabled: Bool { UserDefaults.standard.object(forKey: goalNoticeKey) as? Bool ?? true }
 
@@ -34,6 +35,7 @@ struct GeneralSettingsView: View {
     @AppStorage(GeneralSettings.hapticsKey) private var haptics = true
     @AppStorage(GeneralSettings.goalNoticeKey) private var goalNotice = true
     @AppStorage(GeneralSettings.hideHomeIndicatorKey) private var hideHomeIndicator = true
+    @AppStorage(GeneralSettings.keepAwakeKey) private var keepAwake = true
     @AppStorage(ComicPreset.defaultKey) private var comicMode = "ltr"
 
     private var currentLanguage: String {
@@ -67,7 +69,8 @@ struct GeneralSettingsView: View {
             Section {
                 Toggle("震动反馈", isOn: $haptics)
                 Toggle("阅读时自动隐藏 Home 指示条", isOn: $hideHomeIndicator)
-            } header: { Text("交互") } footer: { Text("震动反馈只在部分按钮和翻页时出现。") }
+                Toggle("阅读与听书时保持屏幕常亮", isOn: $keepAwake)
+            } header: { Text("交互") } footer: { Text("震动反馈只在部分按钮和翻页时出现；屏幕常亮只在阅读与听书页面生效，离开即恢复系统休眠。") }
         }
         .tint(Theme.clay)
         .scrollContentBackground(.hidden)

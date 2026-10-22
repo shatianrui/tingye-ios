@@ -1,0 +1,194 @@
+{
+  "root": {
+    "nodeId": "gen-root",
+    "kind": "project-shell",
+    "pageIds": [
+      "page-home",
+      "page-library",
+      "page-book-detail",
+      "page-reader",
+      "page-player",
+      "page-profile",
+      "page-settings",
+      "page-import",
+      "page-search",
+      "page-icon-board"
+    ],
+    "output": null,
+    "sharedRegions": [
+      "brand CSS tokens (colors_and_type.css, prefix ty)",
+      "typography scale (ty-display/ty-h1/ty-h2/ty-h3/ty-body/ty-caption/ty-label/ty-numeric)",
+      "radius scale (2/8/12/9999)",
+      "surface-depth model (border-led static surfaces, shadow alpha <= 0.05)",
+      "mobile bottom tab navigation via sharedProjectShellContract.mobileNavigation.structure.canonicalHtmlByKey (no partial fragment needed)"
+    ],
+    "privateRegions": [],
+    "mutableSlots": [],
+    "status": "generated",
+    "note": "Only shared chrome is the mobile bottom tab bar, delivered via canonicalHtmlByKey; no partials/*.html fragment is required for this project.",
+    "children": [
+      {
+        "nodeId": "gen-page-home",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-home"
+        ],
+        "output": "pages/home.html",
+        "sharedRegions": [
+          "bottom-tab-navigation"
+        ],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [
+          "activeNavItem"
+        ],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-library",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-library"
+        ],
+        "output": "pages/library.html",
+        "sharedRegions": [
+          "bottom-tab-navigation"
+        ],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [
+          "activeNavItem"
+        ],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-book-detail",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-book-detail"
+        ],
+        "output": "pages/book-detail.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-reader",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-reader"
+        ],
+        "output": "pages/reader.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-player",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-player"
+        ],
+        "output": "pages/player.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-profile",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-profile"
+        ],
+        "output": "pages/profile.html",
+        "sharedRegions": [
+          "bottom-tab-navigation"
+        ],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [
+          "activeNavItem"
+        ],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-settings",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-settings"
+        ],
+        "output": "pages/settings.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-import",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-import"
+        ],
+        "output": "pages/import.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-search",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-search"
+        ],
+        "output": "pages/search.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-icon-board",
+        "kind": "page-leaf",
+        "pageIds": [
+          "page-icon-board"
+        ],
+        "output": "pages/icon-board.html",
+        "sharedRegions": [],
+        "privateRegions": [
+          "page body"
+        ],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,310 @@
+{
+  "data": [
+    {
+      "id": "page-home",
+      "title": "读 · 正在阅读",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home.html",
+        "interactions": [
+          {
+            "domId": "link-book-detail",
+            "targetPageId": "page-book-detail",
+            "transitionLabel": "打开书籍详情"
+          },
+          {
+            "domId": "shortcut-search",
+            "targetPageId": "page-search",
+            "hideEdge": true,
+            "transitionLabel": "搜索"
+          },
+          {
+            "domId": "shortcut-player",
+            "targetPageId": "page-player",
+            "hideEdge": true,
+            "transitionLabel": "继续听书"
+          },
+          {
+            "domId": "nav-library",
+            "targetPageId": "page-library",
+            "hideEdge": true,
+            "transitionLabel": "书架"
+          },
+          {
+            "domId": "nav-profile",
+            "targetPageId": "page-profile",
+            "hideEdge": true,
+            "transitionLabel": "我的"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-library",
+      "title": "书 · 书架",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 0,
+        "y": 744,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/library.html",
+        "interactions": [
+          {
+            "domId": "link-book-detail",
+            "targetPageId": "page-book-detail",
+            "transitionLabel": "打开书籍详情"
+          },
+          {
+            "domId": "cta-import",
+            "targetPageId": "page-import",
+            "transitionLabel": "导入传书"
+          },
+          {
+            "domId": "shortcut-search",
+            "targetPageId": "page-search",
+            "hideEdge": true,
+            "transitionLabel": "搜索"
+          },
+          {
+            "domId": "nav-read",
+            "targetPageId": "page-home",
+            "hideEdge": true,
+            "transitionLabel": "读"
+          },
+          {
+            "domId": "nav-profile",
+            "targetPageId": "page-profile",
+            "hideEdge": true,
+            "transitionLabel": "我的"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-book-detail",
+      "title": "书籍详情",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 169,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/book-detail.html",
+        "interactions": [
+          {
+            "domId": "cta-reader",
+            "targetPageId": "page-reader",
+            "transitionLabel": "继续阅读"
+          },
+          {
+            "domId": "cta-player",
+            "targetPageId": "page-player",
+            "transitionLabel": "开始听书"
+          },
+          {
+            "domId": "back-library",
+            "targetPageId": "page-library",
+            "hideEdge": true,
+            "transitionLabel": "返回书架"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-reader",
+      "title": "阅读器",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 338,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader.html",
+        "interactions": [
+          {
+            "domId": "cta-player",
+            "targetPageId": "page-player",
+            "transitionLabel": "切换听书"
+          },
+          {
+            "domId": "back-book-detail",
+            "targetPageId": "page-book-detail",
+            "hideEdge": true,
+            "transitionLabel": "返回详情"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-player",
+      "title": "听书播放器",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 507,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/player.html",
+        "interactions": [
+          {
+            "domId": "back-book-detail",
+            "targetPageId": "page-book-detail",
+            "hideEdge": true,
+            "transitionLabel": "返回详情"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-profile",
+      "title": "己 · 阅读统计",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 0,
+        "y": 1116,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/profile.html",
+        "interactions": [
+          {
+            "domId": "link-settings",
+            "targetPageId": "page-settings",
+            "transitionLabel": "打开设置"
+          },
+          {
+            "domId": "nav-library",
+            "targetPageId": "page-library",
+            "hideEdge": true,
+            "transitionLabel": "书架"
+          },
+          {
+            "domId": "nav-read",
+            "targetPageId": "page-home",
+            "hideEdge": true,
+            "transitionLabel": "读"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-settings",
+      "title": "设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 169,
+        "y": 1116,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings.html",
+        "interactions": [
+          {
+            "domId": "back-profile",
+            "targetPageId": "page-profile",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-import",
+      "title": "导入传书",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 169,
+        "y": 744,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/import.html",
+        "interactions": [
+          {
+            "domId": "back-library",
+            "targetPageId": "page-library",
+            "hideEdge": true,
+            "transitionLabel": "返回书架"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-search",
+      "title": "搜索与空态",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 0,
+        "y": 372,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/search.html",
+        "interactions": [
+          {
+            "domId": "link-book-detail",
+            "targetPageId": "page-book-detail",
+            "transitionLabel": "打开书籍详情"
+          },
+          {
+            "domId": "back-library",
+            "targetPageId": "page-library",
+            "hideEdge": true,
+            "transitionLabel": "返回书架"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-icon-board",
+      "title": "应用图标方案",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1792613066000,
+      "canvasData": {
+        "x": 0,
+        "y": 1488,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/icon-board.html",
+        "interactions": []
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "mobile",
+    "projectName": "听页 Tingye · 瑞士网格重设计",
+    "designLibrary": null,
+    "visualEditorEnabled": true
+  }
+}

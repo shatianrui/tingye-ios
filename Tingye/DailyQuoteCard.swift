@@ -20,7 +20,7 @@ struct DailyQuoteCard: View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
                 SectionTitle(text: "今日一句", number: number)
-                Text("“").font(Theme.serifBold(52, relativeTo: .largeTitle)).foregroundStyle(Theme.clay)
+                Text("“").font(Theme.serifBold(52, relativeTo: .largeTitle)).foregroundStyle(Theme.accent)
                     .frame(height: 30, alignment: .top)
                     .accessibilityHidden(true)
                 Group {
@@ -35,7 +35,7 @@ struct DailyQuoteCard: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.ink)
                 Text("—— " + sourceLine(entry))
-                    .font(.caption)
+                    .font(Theme.serif(13, relativeTo: .caption))
                     .foregroundStyle(Theme.ink2)
                     .lineLimit(2)
                 HStack(spacing: 10) {
@@ -117,7 +117,7 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 刊式摘句卡：象牙纸、报头双线、陶土引号与题条。导出为图片分享，始终使用日间配色。
+/// 刊式摘句卡：白纸、报头双线、信号蓝引号与题条。导出为图片分享，始终使用日间配色。
 struct QuoteShareCard: View {
     let text: String
     let title: String
@@ -131,29 +131,29 @@ struct QuoteShareCard: View {
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
             }
             .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
-            .foregroundStyle(Color(hex: 0x141413))
-            Rectangle().fill(Color(hex: 0x141413)).frame(height: 4).padding(.top, 10)
-            Rectangle().fill(Color(hex: 0x141413)).frame(height: 1).padding(.top, 4)
+            .foregroundStyle(Color(hex: 0x111112))
+            Rectangle().fill(Color(hex: 0x111112)).frame(height: 4).padding(.top, 10)
+            Rectangle().fill(Color(hex: 0x111112)).frame(height: 1).padding(.top, 4)
             Spacer(minLength: 48)
             Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
                 .frame(height: 80, alignment: .top).offset(x: -6)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x141413))
+                .foregroundStyle(Color(hex: 0x111112))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 48)
             Rectangle().fill(Theme.clay).frame(width: 120, height: 12)
-            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x141413)).padding(.top, 20)
+            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x111112)).padding(.top, 20)
             let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
             if !byline.isEmpty {
-                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x5E5D59)).padding(.top, 6)
+                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x6E6E73)).padding(.top, 6)
             }
-            Rectangle().fill(Color(hex: 0x141413)).frame(height: 1).padding(.top, 28)
+            Rectangle().fill(Color(hex: 0x111112)).frame(height: 1).padding(.top, 28)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFAF9F5))
+        .background(Color(hex: 0xFFFFFF))
         .environment(\.colorScheme, .light)
     }
 

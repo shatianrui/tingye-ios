@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>己 · 阅读统计</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   听页 Tingye · v21 瑞士网格 / 苏黎世白 (Swiss Grid · Zurich White)
+   Brand prefix: ty
+   国际主义网格 · 无衬线 · 黑白灰 + 单一信号蓝
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：信号蓝） ---------- */
+  --ty-primary-50:  #EEF3FF;
+  --ty-primary-100: #DCE7FF;
+  --ty-primary-200: #B8CFFF;
+  --ty-primary-300: #85AFFF;
+  --ty-primary-400: #4D8BFF;
+  --ty-primary-500: #0057FF;
+  --ty-primary-600: #0048DB;
+  --ty-primary-700: #003AB0;
+
+  /* ---------- 中性阶（黑白灰） ---------- */
+  --ty-neutral-0:   #FFFFFF;
+  --ty-neutral-50:  #FAFAFA;
+  --ty-neutral-100: #F4F4F5;
+  --ty-neutral-200: #E4E4E7;
+  --ty-neutral-300: #D4D4D8;
+  --ty-neutral-400: #A1A1AA;
+  --ty-neutral-500: #71717A;
+  --ty-neutral-700: #3F3F46;
+  --ty-neutral-900: #18181B;
+  --ty-neutral-950: #0B0B0C;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #16A34A;
+  --state-warning: #D97706;
+  --state-error:   #DC2626;
+  --state-info:    #0057FF;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-0);
+  --ty-foreground:         #111112;
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    #111112;
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: #111112;
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FFFFFF;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   #6E6E73;
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-50);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（克制的瑞士尺度） ---------- */
+  --ty-radius-sm:    2px;
+  --ty-radius-md:    8px;
+  --ty-radius-lg:    12px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-sans: "Inter", "PingFang SC", "Noto Sans SC", -apple-system, "Helvetica Neue", "Helvetica", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（静态面以描边为主，阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(17, 17, 18, 0.04);
+  --ty-shadow-float:   0 8px 24px rgba(17, 17, 18, 0.10), 0 2px 6px rgba(17, 17, 18, 0.06);
+}
+
+/* ---------- 语义别名 · 深色 ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #F5F5F6;
+  --ty-card:               #141416;
+  --ty-card-foreground:    #F5F5F6;
+  --ty-popover:            #141416;
+  --ty-popover-foreground: #F5F5F6;
+  --ty-primary:            #4D7CFE;
+  --ty-primary-foreground: #FFFFFF;
+  --ty-muted:              #1B1B1E;
+  --ty-muted-foreground:   #9C9CA3;
+  --ty-border:             #26262B;
+  --ty-input:              #26262B;
+  --ty-ring:               #4D7CFE;
+
+  --ty-surface-sunken:     #0F0F11;
+  --ty-hairline:           #26262B;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（瑞士网格字体阶梯） ---------- */
+.ty-display {
+  font-family: var(--ty-font-sans);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.ty-body {
+  font-family: var(--ty-font-sans);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.65;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 瑞士标签：等宽、大写、宽字距，用于元数据/编号/刻度 */
+.ty-label {
+  font-family: var(--ty-font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="w-full max-w-md mx-auto px-4 pb-6">
+      <style id="critical-layout">
+        .pg-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-top:24px; padding-bottom:16px; }
+        .pg-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:var(--ty-radius-md); color:var(--ty-foreground); text-decoration:none; transition:background-color 120ms cubic-bezier(.2,.8,.2,1); -webkit-tap-highlight-color:transparent; }
+        .pg-iconbtn:hover { background-color:var(--ty-muted); }
+        .pg-iconbtn:active { transform:scale(.99); }
+        .pg-iconbtn:focus-visible { outline:2px solid var(--ty-ring); outline-offset:2px; }
+        .pg-hairline { height:1px; background:var(--ty-border); margin-top:12px; margin-bottom:16px; }
+        .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); }
+        .stat-cell { border-left:1px solid var(--ty-border); padding-left:12px; min-width:0; }
+        .stat-cell:first-child { border-left:none; padding-left:0; }
+        .bg-neutral-200 { background-color:var(--ty-neutral-200); }
+        .week-bars { display:flex; align-items:flex-end; height:80px; }
+        .week-col { flex:1; display:flex; justify-content:center; min-width:0; }
+        .week-bar { width:8px; border-radius:var(--ty-radius-sm); }
+        .week-labels { display:flex; margin-top:8px; }
+        .week-labels span { flex:1; text-align:center; min-width:0; }
+        .note-row { display:flex; gap:12px; padding:16px 0; }
+        .note-icon { flex-shrink:0; color:var(--ty-muted-foreground); margin-top:2px; }
+        .note-quote { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        @media (prefers-reduced-motion: reduce) {
+          .pg-iconbtn { transition-duration:0.01ms; }
+        }
+      </style>
+
+      <!-- 1. 页眉 -->
+      <header class="pg-header">
+        <div>
+          <p class="ty-label text-muted-foreground">TINGYE / SELF</p>
+          <h1 class="ty-h1 mt-2" style="font-size:40px;text-wrap:balance;word-break:keep-all;">己</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="#" data-dom-id="link-settings" aria-label="设置" class="pg-iconbtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </a>
+        </div>
+      </header>
+
+      <!-- 2. 数字矩阵 -->
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <p class="ty-numeric text-foreground" style="font-size:28px;line-height:1.1;">5h12m</p>
+          <p class="ty-label text-muted-foreground mt-2">本周</p>
+        </div>
+        <div class="stat-cell">
+          <p class="ty-numeric text-foreground" style="font-size:28px;line-height:1.1;">12</p>
+          <p class="ty-label text-muted-foreground mt-2">连续天</p>
+        </div>
+        <div class="stat-cell">
+          <p class="ty-numeric text-foreground" style="font-size:28px;line-height:1.1;">27</p>
+          <p class="ty-label text-muted-foreground mt-2">读完本</p>
+        </div>
+      </div>
+
+      <div class="pg-hairline" style="margin-top:24px;margin-bottom:24px;"></div>
+
+      <!-- 3. 周报 -->
+      <section>
+        <p class="ty-label text-muted-foreground">本周节奏 WEEK 43</p>
+        <div class="week-bars mt-4">
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:30%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:55%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:40%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:70%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:45%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-primary" style="height:85%;"></div></div>
+          <div class="week-col"><div class="week-bar bg-neutral-200" style="height:60%;"></div></div>
+        </div>
+        <div class="week-labels">
+          <span class="ty-label text-muted-foreground">M</span>
+          <span class="ty-label text-muted-foreground">T</span>
+          <span class="ty-label text-muted-foreground">W</span>
+          <span class="ty-label text-muted-foreground">T</span>
+          <span class="ty-label text-muted-foreground">F</span>
+          <span class="ty-label text-muted-foreground">S</span>
+          <span class="ty-label text-muted-foreground">S</span>
+        </div>
+      </section>
+
+      <div class="pg-hairline" style="margin-top:24px;margin-bottom:24px;"></div>
+
+      <!-- 4. 书摘笔记 -->
+      <section>
+        <p class="ty-label text-muted-foreground">书摘 NOTES</p>
+        <div class="note-row" style="border-bottom:1px solid var(--ty-border);">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 note-icon"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          <div class="min-w-0">
+            <p class="ty-body text-foreground note-quote" style="font-size:14px;">我们生活在二维的牢笼里，直到有人指向第三维。</p>
+            <p class="ty-label text-muted-foreground mt-2">——《平面国》</p>
+          </div>
+        </div>
+        <div class="note-row">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 note-icon"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          <div class="min-w-0">
+            <p class="ty-body text-foreground note-quote" style="font-size:14px;">真正的发现之旅不在于寻找新大陆，而在于拥有新的眼光。</p>
+            <p class="ty-label text-muted-foreground mt-2">——《禅与摩托车维修艺术》</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <nav data-mobile-nav="global" class="w-full h-[56px] shrink-0 border-t border-border bg-background"><div class="w-full max-w-md mx-auto grid grid-cols-3 h-full"><a href="#" data-nav-key="library" data-dom-id="nav-library" class="min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 h-full text-muted-foreground"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span class="text-[11px] leading-none whitespace-nowrap max-w-full truncate">书</span></a><a href="#" data-nav-key="read" data-dom-id="nav-read" class="min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 h-full text-muted-foreground"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="text-[11px] leading-none whitespace-nowrap max-w-full truncate">读</span></a><a href="#" data-nav-key="profile" data-active="true" class="min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 h-full text-primary"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="text-[11px] leading-none whitespace-nowrap max-w-full truncate font-semibold">己</span></a></div></nav>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

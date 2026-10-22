@@ -240,15 +240,8 @@ struct ShelfView: View {
 
     private var shelfHeader: some View {
         VStack(alignment: .leading, spacing: 9) {
-            HStack {
-                Text("LIBRARY · 藏书").foregroundStyle(Theme.ink)
-                Spacer()
-                Text("\(visibleKindEntries.count) VOL.").foregroundStyle(Theme.accent)
-            }
-            .font(Theme.masthead).tracking(1.2).accessibilityHidden(true)
-            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
             adaptiveRow {
-                PageMasthead(title: "书架", subtitle: shelfSubtitle)
+                PageMasthead(title: title, subtitle: shelfSubtitle, kicker: "TINGYE / LIBRARY")
                 if !editing {
                     HStack(spacing: 8) {
                         Button(action: beginEditing) {
@@ -263,7 +256,10 @@ struct ShelfView: View {
                     }.fixedSize(horizontal: true, vertical: false)
                 }
             }
-            Rectangle().fill(Theme.rulePaint).frame(height: Theme.rule).accessibilityHidden(true)
+            Text("\(visibleKindEntries.count) BOOKS · \(useList ? "LIST" : "GRID") · \(sortLabel.localUppercased)")
+                .font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink2)
+                .accessibilityHidden(true)
+            Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true)
         }
     }
 
@@ -278,8 +274,8 @@ struct ShelfView: View {
             Label("添加", systemImage: Icon.add)
                 .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.onClay)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.clay, in: Rectangle())
-                .contentShape(Rectangle())
+                .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
         }
         .accessibilityIdentifier("import.book")
         .accessibilityLabel("添加书籍")
@@ -298,7 +294,7 @@ struct ShelfView: View {
             }
             .padding(.horizontal, 2)
             .frame(minHeight: 48)
-            .overlay(alignment: .bottom) { Rectangle().fill(Theme.rulePaint).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -605,7 +601,7 @@ struct ShelfView: View {
     // MARK: 网格（书阁陈列）
 
     private var bookGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96, maximum: 152), spacing: 16, alignment: .top)], alignment: .leading, spacing: 18) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], alignment: .leading, spacing: 12) {
             ForEach(folders, id: \.self) { path in
                 VStack(alignment: .leading, spacing: 0) {
                     NavigationLink { ShelfView(group: path) } label: { folderTile(path) }
@@ -614,8 +610,8 @@ struct ShelfView: View {
                     folderActions(path)
                 }
             }
-            ForEach(sorted) { entry in
-                bookCell(entry) { gridTile(entry) }
+            ForEach(Array(sorted.enumerated()), id: \.element.id) { index, entry in
+                bookCell(entry) { gridTile(entry, index: index + 1) }
             }
         }
     }
@@ -697,7 +693,7 @@ struct ShelfView: View {
     private func folderTile(_ path: String) -> some View {
         let books = booksInCurrentKind(path)
         return VStack(alignment: .leading, spacing: 0) {
-            Color.clear.aspectRatio(0.7, contentMode: .fit).overlay {
+            Color.clear.aspectRatio(0.75, contentMode: .fit).overlay {
                 GeometryReader { geo in
                     let w = (geo.size.width - 30) / 2
                     LazyVGrid(columns: [GridItem(.fixed(w), spacing: 8), GridItem(.fixed(w), spacing: 8)], spacing: 8) {
@@ -748,9 +744,9 @@ struct ShelfView: View {
         .accessibilityLabel("管理分组 \(path)")
     }
 
-    private func gridTile(_ entry: ShelfEntry) -> some View {
+    private func gridTile(_ entry: ShelfEntry, index: Int? = nil) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            FlexibleCover(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id])
+            FlexibleCover(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], index: index)
                 .overlay(alignment: .topLeading) {
                     if entry.isHidden {
                         Image(systemName: Icon.hiddenBadge)
@@ -763,7 +759,7 @@ struct ShelfView: View {
                     }
                 }
             Text(entry.title)
-                .font(Theme.serifSemibold(15, relativeTo: .subheadline))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .padding(.top, 8)
@@ -809,7 +805,7 @@ struct ShelfView: View {
                         BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 52)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
-                                .font(Theme.serifSemibold(17, relativeTo: .body))
+                                .font(.body.weight(.semibold))
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                             Text(row.author + " · " + model.category(row))

@@ -76,6 +76,8 @@
 	<array>
 		<string>NotoSerifCJKsc-Regular.otf</string>
 		<string>LXGWWenKaiLite-Regular.ttf</string>
+		<string>NotoSansCJKsc-Regular.otf</string>
+		<string>LXGWNeoXiHei.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

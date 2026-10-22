@@ -279,7 +279,7 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 刊导航：顶部墨线 + 编号与宋体页签，选中项由墨色、字重与陶土下划线共同标记。
+/// 瑞士网格页签：56px 高，顶部发丝线；图标 + 11px 标签，选中项由信号蓝与字重共同标记。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -297,15 +297,12 @@ private struct LibraryNavigationBar: View {
                 ForEach(items.indices, id: \.self) { index in
                     let selected = model.tab == index
                     Button { Haptics.selection(); model.tab = index } label: {
-                        VStack(spacing: 2) {
-                            Text(String(format: "%02d", index + 1))
-                                .font(.system(size: 10, weight: .bold)).tracking(1)
-                                .foregroundStyle(selected ? Theme.accent : Theme.ink3)
-                            Text(L(items[index].0)).font(Theme.serif(20, relativeTo: .title3))
-                                .fontWeight(selected ? .bold : .regular)
-                                .foregroundStyle(selected ? Theme.ink : Theme.ink3)
-                            Rectangle().fill(selected ? Theme.clay : .clear).frame(width: 22, height: 3)
+                        VStack(spacing: 3) {
+                            ThemeIcon(symbol: items[index].1, size: 20, weight: .medium)
+                            Text(L(items[index].0))
+                                .font(.system(size: 11, weight: selected ? .semibold : .regular))
                         }
+                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .contentShape(Rectangle())
                     }
@@ -319,7 +316,7 @@ private struct LibraryNavigationBar: View {
             .frame(maxWidth: 560)
             .padding(.horizontal, Theme.inset)
             .frame(maxWidth: .infinity)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleMedium) }
+            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
             .background(Theme.bg.ignoresSafeArea(edges: .bottom))
         }
         .animation(Theme.smoothSpring, value: player.book?.id)
@@ -368,7 +365,7 @@ struct MiniPlayer: View {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 34)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(Theme.serifSemibold(15, relativeTo: .subheadline))
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
@@ -392,12 +389,14 @@ struct MiniPlayer: View {
                             if player.buffering {
                                 ProgressView().controlSize(.small).tint(Theme.onClay)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 24)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 18)
                             }
                         }
                         .foregroundStyle(Theme.onClay)
-                        .frame(width: 48, height: 44)
-                        .background(Theme.clay, in: Rectangle())
+                        .frame(width: 36, height: 36)
+                        .background(Theme.clay, in: Circle())
+                        .contentShape(Circle())
+                        .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -410,8 +409,9 @@ struct MiniPlayer: View {
                 ProgressBar(value: player.progress, tint: Theme.clay, height: 2)
                     .accessibilityHidden(true)
             }
-            .background(Theme.surface, in: Rectangle())
-            .overlay { Rectangle().strokeBorder(Theme.rulePaint, lineWidth: 1) }
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
         }
     }
     private var subtitle: String {
@@ -460,8 +460,35 @@ private struct FeedbackOverlay: ViewModifier {
         }
     }
 }
+/// 阅读 / 听书页保持屏幕常亮：引用计数，阅读页上叠放听书页时不会提前恢复休眠。
+@MainActor enum ScreenAwake {
+    private(set) static var holders = 0
+    static func hold(_ hold: Bool) {
+        holders = max(0, holders + (hold ? 1 : -1))
+        UIApplication.shared.isIdleTimerDisabled = holders > 0
+    }
+}
+
+/// 页面出现时按「通用设置 › 保持屏幕常亮」偏好禁用休眠，消失时恢复；偏好改动即时生效。
+private struct KeepAwakeModifier: ViewModifier {
+    @AppStorage(GeneralSettings.keepAwakeKey) private var keepAwake = true
+    @State private var holding = false
+    func body(content: Content) -> some View {
+        content
+            .onAppear { apply() }
+            .onDisappear { if holding { ScreenAwake.hold(false); holding = false } }
+            .onChange(of: keepAwake) { apply() }
+    }
+    private func apply() {
+        guard keepAwake != holding else { return }
+        ScreenAwake.hold(keepAwake); holding = keepAwake
+    }
+}
+
 extension View {
     func feedbackOverlay() -> some View { modifier(FeedbackOverlay()) }
+    /// 阅读 / 听书页面保持屏幕常亮（可在通用设置关闭）。
+    func keepScreenAwake() -> some View { modifier(KeepAwakeModifier()) }
 }
 
 /// 系统 AirPlay 路由选择按钮

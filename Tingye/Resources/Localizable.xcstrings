@@ -12601,6 +12601,34 @@
         }
       }
     },
+    "思源黑体": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source Han Sans"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "源ノ角ゴシック"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思源黑体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "思源黑體"
+          }
+        }
+      }
+    },
     "总占用": {
       "localizations": {
         "en": {
@@ -26793,6 +26821,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "霞鶩文楷 LXGW WenKai"
+          }
+        }
+      }
+    },
+    "霞鹜新晰黑": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LXGW Neo XiHei"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "霞鶩新晰黒"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "霞鹜新晰黑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "霞鶩新晰黑"
           }
         }
       }
