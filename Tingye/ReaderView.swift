@@ -142,7 +142,7 @@ struct ReaderView: View {
     /// 靛蓝随纸色取值：默认纸跟随外观，深色纸提亮，浅色纸用标准靛蓝；主色上的字相应取白或纸色。
     private var readerAccent: Color {
         if prefs.kind == .paper { return Theme.clay }
-        return prefs.kind.dark ? Color(hex: 0x8FB0D1) : Color(hex: 0x2C4A6E)
+        return prefs.kind.dark ? Color(hex: 0xF0F0F0) : Color(hex: 0x1F1F1F)
     }
     private var readerOnAccent: Color {
         if prefs.kind == .paper { return Theme.onClay }

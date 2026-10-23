@@ -137,29 +137,29 @@ struct QuoteShareCard: View {
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
             }
             .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
-            .foregroundStyle(Color(hex: 0x1F2530))
-            Rectangle().fill(Color(hex: 0x1F2530)).frame(height: 4).padding(.top, 10)
-            Rectangle().fill(Color(hex: 0x1F2530)).frame(height: 1).padding(.top, 4)
+            .foregroundStyle(Color(hex: 0x1F1F1F))
+            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 4).padding(.top, 10)
+            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 1).padding(.top, 4)
             Spacer(minLength: 48)
             Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
                 .frame(height: 80, alignment: .top).offset(x: -6)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x1F2530))
+                .foregroundStyle(Color(hex: 0x1F1F1F))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 48)
             Rectangle().fill(Theme.clay).frame(width: 120, height: 12)
-            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x1F2530)).padding(.top, 20)
+            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x1F1F1F)).padding(.top, 20)
             let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
             if !byline.isEmpty {
-                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x5C6675)).padding(.top, 6)
+                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x666666)).padding(.top, 6)
             }
-            Rectangle().fill(Color(hex: 0x1F2530)).frame(height: 1).padding(.top, 28)
+            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 1).padding(.top, 28)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFCFBF8))
+        .background(Color(hex: 0xFFFFFF))
         .environment(\.colorScheme, .light)
     }
 

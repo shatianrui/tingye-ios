@@ -101,7 +101,6 @@ struct NowView: View {
         let actions = model.resumeActions(for: entry)
         let fraction = current && actions.prefersListening ? player.progress : entry.readFraction
         let chapter = current && actions.prefersListening ? player.chapter : entry.progress.chapter
-        let frame: CGFloat = 9
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(L(actions.prefersListening ? "继续听" : "继续阅读") + " · " + "第 \(chapter + 1) / \(max(1, entry.chapterCount)) 章")
@@ -134,14 +133,13 @@ struct NowView: View {
                 .foregroundStyle(Self.coverInk)
                 .padding(.top, 6)
                 .accessibilityElement(children: .combine)
-                ProgressBar(value: fraction, track: Color.white.opacity(0.18), tint: Theme.clay, height: 4).accessibilityHidden(true)
+                ProgressBar(value: fraction, track: Theme.ink.opacity(0.15), tint: Theme.clay, height: 4).accessibilityHidden(true)
             }
-            .padding(frame + 14)
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Self.coverField)
+            .background(Self.coverField, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .overlay(alignment: .topTrailing) { if current && player.playing { nowListeningSash } }
-            .overlay { Rectangle().strokeBorder(Theme.clay, lineWidth: frame) }
-            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             actionLayout {
                 if actions.prefersListening {
                     listenButton(entry, title: actions.listeningTitle).buttonStyle(PrimaryButtonStyle())
@@ -159,9 +157,9 @@ struct NowView: View {
         }
     }
 
-    /// 封面卡底色与字色日夜不变：靛黑底白字，靠发丝线框与页面分开。
-    private static let coverField = Color(hex: 0x10151C)
-    private static let coverInk = Color.white
+    /// 续读卡改为浅色面：灰底黑字、圆润大卡，微信读书式轻盈（随日夜切换）。
+    private static let coverField = Theme.surface2
+    private static let coverInk = Theme.ink
 
     /// 杂志特刊式斜角带。
     private var nowListeningSash: some View {
