@@ -1,0 +1,103 @@
+{
+  "success": true,
+  "outcome": "passed",
+  "repairable": true,
+  "terminalViolations": [],
+  "terminalBlockingSummary": null,
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": "2026.10.13.09.48.16",
+    "version_source": "skill-release-manifest.json",
+    "runtime_skill_dir": null,
+    "recorded_at": null,
+    "expected_version": "2026.10.13.09.48.16",
+    "status": "matched",
+    "read_status": "loaded"
+  },
+  "operatingMode": "free-explore",
+  "renderBlockingErrorCount": 0,
+  "softWarningCount": 1,
+  "renderBlockingErrors": [],
+  "errorSignatures": [],
+  "softWarnings": [
+    "[mobile-navigation-consistency] 7 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly."
+  ],
+  "repairPlanHints": [],
+  "repairActionTable": [],
+  "errorCount": 0,
+  "warningCount": 1,
+  "errors": [],
+  "warnings": [
+    "[mobile-navigation-consistency] 7 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly."
+  ],
+  "validationRunDisciplineStatus": {
+    "declared": true,
+    "restoreMode": false,
+    "maxFullValidationRuns": 2,
+    "validationHistoryCount": 1,
+    "repairLedgerCount": 0,
+    "softWarningsTriggerRepair": false,
+    "terminalState": null,
+    "nextAction": null,
+    "violations": [],
+    "success": true
+  },
+  "terminalState": null,
+  "nextCheck": {
+    "type": "finish-readiness",
+    "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v21-swiss-draft' --check=all",
+    "fullValidationAllowed": false,
+    "reason": "workspace validation passed; run complete finish readiness before final delivery"
+  },
+  "repairBatch": [],
+  "repairContextPacket": {
+    "schema_version": "1.0",
+    "purpose": "small-context repair packet; read this before full validation-report.json",
+    "success": true,
+    "terminalState": null,
+    "skillProvenance": {
+      "name": "solo-design",
+      "version": "2026.10.13.09.48.16",
+      "version_source": "skill-release-manifest.json",
+      "runtime_skill_dir": null,
+      "recorded_at": null,
+      "expected_version": "2026.10.13.09.48.16",
+      "status": "matched",
+      "read_status": "loaded"
+    },
+    "renderBlockingErrorCount": 0,
+    "softWarningCount": 1,
+    "renderBlockingErrors": [],
+    "repairActionTable": [],
+    "nextCheck": {
+      "type": "finish-readiness",
+      "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v21-swiss-draft' --check=all",
+      "fullValidationAllowed": false,
+      "reason": "workspace validation passed; run complete finish readiness before final delivery"
+    },
+    "forbidden": [
+      "do not read validator source",
+      "do not rerun full validation when nextCheck.fullValidationAllowed=false",
+      "do not start preview/browser unless user explicitly asks",
+      "do not hand-edit repair ledger fields"
+    ]
+  },
+  "projectFileHashes": {
+    "v21-swiss-draft.design": "dfc0d8b81978d38b805a0503d7219e1b7cd91fa60776efe9bdd9adba18ebc07d",
+    "runtime-orchestration-summary.json": "74fb5fc6e7ae1b07afa3e73f512ca121001b72e6235b78c8a22bfb62c7995654",
+    "pages/book-detail.html": "68c3141b6e2f4538c854985165447b2865ad2f1aaa66928cf05e9f3e3c81301c",
+    "pages/home.html": "375c64f722f1c1cc64a5bd3fbd73f664efd369251d2b01c178af3f6fedc3c721",
+    "pages/icon-board.html": "c2fc7e62397d024040bb2cf0adba1186514754242555e5c5eb216660547634d5",
+    "pages/import.html": "1228af78ce0d75d893142afccb30cc5fdcdb3fd924bc5f3f2a50eff33c7aa935",
+    "pages/library.html": "139fcfbbc1310d5ed2e85ba84c36819cdfd9553c807db52a53503b6428d8c327",
+    "pages/player.html": "70c0ec8b32ea7e5d90fe1ba5c8824d0b36a91d0aa00cb9f8dcf6efcec3f1421e",
+    "pages/profile.html": "b2bdfb51533a69d186ed57027e54870756ca551dc80083138fdcad62b387ddcf",
+    "pages/reader.html": "076d5c992a37a7581ae983ac4f0753fcdf36769c9681d26ba274bf10f7eff526",
+    "pages/search.html": "ef2df0e24ab168a1732139611b189c80252be4672df2f06834d2cebee14b9db6",
+    "pages/settings.html": "37da372087ea9705ebbd620ccec3c1e8398084c3f4dd098497cf21c1c9e6b9d8"
+  },
+  "designDir": "/Users/a1234/Desktop/tingye-ios/Design/v21-swiss-draft",
+  "expectedPages": 10,
+  "requireInteractions": null,
+  "checkedAt": "2026-10-22T16:42:00.889Z"
+}

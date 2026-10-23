@@ -33,6 +33,7 @@ struct DailyQuoteCard: View {
                     }
                 }
                 .font(Theme.serif(20, relativeTo: .title3))
+                .serifEmbolden(20)
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.ink)
@@ -61,8 +62,10 @@ struct DailyQuoteCard: View {
                     .accessibilityIdentifier("quote.share")
                 }
             }
-            .padding(.vertical, 8)
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // 刊内摘句框：浅灰平底、零圆角，与封面卡同一语汇
+            .background(Theme.surface2)
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }

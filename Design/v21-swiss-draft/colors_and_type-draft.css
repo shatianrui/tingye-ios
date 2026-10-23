@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+
+/* ============================================================
+   听页 Tingye · 温暖纸质 / 灯下书斋 (Warm Paper · Lamplight Study)
+   Brand prefix: ty
+   暖纸色 · 宋体衬线 · 墨棕 + 单一灯琥珀
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：灯琥珀） ---------- */
+  --ty-primary-50:  #FBF3E8;
+  --ty-primary-100: #F5E4CC;
+  --ty-primary-200: #EAC9A0;
+  --ty-primary-300: #DCA96F;
+  --ty-primary-400: #C98A4B;
+  --ty-primary-500: #9C5B24;
+  --ty-primary-600: #82491B;
+  --ty-primary-700: #683A15;
+
+  /* ---------- 中性阶（暖纸墨棕） ---------- */
+  --ty-neutral-0:   #FDFBF5;
+  --ty-neutral-50:  #F8F3E9;
+  --ty-neutral-100: #F1EADC;
+  --ty-neutral-200: #E3D8C3;
+  --ty-neutral-300: #CFC0A5;
+  --ty-neutral-400: #A6957D;
+  --ty-neutral-500: #7A6A55;
+  --ty-neutral-700: #4A3D2E;
+  --ty-neutral-900: #2E2418;
+  --ty-neutral-950: #171310;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #4A7C59;
+  --state-warning: #B07A2A;
+  --state-error:   #B3402E;
+  --state-info:    #9C5B24;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-50);
+  --ty-foreground:         var(--ty-neutral-900);
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    var(--ty-neutral-900);
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FDFBF5;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   var(--ty-neutral-500);
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-100);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（温润的纸质尺度） ---------- */
+  --ty-radius-sm:    4px;
+  --ty-radius-md:    10px;
+  --ty-radius-lg:    14px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --ty-font-sans: "PingFang SC", -apple-system, "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（暖调，静态面阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(93, 64, 28, 0.05);
+  --ty-shadow-float:   0 8px 24px rgba(93, 64, 28, 0.12), 0 2px 6px rgba(93, 64, 28, 0.06);
+}
+
+/* ---------- 语义别名 · 深色（夜读灯下） ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #E9DFCE;
+  --ty-card:               #211B15;
+  --ty-card-foreground:    #E9DFCE;
+  --ty-popover:            #211B15;
+  --ty-popover-foreground: #E9DFCE;
+  --ty-primary:            #D9A05B;
+  --ty-primary-foreground: #171310;
+  --ty-muted:              #2A231B;
+  --ty-muted-foreground:   #A6957D;
+  --ty-border:             #3A3026;
+  --ty-input:              #3A3026;
+  --ty-ring:               #D9A05B;
+
+  --ty-surface-sunken:     #120F0C;
+  --ty-hairline:           #3A3026;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（温暖纸质字体阶梯：标题用宋体衬线） ---------- */
+.ty-display {
+  font-family: var(--ty-font-serif);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.22;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.ty-body {
+  font-family: var(--ty-font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.78;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 纸质标签：黑体小字、宽字距，用于元数据/栏目眉题 */
+.ty-label {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}

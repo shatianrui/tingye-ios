@@ -397,7 +397,7 @@ struct ChapterManagerView: View {
                     Label("听此章", systemImage: Icon.listen)
                         .font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
                         .padding(.horizontal, 10).frame(minHeight: 44)
-                        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.accentSoft, in: Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("听书，\(chapter.title)")
@@ -727,32 +727,32 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x0B0B0C) : Color(hex: 0xFFFFFF)
-        let foreground = dark ? Color(hex: 0xF5F5F6) : Color(hex: 0x111112)
+        let background = dark ? Color(hex: 0x171310) : Color(hex: 0xF8F3E9)
+        let foreground = dark ? Color(hex: 0xE9DFCE) : Color(hex: 0x2E2418)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Circle().fill(foreground.opacity(0.55)).frame(width: 4, height: 4)
-                Capsule().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
+                Rectangle().fill(Color(hex: dark ? 0xD9A05B : 0x9C5B24)).frame(width: 4, height: 4)
+                Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            RoundedRectangle(cornerRadius: 4).fill(Color(hex: dark ? 0x27272A : 0xF4F4F5)).frame(height: 25)
+            Rectangle().fill(Color(hex: dark ? 0x211B15 : 0xFDFBF5)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 1).fill(Color(hex: dark ? 0x4D7CFE : 0x0057FF)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Color(hex: dark ? 0xD9A05B : 0x9C5B24)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
-            Capsule().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
-            Capsule().fill(foreground.opacity(0.18)).frame(height: 3)
-            Capsule().fill(foreground.opacity(0.18)).frame(width: 32, height: 3)
+            Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
+            Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
+            Rectangle().fill(foreground.opacity(0.18)).frame(width: 32, height: 3)
         }
         .padding(11)
         .frame(width: 74, height: 98)
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x0B0B0C)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0x4D7CFE)) }
+                Rectangle().fill(Color(hex: 0x171310)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xD9A05B)) }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(foreground.opacity(0.1), lineWidth: 1))
+        .clipShape(Rectangle())
+        .overlay(Rectangle().strokeBorder(foreground.opacity(0.1), lineWidth: 1))
         .accessibilityHidden(true)
     }
 }

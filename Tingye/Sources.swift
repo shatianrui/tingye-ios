@@ -259,7 +259,7 @@ private struct SourceActionRow: View {
             ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink).accessibilityHidden(true)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 64)
-        .glassCard(cornerRadius: 18)
+        .glassCard(cornerRadius: 0)
         .contentShape(Rectangle())
     }
 }
@@ -326,8 +326,8 @@ private struct SourceEditor: View {
             content().font(.subheadline).foregroundStyle(Theme.ink).frame(minHeight: 24)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.line, lineWidth: 1) }
+        .background(Theme.surface, in: Rectangle())
+        .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: 1) }
     }
 }
 
@@ -574,12 +574,12 @@ struct OPDSBrowser: View {
         HStack(spacing: 16) {
             AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { BookCoverView(title: entry.title, color: "gray", width: 44) }
                 .frame(width: 44, height: 63)
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .clipShape(Rectangle())
             VStack(alignment: .leading, spacing: 6) {
                 Text(entry.title).font(Theme.serifSemibold(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
                 if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
                 Text(acquisition.fileExtension.uppercased()).font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.accent)
-                    .padding(.horizontal, 6).padding(.vertical, 2).background(Capsule().fill(Theme.accentSoft))
+                    .padding(.horizontal, 6).padding(.vertical, 2).background(Rectangle().fill(Theme.accentSoft))
             }
             Spacer()
             Label("导入", systemImage: Icon.downloadFile)
@@ -720,7 +720,7 @@ struct WiFiTransferView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(24).frame(maxWidth: .infinity, minHeight: 180, alignment: .leading)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                .background(Theme.surface, in: Rectangle())
 
                 if let address = server.address {
                     VStack(alignment: .leading, spacing: 8) {
@@ -744,18 +744,18 @@ struct WiFiTransferView: View {
                         .font(.caption).foregroundStyle(Theme.accent)
                     }
                     .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 8)
-                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+                    .background(Theme.accentSoft, in: Rectangle())
                 } else if let error = server.error {
                     VStack(alignment: .leading, spacing: 12) {
                         Label(error, systemImage: Icon.warning).font(.subheadline).foregroundStyle(Theme.danger)
                         Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
                             .buttonStyle(SecondaryButtonStyle())
                     }
-                    .padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(20).background(Theme.surface, in: Rectangle())
                 } else {
                     ProgressView("正在启动传书服务…").font(.subheadline)
                         .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.surface, in: Rectangle())
                 }
 
                 HStack(spacing: 12) {
@@ -769,14 +769,14 @@ struct WiFiTransferView: View {
                         .font(.caption).foregroundStyle(Theme.accent).monospacedDigit()
                 }
                 .padding(16).frame(minHeight: 64)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.surface, in: Rectangle())
                 if !server.received.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(server.received.reversed().enumerated()), id: \.offset) { _, line in
                             Text(line).font(.caption)
                                 .foregroundStyle(line.hasPrefix("✗") ? Theme.danger : Theme.ink2)
                                 .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                                .background(Theme.surface, in: Rectangle())
                         }
                     }
                 }

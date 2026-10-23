@@ -145,7 +145,7 @@ struct PlayerView: View {
     private func hero(_ book: Book) -> some View {
         let meta = "第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章"
         return VStack(alignment: .leading, spacing: 8) {
-            // v22 顶栏：左收起、报纸蓝「看原文」、右侧目录与低频操作；眉题另起一栏，不与按钮叠放
+            // v23 顶栏：左收起、下划线「看原文」、右侧目录与低频操作；眉题另起一栏，不与按钮叠放
             HStack(spacing: 4) {
                 Button { dismiss() } label: {
                     ThemeIcon(symbol: Icon.collapse, size: 22)
@@ -160,7 +160,8 @@ struct PlayerView: View {
                     else { dismiss(); model.showingPlayer = false; model.selectedBook = book }
                 } label: {
                     Text("看原文")
-                        .font(.subheadline.weight(.medium)).foregroundStyle(Theme.link)
+                        .font(.subheadline.weight(.bold)).foregroundStyle(Theme.link)
+                        .underline(color: Theme.link)
                         .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityLabel("看原文")
@@ -186,35 +187,41 @@ struct PlayerView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, -10)
-            // 报刊栏目条：墨线 + 眉题与章节 + 细线
+            // 杂志栏目条：3pt 墨线 + 刊红眉题与章节 + 细线
             VStack(spacing: 0) {
-                Rectangle().fill(Theme.rulePaint).frame(height: 1)
+                Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy)
                 HStack {
-                    Text("听书 · 正在朗读").font(Theme.kicker).tracking(1.5)
+                    Text("听书 · 正在朗读").font(Theme.kicker).tracking(1.5).foregroundStyle(Theme.accent)
                     Spacer(minLength: 8)
-                    Text(meta).font(.caption2).foregroundStyle(Theme.ink2)
+                    Text(meta).font(.caption2.weight(.semibold)).monospacedDigit().foregroundStyle(Theme.ink2)
                         .accessibilityIdentifier("player.currentChapter")
                 }
                 .padding(.vertical, 7)
                 Rectangle().fill(Theme.line).frame(height: 1)
             }
-            VStack(spacing: 6) {
+            // 红框封面在左、宋体书名在右，像杂志目录页的封面故事条目
+            HStack(alignment: .top, spacing: 16) {
                 if !typeSize.isAccessibilitySize {
                     Button { showingCover = true } label: {
-                        BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 64)
+                        BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 78)
                     }.buttonStyle(.plain).accessibilityLabel("查看《\(book.title)》封面")
                         .accessibilityIdentifier("player.cover")
                 }
-                Text(book.title)
-                    .font(Theme.serifBold(24, relativeTo: .title2)).serifEmbolden(24)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                if !book.author.isEmpty {
-                    Text(book.author).font(.caption).foregroundStyle(Theme.ink2)
-                        .multilineTextAlignment(.center)
+                VStack(alignment: .leading, spacing: 6) {
+                    if !player.chapterTitle.isEmpty {
+                        Text(player.chapterTitle).font(Theme.kicker).tracking(1.2).foregroundStyle(Theme.ink2)
+                            .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                    }
+                    Text(book.title)
+                        .font(Theme.serifBold(26, relativeTo: .title2)).serifEmbolden(26)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !book.author.isEmpty {
+                        Text(book.author).font(.caption).foregroundStyle(Theme.ink2)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
         }
         .foregroundStyle(content)
@@ -331,12 +338,12 @@ struct PlayerView: View {
                 .accessibilityIdentifier("player.previousSentence")
             Button { Haptics.light(); player.toggle() } label: {
                 ZStack {
-                    Circle().fill(Theme.clay)
+                    Rectangle().fill(Theme.clay)
                     if player.buffering { ProgressView().tint(Theme.onClay) }
-                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 26).foregroundStyle(Theme.onClay) }
+                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 28).foregroundStyle(Theme.onClay) }
                 }
-                .frame(width: 64, height: 64)
-                .contentShape(Circle())
+                .frame(width: 68, height: 68)
+                .contentShape(Rectangle())
             }
             .buttonStyle(PressButtonStyle(scale: 0.94))
             .accessibilityLabel(player.buffering ? "正在准备声音" : (player.playing ? "暂停朗读" : "继续朗读"))
@@ -381,13 +388,13 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    /// v22 报刊工具：线性图标在上、小字在下，无边框；开启状态加粗并加下划线。
+    /// v23 杂志工具：线性图标在上、小字在下，无边框；开启状态转刊红加粗并加下划线。
     private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
         VStack(spacing: 4) {
             ThemeIcon(symbol: symbol, size: 21)
-            Text(L(title)).font(.caption.weight(highlighted ? .bold : .regular))
-                .foregroundStyle(highlighted ? Theme.ink : Theme.ink2)
-                .underline(highlighted, color: Theme.ink)
+            Text(L(title)).font(.caption.weight(highlighted ? .bold : .medium))
+                .foregroundStyle(highlighted ? Theme.accent : Theme.ink2)
+                .underline(highlighted, color: Theme.accent)
                 .lineLimit(1).minimumScaleFactor(0.8)
         }
         .foregroundStyle(content)
@@ -456,7 +463,7 @@ private struct TransportButton: View {
 
 /// 直接拖动本章句子；触摸松手才跳转，VoiceOver / 键盘逐句调整。
 /// 拖动中自然跨章或换书时放弃旧目标，不能误跳新章节。
-/// v21 刻度进度轨：33 根 1px 刻度，已播 20px 蓝色、未播 8px 灰色，10px 蓝圆点 thumb。
+/// 刻度进度轨：33 根 1px 刻度，已播 20px 刊红、未播 8px 灰色，墨色竖杠 thumb。
 /// 刻度轨本体直接承载拖动：v21 初版叠了一层 opacity 0.02 的隐形 Slider 作交互层，
 /// 但低透明度视图被 UIKit 命中测试排除，真实触摸与 XCUITest 拖动都穿过了它，滑杆不可拖。
 private struct SentenceProgressControl: View {
@@ -484,9 +491,10 @@ private struct SentenceProgressControl: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    Circle().fill(Theme.clay)
-                        .frame(width: 10, height: 10)
-                        .position(x: min(max(5, geo.size.width * progress), max(5, geo.size.width - 5)), y: 22)
+                    // 墨色竖杠指针：与刊红已播刻度对比，像杂志页边的标尺
+                    Rectangle().fill(Theme.ink)
+                        .frame(width: 3, height: 28)
+                        .position(x: min(max(2, geo.size.width * progress), max(2, geo.size.width - 2)), y: 22)
                 }
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -806,7 +814,7 @@ struct VoiceSettingsView: View {
         Section {
             HStack(spacing: 12) {
                 Image(systemName: Icon.voice).font(.system(size: 21)).foregroundStyle(Theme.onAccent)
-                    .frame(width: 44, height: 44).background(Theme.auroraGradient, in: RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 44, height: 44).background(Theme.auroraGradient, in: Rectangle())
                 VStack(alignment: .leading, spacing: 4) {
                     Text(currentVoiceName).font(.body.weight(.semibold)).foregroundStyle(Theme.ink)
                     Text(currentVoiceSubtitle).font(.caption2).foregroundStyle(Theme.ink3)

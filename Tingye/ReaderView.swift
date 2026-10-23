@@ -139,8 +139,15 @@ struct ReaderView: View {
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
     /// 报刊风格：强调色就是当前纸上的墨色，与听书页的黑色播放键、墨线一致；任何纸色都天然有足够对比。
-    private var readerAccent: Color { prefs.foreground }
-    private var readerOnAccent: Color { prefs.background }
+    /// 灯琥珀随纸色取值：默认纸跟随外观，深色纸提亮，浅色纸用标准琥珀；主色上的字相应取白或纸色。
+    private var readerAccent: Color {
+        if prefs.kind == .paper { return Theme.clay }
+        return prefs.kind.dark ? Color(hex: 0xD9A05B) : Color(hex: 0x9C5B24)
+    }
+    private var readerOnAccent: Color {
+        if prefs.kind == .paper { return Theme.onClay }
+        return prefs.kind.dark ? prefs.background : .white
+    }
     private var readerPanelPaper: Color { paper == "paper" ? Theme.surface : prefs.background }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
@@ -532,7 +539,7 @@ struct ReaderView: View {
         }
         .foregroundStyle(selected ? readerAccent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .overlay(alignment: .bottom) { if selected { Rectangle().fill(readerAccent).frame(width: 24, height: 2) } }
+        .overlay(alignment: .top) { if selected { Rectangle().fill(readerAccent).frame(width: 28, height: 3) } }
         .contentShape(Rectangle())
     }
 
@@ -563,7 +570,7 @@ struct ReaderView: View {
             } else { listeningStatus }
             Button { togglePlayback() } label: {
                 ZStack {
-                    Circle().fill(readerAccent)
+                    Rectangle().fill(readerAccent)
                     if player.buffering { ProgressView().tint(readerOnAccent) }
                     else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(readerOnAccent) }
                 }
@@ -576,7 +583,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 64)
         .overlay(alignment: .top) {
-            ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 2)
+            ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 3)
                 .accessibilityHidden(true)
         }
         .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in

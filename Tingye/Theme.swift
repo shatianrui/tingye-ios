@@ -3,36 +3,36 @@ import UIKit
 import CoreImage
 import Pow
 
-/// 听页 · 报刊 Times（v22）。借鉴《纽约时报》：白纸黑字、宋体粗标题、1px 细线分栏、居中报头。
-/// 几乎不用颜色：强调靠墨色与字重，唯一的彩色是报纸蓝链接 #326891；按钮直角黑底，无阴影无渐变。
-/// 设计稿：Figma「听页 Tingye · v22 Redesign」Direction D。
+/// 听页 · 温暖纸质 · 灯下书斋（v24）。暖纸底、墨棕文字、宋体衬线标题，安静书房气质。
+/// 唯一的彩色是灯琥珀 #9C5B24（白字对比 5.35:1）：眉题、主按钮、进度、播放键与页签指示；其余靠墨色与字重。
+/// 设计稿：Design/v21-swiss-draft「听页 Tingye · 温暖纸质 · 灯下书斋」。
 enum Theme {
-    static let bg = dynamic(0xFFFFFF, 0x121212)
-    static let surface = dynamic(0xFFFFFF, 0x121212)
-    /// 新闻纸底：迷你播放器、引文框等次级面。
-    static let surface2 = dynamic(0xF7F5F0, 0x1D1D1D)
-    static let ink = dynamic(0x121212, 0xF2F2F2)
-    static let ink2 = dynamic(0x5A5A5A, 0xA8A8A8)
+    static let bg = dynamic(0xF8F3E9, 0x171310)
+    static let surface = dynamic(0xFDFBF5, 0x211B15)
+    /// 次级暖纸面：迷你播放器、摘句框等次级面。
+    static let surface2 = dynamic(0xF1EADC, 0x2A231B)
+    static let ink = dynamic(0x2E2418, 0xE9DFCE)
+    static let ink2 = dynamic(0x7A6A55, 0xA6957D)
     static let ink3 = ink2
-    /// 细线：栏目之间一律 1px 浅灰；报头双线与栏目首线用墨色 `rulePaint`。
-    static let line = dynamic(0xDFDFDF, 0x333333)
+    /// 暖调发丝线：条目之间 1px；栏目首线与报头线用墨色 `rulePaint`。
+    static let line = dynamic(0xE3D8C3, 0x3A3026)
     static let rulePaint = ink
-    static let onInk = dynamic(0xFFFFFF, 0x121212)
+    static let onInk = dynamic(0xFDFBF5, 0x171310)
     static let cardEdge = line
-    /// 墨·填充面：主按钮、进度、播放键。深色模式反转为白底黑字。
-    static let clay = ink
-    static let onClay = onInk
-    /// 强调即墨色：选中态、编号、图标高亮都用墨，不引入第二种颜色。
-    static let accent = ink
-    /// 选中浅底：浅灰新闻纸。
-    static let accentSoft = dynamic(0xEFEDE8, 0x262626)
-    static let onAccent = onInk
-    /// 报纸蓝：仅用于文字链接（「全部书架」「看原文」）。
-    static let link = dynamic(0x326891, 0x8DB6D8)
+    /// 灯琥珀·填充面：主按钮、进度、播放键。深色模式提亮为浅琥珀，深字仍过对比度。
+    static let clay = dynamic(0x9C5B24, 0xD9A05B)
+    static let onClay = dynamic(0xFDFBF5, 0x171310)
+    /// 灯琥珀·文字：眉题、编号、选中态。深色模式提亮，保证在墨底上可读。
+    static let accent = dynamic(0x9C5B24, 0xD9A05B)
+    /// 选中浅底：极淡的琥珀。
+    static let accentSoft = dynamic(0xFBF3E8, 0x2A231B)
+    static let onAccent = onClay
+    /// 文字链接：墨色加下划线，不另引入颜色（「全部书架」「看原文」）。
+    static let link = ink
     static let marker = clay
     static let onMarker = onClay
-    /// 跟读当前句：报纸荧光笔的淡黄。
-    static let readingHighlight = dynamic(0xFBF1C7, 0x3A3320)
+    /// 跟读当前句：淡琥珀底，配合左侧琥珀竖条。
+    static let readingHighlight = dynamic(0xF5E4CC, 0x3A3026)
     static let hero = surface2
     static let heroInk = ink
     static let forest = accent
@@ -57,10 +57,10 @@ enum Theme {
 
     static let inset: CGFloat = 24
     static let pageWidth: CGFloat = 720
-    /// 报刊尺度：近乎直角——卡片 2、徽章 0、按钮 3。
-    static let radius: CGFloat = 2
-    static let radiusSmall: CGFloat = 0
-    static let buttonRadius: CGFloat = 3
+    /// 纸质尺度：卡片与按钮 10、徽章 4，温润小圆角。
+    static let radius: CGFloat = 10
+    static let radiusSmall: CGFloat = 4
+    static let buttonRadius: CGFloat = 10
     static let buttonHeight: CGFloat = 46
     static let iconButtonSize: CGFloat = 44
     static let ruleHeavy: CGFloat = 3
@@ -103,12 +103,12 @@ enum Theme {
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
     /// 占位封使用低饱和书刊纸色，随日夜切换；真实导入书封不反色。
     static func coverUIColor(_ color: String) -> UIColor {
-        // v22 占位封：三种低饱和新闻纸色，按书的色名稳定分配；深色模式统一压暗。
+        // 占位封：三种低饱和暖纸色，按书的色名稳定分配；深色模式统一压暗。
         let papers: [UInt32] = [0xEDE7DA, 0xE3E6E1, 0xE9E2DF]
         let light = papers[color.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % papers.count]
-        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x262626) : UIColor(hex: light) }
+        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x2A231B) : UIColor(hex: light) }
     }
-    static func coverForeground(_ color: String) -> Color { dynamic(0x121212, 0xF2F2F2) }
+    static func coverForeground(_ color: String) -> Color { dynamic(0x2E2418, 0xE9DFCE) }
 
     /// 纯色色块（保留渐变签名，便于沿用调用处）。
     static func coverGradient(_ color: String) -> LinearGradient {
@@ -169,12 +169,14 @@ extension View {
 
     /// 内置思源宋体只有常规字重：标题用两层亚像素位移叠印加粗，得到报纸标题的粗宋分量。
     func serifEmbolden(_ size: CGFloat) -> some View { modifier(SerifEmbolden(amount: max(0.3, size * 0.026))) }
+    /// 刊名与封面大标题用的特粗档，接近设计稿的宋体 900。
+    func serifHeavy(_ size: CGFloat) -> some View { modifier(SerifEmbolden(amount: max(0.6, size * 0.042))) }
 
     func paperBackground() -> some View {
         self.background { Theme.bg.ignoresSafeArea() }
     }
 
-    /// 刊跟读：信号蓝浅底与信号蓝竖条共同标记当前句，不只依赖颜色。
+    /// 跟读：淡琥珀底与琥珀竖条共同标记当前句，不只依赖颜色。
     func markerHighlight() -> some View {
         self
             .foregroundStyle(Theme.ink)
@@ -434,9 +436,9 @@ struct SealBadge: View {
     }
 }
 
-// MARK: - 按钮（报刊直角，主次明确）
+// MARK: - 按钮（温润圆角，主次明确）
 
-/// 墨底直角主操作、墨线次操作：报刊的 3px 圆角按钮。
+/// 灯琥珀圆角主操作、2pt 墨框次操作。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -445,7 +447,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     var foreground: Color = Theme.onClay
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(.subheadline.weight(.bold))
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 18).padding(.vertical, 10)
@@ -466,14 +468,14 @@ struct SecondaryButtonStyle: ButtonStyle {
     var emphasized = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.medium))
+            .font(.subheadline.weight(.bold))
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 18).padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(emphasized ? Theme.accent : Theme.ink)
             .background(configuration.isPressed ? Theme.surface2 : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(emphasized ? Theme.accent : Theme.rulePaint, lineWidth: 1) }
+            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(emphasized ? Theme.accent : Theme.rulePaint, lineWidth: 2) }
             .animation(Theme.pressSpring, value: configuration.isPressed)
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : 0.4)
@@ -487,18 +489,18 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 胶囊筛选：选中实心墨底，未选中 1px 描边。
+/// 直角筛选块：选中实心墨底，未选中 1px 描边。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(selected ? .semibold : .regular))
+            .font(.subheadline.weight(selected ? .bold : .regular))
             .foregroundStyle(selected ? Theme.onInk : Theme.ink)
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            .background(selected ? Theme.ink : .clear, in: Capsule())
-            .overlay { if !selected { Capsule().strokeBorder(Theme.line, lineWidth: 1) } }
-            .contentShape(Capsule())
+            .background(selected ? Theme.ink : .clear, in: Rectangle())
+            .overlay { if !selected { Rectangle().strokeBorder(Theme.line, lineWidth: 1) } }
+            .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
@@ -572,13 +574,13 @@ struct Card<Content: View>: View {
     }
 }
 
-/// 设置项图标：单色线性图标，不再用彩色方块。
+/// 设置项图标：墨色线性图标，琥珀留给编号与眉题。
 struct SettingsIcon: View {
     let systemName: String
     let color: Color
     var body: some View {
         ThemeIcon(symbol: systemName, size: 22, weight: .medium)
-            .foregroundStyle(color == Theme.danger ? Theme.danger : Theme.accent)
+            .foregroundStyle(color == Theme.danger ? Theme.danger : Theme.ink)
             .frame(width: 32, height: 32)
             .accessibilityHidden(true)
     }
@@ -623,7 +625,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, 0.5)).accessibilityHidden(true) }
 }
 
-/// 报刊栏目标题：黑体粗宽字距眉题（可带编号），墨色。
+/// 纸质栏目标题：黑体粗宽字距眉题（可带编号），灯琥珀。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -638,7 +640,7 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             if let number { Text(number).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.accent) }
-            Text(L(text).localUppercased).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink)
+            Text(L(text).localUppercased).font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.accent)
             if let badge { SealBadge(text: badge) }
         }
         .accessibilityElement(children: .combine)
@@ -660,15 +662,15 @@ struct PageMasthead: View {
         VStack(alignment: .leading, spacing: 8) {
             if kicker != nil || issue != nil {
                 HStack {
-                    if let kicker { Text(L(kicker)).foregroundStyle(Theme.ink2) }
+                    if let kicker { Text(L(kicker)).foregroundStyle(Theme.accent) }
                     Spacer()
-                    if let issue { Text(L(issue)).foregroundStyle(Theme.accent) }
+                    if let issue { Text(L(issue)).foregroundStyle(Theme.ink2) }
                 }
                 .font(Theme.masthead).tracking(1.5)
                 .accessibilityHidden(true)
             }
             Text(L(title))
-                .font(Theme.serifBold(34, relativeTo: .largeTitle)).serifEmbolden(34)
+                .font(Theme.serifBold(34, relativeTo: .largeTitle)).serifHeavy(34)
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -704,7 +706,8 @@ struct ProgressBar: View {
 
 // MARK: - 书籍封面
 
-/// 真实书封完整显示；无图时使用报刊占位封：新闻纸色 + 宋体粗书名 + 底部一道墨线。
+/// 真实书封完整显示；无图时使用纸质占位封：暖纸色 + 宋体粗书名 + 底部一道墨线。
+/// 不论有无书封，外圈都是 1px 暖调发丝线与 10pt 圆角。
 struct BookCoverView: View {
     let title: String
     var color = "ink"
@@ -733,8 +736,8 @@ struct BookCoverView: View {
         }
         .animation(.easeOut(duration: 0.35), value: image != nil)
         .frame(width: width, height: width / 0.75)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
         .accessibilityElement()
         .accessibilityLabel("《\(title)》封面")
     }
@@ -773,8 +776,8 @@ struct BookCoverView: View {
                 }
             }
             .padding(.leading, max(8, width * 0.12))
-            .padding(.trailing, max(7, width * 0.08))
-            .padding(.vertical, max(9, width * 0.1))
+            .padding(.trailing, max(8, width * 0.1))
+            .padding(.vertical, max(9, width * 0.11))
         }
         .frame(width: width, height: width / 0.75)
     }
@@ -892,9 +895,12 @@ struct ReaderPreferences: Equatable {
         case .paper:   return ReaderPaper.xuanSecondary
         }
     }
-    /// 原生分页与原书图文共用荧光笔黄跟读标记，纸色设置不变。
-    var highlightBand: UIColor { UIColor(hex: 0xE0B400) }
-    /// 连续滚动模式整句铺底：半透明荧光笔黄
+    /// 原生分页与原书图文共用琥珀跟读标记（铺底时取低透明度成淡琥珀），纸色设置不变；深色纸用提亮的琥珀。
+    var highlightBand: UIColor {
+        let darkPaper = kind.dark
+        return UIColor { $0.userInterfaceStyle == .dark || darkPaper ? UIColor(hex: 0xD9A05B) : UIColor(hex: 0x9C5B24) }
+    }
+    /// 连续滚动模式整句铺底：半透明琥珀
     var highlight: UIColor {
         let band = highlightBand, darkPaper = kind.dark
         return UIColor { band.resolvedColor(with: $0).withAlphaComponent($0.userInterfaceStyle == .dark || darkPaper ? 0.26 : 0.22) }

@@ -76,13 +76,16 @@ struct StatsView: View {
                     .accessibilityLabel("更多阅读数据操作")
                 }
                 .font(.subheadline).foregroundStyle(Theme.ink2)
-                HStack(spacing: 6) {
+                .padding(.bottom, -14)
+                Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
+                // 区间切换：2pt 墨框分段，选中实心墨底
+                HStack(spacing: 0) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
-                            Text(L(item.rawValue)).font(.subheadline.weight(period == item ? .bold : .regular))
-                                .foregroundStyle(period == item ? Theme.ink : Theme.ink3)
+                            Text(L(item.rawValue)).font(.subheadline.weight(period == item ? .bold : .medium))
+                                .foregroundStyle(period == item ? Theme.onInk : Theme.ink)
                                 .frame(maxWidth: .infinity, minHeight: 44)
-                                .overlay(alignment: .bottom) { Rectangle().fill(period == item ? Theme.clay : Theme.line).frame(height: period == item ? 3 : 1) }
+                                .background(period == item ? Theme.ink : .clear)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -90,6 +93,7 @@ struct StatsView: View {
                         .accessibilityLabel("按" + item.rawValue + "查看")
                     }
                 }
+                .overlay { Rectangle().strokeBorder(Theme.rulePaint, lineWidth: 2) }
                 .onChange(of: period) { _, _ in offset = 0 }
                 if period != .all { periodNavigation }
                 header
@@ -140,13 +144,18 @@ struct StatsView: View {
         let unclassified = max(0, totalSeconds - reading - listening)
         return VStack(alignment: .leading, spacing: 8) {
             Text(period == .day && offset == 0 ? "今天 · 留给阅读的时间" : "留给阅读的时间")
-                .font(Theme.kicker).tracking(0.6).foregroundStyle(Theme.ink3)
-            HStack(alignment: .firstTextBaseline, spacing: 7) {
-                Text(Self.durationNumber(totalSeconds))
-                    .font(Theme.display(durationSize * 1.6, relativeTo: .largeTitle)).monospacedDigit()
-                    .minimumScaleFactor(0.5).lineLimit(1)
-                Text(Self.durationUnit(totalSeconds)).font(.body).foregroundStyle(Theme.ink2)
+                .font(Theme.kicker).tracking(1.5).foregroundStyle(Theme.accent)
+            // 封面大数字：黑体特粗 + 下压刊红粗杠
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    Text(Self.durationNumber(totalSeconds))
+                        .font(.system(size: durationSize * 1.9, weight: .black)).monospacedDigit()
+                        .minimumScaleFactor(0.5).lineLimit(1)
+                    Text(Self.durationUnit(totalSeconds)).font(.body.weight(.semibold)).foregroundStyle(Theme.ink2)
+                }
+                Rectangle().fill(Theme.clay).frame(width: 96, height: 6).accessibilityHidden(true)
             }
+            .fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(Theme.ink).accessibilityElement(children: .combine)
             summaryLayout {
                 Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Rectangle().fill(Theme.ink).frame(width: 8, height: 8) }
@@ -248,7 +257,7 @@ struct StatsView: View {
                 .font(.caption)
                 .foregroundStyle(Theme.ink2)
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text("\(value)").scaledFont(28, weight: .medium, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
+                Text("\(value)").scaledFont(28, weight: .heavy, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
                 Text(L(unit)).font(.caption).foregroundStyle(Theme.ink3)
             }
         }
@@ -471,12 +480,9 @@ struct StatsView: View {
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("设置")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
+            SectionTitle(text: "设置")
                 .frame(minHeight: 44)
-                .padding(.top, 8)
-                .accessibilityAddTraits(.isHeader)
             settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
                 .accessibilityIdentifier("profile.reading")
             settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
@@ -506,7 +512,7 @@ struct StatsView: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 ThemeIcon(symbol: icon, size: 22, weight: .medium)
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.ink)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {

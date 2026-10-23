@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导入传书</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+
+/* ============================================================
+   听页 Tingye · 温暖纸质 / 灯下书斋 (Warm Paper · Lamplight Study)
+   Brand prefix: ty
+   暖纸色 · 宋体衬线 · 墨棕 + 单一灯琥珀
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：灯琥珀） ---------- */
+  --ty-primary-50:  #FBF3E8;
+  --ty-primary-100: #F5E4CC;
+  --ty-primary-200: #EAC9A0;
+  --ty-primary-300: #DCA96F;
+  --ty-primary-400: #C98A4B;
+  --ty-primary-500: #9C5B24;
+  --ty-primary-600: #82491B;
+  --ty-primary-700: #683A15;
+
+  /* ---------- 中性阶（暖纸墨棕） ---------- */
+  --ty-neutral-0:   #FDFBF5;
+  --ty-neutral-50:  #F8F3E9;
+  --ty-neutral-100: #F1EADC;
+  --ty-neutral-200: #E3D8C3;
+  --ty-neutral-300: #CFC0A5;
+  --ty-neutral-400: #A6957D;
+  --ty-neutral-500: #7A6A55;
+  --ty-neutral-700: #4A3D2E;
+  --ty-neutral-900: #2E2418;
+  --ty-neutral-950: #171310;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #4A7C59;
+  --state-warning: #B07A2A;
+  --state-error:   #B3402E;
+  --state-info:    #9C5B24;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-50);
+  --ty-foreground:         var(--ty-neutral-900);
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    var(--ty-neutral-900);
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FDFBF5;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   var(--ty-neutral-500);
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-100);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（温润的纸质尺度） ---------- */
+  --ty-radius-sm:    4px;
+  --ty-radius-md:    10px;
+  --ty-radius-lg:    14px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --ty-font-sans: "PingFang SC", -apple-system, "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（暖调，静态面阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(93, 64, 28, 0.05);
+  --ty-shadow-float:   0 8px 24px rgba(93, 64, 28, 0.12), 0 2px 6px rgba(93, 64, 28, 0.06);
+}
+
+/* ---------- 语义别名 · 深色（夜读灯下） ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #E9DFCE;
+  --ty-card:               #211B15;
+  --ty-card-foreground:    #E9DFCE;
+  --ty-popover:            #211B15;
+  --ty-popover-foreground: #E9DFCE;
+  --ty-primary:            #D9A05B;
+  --ty-primary-foreground: #171310;
+  --ty-muted:              #2A231B;
+  --ty-muted-foreground:   #A6957D;
+  --ty-border:             #3A3026;
+  --ty-input:              #3A3026;
+  --ty-ring:               #D9A05B;
+
+  --ty-surface-sunken:     #120F0C;
+  --ty-hairline:           #3A3026;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（温暖纸质字体阶梯：标题用宋体衬线） ---------- */
+.ty-display {
+  font-family: var(--ty-font-serif);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.22;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.ty-body {
+  font-family: var(--ty-font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.78;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 纸质标签：黑体小字、宽字距，用于元数据/栏目眉题 */
+.ty-label {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="pg-wrap">
+      <!-- 页眉 -->
+      <header class="pg-header">
+        <a href="#" data-dom-id="back-library" class="pg-back" aria-label="返回书库">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        <h1 class="ty-h1 pg-title">导入传书</h1>
+      </header>
+
+      <!-- 导入方式卡列表 -->
+      <section class="pg-section">
+        <h2 class="ty-label pg-eyebrow">导入方式</h2>
+        <div class="pg-methods">
+          <button type="button" class="pg-method">
+            <span class="pg-method-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 12v6"/></svg>
+            </span>
+            <span class="pg-method-body">
+              <span class="pg-method-title">本地文件</span>
+              <span class="pg-method-desc">直接从手机存储选书导入</span>
+            </span>
+            <svg class="pg-method-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+
+          <button type="button" class="pg-method">
+            <span class="pg-method-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg>
+            </span>
+            <span class="pg-method-body">
+              <span class="pg-method-title">Wi-Fi 传书</span>
+              <span class="pg-method-desc">电脑浏览器无线传输，已开启</span>
+            </span>
+            <svg class="pg-method-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+
+          <button type="button" class="pg-method">
+            <span class="pg-method-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg>
+            </span>
+            <span class="pg-method-body">
+              <span class="pg-method-title">局域网共享</span>
+              <span class="pg-method-desc">读取 NAS 或电脑共享的书夹</span>
+            </span>
+            <svg class="pg-method-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+
+          <button type="button" class="pg-method">
+            <span class="pg-method-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+            </span>
+            <span class="pg-method-body">
+              <span class="pg-method-title">云盘导入</span>
+              <span class="pg-method-desc">连接云存储，一键取书入库</span>
+            </span>
+            <svg class="pg-method-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- 传书说明 -->
+      <section class="pg-section">
+        <h2 class="ty-label pg-eyebrow">传书说明</h2>
+        <div class="pg-wifi">
+          <div class="pg-wifi-head">
+            <span class="pg-dot" aria-hidden="true"></span>
+            <span class="ty-label pg-wifi-label">WIFI 传书 · 已开启</span>
+          </div>
+          <div class="pg-wifi-row">
+            <p class="pg-addr">http://<wbr>192.168.1.8:8080</p>
+            <button type="button" class="pg-copy-btn" aria-label="复制地址">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <h3 class="ty-label pg-eyebrow pg-sub">三步完成</h3>
+        <div class="pg-steps">
+          <div class="pg-step">
+            <span class="pg-step-num" aria-hidden="true">01</span>
+            <p class="ty-body pg-step-text">电脑浏览器打开上方地址</p>
+          </div>
+          <div class="pg-step">
+            <span class="pg-step-num" aria-hidden="true">02</span>
+            <p class="ty-body pg-step-text">把 EPUB / TXT 文件拖入页面</p>
+          </div>
+          <div class="pg-step">
+            <span class="pg-step-num" aria-hidden="true">03</span>
+            <p class="ty-body pg-step-text">自动入库并同步阅读进度</p>
+          </div>
+        </div>
+
+        <h3 class="ty-label pg-eyebrow pg-sub">支持格式</h3>
+        <div class="pg-chips">
+          <span class="pg-chip">EPUB</span>
+          <span class="pg-chip">TXT</span>
+          <span class="pg-chip">PDF</span>
+          <span class="pg-chip">MOBI</span>
+          <span class="pg-chip">AZW3</span>
+        </div>
+      </section>
+
+      <!-- 主行动 -->
+      <section class="pg-cta-wrap">
+        <button type="button" class="pg-cta">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+          <span>从本地文件导入</span>
+        </button>
+      </section>
+    </main>
+
+    <style id="critical-layout">
+      .pg-wrap { max-width: 28rem; margin: 0 auto; padding: 0 20px 44px; }
+      .pg-header { display: flex; align-items: center; gap: 10px; height: 56px; border-bottom: 1px solid var(--ty-hairline); }
+      .pg-back { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin-left: -9px; border-radius: var(--ty-radius-md); color: var(--ty-foreground); transition: background-color 140ms ease; }
+      .pg-back:hover { background-color: var(--ty-surface-sunken); }
+      .pg-back:active { background-color: var(--ty-muted); }
+      .pg-title { font-size: 20px; }
+      .pg-section { margin-top: 28px; }
+      .pg-eyebrow { color: var(--ty-muted-foreground); }
+      .pg-sub { margin-top: 22px; }
+      .pg-methods { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+      .pg-method { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; background: var(--ty-card); border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-lg); text-align: left; cursor: pointer; transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease; }
+      .pg-method:hover { border-color: var(--ty-neutral-300); box-shadow: var(--ty-shadow-hairline); }
+      .pg-method:active { background-color: var(--ty-surface-sunken); }
+      .pg-method-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; color: var(--ty-foreground); }
+      .pg-method-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+      .pg-method-title { font-family: var(--ty-font-sans); font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--ty-foreground); }
+      .pg-method-desc { font-family: var(--ty-font-serif); font-size: 13px; line-height: 1.5; letter-spacing: 0.01em; color: var(--ty-muted-foreground); }
+      .pg-method-arrow { flex-shrink: 0; color: var(--ty-neutral-400); }
+      .pg-wifi { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; padding: 18px 20px; background: var(--ty-surface-sunken); border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-lg); }
+      .pg-wifi-head { display: flex; align-items: center; gap: 8px; }
+      .pg-dot { width: 8px; height: 8px; border-radius: var(--ty-radius-full); background: var(--state-success); flex-shrink: 0; }
+      .pg-wifi-label { color: var(--ty-muted-foreground); }
+      .pg-wifi-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+      .pg-addr { font-family: var(--ty-font-mono); font-size: 19px; line-height: 1.4; letter-spacing: -0.01em; word-break: break-all; color: var(--ty-foreground); }
+      .pg-copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-md); background: var(--ty-card); color: var(--ty-muted-foreground); cursor: pointer; transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease; }
+      .pg-copy-btn:hover { border-color: var(--ty-neutral-300); color: var(--ty-foreground); }
+      .pg-copy-btn:active { background-color: var(--ty-muted); }
+      .pg-steps { display: flex; flex-direction: column; margin-top: 10px; }
+      .pg-step { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; }
+      .pg-step + .pg-step { border-top: 1px solid var(--ty-hairline); }
+      .pg-step-num { font-family: var(--ty-font-mono); font-size: 17px; font-weight: 500; line-height: 1.55; color: var(--ty-muted-foreground); font-variant-numeric: tabular-nums; }
+      .pg-step-text { font-size: 15px; color: var(--ty-foreground); }
+      .pg-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+      .pg-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 11px; border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-sm); background: var(--ty-card); font-family: var(--ty-font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ty-foreground); }
+      .pg-cta-wrap { margin-top: 32px; }
+      .pg-cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; border: none; border-radius: var(--ty-radius-md); background: var(--ty-primary); color: var(--ty-primary-foreground); font-family: var(--ty-font-sans); font-size: 15px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; box-shadow: var(--ty-shadow-hairline); transition: background-color 140ms ease, transform 140ms ease; }
+      .pg-cta:hover { background-color: var(--ty-primary-600); }
+      .pg-cta:active { background-color: var(--ty-primary-700); transform: translateY(1px); }
+      .pg-back:focus-visible, .pg-method:focus-visible, .pg-copy-btn:focus-visible, .pg-cta:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) {
+        .pg-back, .pg-method, .pg-copy-btn, .pg-cta { transition: none; }
+        .pg-cta:active { transform: none; }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

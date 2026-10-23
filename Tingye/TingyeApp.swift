@@ -279,7 +279,7 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 报刊页签：顶部一道墨线；图标 + 11px 标签，选中项由墨色与宋体粗字共同标记。
+/// 杂志页签：顶部一道墨线；选中项顶上压一条刊红短杠，图标与宋体粗字转墨色，未选中为灰。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -295,12 +295,17 @@ private struct LibraryNavigationBar: View {
                     let selected = model.tab == index
                     Button { Haptics.selection(); model.tab = index } label: {
                         VStack(spacing: 3) {
-                            ThemeIcon(symbol: items[index].1, size: 20, weight: .medium)
+                            ThemeIcon(symbol: items[index].1, size: 20, weight: selected ? .semibold : .regular)
                             Text(L(items[index].0))
-                                .font(selected ? Theme.serifBold(11) : .system(size: 11))
+                                .font(selected ? Theme.serifBold(12) : Theme.serif(12))
                         }
-                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
+                        .foregroundStyle(selected ? Theme.ink : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 50)
+                        .padding(.top, 8)
+                        .overlay(alignment: .top) {
+                            Rectangle().fill(selected ? Theme.clay : .clear).frame(width: 36, height: 4)
+                                .accessibilityHidden(true)
+                        }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.96))
@@ -309,7 +314,6 @@ private struct LibraryNavigationBar: View {
                     .accessibilityIdentifier("navigation.tab.\(index)")
                 }
             }
-            .padding(.top, 8)
             .frame(maxWidth: 560)
             .padding(.horizontal, Theme.inset)
             .frame(maxWidth: .infinity)
@@ -390,9 +394,9 @@ struct MiniPlayer: View {
                             }
                         }
                         .foregroundStyle(Theme.onClay)
-                        .frame(width: 36, height: 36)
-                        .background(Theme.clay, in: Circle())
-                        .contentShape(Circle())
+                        .frame(width: 38, height: 38)
+                        .background(Theme.clay, in: Rectangle())
+                        .contentShape(Rectangle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                     }
@@ -406,10 +410,10 @@ struct MiniPlayer: View {
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            // 新闻纸色通栏：顶部细线兼作进度线，墨色部分为已听进度。
+            // 新闻纸色通栏：顶部细线兼作进度线，刊红部分为已听进度。
             .background(Theme.surface2)
             .overlay(alignment: .top) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink, height: 2)
+                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.clay, height: 3)
                     .accessibilityHidden(true)
             }
         }

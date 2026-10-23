@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用图标方案</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+
+/* ============================================================
+   听页 Tingye · 温暖纸质 / 灯下书斋 (Warm Paper · Lamplight Study)
+   Brand prefix: ty
+   暖纸色 · 宋体衬线 · 墨棕 + 单一灯琥珀
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：灯琥珀） ---------- */
+  --ty-primary-50:  #FBF3E8;
+  --ty-primary-100: #F5E4CC;
+  --ty-primary-200: #EAC9A0;
+  --ty-primary-300: #DCA96F;
+  --ty-primary-400: #C98A4B;
+  --ty-primary-500: #9C5B24;
+  --ty-primary-600: #82491B;
+  --ty-primary-700: #683A15;
+
+  /* ---------- 中性阶（暖纸墨棕） ---------- */
+  --ty-neutral-0:   #FDFBF5;
+  --ty-neutral-50:  #F8F3E9;
+  --ty-neutral-100: #F1EADC;
+  --ty-neutral-200: #E3D8C3;
+  --ty-neutral-300: #CFC0A5;
+  --ty-neutral-400: #A6957D;
+  --ty-neutral-500: #7A6A55;
+  --ty-neutral-700: #4A3D2E;
+  --ty-neutral-900: #2E2418;
+  --ty-neutral-950: #171310;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #4A7C59;
+  --state-warning: #B07A2A;
+  --state-error:   #B3402E;
+  --state-info:    #9C5B24;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-50);
+  --ty-foreground:         var(--ty-neutral-900);
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    var(--ty-neutral-900);
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FDFBF5;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   var(--ty-neutral-500);
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-100);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（温润的纸质尺度） ---------- */
+  --ty-radius-sm:    4px;
+  --ty-radius-md:    10px;
+  --ty-radius-lg:    14px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --ty-font-sans: "PingFang SC", -apple-system, "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（暖调，静态面阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(93, 64, 28, 0.05);
+  --ty-shadow-float:   0 8px 24px rgba(93, 64, 28, 0.12), 0 2px 6px rgba(93, 64, 28, 0.06);
+}
+
+/* ---------- 语义别名 · 深色（夜读灯下） ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #E9DFCE;
+  --ty-card:               #211B15;
+  --ty-card-foreground:    #E9DFCE;
+  --ty-popover:            #211B15;
+  --ty-popover-foreground: #E9DFCE;
+  --ty-primary:            #D9A05B;
+  --ty-primary-foreground: #171310;
+  --ty-muted:              #2A231B;
+  --ty-muted-foreground:   #A6957D;
+  --ty-border:             #3A3026;
+  --ty-input:              #3A3026;
+  --ty-ring:               #D9A05B;
+
+  --ty-surface-sunken:     #120F0C;
+  --ty-hairline:           #3A3026;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（温暖纸质字体阶梯：标题用宋体衬线） ---------- */
+.ty-display {
+  font-family: var(--ty-font-serif);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.22;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.ty-body {
+  font-family: var(--ty-font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.78;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 纸质标签：黑体小字、宽字距，用于元数据/栏目眉题 */
+.ty-label {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+      <!-- 内联 SVG 母版符号：台灯书斋 / 折页一隅（听字为 HTML 字形） -->
+      <svg class="ib-defs" width="0" height="0" aria-hidden="true" focusable="false">
+        <defs>
+          <symbol id="icn-lamp" viewBox="0 0 96 96">
+            <path d="M50 34 L29 60 Q50 67 71 60 Z" fill="var(--ty-primary)" fill-opacity="0.15"/>
+            <path d="M28 76 C32 60 30 44 46 26" fill="none" stroke="var(--ty-foreground)" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M19 76 H37" stroke="var(--ty-foreground)" stroke-width="3.2" stroke-linecap="round"/>
+            <path d="M38 37 L62 37 L56 25 L44 25 Z" fill="none" stroke="var(--ty-foreground)" stroke-width="2.8" stroke-linejoin="round"/>
+            <circle cx="50" cy="33" r="2.3" fill="var(--ty-primary)"/>
+            <path d="M30 63 C37 60 45 60 50 63.5 C55 60 63 60 70 63 L70 72 C63 69 55 69 50 72.5 C45 69 37 69 30 72 Z" fill="none" stroke="var(--ty-foreground)" stroke-width="2.8" stroke-linejoin="round"/>
+            <path d="M50 63.5 V72.5" stroke="var(--ty-foreground)" stroke-width="2.4" stroke-linecap="round"/>
+          </symbol>
+          <symbol id="icn-page" viewBox="0 0 96 96">
+            <path d="M28 18 H68 V58 L50 76 H28 Z" fill="none" stroke="var(--ty-foreground)" stroke-width="2.8" stroke-linejoin="round"/>
+            <path d="M68 58 L50 76 L50 58 Z" fill="var(--ty-primary)" fill-opacity="0.22" stroke="var(--ty-foreground)" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M36 30 H60" stroke="var(--ty-foreground)" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M36 38 H60" stroke="var(--ty-foreground)" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M36 46 H52" stroke="var(--ty-foreground)" stroke-width="2.4" stroke-linecap="round"/>
+          </symbol>
+        </defs>
+      </svg>
+
+      <div class="ib-wrap">
+        <!-- 1. 报头页眉 -->
+        <header class="ib-header">
+          <p class="ty-label ib-eyebrow">TINGYE / ICON STUDY</p>
+          <h1 class="ty-h1 ib-h1">应用图标方案</h1>
+          <p class="ty-body ib-quote">灯下展卷，翻页成声。</p>
+        </header>
+
+        <!-- 2. 主推方案大卡 · 灯下书斋 -->
+        <section class="ib-card ib-hero">
+          <p class="ty-label ib-tag">主推方案 · PRIMARY</p>
+          <div class="icn" style="--icn:168px;" role="img" aria-label="主推方案图标：台灯投出琥珀光晕，灯下摊开一本书">
+            <svg class="icn-svg" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><use href="#icn-lamp"/></svg>
+          </div>
+          <h2 class="ty-h3 ib-name-lg">灯下书斋</h2>
+          <p class="ty-body ib-desc">台灯垂下一圈琥珀光，书页在光晕里摊开。<br>灯是陪伴，书是本体，光是两者之间的声音。</p>
+          <div class="ib-fit" aria-label="主推方案应用示意：60 与 29 像素">
+            <div class="ib-fit-item">
+              <div class="icn" style="--icn:60px;" aria-hidden="true">
+                <svg class="icn-svg" viewBox="0 0 96 96" focusable="false"><use href="#icn-lamp"/></svg>
+              </div>
+              <span class="ib-fit-num ty-numeric">60px</span>
+            </div>
+            <div class="ib-fit-item">
+              <div class="icn" style="--icn:29px;" aria-hidden="true">
+                <svg class="icn-svg" viewBox="0 0 96 96" focusable="false"><use href="#icn-lamp"/></svg>
+              </div>
+              <span class="ib-fit-num ty-numeric">29px</span>
+            </div>
+          </div>
+          <p class="ib-spec">CANVAS 1024 × 1024 · RADIUS 22% · SAFE 80%</p>
+        </section>
+
+        <!-- 3. 备选方案双卡 -->
+        <section class="ib-duo">
+          <article class="ib-card">
+            <p class="ty-label ib-alt">备选 A · ALT</p>
+            <div class="icn" style="--icn:120px;" role="img" aria-label="备选 A 图标：宋体特粗听字，右下一点琥珀印章">
+              <span class="ting-wrap" aria-hidden="true">
+                <span class="ting-glyph ty-display">听</span>
+                <span class="ting-seal"></span>
+              </span>
+            </div>
+            <h3 class="ty-h3 ib-name">听字</h3>
+            <p class="ty-caption ib-desc-sm">宋体特粗「听」字，墨色立骨，琥珀作印。</p>
+            <div class="ib-fit" aria-label="备选 A 应用示意：60 与 29 像素">
+              <div class="ib-fit-item">
+                <div class="icn" style="--icn:60px;" aria-hidden="true">
+                  <span class="ting-wrap"><span class="ting-glyph ty-display">听</span><span class="ting-seal"></span></span>
+                </div>
+                <span class="ib-fit-num ty-numeric">60px</span>
+              </div>
+              <div class="ib-fit-item">
+                <div class="icn" style="--icn:29px;" aria-hidden="true">
+                  <span class="ting-wrap"><span class="ting-glyph ty-display">听</span><span class="ting-seal"></span></span>
+                </div>
+                <span class="ib-fit-num ty-numeric">29px</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="ib-card">
+            <p class="ty-label ib-alt">备选 B · ALT</p>
+            <div class="icn" style="--icn:120px;" role="img" aria-label="备选 B 图标：翻起的书页，右下角折角露出琥珀页缘">
+              <svg class="icn-svg" viewBox="0 0 96 96" aria-hidden="true" focusable="false"><use href="#icn-page"/></svg>
+            </div>
+            <h3 class="ty-h3 ib-name">折页一隅</h3>
+            <p class="ty-caption ib-desc-sm">翻起的书页，墨线勾形，折角露出琥珀页缘。</p>
+            <div class="ib-fit" aria-label="备选 B 应用示意：60 与 29 像素">
+              <div class="ib-fit-item">
+                <div class="icn" style="--icn:60px;" aria-hidden="true">
+                  <svg class="icn-svg" viewBox="0 0 96 96" focusable="false"><use href="#icn-page"/></svg>
+                </div>
+                <span class="ib-fit-num ty-numeric">60px</span>
+              </div>
+              <div class="ib-fit-item">
+                <div class="icn" style="--icn:29px;" aria-hidden="true">
+                  <svg class="icn-svg" viewBox="0 0 96 96" focusable="false"><use href="#icn-page"/></svg>
+                </div>
+                <span class="ib-fit-num ty-numeric">29px</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- 4. 脚注 · 应用规则 -->
+        <footer class="ib-rules">
+          <p class="ty-label ib-rules-title">应用规则 · USAGE</p>
+          <ul class="ib-rule-list">
+            <li class="ib-rule ty-caption"><span>琥珀只作点睛：单枚图标内琥珀仅作光晕、印章与页缘，占比不超两成，不参与轮廓勾勒。</span></li>
+            <li class="ib-rule ty-caption"><span>深色模式下图标底色加深一档，墨线提亮为米白，光晕透明度微降。</span></li>
+            <li class="ib-rule ty-caption"><span>不使用渐变光泽：无高光、无滤镜，纸面保持哑光，线条一律单色墨线。</span></li>
+          </ul>
+          <p class="ty-label ib-colophon">听页 TINGYE · LAMPLIGHT STUDY</p>
+        </footer>
+      </div>
+    </main>
+
+    <style id="critical-layout">
+      .ib-defs { display: block; }
+      .ib-wrap { max-width: 30rem; margin: 0 auto; padding: 48px 22px 72px; }
+      .ib-header { margin-bottom: 26px; }
+      .ib-eyebrow { color: var(--ty-muted-foreground); }
+      .ib-h1 { font-size: 30px; margin-top: 10px; color: var(--ty-foreground); }
+      .ib-quote { font-size: 14px; margin-top: 12px; color: var(--ty-muted-foreground); }
+
+      .ib-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        background: var(--ty-card);
+        border: 1px solid var(--ty-border);
+        border-radius: var(--ty-radius-lg);
+        box-shadow: var(--ty-shadow-hairline);
+        padding: 26px 22px 24px;
+        transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+      }
+      .ib-card:hover {
+        border-color: var(--ty-primary-300);
+        box-shadow: var(--ty-shadow-float);
+        transform: translateY(-2px);
+      }
+      .ib-hero { margin-bottom: 16px; padding: 32px 24px 26px; }
+      .ib-tag { color: var(--ty-primary-600); margin-bottom: 20px; }
+      .ib-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 30px; }
+      .ib-duo .ib-card { padding: 22px 14px 20px; }
+      .ib-alt { color: var(--ty-muted-foreground); margin-bottom: 16px; }
+
+      /* 图标母版：iOS 形，圆角约为边长 22% */
+      .icn {
+        position: relative;
+        width: var(--icn);
+        height: var(--icn);
+        flex: none;
+        border-radius: 22%;
+        background: var(--ty-surface-sunken);
+        border: 1px solid var(--ty-hairline);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .icn-svg { width: 100%; height: 100%; display: block; }
+
+      /* 方案 A：听字 + 琥珀印章（印章为图标内部装饰层，定位不溢出） */
+      .ting-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+      .ting-glyph { font-size: calc(var(--icn) * 0.52); line-height: 1; color: var(--ty-foreground); }
+      .ting-seal {
+        position: absolute;
+        right: calc(var(--icn) * -0.08);
+        bottom: calc(var(--icn) * -0.05);
+        width: calc(var(--icn) * 0.15);
+        height: calc(var(--icn) * 0.15);
+        border-radius: calc(var(--icn) * 0.025);
+        background: var(--ty-primary);
+      }
+
+      .ib-name-lg { font-size: 20px; margin-top: 22px; color: var(--ty-foreground); }
+      .ib-name { font-size: 17px; margin-top: 16px; color: var(--ty-foreground); }
+      .ib-desc { font-size: 13.5px; margin-top: 10px; color: var(--ty-muted-foreground); max-width: 22rem; }
+      .ib-desc-sm { margin-top: 6px; color: var(--ty-muted-foreground); }
+
+      /* 应用示意：60 / 29 px 并排 */
+      .ib-fit {
+        width: 100%;
+        margin-top: 18px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 20px;
+        background: var(--ty-muted);
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        padding: 14px 12px 10px;
+      }
+      .ib-fit-item { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+      .ib-fit-num { font-size: 10px; letter-spacing: 0.08em; color: var(--ty-muted-foreground); }
+      .ib-spec { margin-top: 14px; font-family: var(--ty-font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ty-muted-foreground); }
+
+      .ib-rules { border-top: 1px solid var(--ty-border); padding-top: 22px; }
+      .ib-rules-title { color: var(--ty-foreground); margin-bottom: 10px; }
+      .ib-rule-list { list-style: none; margin: 0; padding: 0; }
+      .ib-rule {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 6px 0;
+        color: var(--ty-muted-foreground);
+        text-align: left;
+      }
+      .ib-rule::before {
+        content: "";
+        flex: none;
+        width: 6px;
+        height: 6px;
+        margin-top: 5px;
+        border-radius: 1px;
+        background: var(--ty-primary-300);
+      }
+      .ib-colophon { margin-top: 26px; text-align: center; color: var(--ty-muted-foreground); }
+
+      @media (max-width: 380px) {
+        .ib-duo { grid-template-columns: 1fr; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ib-card { transition: none; }
+        .ib-card:hover { transform: none; }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

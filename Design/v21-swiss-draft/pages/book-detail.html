@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书籍详情</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+
+/* ============================================================
+   听页 Tingye · 温暖纸质 / 灯下书斋 (Warm Paper · Lamplight Study)
+   Brand prefix: ty
+   暖纸色 · 宋体衬线 · 墨棕 + 单一灯琥珀
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：灯琥珀） ---------- */
+  --ty-primary-50:  #FBF3E8;
+  --ty-primary-100: #F5E4CC;
+  --ty-primary-200: #EAC9A0;
+  --ty-primary-300: #DCA96F;
+  --ty-primary-400: #C98A4B;
+  --ty-primary-500: #9C5B24;
+  --ty-primary-600: #82491B;
+  --ty-primary-700: #683A15;
+
+  /* ---------- 中性阶（暖纸墨棕） ---------- */
+  --ty-neutral-0:   #FDFBF5;
+  --ty-neutral-50:  #F8F3E9;
+  --ty-neutral-100: #F1EADC;
+  --ty-neutral-200: #E3D8C3;
+  --ty-neutral-300: #CFC0A5;
+  --ty-neutral-400: #A6957D;
+  --ty-neutral-500: #7A6A55;
+  --ty-neutral-700: #4A3D2E;
+  --ty-neutral-900: #2E2418;
+  --ty-neutral-950: #171310;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #4A7C59;
+  --state-warning: #B07A2A;
+  --state-error:   #B3402E;
+  --state-info:    #9C5B24;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-50);
+  --ty-foreground:         var(--ty-neutral-900);
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    var(--ty-neutral-900);
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FDFBF5;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   var(--ty-neutral-500);
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-100);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（温润的纸质尺度） ---------- */
+  --ty-radius-sm:    4px;
+  --ty-radius-md:    10px;
+  --ty-radius-lg:    14px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --ty-font-sans: "PingFang SC", -apple-system, "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（暖调，静态面阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(93, 64, 28, 0.05);
+  --ty-shadow-float:   0 8px 24px rgba(93, 64, 28, 0.12), 0 2px 6px rgba(93, 64, 28, 0.06);
+}
+
+/* ---------- 语义别名 · 深色（夜读灯下） ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #E9DFCE;
+  --ty-card:               #211B15;
+  --ty-card-foreground:    #E9DFCE;
+  --ty-popover:            #211B15;
+  --ty-popover-foreground: #E9DFCE;
+  --ty-primary:            #D9A05B;
+  --ty-primary-foreground: #171310;
+  --ty-muted:              #2A231B;
+  --ty-muted-foreground:   #A6957D;
+  --ty-border:             #3A3026;
+  --ty-input:              #3A3026;
+  --ty-ring:               #D9A05B;
+
+  --ty-surface-sunken:     #120F0C;
+  --ty-hairline:           #3A3026;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（温暖纸质字体阶梯：标题用宋体衬线） ---------- */
+.ty-display {
+  font-family: var(--ty-font-serif);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.22;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.ty-body {
+  font-family: var(--ty-font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.78;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 纸质标签：黑体小字、宽字距，用于元数据/栏目眉题 */
+.ty-label {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+      <div class="bd-col">
+
+        <!-- 1. 页眉 -->
+        <header class="bd-header">
+          <div class="bd-header-left">
+            <a href="#" data-dom-id="back-library" class="bd-icon-btn" aria-label="返回书库">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
+            <span class="ty-label text-muted-foreground">BOOK / 001</span>
+          </div>
+          <button type="button" class="bd-icon-btn" aria-label="收藏">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+          </button>
+        </header>
+
+        <!-- 2. 题录区：暖纸卡承托大封面 + 题录 -->
+        <section class="bd-biblio" aria-label="题录">
+          <div class="bd-desk">
+            <div class="bd-cover" aria-hidden="true">
+              <span class="bd-cover-spine"></span>
+              <div class="bd-cover-body">
+                <span class="ty-label text-muted-foreground">01</span>
+                <span class="bd-cover-foot">
+                  <span class="bd-cover-title">平面国</span>
+                  <span class="bd-cover-author">埃德温·艾勃特</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bd-biblio-text">
+            <p class="ty-label text-primary">62% READING</p>
+            <h1 class="ty-h1 bd-title">平面国</h1>
+            <p class="ty-label bd-author-line">埃德温·艾勃特 著 · 陈超 译</p>
+            <div class="bd-progress" role="progressbar" aria-label="阅读进度" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100">
+              <span class="bd-progress-fill"></span>
+            </div>
+          </div>
+
+          <div class="bd-meta-grid" aria-label="书籍元数据">
+            <div class="bd-meta-cell">
+              <span class="ty-label text-muted-foreground">页数</span>
+              <span class="ty-numeric bd-meta-value">216</span>
+            </div>
+            <div class="bd-meta-cell">
+              <span class="ty-label text-muted-foreground">字数</span>
+              <span class="ty-numeric bd-meta-value">8.4万</span>
+            </div>
+            <div class="bd-meta-cell">
+              <span class="ty-label text-muted-foreground">入库</span>
+              <span class="ty-numeric bd-meta-value">2026-09-30</span>
+            </div>
+            <div class="bd-meta-cell">
+              <span class="ty-label text-muted-foreground">进度</span>
+              <span class="ty-numeric bd-meta-value">62%</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. 双 CTA -->
+        <div class="bd-cta-row">
+          <a href="#" data-dom-id="cta-reader" class="bd-btn bd-btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>继续阅读</span>
+          </a>
+          <a href="#" data-dom-id="cta-player" class="bd-btn bd-btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>
+            <span>开始听书</span>
+          </a>
+        </div>
+
+        <!-- 4. 简介 -->
+        <section class="bd-section">
+          <h2 class="ty-label text-muted-foreground">简介</h2>
+          <p class="ty-body bd-prose">在只有长与宽的平面国里，居民以线段与多边形之形定尊卑。一位正方形绅士偶遇来自三维空间的球体，惊觉维度之外另有天地。他试图向国人传扬「向上，而非向北」的真理，却被视为异端。这部写于十九世纪的寓言，以几何之冷静，照见认知的边界与偏见的顽固。</p>
+        </section>
+
+        <!-- 5. 章节目录 -->
+        <section class="bd-section">
+          <h2 class="ty-label text-muted-foreground">目录 · 12 章</h2>
+          <div class="bd-chapters">
+            <a href="#" class="bd-chapter-row">
+              <span class="ty-label bd-chapter-num">01</span>
+              <span class="bd-chapter-title ty-body">平面国的性质</span>
+              <span class="ty-numeric bd-chapter-page">P.001</span>
+            </a>
+            <a href="#" class="bd-chapter-row">
+              <span class="ty-label bd-chapter-num">02</span>
+              <span class="bd-chapter-title ty-body">平面国的气候与房舍</span>
+              <span class="ty-numeric bd-chapter-page">P.013</span>
+            </a>
+            <a href="#" class="bd-chapter-row">
+              <span class="ty-label bd-chapter-num">03</span>
+              <span class="bd-chapter-title ty-body">论平面国的居民</span>
+              <span class="ty-numeric bd-chapter-page">P.025</span>
+            </a>
+            <a href="#" class="bd-chapter-row">
+              <span class="ty-label bd-chapter-num">04</span>
+              <span class="bd-chapter-title ty-body">论女性</span>
+              <span class="ty-numeric bd-chapter-page">P.041</span>
+            </a>
+            <a href="#" class="bd-chapter-row">
+              <span class="ty-label bd-chapter-num">05</span>
+              <span class="bd-chapter-title ty-body">辨认彼此的方法</span>
+              <span class="ty-numeric bd-chapter-page">P.058</span>
+            </a>
+            <a href="#" class="bd-chapter-row bd-is-reading">
+              <span class="ty-label bd-chapter-num">07</span>
+              <span class="bd-chapter-title ty-body">球体的启示 · 在读</span>
+              <span class="ty-numeric bd-chapter-page">P.112</span>
+            </a>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <style id="critical-layout">
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body { background: var(--ty-background); color: var(--ty-foreground); overflow-x: hidden; }
+
+      .bd-col { max-width: 28rem; margin: 0 auto; padding: 0 22px 56px; }
+
+      /* ── 页眉 ── */
+      .bd-header { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+      .bd-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .bd-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; border: none; background: transparent; color: var(--ty-foreground); border-radius: var(--ty-radius-md); text-decoration: none; cursor: pointer; transition: background-color 160ms ease; }
+      .bd-icon-btn:hover { background: var(--ty-muted); }
+      .bd-icon-btn:active { background: var(--ty-surface-sunken); }
+      .bd-icon-btn:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: 2px; }
+
+      /* ── 题录卡：书案承托大封面 + 题录 + 元数据 ── */
+      .bd-biblio { margin-top: 10px; background: var(--ty-card); border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-lg); box-shadow: var(--ty-shadow-hairline); overflow: hidden; }
+      .bd-desk { display: flex; justify-content: center; padding: 30px 20px; background: var(--ty-surface-sunken); border-bottom: 1px solid var(--ty-hairline); }
+      .bd-cover { display: flex; width: 150px; aspect-ratio: 3 / 4; flex-shrink: 0; background: var(--ty-card); border: 1px solid var(--ty-hairline); box-shadow: var(--ty-shadow-hairline); }
+      .bd-cover-spine { width: 5px; flex-shrink: 0; background: var(--ty-primary); }
+      .bd-cover-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 12px 12px 14px; }
+      .bd-cover-foot { display: block; }
+      .bd-cover-title { display: block; font-family: var(--ty-font-serif); font-weight: 700; font-size: 18px; line-height: 1.32; color: var(--ty-foreground); }
+      .bd-cover-author { display: block; margin-top: 4px; font-family: var(--ty-font-sans); font-size: 10px; letter-spacing: 0.06em; color: var(--ty-muted-foreground); }
+
+      .bd-biblio-text { padding: 20px; }
+      .bd-biblio-text p { margin: 0; }
+      .bd-title { margin: 10px 0 0; font-size: 28px; text-wrap: balance; word-break: keep-all; }
+      .bd-author-line { margin-top: 12px; color: var(--ty-muted-foreground); }
+      .bd-progress { display: flex; height: 3px; margin-top: 18px; background: var(--ty-muted); border-radius: var(--ty-radius-sm); overflow: hidden; }
+      .bd-progress-fill { width: 62%; background: var(--ty-primary); border-radius: var(--ty-radius-sm); }
+
+      .bd-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--ty-hairline); }
+      .bd-meta-cell { display: flex; flex-direction: column; gap: 5px; padding: 13px 20px; min-width: 0; }
+      .bd-meta-cell:nth-child(even) { border-left: 1px solid var(--ty-hairline); }
+      .bd-meta-cell:nth-child(n+3) { border-top: 1px solid var(--ty-hairline); }
+      .bd-meta-value { font-size: 15px; color: var(--ty-foreground); }
+
+      /* ── 双 CTA ── */
+      .bd-cta-row { display: flex; gap: 12px; margin-top: 22px; }
+      .bd-btn { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 12px; border-radius: var(--ty-radius-md); font-family: var(--ty-font-serif); font-weight: 600; font-size: 15px; letter-spacing: 0.04em; text-decoration: none; cursor: pointer; transition: background-color 160ms cubic-bezier(.2,.8,.2,1), border-color 160ms cubic-bezier(.2,.8,.2,1), transform 120ms cubic-bezier(.2,.8,.2,1); }
+      .bd-btn:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: 2px; }
+      .bd-btn:active { transform: translateY(1px); }
+      .bd-btn-primary { background: var(--ty-primary); border: 1.5px solid var(--ty-primary); color: var(--ty-primary-foreground); }
+      .bd-btn-primary:hover { background: var(--ty-primary-600); border-color: var(--ty-primary-600); }
+      .bd-btn-primary:active { background: var(--ty-primary-700); border-color: var(--ty-primary-700); }
+      .bd-btn-outline { background: transparent; border: 1.5px solid var(--ty-foreground); color: var(--ty-foreground); }
+      .bd-btn-outline:hover { background: var(--ty-muted); }
+      .bd-btn-outline:active { background: var(--ty-surface-sunken); }
+
+      /* ── 章节 ── */
+      .bd-section { margin-top: 34px; }
+      .bd-section h2 { margin: 0; }
+      .bd-prose { margin: 12px 0 0; font-size: 15px; text-indent: 2em; overflow-wrap: break-word; }
+
+      /* ── 目录 ── */
+      .bd-chapters { margin-top: 8px; border-top: 1px solid var(--ty-hairline); }
+      .bd-chapter-row { display: flex; align-items: baseline; gap: 12px; padding: 13px 10px; margin: 0 -10px; border-top: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-sm); text-decoration: none; color: var(--ty-foreground); transition: background-color 160ms ease; }
+      .bd-chapters > .bd-chapter-row:first-child { border-top: none; }
+      .bd-chapter-row:hover { background: var(--ty-muted); }
+      .bd-chapter-row:active { background: var(--ty-surface-sunken); }
+      .bd-chapter-row:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: -2px; }
+      .bd-chapter-num { width: 26px; flex-shrink: 0; color: var(--ty-muted-foreground); }
+      .bd-chapter-title { flex: 1; min-width: 0; font-size: 15px; }
+      .bd-chapter-page { flex-shrink: 0; font-size: 12px; color: var(--ty-muted-foreground); }
+      .bd-is-reading .bd-chapter-num, .bd-is-reading .bd-chapter-title, .bd-is-reading .bd-chapter-page { color: var(--ty-primary); }
+      .bd-is-reading .bd-chapter-title { font-weight: 600; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bd-icon-btn, .bd-btn, .bd-chapter-row { transition: none; }
+        .bd-btn:active { transform: none; }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

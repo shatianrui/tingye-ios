@@ -245,10 +245,10 @@ struct ShelfView: View {
                 if !editing {
                     HStack(spacing: 8) {
                         Button(action: beginEditing) {
-                            Text("整理").font(.subheadline.weight(.medium))
+                            Text("整理").font(.subheadline.weight(.bold))
                                 .padding(.horizontal, 12).frame(minWidth: 44, minHeight: 44)
                         }
-                        .buttonStyle(.plain).foregroundStyle(Theme.ink2)
+                        .buttonStyle(.plain).foregroundStyle(Theme.ink)
                         .disabled(visibleKindEntries.isEmpty)
                         .accessibilityLabel("整理书库")
                         .accessibilityIdentifier("shelf.organize")
@@ -259,7 +259,7 @@ struct ShelfView: View {
             Text("\(visibleKindEntries.count) BOOKS · \(useList ? "LIST" : "GRID") · \(sortLabel.localUppercased)")
                 .font(Theme.masthead).tracking(1.5).foregroundStyle(Theme.ink2)
                 .accessibilityHidden(true)
-            Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true)
+            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
         }
     }
 
@@ -272,10 +272,10 @@ struct ShelfView: View {
             }
         } label: {
             Label("添加", systemImage: Icon.add)
-                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.onClay)
+                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onClay)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .background(Theme.clay, in: Rectangle())
+                .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")
         .accessibilityLabel("添加书籍")
@@ -305,10 +305,8 @@ struct ShelfView: View {
     private var kindSelector: some View {
         adaptiveRow {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
-                    .padding(.vertical, 2)
+                HStack(spacing: 20) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
                 VStack(alignment: .leading, spacing: 4) { kindButton("书籍", value: "books"); kindButton("漫画", value: "comics") }
-                    .padding(.vertical, 2)
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
             libraryOptions
@@ -323,12 +321,18 @@ struct ShelfView: View {
             Haptics.selection()
             withAnimation(Theme.pressSpring) { kind = value; category = nil }
         } label: {
-            HStack(spacing: 5) {
-                Text(L(title))
-                Text("\(count)").monospacedDigit()
-            }.fixedSize(horizontal: true, vertical: false)
+            // 杂志栏目切换：宋体书名 + 选中时 4pt 刊红下划杠
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(L(title)).font(selected ? Theme.serifBold(18, relativeTo: .headline) : Theme.serif(18, relativeTo: .headline))
+                Text("\(count)").font(.caption.weight(.bold)).monospacedDigit()
+            }
+            .foregroundStyle(selected ? Theme.ink : Theme.ink3)
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minHeight: 44)
+            .overlay(alignment: .bottom) { Rectangle().fill(selected ? Theme.clay : .clear).frame(height: 4) }
+            .contentShape(Rectangle())
         }
-        .buttonStyle(ChipPillStyle(selected: selected))
+        .buttonStyle(.plain)
         .accessibilityLabel("\(title)，\(count) 本")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -669,7 +673,7 @@ struct ShelfView: View {
                         .foregroundStyle(entry.started && entry.local ? Theme.accent : Theme.ink3)
                     Spacer(minLength: 0)
                 }
-                Text("详情").font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
+                Text("详情").font(.caption.weight(.bold)).foregroundStyle(Theme.ink)
                 Image(systemName: Icon.disclosure).font(.caption2).foregroundStyle(Theme.ink3)
             }
             .frame(minWidth: 44, minHeight: 44)
@@ -753,7 +757,7 @@ struct ShelfView: View {
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(width: 24, height: 24)
-                            .background(.black.opacity(0.45), in: Circle())
+                            .background(.black.opacity(0.6), in: Rectangle())
                             .padding(6)
                             .accessibilityLabel("已隐藏")
                     }
@@ -778,7 +782,7 @@ struct ShelfView: View {
                         HStack(spacing: 14) {
                             Image(systemName: Icon.folderFill)
                                 .font(.system(size: 22))
-                                .foregroundStyle(Theme.accent)
+                                .foregroundStyle(Theme.ink)
                                 .frame(width: 44)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(String(path.split(separator: "/").last ?? ""))

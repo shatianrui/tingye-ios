@@ -67,7 +67,7 @@ struct ComicReaderView: View {
                     Button { dismiss() } label: {
                         ThemeIcon(symbol: Icon.back, size: 24)
                             .frame(width: 44, height: 44)
-                            .background(Theme.surface2, in: Circle())
+                            .background(Theme.surface2, in: Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("返回")
@@ -102,7 +102,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(12)
-                .glassSurface(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .glassSurface(in: Rectangle())
                 Spacer()
                 VStack(spacing: 4) {
                     HStack {
@@ -140,7 +140,7 @@ struct ComicReaderView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 8)
-                .glassSurface(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .glassSurface(in: Rectangle())
             }
             .frame(maxWidth: 760)
             .padding(.horizontal, 24)
@@ -175,7 +175,7 @@ struct ComicReaderView: View {
         }
         .foregroundStyle(selected ? Theme.accent : Theme.ink)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? Theme.accentSoft : .clear, in: RoundedRectangle(cornerRadius: 12))
+        .background(selected ? Theme.accentSoft : .clear, in: Rectangle())
         .contentShape(Rectangle())
     }
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {

@@ -750,7 +750,7 @@ struct ICloudBackupView: View {
                 if let transfer = model.icloud {
                     sectionTitle("当前操作")
                     ICloudTransferCard(transfer: transfer)
-                        .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
+                        .padding(16).background(Theme.surface, in: Rectangle())
                 }
 
                 sectionTitle("保存当前书库")
@@ -762,7 +762,7 @@ struct ICloudBackupView: View {
                 }
                 .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 52)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
+                .background(Theme.surface, in: Rectangle())
                 if let upload = model.backupUpload {
                     VStack(alignment: .leading, spacing: 8) {
                         ICloudUploadRow(status: upload)
@@ -771,7 +771,7 @@ struct ICloudBackupView: View {
                                 .frame(minHeight: 44)
                         }
                     }
-                    .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
+                    .padding(16).background(Theme.surface, in: Rectangle())
                 }
 
                 sectionTitle("恢复书库")
@@ -781,7 +781,7 @@ struct ICloudBackupView: View {
                 Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。")
                     .font(.caption).foregroundStyle(Theme.ink2)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft.opacity(0.55), in: RoundedRectangle(cornerRadius: 20))
+                    .background(Theme.accentSoft.opacity(0.55), in: Rectangle())
 
                 sectionTitle("自动同步")
                 Toggle(isOn: $syncProgress) {
@@ -792,7 +792,7 @@ struct ICloudBackupView: View {
                     }
                 }
                 .tint(Theme.accent).padding(16)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
+                .background(Theme.surface, in: Rectangle())
                 ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
                 if syncProgress {
                     Button("立即检查进度同步") { model.refreshProgressSync() }
@@ -959,7 +959,7 @@ private struct ProgressSyncStatusRows: View {
             }
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.surface, in: Rectangle())
     }
     private func received(_ date: Date) -> String {
         var text = "\(time(date)) · \(sync.lastReceivedCount) 条变化"

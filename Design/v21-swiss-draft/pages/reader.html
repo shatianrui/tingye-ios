@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阅读器</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+
+/* ============================================================
+   听页 Tingye · 温暖纸质 / 灯下书斋 (Warm Paper · Lamplight Study)
+   Brand prefix: ty
+   暖纸色 · 宋体衬线 · 墨棕 + 单一灯琥珀
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌主色（单一色相：灯琥珀） ---------- */
+  --ty-primary-50:  #FBF3E8;
+  --ty-primary-100: #F5E4CC;
+  --ty-primary-200: #EAC9A0;
+  --ty-primary-300: #DCA96F;
+  --ty-primary-400: #C98A4B;
+  --ty-primary-500: #9C5B24;
+  --ty-primary-600: #82491B;
+  --ty-primary-700: #683A15;
+
+  /* ---------- 中性阶（暖纸墨棕） ---------- */
+  --ty-neutral-0:   #FDFBF5;
+  --ty-neutral-50:  #F8F3E9;
+  --ty-neutral-100: #F1EADC;
+  --ty-neutral-200: #E3D8C3;
+  --ty-neutral-300: #CFC0A5;
+  --ty-neutral-400: #A6957D;
+  --ty-neutral-500: #7A6A55;
+  --ty-neutral-700: #4A3D2E;
+  --ty-neutral-900: #2E2418;
+  --ty-neutral-950: #171310;
+
+  /* ---------- 状态色（仅语义状态，不作身份/分类用色） ---------- */
+  --state-success: #4A7C59;
+  --state-warning: #B07A2A;
+  --state-error:   #B3402E;
+  --state-info:    #9C5B24;
+
+  /* ---------- 语义别名 · 浅色（默认） ---------- */
+  --ty-background:         var(--ty-neutral-50);
+  --ty-foreground:         var(--ty-neutral-900);
+  --ty-card:               var(--ty-neutral-0);
+  --ty-card-foreground:    var(--ty-neutral-900);
+  --ty-popover:            var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary:            var(--ty-primary-500);
+  --ty-primary-foreground: #FDFBF5;
+  --ty-muted:              var(--ty-neutral-100);
+  --ty-muted-foreground:   var(--ty-neutral-500);
+  --ty-border:             var(--ty-neutral-200);
+  --ty-input:              var(--ty-neutral-200);
+  --ty-ring:               var(--ty-primary-500);
+
+  /* 表面分层（浅色） */
+  --ty-surface-sunken:     var(--ty-neutral-100);
+  --ty-hairline:           var(--ty-neutral-200);
+
+  /* ---------- 半径（温润的纸质尺度） ---------- */
+  --ty-radius-sm:    4px;
+  --ty-radius-md:    10px;
+  --ty-radius-lg:    14px;
+  --ty-radius-full:  9999px;
+  --ty-radius-small:  var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large:  var(--ty-radius-lg);
+
+  /* ---------- 字体系统 ---------- */
+  --ty-font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --ty-font-sans: "PingFang SC", -apple-system, "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --ty-font-mono: "SF Mono", "JetBrains Mono", "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- 阴影（暖调，静态面阴影 alpha ≤ 0.05） ---------- */
+  --ty-shadow-hairline: 0 1px 2px rgba(93, 64, 28, 0.05);
+  --ty-shadow-float:   0 8px 24px rgba(93, 64, 28, 0.12), 0 2px 6px rgba(93, 64, 28, 0.06);
+}
+
+/* ---------- 语义别名 · 深色（夜读灯下） ---------- */
+.dark {
+  --ty-background:         var(--ty-neutral-950);
+  --ty-foreground:         #E9DFCE;
+  --ty-card:               #211B15;
+  --ty-card-foreground:    #E9DFCE;
+  --ty-popover:            #211B15;
+  --ty-popover-foreground: #E9DFCE;
+  --ty-primary:            #D9A05B;
+  --ty-primary-foreground: #171310;
+  --ty-muted:              #2A231B;
+  --ty-muted-foreground:   #A6957D;
+  --ty-border:             #3A3026;
+  --ty-input:              #3A3026;
+  --ty-ring:               #D9A05B;
+
+  --ty-surface-sunken:     #120F0C;
+  --ty-hairline:           #3A3026;
+
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float:   0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+}
+
+/* ---------- 排版类（温暖纸质字体阶梯：标题用宋体衬线） ---------- */
+.ty-display {
+  font-family: var(--ty-font-serif);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+}
+
+.ty-h1 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.22;
+}
+
+.ty-h2 {
+  font-family: var(--ty-font-serif);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.ty-h3 {
+  font-family: var(--ty-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.ty-body {
+  font-family: var(--ty-font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.78;
+}
+
+.ty-caption {
+  font-family: var(--ty-font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* 纸质标签：黑体小字、宽字距，用于元数据/栏目眉题 */
+.ty-label {
+  font-family: var(--ty-font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.ty-numeric {
+  font-family: var(--ty-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen antialiased">
+    <main class="reader-main">
+      <!-- 1. 极简页眉：返回 + 章节名小字，下方一道暖发丝线 -->
+      <header class="reader-header">
+        <div class="reader-col reader-header-inner">
+          <a href="#" data-dom-id="back-book-detail" class="reader-icon-btn" aria-label="返回书籍详情">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </a>
+          <span class="reader-chapter-name ty-caption">平面国 · 第 7 章 球体的启示</span>
+          <span aria-hidden="true"></span>
+        </div>
+      </header>
+
+      <div class="reader-col reader-content">
+        <!-- 2. 章节头（宋体标题） -->
+        <div class="reader-chapter-head">
+          <p class="ty-label reader-book-label">平面国 · Flatland</p>
+          <h1 class="ty-h2 reader-chapter-title">第 7 章　球体的启示</h1>
+        </div>
+
+        <!-- 3. 正文长排 -->
+        <article class="reader-body ty-body">
+          <p>那是一个千年一度的日子。我正与家中的小六边形们围坐，讲授平面国的几何常识，忽然听见客厅中央传来一个声音——它不来自东，不来自西，而仿佛来自我胸膛内部的某处。我环顾四周，妻女皆在隔壁，屋内空无一人，唯有那声音愈发清晰：「正方形啊，正方形，你以为二维便是宇宙的全部吗？」</p>
+          <p>我按平面国的礼数喝问来者姓名。声音答道：「我来自空间国，是一个球体。」我大笑——圆我是认识的，球体却是何物？话音未落，一个圆凭空出现在我的桌面上，起初只是一个点，继而胀大成小圆，再扩为大圆，随后又缓缓收缩，终归于无。这绝非魔术师的戏法，因为没有任何平面国的居民能令一个圆随意改变直径。</p>
+          <p>「你看见的，」那声音说，「只是我穿过你们平面时的截面。正如你在直线上投下一条线段，我在你们的平面上投下一个圆。我升起来，圆便缩小；我降下去，圆便增大。」我战栗了。倘若此言为真，那么在「上」与「下」之外，竟还有第三个方向，一个我毕生无法想象的方向。</p>
+          <p>球体见我仍不肯信服，便伸手——若那可以称为手——轻轻一拽。霎时间，我感到自己被拖离了平面，整个世界在脚下摊开：我看见了自己房屋的内部，看见了妻子正在厨房忙碌，看见了一切封闭房间的五脏六腑，仿佛上帝俯视一只透明的盒子。原来所谓「里面」与「外面」，不过是维度欠缺者的幻觉。</p>
+          <p>当我被放回平面，双膝尚自颤抖。球体的声音从高空飘来，渐远渐弱：「记住今夜吧，平面国的使者。既然有第三维，谁又能断言没有第四维、第五维呢？」<span class="reader-current">我望着天花板，第一次意识到我们引以为豪的二维世界，或许也只是某本更厚的书中，薄薄的一页。</span></p>
+        </article>
+      </div>
+
+      <!-- 4. 底部琥珀细进度线 + 5. 听书入口横条 -->
+      <footer class="reader-footer">
+        <div class="reader-col">
+          <div class="reader-progress-track" role="progressbar" aria-label="阅读进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="34">
+            <div class="reader-progress-fill"></div>
+          </div>
+          <div class="reader-progress-meta">
+            <span class="ty-label ty-numeric text-muted-foreground">34% · 73 / 216</span>
+            <span class="ty-label text-muted-foreground">平面国</span>
+          </div>
+          <a href="#" data-dom-id="cta-player" class="reader-cta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Z"/><path d="M21 14h-3a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5Z"/><path d="M3 14v-2a9 9 0 0 1 18 0v2"/></svg>
+            <span class="reader-cta-text">听这一章</span>
+            <svg class="cta-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+      </footer>
+    </main>
+
+    <style id="critical-layout">
+      /* 温暖纸质 · 灯下夜读（深色）：语义令牌经 .dark 自动生效 */
+      .reader-main {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(130% 52% at 50% 0%, color-mix(in srgb, var(--ty-primary) 7%, transparent) 0%, transparent 70%),
+          var(--ty-background);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-serif);
+        overflow-x: clip;
+      }
+      .reader-col { width: 100%; max-width: 30rem; margin-left: auto; margin-right: auto; padding-left: 26px; padding-right: 26px; }
+      .reader-content { flex: 1; }
+
+      /* 页眉：返回 + 章节名小字 + 暖发丝线 */
+      .reader-header { border-bottom: 1px solid var(--ty-hairline); }
+      .reader-header-inner { height: 52px; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; }
+      .reader-chapter-name { justify-self: center; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ty-muted-foreground); }
+      .reader-icon-btn {
+        width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+        color: var(--ty-foreground); border-radius: var(--ty-radius-full); text-decoration: none;
+        transition: background-color 160ms cubic-bezier(.2,.8,.2,1), color 160ms cubic-bezier(.2,.8,.2,1);
+      }
+      .reader-icon-btn:hover { background: var(--ty-muted); }
+      .reader-icon-btn:active { background: var(--ty-border); }
+      .reader-icon-btn:focus-visible, .reader-cta:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: 2px; }
+
+      /* 章节头 */
+      .reader-chapter-head { padding-top: 42px; padding-bottom: 30px; }
+      .reader-book-label { margin-bottom: 14px; color: var(--ty-muted-foreground); }
+      .reader-chapter-title { font-size: 25px; color: var(--ty-foreground); text-wrap: balance; word-break: keep-all; }
+
+      /* 正文长排：宋体衬线 18px / 1.9 / 段距 1em / 首行缩进 2em */
+      .reader-body { padding-bottom: 44px; }
+      .reader-body p {
+        font-family: var(--ty-font-serif);
+        font-size: 18px; line-height: 1.9;
+        margin: 0 0 1em;
+        text-indent: 2em; text-align: justify;
+        color: var(--ty-foreground);
+      }
+      /* 当前句标记：灯琥珀细下划线（唯一强调） */
+      .reader-current {
+        text-decoration: underline;
+        text-decoration-color: var(--ty-primary);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 5px;
+      }
+
+      /* 底部：琥珀细进度线 + 页码数字 + 听书横条 */
+      .reader-footer { border-top: 1px solid var(--ty-hairline); padding-top: 16px; padding-bottom: 28px; }
+      .reader-progress-track { height: 2px; width: 100%; border-radius: var(--ty-radius-full); background: var(--ty-muted); overflow: hidden; }
+      .reader-progress-fill { height: 100%; width: 34%; border-radius: var(--ty-radius-full); background: var(--ty-primary); }
+      .reader-progress-meta { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; }
+      .reader-cta {
+        margin-top: 14px; height: 48px; padding-left: 16px; padding-right: 16px;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        border-radius: var(--ty-radius-md); text-decoration: none;
+        background: var(--ty-primary); color: var(--ty-primary-foreground);
+        font-family: var(--ty-font-sans); font-size: 14px; font-weight: 600; letter-spacing: 0.02em;
+        transition: opacity 160ms cubic-bezier(.2,.8,.2,1), transform 160ms cubic-bezier(.2,.8,.2,1);
+      }
+      .reader-cta:hover { opacity: 0.9; }
+      .reader-cta:active { opacity: 0.82; transform: translateY(1px); }
+      .reader-cta .cta-chevron { transition: transform 160ms cubic-bezier(.2,.8,.2,1); }
+      .reader-cta:hover .cta-chevron { transform: translateX(2px); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .reader-icon-btn, .reader-cta, .reader-cta .cta-chevron { transition: none; }
+        .reader-cta:hover .cta-chevron { transform: none; }
+        .reader-cta:active { transform: none; }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
