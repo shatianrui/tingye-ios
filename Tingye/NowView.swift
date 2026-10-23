@@ -159,8 +159,8 @@ struct NowView: View {
         }
     }
 
-    /// 封面卡底色与字色日夜不变：墨底白字，靠刊红框与页面分开。
-    private static let coverField = Color(hex: 0x141414)
+    /// 封面卡底色与字色日夜不变：靛黑底白字，靠发丝线框与页面分开。
+    private static let coverField = Color(hex: 0x10151C)
     private static let coverInk = Color.white
 
     /// 杂志特刊式斜角带。

@@ -727,16 +727,16 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x171310) : Color(hex: 0xF8F3E9)
-        let foreground = dark ? Color(hex: 0xE9DFCE) : Color(hex: 0x2E2418)
+        let background = dark ? Color(hex: 0x10151C) : Color(hex: 0xF7F5F0)
+        let foreground = dark ? Color(hex: 0xE3E7EC) : Color(hex: 0x1F2530)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0xD9A05B : 0x9C5B24)).frame(width: 4, height: 4)
+                Rectangle().fill(Color(hex: dark ? 0x8FB0D1 : 0x2C4A6E)).frame(width: 4, height: 4)
                 Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            Rectangle().fill(Color(hex: dark ? 0x211B15 : 0xFDFBF5)).frame(height: 25)
+            Rectangle().fill(Color(hex: dark ? 0x182029 : 0xFCFBF8)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0xD9A05B : 0x9C5B24)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Color(hex: dark ? 0x8FB0D1 : 0x2C4A6E)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
@@ -747,8 +747,8 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x171310)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xD9A05B)) }
+                Rectangle().fill(Color(hex: 0x10151C)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0x8FB0D1)) }
             }
         }
         .clipShape(Rectangle())

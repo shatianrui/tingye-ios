@@ -139,10 +139,10 @@ struct ReaderView: View {
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
     /// 报刊风格：强调色就是当前纸上的墨色，与听书页的黑色播放键、墨线一致；任何纸色都天然有足够对比。
-    /// 灯琥珀随纸色取值：默认纸跟随外观，深色纸提亮，浅色纸用标准琥珀；主色上的字相应取白或纸色。
+    /// 靛蓝随纸色取值：默认纸跟随外观，深色纸提亮，浅色纸用标准靛蓝；主色上的字相应取白或纸色。
     private var readerAccent: Color {
         if prefs.kind == .paper { return Theme.clay }
-        return prefs.kind.dark ? Color(hex: 0xD9A05B) : Color(hex: 0x9C5B24)
+        return prefs.kind.dark ? Color(hex: 0x8FB0D1) : Color(hex: 0x2C4A6E)
     }
     private var readerOnAccent: Color {
         if prefs.kind == .paper { return Theme.onClay }

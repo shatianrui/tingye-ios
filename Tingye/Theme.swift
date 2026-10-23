@@ -3,45 +3,45 @@ import UIKit
 import CoreImage
 import Pow
 
-/// 听页 · 温暖纸质 · 灯下书斋（v24）。暖纸底、墨棕文字、宋体衬线标题，安静书房气质。
-/// 唯一的彩色是灯琥珀 #9C5B24（白字对比 5.35:1）：眉题、主按钮、进度、播放键与页签指示；其余靠墨色与字重。
-/// 设计稿：Design/v21-swiss-draft「听页 Tingye · 温暖纸质 · 灯下书斋」。
+/// 听页 · 墨青 · 靛蓝书卷（v25）。宣纸白底、墨青文字、宋体衬线标题，蓝印线描气质。
+/// 唯一的彩色是靛蓝 #2C4A6E（宣纸底对比 8.3:1）：眉题、主按钮、进度、播放键与页签指示；
+/// 铜金 #96703A 仅用于印章式徽章与细描边，不承载正文。
 enum Theme {
-    static let bg = dynamic(0xF8F3E9, 0x171310)
-    static let surface = dynamic(0xFDFBF5, 0x211B15)
-    /// 次级暖纸面：迷你播放器、摘句框等次级面。
-    static let surface2 = dynamic(0xF1EADC, 0x2A231B)
-    static let ink = dynamic(0x2E2418, 0xE9DFCE)
-    static let ink2 = dynamic(0x7A6A55, 0xA6957D)
+    static let bg = dynamic(0xF7F5F0, 0x10151C)
+    static let surface = dynamic(0xFCFBF8, 0x182029)
+    /// 次级冷纸面：迷你播放器、摘句框等次级面。
+    static let surface2 = dynamic(0xEDEFEA, 0x202A36)
+    static let ink = dynamic(0x1F2530, 0xE3E7EC)
+    static let ink2 = dynamic(0x5C6675, 0x98A2B0)
     static let ink3 = ink2
-    /// 暖调发丝线：条目之间 1px；栏目首线与报头线用墨色 `rulePaint`。
-    static let line = dynamic(0xE3D8C3, 0x3A3026)
+    /// 冷调发丝线：条目之间 1px；栏目首线与报头线用墨色 `rulePaint`。
+    static let line = dynamic(0xD7DCD8, 0x2E3947)
     static let rulePaint = ink
-    static let onInk = dynamic(0xFDFBF5, 0x171310)
+    static let onInk = dynamic(0xFCFBF8, 0x10151C)
     static let cardEdge = line
-    /// 灯琥珀·填充面：主按钮、进度、播放键。深色模式提亮为浅琥珀，深字仍过对比度。
-    static let clay = dynamic(0x9C5B24, 0xD9A05B)
-    static let onClay = dynamic(0xFDFBF5, 0x171310)
-    /// 灯琥珀·文字：眉题、编号、选中态。深色模式提亮，保证在墨底上可读。
-    static let accent = dynamic(0x9C5B24, 0xD9A05B)
-    /// 选中浅底：极淡的琥珀。
-    static let accentSoft = dynamic(0xFBF3E8, 0x2A231B)
+    /// 靛蓝·填充面：主按钮、进度、播放键。深色模式提亮为浅靛，深字仍过对比度。
+    static let clay = dynamic(0x2C4A6E, 0x8FB0D1)
+    static let onClay = dynamic(0xFCFBF8, 0x10151C)
+    /// 靛蓝·文字：眉题、编号、选中态。深色模式提亮，保证在墨底上可读。
+    static let accent = dynamic(0x2C4A6E, 0x8FB0D1)
+    /// 选中浅底：极淡的靛蓝。
+    static let accentSoft = dynamic(0xE9EEF3, 0x232C38)
     static let onAccent = onClay
     /// 文字链接：墨色加下划线，不另引入颜色（「全部书架」「看原文」）。
     static let link = ink
     static let marker = clay
     static let onMarker = onClay
-    /// 跟读当前句：淡琥珀底，配合左侧琥珀竖条。
-    static let readingHighlight = dynamic(0xF5E4CC, 0x3A3026)
+    /// 跟读当前句：淡靛蓝底，配合左侧靛蓝竖条。
+    static let readingHighlight = dynamic(0xE3EAF2, 0x2A3542)
     static let hero = surface2
     static let heroInk = ink
     static let forest = accent
     static let onForest = onAccent
     static let wash = clay.opacity(0.14)
     static let danger = dynamic(0xB43C50, 0xF0A5B2)
-    /// 金仅用于「精排 / 精装」标识描边，不承载文字；日夜同值。
-    static let gold = dynamic(0x8B6B35, 0xD0AE73)
-    static let goldSoft = dynamic(0xF3EDDE, 0x373124)
+    /// 铜金仅用于「精排 / 精装」等印章式标识，不承载正文；日夜同值。
+    static let gold = dynamic(0x96703A, 0xC89B62)
+    static let goldSoft = dynamic(0xF1EDE2, 0x322D20)
     static let jade = dynamic(0x4F6B3E, 0x9DB58A)
     static let jadeSoft = dynamic(0xE7ECDD, 0x2A3324)
     static let indigo = accent
@@ -101,14 +101,14 @@ enum Theme {
     // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
 
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
-    /// 占位封使用低饱和书刊纸色，随日夜切换；真实导入书封不反色。
+    /// 占位封使用低饱和冷纸色，随日夜切换；真实导入书封不反色。
     static func coverUIColor(_ color: String) -> UIColor {
-        // 占位封：三种低饱和暖纸色，按书的色名稳定分配；深色模式统一压暗。
-        let papers: [UInt32] = [0xEDE7DA, 0xE3E6E1, 0xE9E2DF]
+        // 占位封：三种低饱和冷纸色，按书的色名稳定分配；深色模式统一压暗。
+        let papers: [UInt32] = [0xE9EDEA, 0xE4E9EF, 0xEDECE6]
         let light = papers[color.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % papers.count]
-        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x2A231B) : UIColor(hex: light) }
+        return UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0x202A36) : UIColor(hex: light) }
     }
-    static func coverForeground(_ color: String) -> Color { dynamic(0x2E2418, 0xE9DFCE) }
+    static func coverForeground(_ color: String) -> Color { dynamic(0x1F2530, 0xE3E7EC) }
 
     /// 纯色色块（保留渐变签名，便于沿用调用处）。
     static func coverGradient(_ color: String) -> LinearGradient {
@@ -124,7 +124,7 @@ enum Theme {
     }
 }
 
-// MARK: - 层次：暖纸画布与安静的内容表面
+// MARK: - 层次：宣纸画布与安静的内容表面
 
 extension View {
     /// 自定义系统字号也跟随 Dynamic Type；不要用固定字号再缩小文字来掩盖溢出。
@@ -176,7 +176,7 @@ extension View {
         self.background { Theme.bg.ignoresSafeArea() }
     }
 
-    /// 跟读：淡琥珀底与琥珀竖条共同标记当前句，不只依赖颜色。
+    /// 跟读：淡靛蓝底与靛蓝竖条共同标记当前句，不只依赖颜色。
     func markerHighlight() -> some View {
         self
             .foregroundStyle(Theme.ink)
@@ -438,7 +438,7 @@ struct SealBadge: View {
 
 // MARK: - 按钮（温润圆角，主次明确）
 
-/// 灯琥珀圆角主操作、2pt 墨框次操作。
+/// 靛蓝圆角主操作、2pt 墨框次操作。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -574,7 +574,7 @@ struct Card<Content: View>: View {
     }
 }
 
-/// 设置项图标：墨色线性图标，琥珀留给编号与眉题。
+/// 设置项图标：墨色线性图标，靛蓝留给编号与眉题。
 struct SettingsIcon: View {
     let systemName: String
     let color: Color
@@ -625,7 +625,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, 0.5)).accessibilityHidden(true) }
 }
 
-/// 纸质栏目标题：黑体粗宽字距眉题（可带编号），灯琥珀。
+/// 纸质栏目标题：黑体粗宽字距眉题（可带编号），靛蓝。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -706,8 +706,8 @@ struct ProgressBar: View {
 
 // MARK: - 书籍封面
 
-/// 真实书封完整显示；无图时使用纸质占位封：暖纸色 + 宋体粗书名 + 底部一道墨线。
-/// 不论有无书封，外圈都是 1px 暖调发丝线与 10pt 圆角。
+/// 真实书封完整显示；无图时使用纸质占位封：冷纸色 + 宋体粗书名 + 底部一道墨线。
+/// 不论有无书封，外圈都是 1px 冷调发丝线与 10pt 圆角。
 struct BookCoverView: View {
     let title: String
     var color = "ink"
@@ -804,7 +804,7 @@ struct CoverBackdrop: View {
     @State private var average: UIColor?
     var body: some View {
         Group {
-            if image != nil { Color(uiColor: average?.backgroundForWhiteText ?? UIColor(hex: 0x272623)) }
+            if image != nil { Color(uiColor: average?.backgroundForWhiteText ?? UIColor(hex: 0x1B2430)) }
             else { Theme.coverColor(color) }
         }
         .task(id: image.map(ObjectIdentifier.init)) {
@@ -895,12 +895,12 @@ struct ReaderPreferences: Equatable {
         case .paper:   return ReaderPaper.xuanSecondary
         }
     }
-    /// 原生分页与原书图文共用琥珀跟读标记（铺底时取低透明度成淡琥珀），纸色设置不变；深色纸用提亮的琥珀。
+    /// 原生分页与原书图文共用靛蓝跟读标记（铺底时取低透明度成淡靛蓝），纸色设置不变；深色纸用提亮的靛蓝。
     var highlightBand: UIColor {
         let darkPaper = kind.dark
-        return UIColor { $0.userInterfaceStyle == .dark || darkPaper ? UIColor(hex: 0xD9A05B) : UIColor(hex: 0x9C5B24) }
+        return UIColor { $0.userInterfaceStyle == .dark || darkPaper ? UIColor(hex: 0x8FB0D1) : UIColor(hex: 0x2C4A6E) }
     }
-    /// 连续滚动模式整句铺底：半透明琥珀
+    /// 连续滚动模式整句铺底：半透明靛蓝
     var highlight: UIColor {
         let band = highlightBand, darkPaper = kind.dark
         return UIColor { band.resolvedColor(with: $0).withAlphaComponent($0.userInterfaceStyle == .dark || darkPaper ? 0.26 : 0.22) }

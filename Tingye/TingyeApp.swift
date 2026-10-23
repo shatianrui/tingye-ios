@@ -99,10 +99,10 @@ enum UIReview {
             var book = source
             let renderer = UIGraphicsImageRenderer(size: CGSize(width: 240, height: 344))
             let image = renderer.image { context in
-                let palettes: [(UInt32, UInt32, UInt32)] = [(0x294C5A, 0x8DAAA3, 0xC4B58E), (0xDFE7D6, 0x91AF9B, 0x527A70), (0xE4D8C2, 0x91A7AD, 0x496C7B)]
+                let palettes: [(UInt32, UInt32, UInt32)] = [(0x1B2A3D, 0x46648A, 0x96703A), (0xE9EDEA, 0x8FA6BC, 0x2C4A6E), (0xDCE4E9, 0x7E99B5, 0x46648A)]
                 let palette = palettes[index % palettes.count]
                 UIColor(hex: palette.0).setFill(); context.fill(CGRect(x: 0, y: 0, width: 240, height: 344))
-                UIColor(hex: index == 0 ? 0xE6CA8F : 0xF6EFCE).setFill()
+                UIColor(hex: index == 0 ? 0xC89B62 : 0xF7F5F0).setFill()
                 UIBezierPath(ovalIn: CGRect(x: 139, y: 133, width: 63, height: 63)).fill()
                 for layer in 0..<2 {
                     UIColor(hex: layer == 0 ? palette.1 : palette.2).setFill()
@@ -112,7 +112,7 @@ enum UIReview {
                     path.addCurve(to: CGPoint(x: 240, y: y - 8), controlPoint1: CGPoint(x: 90, y: y - 70), controlPoint2: CGPoint(x: 150, y: y + 58))
                     path.addLine(to: CGPoint(x: 240, y: 344)); path.addLine(to: CGPoint(x: 0, y: 344)); path.close(); path.fill()
                 }
-                let foreground = UIColor(hex: index == 0 ? 0xF4EEDB : 0x304B4F)
+                let foreground = UIColor(hex: index == 0 ? 0xE3E7EC : 0x1F2530)
                 (book.title as NSString).draw(in: CGRect(x: 28, y: 36, width: 190, height: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 31, weight: .medium), .foregroundColor: foreground, .kern: 4])
                 (book.author as NSString).draw(at: CGPoint(x: 30, y: 91), withAttributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: foreground])
                 ("听页 · 示例节选" as NSString).draw(at: CGPoint(x: 27, y: 315), withAttributes: [.font: UIFont.systemFont(ofSize: 11), .foregroundColor: UIColor.white])
