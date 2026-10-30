@@ -1,0 +1,89 @@
+{
+  "app": "Tingye",
+  "version": "1.24.0",
+  "build": "122",
+  "recordedAt": "2026-10-23T22:21:49.639994+08:00",
+  "platforms": {
+    "ios": {
+      "uploadedAt": "2026-10-23 22:08:13.318 +08:00",
+      "uploadStatus": "succeeded",
+      "exportExitCode": 0,
+      "archive": "build/Tingye-122.xcarchive",
+      "uploadLog": "build/upload-122.log",
+      "architectures": [
+        "arm64"
+      ],
+      "archiveChecksPassed": 28,
+      "binarySHA256": "06ecef31a73601c08f854d7488194905222f479d16fb233be745109847f62e21",
+      "dSYMUUIDs": [
+        [
+          "25043398-8787-3D32-A93A-7D3BC081B25B",
+          "arm64"
+        ]
+      ],
+      "testflightStatus": "available-to-current-tester"
+    },
+    "mac": {
+      "uploadedAt": "2026-10-23 22:18:35.698 +08:00",
+      "uploadStatus": "succeeded",
+      "exportExitCode": 0,
+      "archive": "build/Tingye-122-mac.xcarchive",
+      "uploadLog": "build/upload-122-mac.log",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "archiveChecksPassed": 29,
+      "binarySHA256": "4907e2642f77144ee9894922cd69b029316dedc8b58db2c9e3570cf2ce4279cb",
+      "dSYMUUIDs": [
+        [
+          "A45EF478-6019-3B0E-A0A9-89235545FF78",
+          "arm64"
+        ],
+        [
+          "FC8B3003-2AAE-3D56-9BD1-ADA8E07A735F",
+          "x86_64"
+        ]
+      ],
+      "testflightStatus": "available-to-current-tester"
+    }
+  },
+  "tests": {
+    "core": 112,
+    "ui": 23,
+    "passed": 135,
+    "failed": 0,
+    "skipped": 0,
+    "environment": "iPhone 17e / iOS 27.0 Simulator",
+    "buildNumberBumpedAfterTests": true,
+    "businessCodeUnchangedAfterTests": true
+  },
+  "frozenSourceFiles": 149,
+  "sourceFreezeVerified": true,
+  "releaseNotesFile": "TestFlight-122-更新说明.txt",
+  "releaseNotesUploadedToASC": false,
+  "appStoreReviewSubmitted": false,
+  "testerGroupsChanged": false,
+  "gitCommitCreated": false,
+  "iosAvailability": {
+    "checkedAt": "2026-10-23T22:15:15.279730+08:00",
+    "source": "macOS TestFlight native application, iOS platform selected and refreshed",
+    "version": "1.24.0",
+    "build": "122",
+    "installActionVisible": true,
+    "sizeMB": 54.2,
+    "status": "available-to-current-tester",
+    "installationPerformed": false
+  },
+  "macUploadNote": "App Store Connect returned one transient HTTP 500 during preflight. The same upload process continued and succeeded; no credentials or archive were changed.",
+  "macAvailability": {
+    "checkedAt": "2026-10-23T22:21:49.639994+08:00",
+    "source": "macOS TestFlight native application, macOS platform selected",
+    "version": "1.24.0",
+    "build": "122",
+    "updateActionVisible": true,
+    "sizeMB": 60.6,
+    "status": "available-to-current-tester",
+    "installationPerformed": false
+  }
+}

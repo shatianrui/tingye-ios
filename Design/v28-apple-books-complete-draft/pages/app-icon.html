@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppIcon · 听页设计规范</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+<style id="critical-layout">
+  *,*::before,*::after{box-sizing:border-box}
+  html{background:var(--ty-surface-sunken)}
+  body{margin:0;min-width:0;min-height:100vh;background:var(--ty-surface-sunken);color:var(--ty-foreground);font-family:var(--ty-font-sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;-webkit-tap-highlight-color:transparent}a:focus-visible{outline:2px solid var(--ty-ring);outline-offset:3px}
+  .icon-board{width:100%;max-width:1180px;min-height:100vh;margin:0 auto;padding:36px 20px 0;background:var(--ty-surface-sunken)}
+  .icon-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:32px;align-items:center;padding-bottom:36px}.hero-copy{min-width:0}.eyebrow{margin:0 0 10px;color:var(--ty-muted-foreground);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase}.hero-copy h1{margin:0;font-size:34px;font-weight:700;line-height:1.2;letter-spacing:-.025em}.hero-copy .hero-lead{max-width:580px;margin:12px 0 0;color:var(--ty-muted-foreground);font-size:16px;line-height:1.7}.hero-statement{margin:20px 0 0;font-size:18px;font-weight:500;line-height:1.55}.hero-tags{display:flex;flex-wrap:wrap;gap:8px 16px;margin:18px 0 0;padding:0;list-style:none;color:var(--ty-muted-foreground);font-size:12px}.hero-tags li{display:flex;align-items:center;gap:7px}.hero-tags li::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--ty-neutral-500)}
+  .master-figure{display:grid;justify-items:center;min-width:0;margin:0}.master-stage{display:grid;justify-items:center;width:100%;padding:24px 16px 18px;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--ty-background)}.icon-mask{position:relative;flex:none;aspect-ratio:1;overflow:hidden;border-radius:22.37%;background:var(--ty-muted)}.icon-mask img{display:block;width:100%;height:100%;object-fit:cover}.master-icon{width:min(248px,66vw)}.master-dimension{display:flex;align-items:center;gap:10px;width:min(248px,66vw);margin-top:14px;color:var(--ty-muted-foreground);font-size:11px;font-variant-numeric:tabular-nums}.master-dimension::before,.master-dimension::after{content:"";height:1px;flex:1;background:var(--ty-neutral-400)}.master-figure figcaption{margin-top:12px;color:var(--ty-muted-foreground);font-size:12px;line-height:1.55;text-align:center}
+  .spec-section{padding:30px 0;border-top:1px solid var(--ty-hairline)}.section-heading{max-width:740px;margin-bottom:24px}.section-index{margin:0 0 6px;color:var(--ty-muted-foreground);font-size:12px;font-variant-numeric:tabular-nums}.section-heading h2{margin:0;font-size:24px;font-weight:600;line-height:1.3;letter-spacing:-.015em}.section-heading>p:last-child{margin:8px 0 0;color:var(--ty-muted-foreground);font-size:14px;line-height:1.7}
+  .variant-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}.variant-figure{min-width:0;margin:0}.variant-stage{--stage-bg:var(--ty-neutral-50);display:grid;place-items:center;min-height:230px;padding:28px 20px;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--stage-bg)}.variant-stage.dark-stage{--stage-bg:#121212;border-color:#2C2C2C}.variant-stage.tinted-stage{--stage-bg:#E8E8E8}.variant-icon{width:156px}.variant-figure figcaption{padding:14px 0 0}.variant-title-line{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}.variant-title-line h3{margin:0;font-size:17px;font-weight:600;line-height:1.45}.variant-title-line span{color:var(--ty-muted-foreground);font-family:var(--ty-font-mono);font-size:11px;overflow-wrap:anywhere}.variant-figure figcaption>p{margin:6px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+  .size-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}.size-figure{min-width:0;margin:0}.size-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;font-size:13px;font-weight:500}.size-label span:last-child{color:var(--ty-muted-foreground);font-size:12px;font-weight:400}.size-stage{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:28px;min-height:160px;padding:28px 20px 20px;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--ty-neutral-50)}.size-stage.on-dark{border-color:#2C2C2C;background:#121212}.size-item{display:grid;justify-items:center;gap:10px;min-width:36px;margin:0}.size-item figcaption{color:var(--ty-muted-foreground);font-size:11px;line-height:1.4;font-variant-numeric:tabular-nums}.on-dark .size-item figcaption{color:#A3A3A3}.size-60{width:60px}.size-40{width:40px}.size-29{width:29px}.size-note{margin:12px 0 0;color:var(--ty-muted-foreground);font-size:12px;line-height:1.65}
+  .delivery-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}.spec-list{margin:0}.spec-list>div{display:grid;grid-template-columns:minmax(88px,.35fr) minmax(0,1fr);gap:16px;padding:14px 0;border-top:1px solid var(--ty-hairline)}.spec-list>div:last-child{border-bottom:1px solid var(--ty-hairline)}.spec-list dt{font-size:13px;font-weight:600;line-height:1.6}.spec-list dd{min-width:0;margin:0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.65;overflow-wrap:anywhere}.mask-note{padding:20px;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--ty-background)}.mask-diagram{display:grid;grid-template-columns:88px minmax(0,1fr);gap:18px;align-items:center}.mask-mini{width:88px;border:1px dashed var(--ty-neutral-500)}.mask-note h3{margin:0;font-size:16px;font-weight:600;line-height:1.45}.mask-note p{margin:6px 0 0;color:var(--ty-muted-foreground);font-size:12px;line-height:1.65}.mask-note>p:last-child{margin-top:18px;padding-top:14px;border-top:1px solid var(--ty-hairline)}
+  .board-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:24px 0 calc(24px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--ty-hairline);color:var(--ty-muted-foreground);font-size:12px}.board-footer p{margin:0}.board-footer a{display:inline-flex;align-items:center;min-height:44px;color:var(--ty-foreground);text-decoration:none}
+  @media(min-width:700px){.icon-board{padding:52px 32px 0}.icon-hero{grid-template-columns:minmax(0,1fr) minmax(280px,.72fr);gap:56px}.hero-copy h1{font-size:44px}.variant-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.variant-stage{min-height:210px;padding-right:14px;padding-left:14px}.variant-icon{width:min(140px,100%)}.size-grid,.delivery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.spec-section{padding:38px 0}}
+  @media(min-width:1020px){.variant-icon{width:156px}.variant-stage{min-height:238px}.icon-hero{gap:84px}}
+  @media(max-width:359px){.icon-board{padding-right:12px;padding-left:12px}.master-stage{padding-right:12px;padding-left:12px}.master-icon,.master-dimension{width:min(220px,70vw)}.size-stage{gap:20px;padding-right:14px;padding-left:14px}.mask-diagram{grid-template-columns:72px minmax(0,1fr);gap:14px}.mask-mini{width:72px}.spec-list>div{grid-template-columns:80px minmax(0,1fr);gap:12px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+<main class="icon-board">
+  <section class="icon-hero" aria-labelledby="page-title">
+    <header class="hero-copy"><p class="eyebrow">听页设计规范 · AppIcon</p><h1 id="page-title">书页与声波，<br>只剩一个识别。</h1><p class="hero-lead">同一单色母版对应 iOS 标准、深色与着色三种系统外观。轮廓、书脊与三道声波始终一致，不增加第四套图标。</p><p class="hero-statement">以书页为形，以声波为识。</p><ul class="hero-tags"><li>1024 px 主母版</li><li>sRGB</li><li>单色几何</li><li>系统圆角遮罩</li></ul></header>
+    <figure class="master-figure"><div class="master-stage"><div class="icon-mask master-icon"><img src="../assets/app-icon-standard.png" alt="听页标准 AppIcon：黑底白色打开书页与三道声波" width="1024" height="1024" decoding="async"></div><div class="master-dimension" aria-hidden="true">1024 × 1024 px</div></div><figcaption>标准主母版 · 正方形交付，画板仅预览系统遮罩</figcaption></figure>
+  </section>
+  <section class="spec-section" aria-labelledby="variants-heading"><div class="section-heading"><p class="section-index">01 / 正式变体</p><h2 id="variants-heading">三种系统语义，一套几何</h2><p>仅改变系统要求的外观处理，不重排书页、不改变声波数量，也不添加文字或装饰。</p></div><div class="variant-grid">
+    <figure class="variant-figure"><div class="variant-stage"><div class="icon-mask variant-icon"><img src="../assets/app-icon-standard.png" alt="标准外观 AppIcon" width="1024" height="1024" decoding="async"></div></div><figcaption><div class="variant-title-line"><h3>标准</h3><span>app-icon-standard.png</span></div><p>默认主屏幕与浅色环境使用。深色底与白色符号建立最高辨识度。</p></figcaption></figure>
+    <figure class="variant-figure"><div class="variant-stage dark-stage"><div class="icon-mask variant-icon"><img src="../assets/app-icon-dark.png" alt="深色外观 AppIcon" width="1024" height="1024" decoding="async"></div></div><figcaption><div class="variant-title-line"><h3>深色</h3><span>app-icon-dark.png</span></div><p>响应 iOS 深色主屏幕。保留符号亮度和外轮廓，不与深色壁纸融为一体。</p></figcaption></figure>
+    <figure class="variant-figure"><div class="variant-stage tinted-stage"><div class="icon-mask variant-icon"><img src="../assets/app-icon-tinted.png" alt="着色外观 AppIcon" width="1024" height="1024" decoding="async"></div></div><figcaption><div class="variant-title-line"><h3>着色</h3><span>app-icon-tinted.png</span></div><p>为系统着色模式提供的单色版本。依赖明暗层级，而非额外品牌色。</p></figcaption></figure>
+  </div></section>
+  <section class="spec-section" aria-labelledby="sizes-heading"><div class="section-heading"><p class="section-index">02 / 辨识度</p><h2 id="sizes-heading">60、40、29 px 小尺寸检查</h2><p>在明暗背景上检查书页负形、中央书脊和声波是否仍可分辨。所有尺寸使用同一 PNG 等比缩放，不细线化、不重绘。</p></div><div class="size-grid">
+    <figure class="size-figure"><figcaption class="size-label"><span>标准图标 · 明亮背景</span><span>60 / 40 / 29 px</span></figcaption><div class="size-stage"><figure class="size-item"><div class="icon-mask size-60"><img src="../assets/app-icon-standard.png" alt="60 像素标准 AppIcon" width="60" height="60"></div><figcaption>60 px</figcaption></figure><figure class="size-item"><div class="icon-mask size-40"><img src="../assets/app-icon-standard.png" alt="40 像素标准 AppIcon" width="40" height="40"></div><figcaption>40 px</figcaption></figure><figure class="size-item"><div class="icon-mask size-29"><img src="../assets/app-icon-standard.png" alt="29 像素标准 AppIcon" width="29" height="29"></div><figcaption>29 px</figcaption></figure></div></figure>
+    <figure class="size-figure"><figcaption class="size-label"><span>深色图标 · 暗色背景</span><span>60 / 40 / 29 px</span></figcaption><div class="size-stage on-dark"><figure class="size-item"><div class="icon-mask size-60"><img src="../assets/app-icon-dark.png" alt="60 像素深色 AppIcon" width="60" height="60"></div><figcaption>60 px</figcaption></figure><figure class="size-item"><div class="icon-mask size-40"><img src="../assets/app-icon-dark.png" alt="40 像素深色 AppIcon" width="40" height="40"></div><figcaption>40 px</figcaption></figure><figure class="size-item"><div class="icon-mask size-29"><img src="../assets/app-icon-dark.png" alt="29 像素深色 AppIcon" width="29" height="29"></div><figcaption>29 px</figcaption></figure></div></figure>
+  </div><p class="size-note">通过标准：29 px 下仍能区分打开的双页与上方三道声波；书脊不断裂，图形不触碰圆角边缘。</p></section>
+  <section class="spec-section" aria-labelledby="delivery-heading"><div class="section-heading"><p class="section-index">03 / 交付与遮罩</p><h2 id="delivery-heading">源文件保持正方形，系统负责圆角</h2><p>预览中的 22.37% 圆角只用于设计检查，不烘焙进 PNG。图标在 Xcode 中使用统一 1024 px AppIcon 槽位及对应外观资源。</p></div><div class="delivery-grid"><dl class="spec-list"><div><dt>主规格</dt><dd>1024 × 1024 px，PNG，sRGB；正方形画布，无透明圆角。</dd></div><div><dt>安全边距</dt><dd>关键书页与声波位于中心安全区，四周至少保留 14% 空白。</dd></div><div><dt>几何约束</dt><dd>中央书脊垂直，双页对称；三道声波由细到粗保持统一端点。</dd></div><div><dt>内容限制</dt><dd>不加入“听页”文字、渐变、投影、额外徽标或第四种外观。</dd></div></dl><aside class="mask-note" aria-label="圆角遮罩说明"><div class="mask-diagram"><div class="icon-mask mask-mini"><img src="../assets/app-icon-standard.png" alt="圆角遮罩下的标准 AppIcon" width="88" height="88"></div><div><h3>连续圆角遮罩</h3><p>画板以 22.37% 近似系统外观。虚线只用于检查源图边界。</p></div></div><p>明暗背景检查与圆角检查同时进行，避免只在大尺寸白底上判断图标。</p></aside></div></section>
+  <footer class="board-footer"><p>听页 · 标准 / 深色 / 着色</p><a href="accessibility.html" data-dom-id="open-accessibility">查看可访问性规范</a><p>AppIcon v28 · 单色图标系统</p></footer>
+</main>
+</body>
+</html>

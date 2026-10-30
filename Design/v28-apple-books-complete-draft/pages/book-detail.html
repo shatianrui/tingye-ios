@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书籍详情</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen antialiased">
+  <div class="desktop-stage">
+    <aside class="context-panel" aria-label="书籍出版信息">
+      <h2>出版信息</h2>
+      <p>《故乡》收录于鲁迅小说集《呐喊》，本机版本按四个阅读章节整理。</p>
+      <dl class="context-list">
+        <div><dt>作者</dt><dd>鲁迅</dd></div>
+        <div><dt>首次发表</dt><dd>1921年</dd></div>
+        <div><dt>本机章节</dt><dd>4章</dd></div>
+      </dl>
+      <p class="context-note">公版内容整理，阅读与听书位置分别保存。</p>
+    </aside>
+
+    <main class="app-shell" id="main-content">
+      <header class="local-nav" aria-label="书籍导航">
+        <a href="shelf.html" class="back-link" data-dom-id="detail-back-shelf" aria-label="返回书库"><i data-lucide="chevron-left" aria-hidden="true"></i><span>书库</span></a>
+        <span class="local-title">书籍详情</span>
+        <a href="library-management.html" class="manage-link" aria-label="管理本书">管理</a>
+      </header>
+
+      <div class="app-content">
+        <article aria-labelledby="book-title">
+          <header class="detail-heading">
+            <h1 id="book-title" class="ty-display">故乡</h1>
+            <p>鲁迅 · 小说</p>
+          </header>
+
+          <section class="book-overview" aria-label="书籍与进度">
+            <img class="book-cover" src="../assets/cover-hometown.png" width="112" height="168" alt="《故乡》封面" fetchpriority="high" decoding="async">
+            <dl class="book-facts">
+              <div><dt>阅读位置</dt><dd class="ty-numeric">第四章 · 42%</dd></div>
+              <div><dt>听书位置</dt><dd class="ty-numeric">第三章 · 18:24</dd></div>
+              <div><dt>版本</dt><dd>公版整理</dd></div>
+            </dl>
+          </section>
+
+          <div class="book-actions" aria-label="阅读与听书操作">
+            <a href="reader.html" class="primary-button" data-dom-id="detail-read"><i data-lucide="book-open" aria-hidden="true"></i><span>阅读</span></a>
+            <a href="player.html" class="secondary-button" data-dom-id="detail-listen"><i data-lucide="headphones" aria-hidden="true"></i><span>听书</span></a>
+          </div>
+
+          <section class="content-section" aria-labelledby="intro-title">
+            <h2 id="intro-title" class="ty-h2">内容简介</h2>
+            <p class="detail-copy">《故乡》以“我”回乡的所见所感为线索，写闰土、杨二嫂等人物的变化，呈现记忆与现实之间的距离。</p>
+            <p class="detail-copy">本机版本保留阅读和听书的独立位置，可从当前章节继续，也可从目录重新选择。</p>
+          </section>
+
+          <section class="content-section excerpt-section" aria-labelledby="excerpt-title">
+            <h2 id="excerpt-title" class="ty-h2">正文节选</h2>
+            <blockquote class="book-excerpt ty-reading">
+              <p>我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。</p>
+              <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。</p>
+            </blockquote>
+          </section>
+
+          <section class="content-section" aria-labelledby="chapters-title">
+            <div class="section-heading">
+              <h2 id="chapters-title" class="ty-h2">章节目录</h2>
+              <span class="section-meta ty-numeric">共4章</span>
+            </div>
+            <ol class="chapter-list">
+              <li><a href="reader.html" class="chapter-row"><span class="chapter-number ty-numeric">01</span><span class="chapter-copy"><strong>回乡</strong><span>已读完</span></span><i data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+              <li><a href="reader.html" class="chapter-row"><span class="chapter-number ty-numeric">02</span><span class="chapter-copy"><strong>老屋</strong><span>已读完</span></span><i data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+              <li><a href="reader.html" class="chapter-row"><span class="chapter-number ty-numeric">03</span><span class="chapter-copy"><strong>闰土</strong><span class="ty-numeric">听书至18:24</span></span><i data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+              <li><a href="reader.html" class="chapter-row" aria-current="location"><span class="chapter-number ty-numeric">04</span><span class="chapter-copy"><strong>离别</strong><span class="ty-numeric">阅读至42%</span></span><i data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+            </ol>
+          </section>
+        </article>
+
+        <footer class="business-footer">
+          <p>公版内容整理 · 最近同步 10月30日 09:42</p>
+          <p>阅读与听书进度独立保存</p>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <style id="critical-layout">
+    *, *::before, *::after { box-sizing: border-box; }
+    html { background: var(--ty-surface-sunken); }
+    body { margin: 0; min-height: 100vh; background: var(--ty-surface-sunken); color: var(--ty-foreground); font-family: var(--ty-font-sans); -webkit-font-smoothing: antialiased; }
+    button, input { font: inherit; }
+    a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--ty-ring); outline-offset: 3px; }
+    .desktop-stage { width: 100%; max-width: 430px; margin: 0 auto; }
+    .context-panel { display: none; }
+    .app-shell { width: 100%; min-height: 100vh; background: var(--ty-background); }
+    .app-shell svg, .context-panel svg { width: 20px; height: 20px; flex: none; stroke-width: 1.5; }
+    .local-nav { display: grid; grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr); gap: 8px; align-items: center; min-height: 60px; padding: max(8px, env(safe-area-inset-top)) 16px 8px; border-bottom: 1px solid var(--ty-hairline); }
+    .back-link, .manage-link { display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 0 4px; border-radius: var(--ty-radius-md); color: var(--ty-foreground); font-size: 14px; line-height: 1.5; text-decoration: none; white-space: nowrap; transition: opacity 140ms cubic-bezier(.2,.8,.2,1); }
+    .back-link { justify-self: start; }
+    .manage-link { justify-self: end; }
+    .back-link:active, .manage-link:active { opacity: .72; }
+    .local-title { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; text-align: center; white-space: nowrap; }
+    .app-content { padding: 28px 20px 0; }
+    .detail-heading h1 { margin: 0; font-size: 30px; line-height: 1.22; letter-spacing: -0.02em; }
+    .detail-heading p { margin: 8px 0 0; color: var(--ty-muted-foreground); font-size: 14px; line-height: 1.5; }
+    .book-overview { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 20px; align-items: center; margin-top: 24px; }
+    .book-cover { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-sm); background: var(--ty-surface-sunken); }
+    .book-facts { min-width: 0; margin: 0; }
+    .book-facts > div { padding: 10px 0; }
+    .book-facts > div + div { border-top: 1px solid var(--ty-hairline); }
+    .book-facts dt { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+    .book-facts dd { margin: 4px 0 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+    .book-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+    .primary-button, .secondary-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 48px; padding: 12px 16px; border-radius: var(--ty-radius-md); font-size: 16px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; white-space: nowrap; cursor: pointer; transition: opacity 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1); }
+    .primary-button { border: 0; background: var(--ty-primary); color: var(--ty-primary-foreground); }
+    .secondary-button { border: 1px solid var(--ty-border); background: var(--ty-background); color: var(--ty-foreground); }
+    .primary-button:active, .secondary-button:active { opacity: .72; transform: translateY(1px); }
+    .content-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--ty-hairline); }
+    .content-section h2 { margin: 0; font-size: 20px; line-height: 1.3; }
+    .detail-copy { margin: 12px 0 0; color: var(--ty-foreground); font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+    .detail-copy + .detail-copy { margin-top: 8px; }
+    .book-excerpt { margin: 16px 0 0; padding: 0 0 0 16px; border-left: 1px solid var(--ty-hairline); color: var(--ty-foreground); font-size: 17px; line-height: 1.95; }
+    .book-excerpt p { margin: 0; overflow-wrap: anywhere; }
+    .book-excerpt p + p { margin-top: 16px; }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+    .section-meta { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+    .chapter-list { margin: 12px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--ty-hairline); }
+    .chapter-list li + li { border-top: 1px solid var(--ty-hairline); }
+    .chapter-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) 20px; gap: 12px; align-items: center; min-height: 68px; padding: 12px 0; color: var(--ty-foreground); text-decoration: none; transition: opacity 140ms cubic-bezier(.2,.8,.2,1); }
+    .chapter-row:active { opacity: .72; }
+    .chapter-number { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+    .chapter-copy { display: grid; min-width: 0; gap: 4px; }
+    .chapter-copy strong { font-size: 16px; font-weight: 600; line-height: 1.5; }
+    .chapter-copy > span { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+    .chapter-row > svg, .chapter-row > i:last-child { color: var(--ty-muted-foreground); transition: transform 140ms cubic-bezier(.2,.8,.2,1); }
+    .business-footer { display: grid; gap: 4px; margin-top: 32px; padding: 20px 0 calc(24px + env(safe-area-inset-bottom)); border-top: 1px solid var(--ty-hairline); color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+    .business-footer p { margin: 0; }
+    .context-panel h2 { margin: 0; font-size: 20px; line-height: 1.3; }
+    .context-panel > p { margin: 16px 0 0; color: var(--ty-muted-foreground); font-size: 14px; line-height: 1.8; }
+    .context-list { margin: 24px 0 0; border-top: 1px solid var(--ty-hairline); }
+    .context-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--ty-hairline); font-size: 13px; line-height: 1.5; }
+    .context-list dt { color: var(--ty-muted-foreground); }
+    .context-list dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+    .context-panel .context-note { font-size: 13px; }
+    @media (hover: hover) {
+      .back-link:hover, .manage-link:hover { opacity: .72; }
+      .primary-button:hover, .secondary-button:hover { opacity: .78; transform: translateY(-1px); }
+      .chapter-row:hover > svg { transform: translateX(2px); }
+    }
+    @media (max-width: 350px) {
+      .app-content { padding-right: 16px; padding-left: 16px; }
+      .book-overview { grid-template-columns: 96px minmax(0, 1fr); gap: 16px; }
+    }
+    @media (min-width: 900px) {
+      .desktop-stage { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 430px); gap: 64px; align-items: start; max-width: 850px; padding: 48px 24px; }
+      .context-panel { display: block; padding-top: 16px; border-top: 1px solid var(--ty-hairline); }
+      .app-shell { min-height: calc(100vh - 96px); border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-lg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

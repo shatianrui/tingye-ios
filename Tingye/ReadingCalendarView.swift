@@ -14,9 +14,8 @@ struct ReadingCalendarView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     header
-                    weekdayRow
-                    grid
-                    Rectangle().fill(Theme.line).frame(height: 1)
+                    VStack(spacing: 12) { weekdayRow; grid }
+                        .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                     dayDetail
                     monthSummary
                 }
@@ -25,7 +24,7 @@ struct ReadingCalendarView: View {
             }
             .paperBackground()
             .navigationTitle("阅读日历")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
         }
     }
@@ -73,10 +72,10 @@ struct ReadingCalendarView: View {
                     .font(.subheadline.weight(minutes >= goalMinutes ? .bold : .regular)).monospacedDigit()
                 Rectangle().fill(minutes >= goalMinutes ? Theme.onClay : .clear).frame(width: 12, height: 2)
             }
-            .foregroundStyle(minutes > 0 ? Theme.onClay : (future ? Theme.ink3.opacity(0.5) : Theme.ink))
+            .foregroundStyle(minutes >= goalMinutes ? Theme.onAccent : (future ? Theme.ink3.opacity(0.5) : Theme.ink))
             .frame(maxWidth: .infinity, minHeight: 48)
-            .background(minutes > 0 ? Theme.clay.opacity(Self.intensity(minutes: minutes, goal: goalMinutes)) : Theme.surface2.opacity(0.5))
-            .overlay { if isSelected { Rectangle().strokeBorder(Theme.accent, lineWidth: 2) } }
+            .background(minutes >= goalMinutes ? Theme.accent : minutes > 0 ? Theme.accentSoft : Theme.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay { if isSelected { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.accent, lineWidth: 2) } }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -120,7 +119,8 @@ struct ReadingCalendarView: View {
             summary("\(reached)", "达标天数")
             summary("\(total)", "本月分钟")
         }
-        .padding(.top, 4)
+        .padding(20)
+        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     private func summary(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {

@@ -1,0 +1,190 @@
+{
+  "success": false,
+  "outcome": "validation_failed",
+  "repairable": true,
+  "terminalViolations": [],
+  "terminalBlockingSummary": null,
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": "2026.10.13.09.48.16",
+    "version_source": "skill-release-manifest.json",
+    "runtime_skill_dir": null,
+    "recorded_at": null,
+    "expected_version": "2026.10.13.09.48.16",
+    "status": "matched",
+    "read_status": "loaded"
+  },
+  "operatingMode": "free-explore",
+  "renderBlockingErrorCount": 1,
+  "softWarningCount": 8,
+  "renderBlockingErrors": [
+    "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries"
+  ],
+  "errorSignatures": [
+    {
+      "errorClass": "repair-ledger",
+      "normalized": "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries",
+      "signature": "83056ddec66775c77061757e3308101358be6a4d9ab350b7bfe56498430fa7fa"
+    }
+  ],
+  "softWarnings": [
+    "[repair-ledger] validationRepairLedger[0].repairActions[0].preEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[0].repairActions[0].postEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[1].repairActions[0].preEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[1].repairActions[0].postEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationHistory has 3 failed validation(s) but repairEntryEvidence has 2 entries",
+    "[repair-ledger] validationHistory[1] has no matching validationRepairLedger entry for validation-report.json#ad1d77379952d303d684c9f3d0928a7b919b6723b66b5e0cbbb8aa9848bc6225",
+    "[mobile-navigation-consistency] 21 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] app-icon.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference."
+  ],
+  "repairPlanHints": [
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "app-icon.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    }
+  ],
+  "repairActionTable": [
+    {
+      "error": "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries",
+      "errorClass": "repair-ledger",
+      "severity": "blocking",
+      "action": "append_repair_entry_evidence_and_revalidation_report",
+      "owner": "main-agent",
+      "sourceReadPolicy": "read validation report and repair workflow only"
+    }
+  ],
+  "errorCount": 1,
+  "warningCount": 8,
+  "errors": [
+    "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries"
+  ],
+  "warnings": [
+    "[repair-ledger] validationRepairLedger[0].repairActions[0].preEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[0].repairActions[0].postEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[1].repairActions[0].preEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationRepairLedger[1].repairActions[0].postEditFileHashes[] is missing (legacy optional evidence)",
+    "[repair-ledger] validationHistory has 3 failed validation(s) but repairEntryEvidence has 2 entries",
+    "[repair-ledger] validationHistory[1] has no matching validationRepairLedger entry for validation-report.json#ad1d77379952d303d684c9f3d0928a7b919b6723b66b5e0cbbb8aa9848bc6225",
+    "[mobile-navigation-consistency] 21 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] app-icon.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference."
+  ],
+  "validationRunDisciplineStatus": {
+    "declared": true,
+    "restoreMode": false,
+    "maxFullValidationRuns": 4,
+    "validationHistoryCount": 3,
+    "repairLedgerCount": 2,
+    "softWarningsTriggerRepair": false,
+    "terminalState": null,
+    "nextAction": null,
+    "violations": [],
+    "success": true
+  },
+  "terminalState": null,
+  "nextCheck": {
+    "type": "repair-ledger",
+    "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v28-apple-books-complete-draft' --check=repair-ledger",
+    "fullValidationAllowed": false,
+    "reason": "current failure is repair ledger evidence; do not rerun full validation until this targeted check passes"
+  },
+  "repairBatch": [
+    {
+      "error": "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries",
+      "errorClass": "repair-ledger",
+      "severity": "blocking",
+      "action": "append_repair_entry_evidence_and_revalidation_report",
+      "owner": "main-agent",
+      "sourceReadPolicy": "read validation report and repair workflow only"
+    }
+  ],
+  "repairContextPacket": {
+    "schema_version": "1.0",
+    "purpose": "small-context repair packet; read this before full validation-report.json",
+    "success": false,
+    "terminalState": null,
+    "skillProvenance": {
+      "name": "solo-design",
+      "version": "2026.10.13.09.48.16",
+      "version_source": "skill-release-manifest.json",
+      "runtime_skill_dir": null,
+      "recorded_at": null,
+      "expected_version": "2026.10.13.09.48.16",
+      "status": "matched",
+      "read_status": "loaded"
+    },
+    "renderBlockingErrorCount": 1,
+    "softWarningCount": 8,
+    "renderBlockingErrors": [
+      "[repair-ledger] validationHistory has 3 failed validation(s) but validationRepairLedger has 2 entries"
+    ],
+    "repairActionTable": [
+      {
+        "errorClass": "repair-ledger",
+        "owner": "main-agent",
+        "severity": "blocking",
+        "action": "append_repair_entry_evidence_and_revalidation_report",
+        "affectedFiles": [],
+        "sourceReadPolicy": "read validation report and repair workflow only"
+      }
+    ],
+    "nextCheck": {
+      "type": "repair-ledger",
+      "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v28-apple-books-complete-draft' --check=repair-ledger",
+      "fullValidationAllowed": false,
+      "reason": "current failure is repair ledger evidence; do not rerun full validation until this targeted check passes"
+    },
+    "forbidden": [
+      "do not read validator source",
+      "do not rerun full validation when nextCheck.fullValidationAllowed=false",
+      "do not start preview/browser unless user explicitly asks",
+      "do not hand-edit repair ledger fields"
+    ]
+  },
+  "projectFileHashes": {
+    "v28-apple-books-complete-draft.design": "39b6d3f119c4f52f62be2dd43778b5ef2c9ba17d686008c28abe224b5adc1255",
+    "runtime-orchestration-summary.json": "0c86eadd74fa6e15d3debc15ad8b9a83a95f53cee2a2746a06aed7d4391c2bb5",
+    "pages/accessibility.html": "36c12d9520e6454b4923b5f5bc521da2bc1d86f45d09a98fc232b985a40d1a49",
+    "pages/app-icon.html": "77a2054c4988c2e488948a03c08fe79d4157f4c24f8e581ad9386781b97db7c1",
+    "pages/book-detail.html": "67e7f3ab27c094469fd3460db426c850e69a3f1ec81ae7ab98af597554f62635",
+    "pages/comic.html": "5f67bc1cbc1294f77fa560c66d492b203ed6b2217fd3eb28f939dbc4ca16a581",
+    "pages/import.html": "f72f87373b817fb301882a8acdd367ca47d4b223a7b7e513643fbefb92d6ca84",
+    "pages/library-management.html": "eb86c483a916f62781e27ed5f679529949e4f7de14154bf4e6834d18f7be7aff",
+    "pages/now.html": "12b5df8dfa81a58dab3053b933c6a59e89fe2cb90af196ad9cd40b9910dcff18",
+    "pages/original-pdf.html": "6d4abf5e9f95e3b66752588d618c510ce89a1e4a1c0abceeed6c649aa790dfa9",
+    "pages/player.html": "3dd881a424d6850819d50a5882015975f6254579126244998264097e81673327",
+    "pages/profile.html": "ee7f7b859920b7cfd4aecc003078d05f74c812bfc2a2bb5f959b9362286a4adf",
+    "pages/reader-annotations.html": "816fddf6ad63f4ef1f865fbd174a079eeb8a5cf85bb00e3ba60a64f4278934b9",
+    "pages/reader-contents.html": "5d5c67d8ec84b03dced748db9b2821d6193433f52c6352ace7974dd0d836567c",
+    "pages/reader-preferences.html": "a367677d92bbf906dad3f204a022978791270575f57197b55fa5395d0ddfc4ae",
+    "pages/reader.html": "8f95caddf3366e09faf96c9ba19191adf9548f43990d4b2844c08b48874f48ba",
+    "pages/reading-calendar.html": "a560b6a50837bf0ca5c277b451cea8ab253971b5cec1d81ec9d80b2138f5a8b9",
+    "pages/remote-sources.html": "4b54a25db94e0ccb6d7bd5df3e6b8ebabf48bc813e1904861ab6ce1eb3db2231",
+    "pages/settings-about.html": "655bae72e3e1eca4d22d71a5a3822d75484f410ceb0f6d7825880f177f551d4f",
+    "pages/settings-data.html": "a08fdbe569aea992e060ad436b2acd90d1508a70fa828f39d8b1d5bc89fdf12e",
+    "pages/settings-general.html": "ac69703370e0416fd316487e80f0065e4f453584cf3027c3aef2f38cccc0a687",
+    "pages/settings-reading.html": "9884b0323c3ef392f28316c272a110f79e3115b3aabdcd3465546d2ddb85dfa2",
+    "pages/shelf.html": "f5d0b3e137468c09c4e5e61a399d8c808ca35057f1849a21783ddc8c7f299189",
+    "pages/states.html": "d634b6524de597a4f016afffd5faec5f241b7ebe0d269eb8f7b61ef5966c68b0",
+    "pages/stats.html": "e445484b72d58286ca6bf44beaece0d5d1cb8f75c711a9879575577113781d91",
+    "pages/voice.html": "76b8e84dfb240ad1b1242abe460d4928af823b66f5a29b4ffc247ae41b730b26",
+    "assets/app-icon-dark.png": "cd87e1171c030d995ed8d3bcb403579922cbf60341830c71e9314dacd71e5a58",
+    "assets/app-icon-standard.png": "35abeb36628ec7a7f6189753380cad38d2184012219362772ea1f8a78f676c0e",
+    "assets/app-icon-tinted.png": "2ef962eccec14e6eb52aaa6ff45ea7de9374d5d9e846d65d95f158c5f91ad21c",
+    "assets/cover-birds.png": "c582799692829ea5a2055a9e520b11efc10fee74744b23e3cb7c3340d34441a0",
+    "assets/cover-hometown.png": "8452d5b2e6181ed6b8b78a750a056d13861db5b0d62a63417f16228bc83ec7a8",
+    "assets/cover-spring.png": "f968440eaa20f6d5430e195c937302aaea4fc52a79b1eaf16fcd4a72e7f6f1b8"
+  },
+  "designDir": "/Users/a1234/Desktop/tingye-ios/Design/v28-apple-books-complete-draft",
+  "expectedPages": 24,
+  "requireInteractions": "cta-reader:now.html,nav-shelf:now.html,nav-profile:now.html,open-book-detail:shelf.html,open-stats:profile.html,open-settings-data:profile.html,reader-contents:reader.html,reader-preferences:reader.html,reader-annotations:reader.html,reader-more:reader.html,open-player:reader.html,detail-read:book-detail.html,detail-listen:book-detail.html,contents-close-reader:reader-contents.html,preferences-close-reader:reader-preferences.html,annotations-close-reader:reader-annotations.html,confirm-end:player.html,open-accessibility:app-icon.html",
+  "checkedAt": "2026-10-30T04:56:04.193Z"
+}

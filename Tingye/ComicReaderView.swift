@@ -5,11 +5,11 @@ import Pow
 /// 漫画模式（参照 PureLibro）：左→右翻页、右→左（日漫）、上下条漫三种；轻点中间显示工具栏，双击放大。
 /// 每页对应一个章节，进度按页保存，与书籍的「章 + 句」进度、iCloud 同步一致。
 struct ComicReaderView: View {
-    @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
     let book: Book
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.scenePhase) var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 每部漫画单独记住阅读方式；没设置过的用「漫画默认阅读方式」。
     @State private var mode: String
     init(book: Book) {
@@ -67,14 +67,14 @@ struct ComicReaderView: View {
                     Button { dismiss() } label: {
                         ThemeIcon(symbol: Icon.back, size: 24)
                             .frame(width: 44, height: 44)
-                            .background(Theme.surface2, in: Rectangle())
+                            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("返回")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(book.title).font(Theme.sans(18 * uiScale, weight: .medium)).lineLimit(2)
-                        Text("图像阅读 · \(modeLabel)")
-                            .font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                        Text(book.title).font(Theme.sans(20, weight: .bold)).lineLimit(2)
+                        Text("\(page + 1) / \(count) 页 · \(modeLabel)")
+                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -102,7 +102,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(12)
-                .glassSurface(in: Rectangle())
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 Spacer()
                 VStack(spacing: 4) {
                     HStack {
@@ -110,7 +110,7 @@ struct ComicReaderView: View {
                         Spacer()
                         Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
                     }
-                    .font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                    .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                     .padding(.horizontal, 8).padding(.top, 10)
                     HStack(spacing: 10) {
                         pageStep(-1, "上一页", Icon.back)
@@ -124,9 +124,8 @@ struct ComicReaderView: View {
                         } else { Spacer() }
                         pageStep(1, "下一页", Icon.disclosure)
                     }
-                    Rectangle().fill(Theme.line.opacity(0.5)).frame(height: 0.5)
-                    HStack(spacing: 6) {
-                        Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "页面目录") }
+                    HStack(spacing: 8) {
+                        Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
                             .accessibilityIdentifier("comic.contents")
                         Menu {
                             Picker("阅读方向", selection: $mode) {
@@ -134,13 +133,16 @@ struct ComicReaderView: View {
                                 Label("从右往左（日漫）", systemImage: Icon.prevDirection).tag("rtl")
                                 Label("上下滚动（条漫）", systemImage: Icon.downDirection).tag("vertical")
                             }
-                        } label: { comicAction(Icon.readingDirection, modeLabel) }
+                        } label: { comicAction(Icon.readingDirection, modeLabel, selected: true) }
                         .accessibilityLabel("翻页方式，当前\(modeLabel)")
+                        Button { onlyBookmarks = true; showingPages = true } label: { comicAction(Icon.bookmark(false), "书签") }
                     }
                     .buttonStyle(.plain)
+                    Text("双指缩放 · 双击适应屏幕")
+                        .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, 8)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 8)
-                .glassSurface(in: Rectangle())
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .frame(maxWidth: 760)
             .padding(.horizontal, 24)
@@ -152,7 +154,7 @@ struct ComicReaderView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(!chrome)
-        .animation(.snappy(duration: 0.22), value: chrome)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: chrome)
         .sheet(isPresented: $showingPages) { pageDirectory }
         .alert("漫画阅读操作", isPresented: $showingHelp) {
             Button("知道了", role: .cancel) {}
@@ -161,21 +163,23 @@ struct ComicReaderView: View {
         }
         .accessibilityAction(named: "显示阅读工具") { chrome = true }
         .onAppear {
+            model.setReadingSurface(book.id, visible: true)
             let saved = model.entries.first { $0.id == book.id }?.progress.chapter ?? 0
             page = min(max(0, saved), max(0, count - 1))
         }
         .onChange(of: page) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
         .onChange(of: mode) { _, value in ComicPreset.save(value, for: book.id) }
-        .task { while !Task.isCancelled { do { try await Task.sleep(for: .seconds(5)) } catch { return }; if scenePhase == .active { model.recordReading(seconds: 5, bookID: book.id, title: book.title) } } }
+        .onDisappear { model.setReadingSurface(book.id, visible: false) }
     }
     private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 6) {
             ThemeIcon(symbol: icon, size: 24)
-            Text(L(title)).font(Theme.sans(12 * uiScale)).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.accent : Theme.ink)
+        .foregroundStyle(selected ? Theme.onAccent : Theme.ink3)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? Theme.accentSoft : .clear, in: Rectangle())
+        .padding(.vertical, 4)
+        .background(selected ? Theme.accent : Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
         .contentShape(Rectangle())
     }
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {
@@ -208,6 +212,8 @@ struct ComicReaderView: View {
                     ForEach(directoryPages, id: \.self) { index in
                         Button { goToPage(index); showingPages = false } label: {
                             HStack(spacing: 14) {
+                                ComicPage(book: book, index: index, fit: .thumbnail)
+                                    .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
                                 Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
                                     .foregroundStyle(index == page ? Theme.accent : Theme.ink3).frame(width: 36)
                                 Text("第 \(index + 1) 页").font(.system(size: 15)).foregroundStyle(Theme.ink)
@@ -240,7 +246,7 @@ struct ComicReaderView: View {
 
 /// 一页漫画：后台按屏幕尺寸降采样解码，避免几十张原图同时占满内存；双击放大 / 还原。
 private struct ComicPage: View {
-    enum Fit { case page, width }
+    enum Fit { case page, width, thumbnail }
     private static let cache: NSCache<NSString, UIImage> = {
         let c = NSCache<NSString, UIImage>()
         c.countLimit = 12
@@ -255,7 +261,7 @@ private struct ComicPage: View {
     var body: some View {
         Group {
             if let image {
-                if fit == .width {
+                if fit == .width || fit == .thumbnail {
                     Image(uiImage: image).resizable().scaledToFit()
                         .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 10))
                 } else {
@@ -271,14 +277,14 @@ private struct ComicPage: View {
         .accessibilityLabel("第 \(index + 1) 页")
         .task(id: index) {
             guard image == nil else { return }
-            let cacheKey = "\(book.id)-\(index)" as NSString
+            let cacheKey = "\(book.id)-\(index)-\(fit)" as NSString
             if let cached = Self.cache.object(forKey: cacheKey) {
                 image = cached
                 return
             }
             let ref = book.chapters.indices.contains(index) ? book.chapters[index].fields["nativeImages"]?.array?.first?.string : nil
             let box = BookBox(book: book)
-            let maxPixel = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height) * UIScreen.main.scale
+            let maxPixel = fit == .thumbnail ? 180 : max(UIScreen.main.bounds.width, UIScreen.main.bounds.height) * UIScreen.main.scale
             let decoded = await Task.detached(priority: .userInitiated) { () -> UIImage? in
                 guard let ref, let data = box.book.resourceData(ref), let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
                 let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceThumbnailMaxPixelSize: maxPixel]

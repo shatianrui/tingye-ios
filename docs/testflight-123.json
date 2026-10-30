@@ -1,0 +1,92 @@
+{
+  "app": "Tingye",
+  "version": "1.24.0",
+  "build": "123",
+  "recordedAt": "2026-10-24T00:58:09.686852+08:00",
+  "scope": "悬浮阅读菜单覆盖正文；普通正文、原书图文与 PDF 开合菜单时保持视口与阅读位置，PDF 缩放保持。",
+  "platforms": {
+    "ios": {
+      "uploadStatus": "succeeded",
+      "testflightStatus": "available-to-current-tester",
+      "archive": "build/Tingye-123.xcarchive",
+      "uploadLog": "build/upload-123.log",
+      "archiveChecksPassed": 28,
+      "architectures": [
+        "arm64"
+      ],
+      "binarySHA256": "221204d319a096b4c846710d59bb7ed49dbc6ab784844882492b0a9959452062",
+      "dSYMUUIDs": [
+        [
+          "A1D75FDA-9565-399C-B674-56750E7C8EAC",
+          "arm64"
+        ]
+      ],
+      "uploadedAt": "2026-10-24 00:43:13.545 +08:00",
+      "exportExitCode": 0
+    },
+    "mac": {
+      "uploadStatus": "succeeded",
+      "testflightStatus": "available-to-current-tester",
+      "archive": "build/Tingye-123-mac.xcarchive",
+      "uploadLog": "build/upload-123-mac.log",
+      "archiveChecksPassed": 29,
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "binarySHA256": "3cd9174acef107bf51fc9cca867b5d28d50461b982e6c4cb10acd98d926c31e9",
+      "dSYMUUIDs": [
+        [
+          "004147D8-2317-36EA-BDBA-350EC5E9F05B",
+          "arm64"
+        ],
+        [
+          "7FEEE0D5-4CDF-3D97-AC12-42D1B157CB1E",
+          "x86_64"
+        ]
+      ],
+      "uploadedAt": "2026-10-24 00:52:36.264 +08:00",
+      "exportExitCode": 0
+    }
+  },
+  "tests": {
+    "core": 112,
+    "relatedUI": 12,
+    "uniquePassedOnIPhone17e": 124,
+    "iPhoneSE3SupplementalCases": 3,
+    "unresolvedFailures": 0,
+    "earlyUITestHarnessFailuresResolved": true,
+    "fullUITestSuiteRerun": false,
+    "buildNumberBumpedAfterTests": true,
+    "businessCodeUnchangedAfterTests": true
+  },
+  "frozenSourceFiles": 149,
+  "sourceFreezeVerified": true,
+  "releaseNotesFile": "TestFlight-123-更新说明.txt",
+  "releaseNotesUploadedToASC": false,
+  "appStoreReviewSubmitted": false,
+  "testerGroupsChanged": false,
+  "gitCommitCreated": false,
+  "sourceFreezeVerifiedAfterUpload": true,
+  "iosAvailability": {
+    "checkedAt": "2026-10-24T00:53:40.994144+08:00",
+    "source": "macOS TestFlight native application, iOS platform selected and refreshed",
+    "version": "1.24.0",
+    "build": "123",
+    "installActionVisible": true,
+    "sizeMB": 54.2,
+    "status": "available-to-current-tester",
+    "installationTriggeredByAgent": false
+  },
+  "macAvailability": {
+    "checkedAt": "2026-10-24T00:58:09.686852+08:00",
+    "source": "macOS TestFlight native application, macOS platform selected and refreshed",
+    "version": "1.24.0",
+    "build": "123",
+    "updateActionVisible": true,
+    "sizeMB": 60.6,
+    "status": "available-to-current-tester",
+    "installationTriggeredByAgent": false
+  },
+  "sourceFreezeVerifiedAtCompletion": true
+}

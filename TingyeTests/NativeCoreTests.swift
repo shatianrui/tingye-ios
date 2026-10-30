@@ -214,9 +214,13 @@ final class NativeCoreTests: XCTestCase {
         let read = ResumeActions(started: true, lastActivity: .reading, hasListened: false, playing: false)
         XCTAssertEqual(read.readingTitle, "继续阅读"); XCTAssertEqual(read.listeningTitle, "听这本书")
         let heard = ResumeActions(started: true, lastActivity: .listening, hasListened: true, playing: false)
-        XCTAssertTrue(heard.prefersListening); XCTAssertEqual(heard.listeningTitle, "继续听")
+        XCTAssertFalse(heard.prefersListening); XCTAssertEqual(heard.listeningTitle, "继续听")
+        XCTAssertEqual(heard.readingTitle, "继续阅读")
         let playing = ResumeActions(started: true, lastActivity: .reading, hasListened: true, playing: true)
-        XCTAssertTrue(playing.prefersListening); XCTAssertEqual(playing.listeningTitle, "暂停朗读")
+        XCTAssertFalse(playing.prefersListening); XCTAssertEqual(playing.listeningTitle, "暂停朗读")
+        let onlyHeard = ResumeActions(started: false, lastActivity: .listening, hasListened: true, playing: true)
+        XCTAssertEqual(onlyHeard.readingTitle, "开始阅读", "听过不代表已打开正文")
+        XCTAssertFalse(onlyHeard.prefersListening, "正在听也不能替换阅读主操作")
     }
 
     func testOldCatalogDefaultsToReadingAndKeepsOptionalActivity() throws {
@@ -224,9 +228,14 @@ final class NativeCoreTests: XCTestCase {
         var row = ShelfEntry(book: book)
         let old = try JSONDecoder().decode(ShelfEntry.self, from: Integrity.encoder().encode(row))
         XCTAssertNil(old.lastActivity); XCTAssertNil(old.hasListened)
+        XCTAssertNil(old.listeningProgress); XCTAssertNil(old.lastReadAt)
         row.lastActivity = .listening; row.hasListened = true
+        row.listeningProgress = .init(chapter: 0, position: 1, updatedAt: 200)
+        row.lastReadAt = 100
         let restored = try JSONDecoder().decode(ShelfEntry.self, from: Integrity.encoder().encode(row))
         XCTAssertEqual(restored.lastActivity, .listening); XCTAssertEqual(restored.hasListened, true)
+        XCTAssertEqual(restored.listeningProgress, row.listeningProgress)
+        XCTAssertEqual(restored.lastReadAt, row.lastReadAt)
     }
 
     func testRemainingListeningTimeIsExplicitlyEstimatedAndRateAware() {
@@ -244,15 +253,304 @@ final class NativeCoreTests: XCTestCase {
             try await model.add(book)
             let original = try XCTUnwrap(model.entries.first).progress
             model.recordActivity(.listening, for: book.id)
-            XCTAssertTrue(model.resumeActions(for: model.entries[0]).prefersListening)
+            XCTAssertFalse(model.resumeActions(for: model.entries[0]).prefersListening)
+            XCTAssertEqual(model.resumeActions(for: model.entries[0]).readingTitle, "开始阅读")
+            XCTAssertNil(model.entries[0].lastReadAt)
             model.open(model.entries[0])
             XCTAssertFalse(model.resumeActions(for: model.entries[0]).prefersListening)
             XCTAssertEqual(model.resumeActions(for: model.entries[0]).listeningTitle, "继续听")
             model.flushPendingSaves()
             let saved = try XCTUnwrap(disk.catalog().first)
             XCTAssertEqual(saved.lastActivity, .reading); XCTAssertEqual(saved.hasListened, true)
+            XCTAssertNotNil(saved.lastReadAt)
             XCTAssertEqual(saved.progress, original)
         }
+    }
+
+    @MainActor func testListeningCallbacksDoNotOverwriteReadingProgressOrICloud() async throws {
+        let store = MemoryKeyValueStore()
+        try await withDesignModel(syncStore: store) { model, disk, _ in
+            let book = self.readingFirstBook("separate-sync")
+            try await model.add(book)
+            model.recordActivity(.reading, for: book.id)
+            model.saveProgress(book.id, chapter: 1, position: 2)
+            let before = try XCTUnwrap(model.entries.first)
+            let synced = try JSONSerialization.data(withJSONObject: store.values, options: .sortedKeys)
+            model.player.onProgress?(book.id, 0, 1)
+            let after = try XCTUnwrap(model.entries.first)
+            XCTAssertEqual(after.progress, before.progress, "声音回调不能覆盖正在阅读的位置或时间戳")
+            XCTAssertEqual(after.lastReadAt, before.lastReadAt)
+            XCTAssertEqual(after.listeningProgress?.chapter, 0)
+            XCTAssertEqual(after.listeningProgress?.position, 1)
+            XCTAssertEqual(model.readingRecency(for: after), model.readingRecency(for: before))
+            XCTAssertEqual(try JSONSerialization.data(withJSONObject: store.values, options: .sortedKeys), synced,
+                           "听书进度不能写入跨设备阅读位置")
+            model.flushPendingSaves()
+            let persisted = try XCTUnwrap(disk.catalog().first)
+            XCTAssertEqual(persisted.progress, before.progress)
+            XCTAssertEqual(persisted.listeningProgress, after.listeningProgress)
+        }
+    }
+
+    @MainActor func testIndependentReadingAndListeningPositionsSurviveReload() async throws {
+        try await withSystemVoice {
+            try await self.withDesignModel { model, disk, _ in
+                let book = self.readingFirstBook("separate-reload")
+                try await model.add(book)
+                model.recordActivity(.reading, for: book.id)
+                model.saveProgress(book.id, chapter: 1, position: 2)
+                model.saveListeningProgress(book.id, chapter: 0, position: 1)
+                model.flushPendingSaves()
+                let saved = try XCTUnwrap(disk.catalog().first)
+                let suite = "tests.reading-reload." + UUID().uuidString
+                let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+                defaults.set(false, forKey: ProgressSync.enabledKey)
+                defer { defaults.removePersistentDomain(forName: suite) }
+                let reopened = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
+                defer { reopened.player.stop(); reopened.flushPendingSaves() }
+                let loaded = try await reopened.loadBook(book.id)
+                reopened.startListening(loaded, showPlayer: false)
+                reopened.player.pause()
+                XCTAssertEqual(reopened.player.chapter, 0)
+                XCTAssertEqual(reopened.player.position, 1, "重新启动听书应恢复独立的听书位置")
+                reopened.open(try XCTUnwrap(reopened.entries.first))
+                XCTAssertEqual(reopened.selectedBook?.id, book.id)
+                XCTAssertEqual(reopened.entries.first?.progress, saved.progress,
+                               "重新打开正文必须仍能恢复第2章的阅读位置")
+                XCTAssertEqual(reopened.player.chapter, 0, "打开正文不能拖动声音位置")
+                XCTAssertEqual(reopened.player.position, 1)
+                XCTAssertFalse(reopened.showingPlayer)
+            }
+        }
+    }
+
+    @MainActor func testLegacyListeningFallsBackOnceThenKeepsItsOwnPosition() async throws {
+        try await withSystemVoice {
+            try await self.withDesignModel { model, _, _ in
+                let book = self.readingFirstBook("legacy-listening")
+                try await model.add(book, progress: .init(chapter: 1, position: 1, updatedAt: 100))
+                XCTAssertNil(model.entries.first?.listeningProgress)
+                model.startListening(book, showPlayer: false)
+                model.player.pause()
+                XCTAssertEqual(model.player.chapter, 1)
+                XCTAssertEqual(model.player.position, 1, "旧书库没有听书字段时从原有阅读位置开始")
+                XCTAssertEqual(model.entries.first?.listeningProgress?.position, 1)
+                model.saveProgress(book.id, chapter: 0, position: 2)
+                let reading = try XCTUnwrap(model.entries.first).progress
+                model.player.stop()
+                model.startListening(book, showPlayer: false)
+                model.player.pause()
+                XCTAssertEqual(model.player.chapter, 1)
+                XCTAssertEqual(model.player.position, 1, "有独立听书进度后，阅读推进不能改变续听位置")
+                XCTAssertEqual(model.entries.first?.progress, reading)
+            }
+        }
+    }
+
+    @MainActor func testExplicitListeningChapterLeavesReadingResumeUntouched() async throws {
+        try await withSystemVoice {
+            try await self.withDesignModel { model, _, _ in
+                let book = self.readingFirstBook("explicit-listening")
+                try await model.add(book, progress: .init(chapter: 1, position: 2, updatedAt: 100))
+                model.startListening(book, showPlayer: false)
+                model.player.pause()
+                let reading = try XCTUnwrap(model.entries.first).progress
+                model.listen(book.id, chapter: 0, position: 1, showPlayer: false)
+                model.player.pause()
+                XCTAssertEqual(model.player.chapter, 0)
+                XCTAssertEqual(model.player.position, 1)
+                XCTAssertEqual(model.entries.first?.progress, reading,
+                               "听此章/从这句听只能定位声音，不能改写阅读断点")
+                XCTAssertEqual(model.entries.first?.listeningProgress?.chapter, 0)
+                XCTAssertEqual(model.entries.first?.listeningProgress?.position, 1)
+                XCTAssertFalse(model.showingPlayer, "辅助听书不应自动打开全屏播放器")
+            }
+        }
+    }
+
+    @MainActor func testListeningOnlyBookDoesNotReplaceRecentReading() async throws {
+        try await withDesignModel { model, _, _ in
+            let readingBook = self.readingFirstBook("reading-recent")
+            let listeningBook = self.readingFirstBook("listening-only")
+            try await model.add(readingBook)
+            try await model.add(listeningBook)
+            model.open(try XCTUnwrap(model.entries.first { $0.id == readingBook.id }))
+            model.saveProgress(readingBook.id, chapter: 1, position: 1)
+            model.recordActivity(.listening, for: listeningBook.id)
+            model.saveListeningProgress(listeningBook.id, chapter: 1, position: 2)
+            let heard = try XCTUnwrap(model.entries.first { $0.id == listeningBook.id })
+            XCTAssertFalse(heard.started, "只听过的书不能标成已读")
+            XCTAssertNil(heard.lastReadAt)
+            XCTAssertEqual(model.readingRecency(for: heard), 0)
+            XCTAssertEqual(model.resumeActions(for: heard).readingTitle, "开始阅读")
+            XCTAssertEqual(model.resumeActions(for: heard).listeningTitle, "继续听")
+            XCTAssertEqual(model.lastReadingBook?.id, readingBook.id,
+                           "最近阅读与启动续读不能被新的听书回调抢走")
+        }
+    }
+
+    @MainActor func testRemoteReadingMergePreservesIndependentListeningPosition() throws {
+        let store = MemoryKeyValueStore()
+        let suite = "tests.reading-merge." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: ProgressSync.enabledKey)
+        let sync = ProgressSync(store: store, defaults: defaults, account: { true })
+        let book = readingFirstBook("separate-merge")
+        var local = ShelfEntry(book: book, progress: .init(chapter: 0, position: 1, updatedAt: 100))
+        local.listeningProgress = .init(chapter: 1, position: 2, updatedAt: 300)
+        local.lastReadAt = 150
+        store.values[ProgressSync.key(local)] = ["c": 1, "p": 0, "t": 200.0]
+        let merged = sync.merge([local], protected: [])
+        XCTAssertEqual(merged.applied, [book.id])
+        let result = try XCTUnwrap(merged.entries.first)
+        XCTAssertEqual(result.progress, ReadingProgress(chapter: 1, position: 0, updatedAt: 200))
+        XCTAssertEqual(result.listeningProgress, local.listeningProgress)
+        XCTAssertEqual(result.lastReadAt, local.lastReadAt)
+    }
+
+    @MainActor func testRemoteReadingUpdatesDoNotStopPausedOrPlayingAudio() async throws {
+        try await withSystemVoice {
+            let store = MemoryKeyValueStore()
+            try await self.withDesignModel(syncStore: store) { model, _, _ in
+                let book = self.readingFirstBook("audio-survives-reading-sync")
+                try await model.add(book, progress: .init(chapter: 1, position: 2, updatedAt: 100))
+                model.startListening(book, showPlayer: false, from: .init(chapter: 0, position: 1))
+                model.player.pause()
+                let row = try XCTUnwrap(model.entries.first)
+                let savedListening = row.listeningProgress
+                store.values[ProgressSync.key(row)] = ["c": 0, "p": 2, "t": 200.0]
+                model.pullProgress()
+                XCTAssertEqual(model.entries.first?.progress, ReadingProgress(chapter: 0, position: 2, updatedAt: 200))
+                XCTAssertEqual(model.entries.first?.listeningProgress, savedListening)
+                XCTAssertEqual(model.player.book?.id, book.id, "同步阅读不能结束已暂停的独立听书会话")
+                XCTAssertFalse(model.player.playing)
+                XCTAssertEqual(model.player.chapter, 0)
+                XCTAssertEqual(model.player.position, 1)
+                model.player.resume()
+                XCTAssertTrue(model.player.playing)
+                store.values[ProgressSync.key(row)] = ["c": 1, "p": 0, "t": 300.0]
+                model.pullProgress()
+                XCTAssertEqual(model.entries.first?.progress, ReadingProgress(chapter: 1, position: 0, updatedAt: 300),
+                               "只在听书时，远端阅读更新仍应合并")
+                XCTAssertTrue(model.player.playing, "阅读同步不能中断正在播放的辅助声音")
+                XCTAssertEqual(model.player.chapter, 0)
+                XCTAssertEqual(model.player.position, 1)
+                model.player.pause()
+            }
+        }
+    }
+
+    @MainActor func testUsageTickPrioritizesForegroundReadingAndCountsBackgroundAudioOnce() async throws {
+        try await withSystemVoice {
+            try await self.withDesignModel { model, _, _ in
+                let audioBook = self.readingFirstBook("usage-audio-a")
+                let readingBook = self.readingFirstBook("usage-reading-b")
+                try await model.add(audioBook)
+                try await model.add(readingBook)
+                model.startListening(audioBook, showPlayer: false)
+                XCTAssertTrue(model.player.playing)
+                XCTAssertFalse(model.player.buffering)
+                model.setReadingSurface(readingBook.id, visible: true)
+
+                model.recordUsageTick(seconds: 5, appActive: true)
+                XCTAssertEqual(model.readingSeconds.values.reduce(0, +), 5, accuracy: 0.001,
+                               "听 A 同时读 B 的一个 tick 只能计一次时长")
+                XCTAssertEqual(model.sessions.count, 1)
+                XCTAssertEqual(model.sessions.first?.bookID, readingBook.id)
+                XCTAssertEqual(model.sessions.first?.listening, false)
+                XCTAssertEqual(model.sessions.first?.seconds, 5)
+
+                model.recordUsageTick(seconds: 5, appActive: false)
+                XCTAssertEqual(model.readingSeconds.values.reduce(0, +), 10, accuracy: 0.001)
+                XCTAssertEqual(model.sessions.count, 2)
+                XCTAssertEqual(model.sessions.last?.bookID, audioBook.id,
+                               "进入后台后应记录仍在播放的 A，不再累计不可见的正文 B")
+                XCTAssertEqual(model.sessions.last?.listening, true)
+                XCTAssertEqual(model.sessions.last?.seconds, 5)
+                XCTAssertEqual(model.sessions.map(\.seconds).reduce(0, +), 10, accuracy: 0.001)
+
+                model.player.pause()
+                let before = model.sessions
+                model.recordUsageTick(seconds: 5, appActive: false)
+                XCTAssertEqual(model.readingSeconds.values.reduce(0, +), 10, accuracy: 0.001)
+                XCTAssertEqual(model.sessions, before, "后台暂停后不能继续计听书或残留阅读时长")
+            }
+        }
+    }
+
+    @MainActor func testUsageTickCountsPureReadingOnlyWhileItsSurfaceIsVisible() async throws {
+        try await withDesignModel { model, _, _ in
+            let book = self.readingFirstBook("usage-reading-only")
+            try await model.add(book)
+            XCTAssertNil(model.player.book)
+            model.setReadingSurface(book.id, visible: true)
+            model.recordUsageTick(seconds: 5, appActive: true)
+            XCTAssertEqual(model.readingSeconds.values.reduce(0, +), 5, accuracy: 0.001)
+            XCTAssertEqual(model.sessions.count, 1)
+            XCTAssertEqual(model.sessions.first?.bookID, book.id)
+            XCTAssertEqual(model.sessions.first?.listening, false)
+            XCTAssertEqual(model.sessions.first?.seconds, 5)
+
+            let before = model.sessions
+            model.recordUsageTick(seconds: 5, appActive: false)
+            XCTAssertEqual(model.sessions, before, "没有声音时进入后台不能计阅读")
+            model.setReadingSurface(book.id, visible: false)
+            XCTAssertNil(model.visibleReadingBookID)
+            model.recordUsageTick(seconds: 5, appActive: true)
+            XCTAssertEqual(model.readingSeconds.values.reduce(0, +), 5, accuracy: 0.001)
+            XCTAssertEqual(model.sessions, before, "离开正文后首页或播放器停留不能计为阅读")
+        }
+    }
+
+    func testReaderSearchReturnsRepeatedMatchesWithDistinctLocations() {
+        let chapters = [Chapter(title: "第一章", text: "晨光。晨光。"), Chapter(title: "第二章", text: "晨光。")]
+        let matches = ReaderSearch.matches(in: chapters, query: "晨光")
+        XCTAssertEqual(matches.map(\.index), [0, 0, 1], "同章重复文字应各有一个可跳转的结果")
+        XCTAssertEqual(matches.map(\.offset), [0, 3, 0])
+        XCTAssertEqual(Set(matches.map(\.id)).count, 3)
+        XCTAssertTrue(matches.allSatisfy { $0.snippet.contains("晨光") })
+    }
+
+    func testReaderSearchUsesUTF16OffsetsAfterEmoji() {
+        let text = "📖 夜风。📖 夜风。"
+        let matches = ReaderSearch.matches(in: [Chapter(title: "夜读", text: text)], query: "夜风")
+        XCTAssertEqual(matches.map(\.offset), [3, 9], "正文定位使用 UTF-16，不能按 Swift Character 数定位")
+        for match in matches {
+            XCTAssertEqual((text as NSString).substring(with: NSRange(location: match.offset, length: 2)), "夜风")
+            XCTAssertTrue(match.snippet.contains("📖"), "摘要截取不能破坏组合字符")
+        }
+    }
+
+    func testReaderSearchHandlesTitleOnlyWhitespaceAndResultLimits() {
+        let chapters = [Chapter(title: "A Quiet Chapter", text: "只有正文。"), Chapter(title: "另一章", text: String(repeating: "阅读。", count: 240))]
+        let title = ReaderSearch.matches(in: chapters, query: " quiet ")
+        XCTAssertEqual(title.count, 1)
+        XCTAssertEqual(title.first?.index, 0)
+        XCTAssertEqual(title.first?.offset, 0, "仅章名命中时跳到该章开头")
+        XCTAssertEqual(title.first?.snippet, "只有正文。")
+        XCTAssertTrue(ReaderSearch.matches(in: chapters, query: " \n\t ").isEmpty)
+        XCTAssertTrue(ReaderSearch.matches(in: chapters, query: "不存在的文字").isEmpty)
+        XCTAssertTrue(ReaderSearch.matches(in: chapters, query: "阅读", limit: 0).isEmpty)
+        XCTAssertEqual(ReaderSearch.matches(in: chapters, query: "阅读", limit: 2).map(\.offset), [0, 3])
+        XCTAssertEqual(ReaderSearch.matches(in: chapters, query: "阅读").count, 200,
+                       "长书中大量命中应限制结果量，不阻塞阅读界面")
+    }
+
+    private func readingFirstBook(_ id: String) -> Book {
+        let text = (1...4).map { "第\($0)句，" + String(repeating: "安静地阅读，", count: 20) + "这一段结束。" }.joined()
+        return Book(id: id, title: id, format: "TXT", chapters: [.init(title: "第一章", text: text), .init(title: "第二章", text: text)])
+    }
+
+    @MainActor private func withSystemVoice(_ action: () async throws -> Void) async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["voice.provider", "voice.rate", "voice.roles"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defaults.set("system", forKey: "voice.provider")
+        defaults.set(1.0, forKey: "voice.rate")
+        defaults.set(false, forKey: "voice.roles")
+        defer { for (key, value) in zip(keys, saved) { defaults.set(value, forKey: key) } }
+        try await action()
     }
 
     @MainActor func testPartialImportsHavePerFileResultsAndDoNotShowSuccessAlerts() async throws {
@@ -275,14 +573,14 @@ final class NativeCoreTests: XCTestCase {
         }
     }
 
-    @MainActor private func withDesignModel(_ action: (AppModel, LibraryDisk, URL) async throws -> Void) async throws {
+    @MainActor private func withDesignModel(syncStore: MemoryKeyValueStore? = nil, _ action: (AppModel, LibraryDisk, URL) async throws -> Void) async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite = "tests.design." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { try? FileManager.default.removeItem(at: base); defaults.removePersistentDomain(forName: suite) }
-        defaults.set(false, forKey: ProgressSync.enabledKey)
+        defaults.set(syncStore != nil, forKey: ProgressSync.enabledKey)
         let disk = try LibraryDisk(owner: "design-test", base: base)
-        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: syncStore ?? MemoryKeyValueStore(), defaults: defaults, account: { syncStore != nil }))
         do { try await action(model, disk, base) }
         catch { _ = try? await model.beginLibraryRestore(); throw error }
         _ = try await model.beginLibraryRestore()
@@ -617,7 +915,8 @@ final class ProgressAndBackupTests: XCTestCase {
         let other = Book(id: "other", title: "保留", format: "TXT", chapters: [Chapter(title: "正文", text: "另一书。")])
         try disk.write(other); try disk.saveCatalog([ShelfEntry(book: other)])
         let mark = Bookmark(chapter: 0, position: 1, excerpt: "归来。")
-        let archive = ICloudArchive(owner: "guest", books: [.init(packet: .init(book: book, progress: .init(chapter: 0, position: 1, updatedAt: 123)), bookmarks: [mark])])
+        let listening = ReadingProgress(chapter: 0, position: 0, updatedAt: 456)
+        let archive = ICloudArchive(owner: "guest", books: [.init(packet: .init(book: book, progress: .init(chapter: 0, position: 1, updatedAt: 123)), bookmarks: [mark], listeningProgress: listening, lastReadAt: 234)])
         let first = try store.save(archive), second = try store.save(archive)
         XCTAssertNotEqual(first, second)
         XCTAssertEqual(try store.snapshots(owner: "guest").count, 2)
@@ -629,6 +928,9 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertEqual(try disk.read(other.id), other)
         let row = try XCTUnwrap(rows.first { $0.id == book.id })
         XCTAssertEqual(row.progress.position, 1)
+        XCTAssertEqual(row.listeningProgress, listening, "快照还原应分别保留阅读位置与听书位置")
+        XCTAssertEqual(row.lastReadAt, 234)
+        XCTAssertEqual(row.hasListened, true)
         XCTAssertEqual(row.bookmarks.first?.id, mark.id)
         XCTAssertEqual(row.sentenceCounts, [2])
         XCTAssertEqual(try disk.catalog().count, 2)
@@ -637,6 +939,17 @@ final class ProgressAndBackupTests: XCTestCase {
         var invalid = recovered; invalid.books[0].packet.progress.chapter = 999
         XCTAssertThrowsError(try disk.restore(invalid, owner: "guest", entries: rows))
         XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), before)
+        var invalidListening = recovered
+        invalidListening.books[0].listeningProgress?.chapter = 999
+        XCTAssertThrowsError(try disk.restore(invalidListening, owner: "guest", entries: rows))
+        XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), before,
+                       "听书位置无效的快照也必须在写入前拒绝，保留原书库")
+        let legacy = ICloudArchive(owner: "guest", books: [.init(packet: .init(book: book, progress: row.progress), bookmarks: [mark])])
+        let decodedLegacy = try JSONDecoder().decode(ICloudArchive.self, from: Integrity.encoder().encode(legacy))
+        XCTAssertEqual(decodedLegacy.version, 1)
+        XCTAssertNil(decodedLegacy.books.first?.listeningProgress)
+        XCTAssertNil(decodedLegacy.books.first?.lastReadAt)
+        XCTAssertEqual(try decodedLegacy.validated(owner: "guest").books.first?.packet.progress, row.progress)
         try Data("broken".utf8).write(to: second)
         XCTAssertThrowsError(try store.read(second, owner: "guest"))
         XCTAssertEqual(try disk.read(book.id), book)
@@ -1440,6 +1753,36 @@ extension NativeCoreTests {
         let marks = try await web.evaluateJavaScript("document.querySelectorAll('mark[data-ty-speech]').length", in: nil, contentWorld: .page) as? Int
         XCTAssertEqual(marks, 0, "恢复阅读位置不应制造朗读高亮")
 
+        // 窗口缩小等真实视口变化仍需重排，并让同一句完整落在可见页内。
+        web.frame.size.height = 300
+        web.layoutIfNeeded()
+        coordinator.viewportDidChange(web)
+        try await Task.sleep(for: .milliseconds(500))
+        let offset = Sentence.split(text)[80].range.location
+        let resizedJSON = try await web.evaluateJavaScript("""
+            (() => {
+              const node = document.querySelector('p').firstChild, range = document.createRange();
+              range.setStart(node, \(offset)); range.setEnd(node, \(offset + 1));
+              const rect = range.getBoundingClientRect();
+              return JSON.stringify({left:rect.left, right:rect.right, top:rect.top, bottom:rect.bottom, width:innerWidth, height:innerHeight, scroll:scrollX});
+            })()
+            """, in: nil, contentWorld: .page) as! String
+        let resized = try JSONSerialization.jsonObject(with: Data(resizedJSON.utf8)) as! [String: Double]
+        XCTAssertEqual(resized["height"]!, 300, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(resized["left"]!, -1, "缩小视口后仍应显示原阅读句的首字")
+        XCTAssertLessThanOrEqual(resized["right"]!, resized["width"]! + 1)
+        XCTAssertGreaterThanOrEqual(resized["top"]!, -1)
+        XCTAssertLessThanOrEqual(resized["bottom"]!, resized["height"]! + 1, "正文不可藏在阅读工具下")
+        let resizedPage = resized["scroll"]! / resized["width"]!
+        XCTAssertEqual(resizedPage, resizedPage.rounded(), accuracy: 0.01, "重排后应停在整页边界")
+        XCTAssertEqual(coordinator.readingPosition, 80)
+        web.frame.size.height = 480
+        web.layoutIfNeeded()
+        coordinator.viewportDidChange(web)
+        try await Task.sleep(for: .milliseconds(500))
+        let expandedPage = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int
+        XCTAssertEqual(expandedPage, initialPage, "收起工具后仍应回到相同阅读句所在页")
+
         let saved = expectation(description: "Manual page saved")
         var savedPosition = -1
         coordinator.onPositionChange = { position in savedPosition = position; saved.fulfill() }
@@ -1769,7 +2112,7 @@ extension NativeCoreTests {
         XCTAssertThrowsError(try BookImporter.read(url))
     }
 
-    func testMobiChapterLimitRejectsInsteadOfSilentlyDroppingTheEnding() throws {
+    func testMobiChapterCountDoesNotDropEnding() throws {
         var header = [UInt8](repeating: 0, count: 16)
         importFixPut16(1, into: &header, at: 0)
         importFixPut16(1, into: &header, at: 8)
@@ -1778,16 +2121,49 @@ extension NativeCoreTests {
             let body = Array(parts.joined(separator: "<mbp:pagebreak/>").utf8)
             let url = try importFixMobiFile(records: [header, body])
             defer { try? FileManager.default.removeItem(at: url) }
-            if count == 3000 {
-                let imported = try BookImporter.read(url)
-                XCTAssertEqual(imported.book.chapters.count, 3000)
-                XCTAssertTrue(imported.book.chapters.last?.text.contains("UNIQUE_ENDING") == true)
-            } else {
-                XCTAssertThrowsError(try BookImporter.read(url)) { error in
-                    XCTAssertTrue(error.localizedDescription.contains("3000"))
-                }
-            }
+            let imported = try BookImporter.read(url)
+            XCTAssertEqual(imported.book.chapters.count, count)
+            XCTAssertTrue(imported.book.chapters.last?.text.contains("UNIQUE_ENDING") == true)
         }
+    }
+
+    func testImportAcceptsBooksBeyondFormerSizeAndChapterLimits() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        let text = String(repeating: "字", count: 4_000_001)
+        let textURL = base.appendingPathComponent("large.txt")
+        try Data(text.utf8).write(to: textURL)
+        let largeText = try BookImporter.read(textURL).book
+        XCTAssertEqual(largeText.chapters.reduce(0) { $0 + $1.text.utf16.count }, 4_000_001)
+
+        let manyChapters = Book(title: "章节很多的书", format: "TXT", chapters: (0..<3001).map { Chapter(title: "第 \($0 + 1) 章", text: "正文") })
+        XCTAssertNoThrow(try manyChapters.validated())
+        XCTAssertEqual(manyChapters.chapters.count, 3001)
+
+        let oversized = base.appendingPathComponent("oversized.epub")
+        XCTAssertTrue(FileManager.default.createFile(atPath: oversized.path, contents: nil))
+        let handle = try FileHandle(forWritingTo: oversized)
+        try handle.truncate(atOffset: 100 * 1024 * 1024 + 1)
+        try handle.close()
+        XCTAssertThrowsError(try BookImporter.read(oversized)) { error in
+            XCTAssertFalse(error.localizedDescription.contains("100 MB"), "损坏文件可以报错，但不能再触发旧的文件大小上限")
+        }
+
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600))
+        var pdf = renderer.pdfData { context in
+            context.beginPage()
+            ("Large PDF remains readable" as NSString).draw(at: CGPoint(x: 30, y: 30), withAttributes: [.font: UIFont.systemFont(ofSize: 20)])
+        }
+        pdf.append(Data("\n%".utf8))
+        pdf.append(Data(repeating: 0x20, count: 22 * 1024 * 1024))
+        let pdfURL = base.appendingPathComponent("large.pdf")
+        try pdf.write(to: pdfURL)
+        let largePDF = try BookImporter.read(pdfURL).book
+        XCTAssertEqual(largePDF.chapters.count, 1)
+        XCTAssertTrue(largePDF.chapters[0].text.contains("Large PDF remains readable"))
+        XCTAssertEqual(largePDF.pdf, pdf)
     }
 
     func testSourceCredentialsAreLimitedToTheConfiguredOrigin() throws {
@@ -1960,5 +2336,59 @@ extension NativeCoreTests {
         put32(16); put16(1); put16(1); put32(sampleRate); put32(sampleRate * 2); put16(2); put16(16)
         wav.append(Data("data".utf8)); put32(UInt32(pcm.count)); wav.append(pcm)
         return wav
+    }
+}
+
+
+// MARK: - Figma reader appearance parity
+
+extension NativeCoreTests {
+    @MainActor func testReaderHighlightUsesPaperAppearanceInsteadOfAppAppearance() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            for paper in ReaderPaper.allCases {
+                let preferences = ReaderPreferences(paper: paper.rawValue)
+                let followsDarkAppearance = paper.dark || (paper == .paper && style == .dark)
+                let expected = UIColor(hex: followsDarkAppearance ? 0x8DA7FF : 0x315BEE)
+                XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), expected,
+                               "\(paper.rawValue) 的跟读色必须按纸色明暗解析")
+                let highlight = preferences.highlight.resolvedColor(with: traits)
+                XCTAssertEqual(highlight.cgColor.alpha, followsDarkAppearance ? 0.26 : 0.14, accuracy: 0.001)
+            }
+        }
+    }
+
+    /// 原书模式与原生模式使用同一字体键、纸色与交互蓝；原出版物的图像比例和显式颜色不被重绘。
+    @MainActor func testOriginalReaderAppliesBundledSansFontsAndThemeWithoutChangingPublicationArtwork() async throws {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 160, height: 90)).image { context in
+            UIColor.systemTeal.setFill(); context.fill(CGRect(x: 0, y: 0, width: 160, height: 90))
+        }
+        let imageData = try XCTUnwrap(image.pngData())
+        let source = "<p id='reader-text'>原书中的正文。</p><a id='reader-link' href='#chapter'>目录链接</a><a class='publication-link'>书内特定颜色</a><img id='artwork' src='data:image/png;base64,\(imageData.base64EncodedString())'><table><tr><td>原书表格</td></tr></table>"
+        for key in ["hansans", "xixihei"] {
+            let loaded = expectation(description: "Original reader \(key) loaded")
+            let delegate = LoadDelegate { loaded.fulfill() }
+            let config = WKWebViewConfiguration()
+            config.defaultWebpagePreferences.allowsContentJavaScript = false
+            config.websiteDataStore = .nonPersistent()
+            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
+            web.navigationDelegate = delegate
+            web.loadHTMLString(OriginalDocument.html(source, css: ".publication-link {color:rgb(80, 65, 50)}", color: "#17233A", background: "transparent", paper: "#F6F0E4", preferences: ReaderPreferences(font: key), accent: "#315BEE"), baseURL: nil)
+            await fulfillment(of: [loaded], timeout: 40)
+            let font = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('reader-text')).fontFamily", in: nil, contentWorld: .page) as? String ?? ""
+            XCTAssertTrue(font.contains(try XCTUnwrap(ReaderPreferences.bundledFonts[key])), key)
+            XCTAssertFalse(font.contains("Songti"), "无衬线字体不能在原书模式退回宋体")
+            let style = try await web.evaluateJavaScript("JSON.stringify({paper:document.getElementById('ty-reader-book').dataset.tyPaper, color:getComputedStyle(document.body).color, background:getComputedStyle(document.body).backgroundColor, accent:getComputedStyle(document.getElementById('reader-link')).color, publication:getComputedStyle(document.querySelector('.publication-link')).color, ratio:document.getElementById('artwork').getBoundingClientRect().width/document.getElementById('artwork').getBoundingClientRect().height, tables:document.querySelectorAll('table').length})", in: nil, contentWorld: .page) as? String
+            let data = try XCTUnwrap(style?.data(using: .utf8))
+            let result = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            XCTAssertEqual(result["paper"] as? String, "#F6F0E4")
+            XCTAssertEqual(result["color"] as? String, "rgb(23, 35, 58)")
+            XCTAssertEqual(result["background"] as? String, "rgba(0, 0, 0, 0)")
+            XCTAssertEqual(result["accent"] as? String, "rgb(49, 91, 238)")
+            XCTAssertEqual(result["publication"] as? String, "rgb(80, 65, 50)")
+            XCTAssertEqual(try XCTUnwrap(result["ratio"] as? Double), 160.0 / 90.0, accuracy: 0.01)
+            XCTAssertEqual(result["tables"] as? Int, 1)
+            withExtendedLifetime(delegate) {}
+        }
     }
 }

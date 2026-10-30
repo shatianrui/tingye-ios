@@ -28,7 +28,7 @@ enum OriginalDocument {
         html.replacingOccurrences(of: #"(?i)<(?!(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)[\s/>])([a-z][a-z0-9:-]*)(\s[^<>]*?)?\s*/>"#, with: "<$1$2></$1>", options: .regularExpression)
     }
     /// `paper` 是阅读页纸色（WebView 透明，露出纸色）：页面脚本据此修正书籍样式写死的低对比文字颜色。
-    static func html(_ source: String, css: String, color: String = "#14181F", background: String = "#F4F6F8", paper: String = "#F4F6F8", preferences: ReaderPreferences = .init()) -> String {
+    static func html(_ source: String, css: String, color: String = "#17233A", background: String = "#F6F0E4", paper: String = "#F6F0E4", preferences: ReaderPreferences = .init(), accent: String = "#315BEE") -> String {
         var html = source.replacingOccurrences(of: #"(?is)<(script|iframe|object|embed|form|base)\b[^>]*>.*?</\1\s*>|<(script|iframe|object|embed|form|base|meta)\b[^>]*\/?>"#, with: "", options: .regularExpression)
         html = html.replacingOccurrences(of: #"(?i)\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)"#, with: "", options: .regularExpression)
         html = closingSelfClosedTags(html)
@@ -39,6 +39,10 @@ enum OriginalDocument {
             if preferences.font.hasPrefix("custom:") {
                 let name = String(preferences.font.dropFirst(7)).replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "\\", with: "")
                 return "\"\(name)\", \"NotoSerifCJKsc-Regular\", serif"
+            }
+            if let registered = ReaderPreferences.bundledFonts[preferences.font] {
+                let fallback = ["hansans", "xixihei"].contains(preferences.font) ? "sans-serif" : "serif"
+                return "\"\(registered)\", \(fallback)"
             }
             return "\"NotoSerifCJKsc-Regular\", \"Songti SC\", serif"
         }()
@@ -52,7 +56,7 @@ enum OriginalDocument {
         // 多栏会把栏宽撑满容器，若再加栏间距，每页就比屏宽多出间距，越往后翻错位越大；
         // 书籍自带 CSS（含合并到 body 上的 class）也可能改 body/容器的边距与宽度，故用 !important 锁定分页骨架。
         return """
-        <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: tingye-resource:; style-src 'unsafe-inline'; font-src data: tingye-resource:; script-src 'none'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"><style>html,body{height:100%!important;width:auto!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;columns:auto!important}body{color:\(color);background:\(background);font:\(fontSize)px/\(lineHeight) \(fontFamily);\(letterSpacing)\(textAlign)overflow-wrap:break-word}img,svg,table,video{max-width:100%;height:auto}pre{white-space:pre-wrap}table{border-collapse:collapse}td,th{padding:6px}a.restored-source-link{display:none} \(styles) #ty-reader-book{box-sizing:border-box!important;width:100vw!important;max-width:none!important;height:100%!important;margin:0!important;padding:20px 0!important;border:0!important;column-width:100vw!important;column-count:auto!important;column-gap:0!important;column-fill:auto!important;font:\(fontSize)px/\(lineHeight) \(fontFamily)!important;\(letterSpacing)\(textAlign)} #ty-reader-book p{margin-top:0!important;margin-bottom:\(paragraphMargin)px!important;text-indent:\(textIndent)!important;line-height:\(lineHeight)!important} #ty-reader-book *{overflow:visible!important;columns:auto!important} #ty-reader-book img,#ty-reader-book svg,#ty-reader-book video{height:auto!important;max-width:100%!important;max-height:calc(100vh - 48px)!important;object-fit:contain} #ty-reader-book figure{break-inside:avoid} #ty-reader-book figure img{display:block;margin-left:auto;margin-right:auto} #ty-reader-book pre,#ty-reader-book pre *,#ty-reader-book code{white-space:pre-wrap!important;overflow-wrap:anywhere!important}</style></head><body><article id="ty-reader-book" data-ty-paper="\(paper)" data-ty-fg="\(color)">\(html)</article></body></html>
+        <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: tingye-resource:; style-src 'unsafe-inline'; font-src data: tingye-resource:; script-src 'none'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"><style>html,body{height:100%!important;width:auto!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;columns:auto!important}body{color:\(color);background:\(background);font:\(fontSize)px/\(lineHeight) \(fontFamily);\(letterSpacing)\(textAlign)overflow-wrap:break-word}img,svg,table,video{max-width:100%;height:auto}pre{white-space:pre-wrap}table{border-collapse:collapse}td,th{padding:6px}a{color:\(accent);text-decoration-thickness:1px;text-underline-offset:3px}::selection{background:\(accent);color:\(background == "transparent" ? paper : background)}a.restored-source-link{display:none} \(styles) #ty-reader-book{box-sizing:border-box!important;width:100vw!important;max-width:none!important;height:100%!important;margin:0!important;padding:20px 0!important;border:0!important;column-width:100vw!important;column-count:auto!important;column-gap:0!important;column-fill:auto!important;font:\(fontSize)px/\(lineHeight) \(fontFamily)!important;\(letterSpacing)\(textAlign)} #ty-reader-book p{margin-top:0!important;margin-bottom:\(paragraphMargin)px!important;text-indent:\(textIndent)!important;line-height:\(lineHeight)!important} #ty-reader-book *{overflow:visible!important;columns:auto!important} #ty-reader-book img,#ty-reader-book svg,#ty-reader-book video{height:auto!important;max-width:100%!important;max-height:calc(100vh - 48px)!important;object-fit:contain} #ty-reader-book figure{break-inside:avoid} #ty-reader-book figure img{display:block;margin-left:auto;margin-right:auto} #ty-reader-book pre,#ty-reader-book pre *,#ty-reader-book code{white-space:pre-wrap!important;overflow-wrap:anywhere!important}</style></head><body><article id="ty-reader-book" data-ty-paper="\(paper)" data-ty-fg="\(color)">\(html)</article></body></html>
         """
     }
 }
@@ -159,7 +163,7 @@ enum OriginalSpeechHighlight {
             for (const part of segments.reverse()) {
                 const r = document.createRange(); r.setStart(part.node, part.start); r.setEnd(part.node, part.end);
                 const mark = document.createElement('mark'); mark.dataset.tySpeech = 'true';
-                // 金箔下划线：与纯文本阅读页同款，只铺文字底部一段
+                // 钴蓝跟读带：与原生文字模式共用纸色适配后的高亮，只铺文字底部。
                 mark.style.setProperty('background-image', 'linear-gradient(180deg, rgba(0,0,0,0) 62%, ' + input.color + ' 62%)', 'important');
                 mark.style.setProperty('color', 'inherit', 'important'); r.surroundContents(mark);
             }
@@ -269,6 +273,18 @@ enum OriginalReadingPosition {
     static func read(page: Int) -> String { "window.__tyReading ? window.__tyReading.position(\(max(0, page))) : -1" }
 }
 
+/// 阅读工具和设备方向改变可用视口时，重排完成后仍停在当前阅读句。
+private final class OriginalReaderWebView: WKWebView {
+    var onViewportChange: (() -> Void)?
+    private var previousSize = CGSize.zero
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.width > 1, bounds.height > 1, bounds.size != previousSize else { return }
+        previousSize = bounds.size
+        onViewportChange?()
+    }
+}
+
 struct OriginalBookView: UIViewRepresentable {
     let html: String
     let css: String
@@ -277,7 +293,9 @@ struct OriginalBookView: UIViewRepresentable {
     /// 正文颜色跟随阅读页纸色；背景透明，露出阅读页自己的纸色。
     var foreground: Color = Theme.ink
     /// 阅读页纸色，用于修正书籍样式里低对比的文字颜色。
-    var paper: Color = Theme.bg
+    var paper: Color = ReaderPaper.xuan
+    /// 只用于阅读交互（链接、选区）；出版物的图片与版面保持原样。
+    var accent: Color = Theme.accent
     var preferences: ReaderPreferences = .init()
     var highlight: NSRange? = nil
     /// 当前读到的字（章内 UTF-16 偏移，即 `SpeechPlayer.followPublisher`）：长句跨页时读到哪页翻到哪页。
@@ -294,7 +312,6 @@ struct OriginalBookView: UIViewRepresentable {
     /// 手动翻到别的页（点按或滑动后页码确实变了）：停止朗读跟随，与纯文本翻页一致。
     var onManualPage: (() -> Void)? = nil
     /// 手动翻回正在朗读的那一页：恢复自动跟随，与纯文本翻页一致。
-    var onResumeFollow: (() -> Void)? = nil
     /// 首页继续左点 / 末页继续右点：翻章。
     var onEdgeTurn: ((Int) -> Void)? = nil
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -309,12 +326,19 @@ struct OriginalBookView: UIViewRepresentable {
         let config = WKWebViewConfiguration(); config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
         context.coordinator.resources = Self.prepare(config, book: book)
-        let view = WKWebView(frame: .zero, configuration: config); view.navigationDelegate = context.coordinator; view.isOpaque = false; view.backgroundColor = .clear
+        let view = OriginalReaderWebView(frame: .zero, configuration: config); view.navigationDelegate = context.coordinator; view.isOpaque = false; view.backgroundColor = .clear
         // 横向分页：滑动吸附整页，方向锁定避免纵向漂移。
         view.scrollView.isPagingEnabled = true
         view.scrollView.isDirectionalLockEnabled = true
         view.scrollView.showsHorizontalScrollIndicator = false
+        view.scrollView.showsVerticalScrollIndicator = false
+        view.scrollView.contentInsetAdjustmentBehavior = .never
+        view.scrollView.backgroundColor = .clear
         context.coordinator.view = view
+        view.onViewportChange = { [weak coordinator = context.coordinator, weak view] in
+            guard let view else { return }
+            coordinator?.viewportDidChange(view)
+        }
         view.accessibilityCustomActions = [
             UIAccessibilityCustomAction(name: "显示或隐藏阅读工具", target: context.coordinator, selector: #selector(Coordinator.accessibilityToggleTools)),
             UIAccessibilityCustomAction(name: "上一页", target: context.coordinator, selector: #selector(Coordinator.accessibilityPreviousPage)),
@@ -330,13 +354,16 @@ struct OriginalBookView: UIViewRepresentable {
     }
     func updateUIView(_ view: WKWebView, context: Context) {
         let coordinator = context.coordinator
-        coordinator.onToggleChrome = onToggleChrome; coordinator.onManualPage = onManualPage; coordinator.onResumeFollow = onResumeFollow; coordinator.onEdgeTurn = onEdgeTurn
+        coordinator.onToggleChrome = onToggleChrome; coordinator.onManualPage = onManualPage; coordinator.onEdgeTurn = onEdgeTurn
         coordinator.onPositionChange = onPositionChange
         coordinator.requestPosition(readingPosition, revision: positionRevision)
         let color = UIColor(foreground).resolvedColor(with: view.traitCollection).cssHex
         let paperHex = UIColor(paper).resolvedColor(with: view.traitCollection).cssHex
+        let accentHex = UIColor(accent).resolvedColor(with: view.traitCollection).cssHex
+        view.tintColor = UIColor(accent)
+        view.scrollView.indicatorStyle = preferences.kind.dark ? .white : .default
         let typoKey = "\(preferences.font)-\(Int(preferences.fontSize.rounded()))-\(Int(preferences.lineSpacing.rounded()))-\(Int(preferences.paragraphSpacing.rounded()))-\(preferences.letterSpacing)-\(preferences.indent)-\(preferences.justified)"
-        let key = "\(book.id)-\(chapter)-\(color)-\(paperHex)-\(typoKey)-\(html.hashValue)-\(css.hashValue)"
+        let key = "\(book.id)-\(chapter)-\(color)-\(paperHex)-\(accentHex)-\(typoKey)-\(html.hashValue)-\(css.hashValue)"
         let highlightKey = "\(key)-\(String(describing: highlight))-\(highlightColor.resolvedColor(with: view.traitCollection).cssHex)"
         let text = book.chapters.indices.contains(chapter) ? book.chapters[chapter].text : ""
         if coordinator.text != text || coordinator.readingScript.isEmpty { coordinator.readingScript = OriginalReadingPosition.script(text: text) }
@@ -363,7 +390,7 @@ struct OriginalBookView: UIViewRepresentable {
         coordinator.key = key; coordinator.loaded = false
         coordinator.pendingPosition = readingPosition
         coordinator.resources?.update(book)
-        view.loadHTMLString(OriginalDocument.html(html, css: css, color: color, background: "transparent", paper: paperHex, preferences: preferences), baseURL: nil)
+        view.loadHTMLString(OriginalDocument.html(html, css: css, color: color, background: "transparent", paper: paperHex, preferences: preferences, accent: accentHex), baseURL: nil)
     }
     final class Coordinator: NSObject, WKNavigationDelegate, UIGestureRecognizerDelegate {
         var key = ""
@@ -383,6 +410,7 @@ struct OriginalBookView: UIViewRepresentable {
         var positionRevision: Int?
         var pendingPosition: Int?
         private var manualRevision = 0
+        private var viewportRevision = 0
         var onPositionChange: ((Int) -> Void)?
         func requestPosition(_ position: Int, revision: Int) {
             readingPosition = position
@@ -393,6 +421,20 @@ struct OriginalBookView: UIViewRepresentable {
             pendingPosition = nil
             guard highlight == nil || !follow else { return }
             view.evaluateJavaScript(OriginalReadingPosition.restore(position), in: nil, in: .defaultClient, completionHandler: nil)
+        }
+        func viewportDidChange(_ view: WKWebView) {
+            viewportRevision += 1
+            guard loaded else { return }
+            let viewport = viewportRevision, documentKey = key, manual = manualRevision, revision = positionRevision
+            let position = readingPosition
+            // 一次工具栏动画会经历多次布局；只在最终尺寸稳定后恢复，避免中途跳页。
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self, weak view] in
+                guard let self, let view, self.loaded, self.viewportRevision == viewport,
+                      self.key == documentKey, self.manualRevision == manual,
+                      self.positionRevision == revision else { return }
+                self.pendingPosition = position
+                self.apply(view)
+            }
         }
         private var lastFollow: (Int, Bool)?
         private var spokenSubscription: AnyCancellable?
@@ -410,7 +452,6 @@ struct OriginalBookView: UIViewRepresentable {
         private var dragStartPage = 0
         var onToggleChrome: (() -> Void)?
         var onManualPage: (() -> Void)?
-        var onResumeFollow: (() -> Void)?
         var onEdgeTurn: ((Int) -> Void)?
         /// 允许与 WebView 内部点击 / 滚动手势同时识别，否则链接密集的正文里点按会失效。
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
@@ -441,35 +482,37 @@ struct OriginalBookView: UIViewRepresentable {
         private func currentPage(_ view: WKWebView) -> Int {
             Int((view.scrollView.contentOffset.x / max(1, view.scrollView.bounds.width)).rounded())
         }
-        /// 与纯文本翻页一致：翻到朗读所在页恢复跟随，翻到别处停止跟随。
+        /// 手动翻页始终退出跟随；与正文工具中的显式“回到朗读处”区分。
         private func settled(on page: Int) {
             manualRevision += 1; pendingPosition = nil
-            if let spokenPage, page == spokenPage { follow = true; onResumeFollow?() }
-            else {
-                follow = false; onManualPage?()
-                guard let view else { return }
-                let documentKey = key, revision = manualRevision, requestedRevision = positionRevision
-                view.evaluateJavaScript(OriginalReadingPosition.read(page: page), in: nil, in: .defaultClient) { [weak self] result in
-                    guard let self, self.key == documentKey, self.manualRevision == revision,
-                          self.positionRevision == requestedRevision, !self.follow,
-                          case .success(let value) = result, let position = value as? Int, position >= 0 else { return }
-                    self.readingPosition = position
-                    self.onPositionChange?(position)
-                }
+            follow = false; onManualPage?()
+            guard let view else { return }
+            let documentKey = key, revision = manualRevision, requestedRevision = positionRevision
+            view.evaluateJavaScript(OriginalReadingPosition.read(page: page), in: nil, in: .defaultClient) { [weak self] result in
+                guard let self, self.key == documentKey, self.manualRevision == revision,
+                      self.positionRevision == requestedRevision, !self.follow,
+                      case .success(let value) = result, let position = value as? Int, position >= 0 else { return }
+                self.readingPosition = position
+                self.onPositionChange?(position)
             }
         }
         private func page(by delta: Int) {
             guard let view else { return }
             let scroll = view.scrollView
-            let target = scroll.contentOffset.x + CGFloat(delta) * scroll.bounds.width
-            let last = max(0, scroll.contentSize.width - scroll.bounds.width)
+            let width = max(1, scroll.bounds.width)
+            // 锁定整页边界，避免上一次滚动尚有亚像素偏移时累积到下一页。
+            let target = CGFloat(currentPage(view) + delta) * width
+            let last = max(0, scroll.contentSize.width - width)
             if target < -0.5 || target > last + 0.5 {
                 manualRevision += 1; pendingPosition = nil
                 onEdgeTurn?(delta); return
             }
             let x = min(max(0, target), last)
-            settled(on: Int((x / max(1, scroll.bounds.width)).rounded()))
-            scroll.setContentOffset(CGPoint(x: x, y: 0), animated: true)
+            settled(on: Int((x / width).rounded()))
+            // 尚未挂入窗口的 WebView 没有可靠的滚动动画时钟；直接提交页码。
+            // 实际可见页面继续使用原生动画，并尊重系统「减少动态效果」。
+            let animates = view.window != nil && !UIAccessibility.isReduceMotionEnabled
+            scroll.setContentOffset(CGPoint(x: x, y: 0), animated: animates)
         }
         func apply(_ view: WKWebView) {
             lastFollow = (spoken, follow)

@@ -1,0 +1,209 @@
+{
+  "data": [
+    {
+      "id": "page-now",
+      "title": "此刻 · 视觉草稿",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793291178000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-302da443",
+          "measuredAt": 1793320537301
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/now.html",
+        "interactions": [
+          {
+            "domId": "cta-reader",
+            "targetPageId": "page-reader",
+            "transitionLabel": "继续阅读"
+          },
+          {
+            "domId": "nav-shelf",
+            "targetPageId": "page-shelf",
+            "hideEdge": true,
+            "transitionLabel": "书库"
+          },
+          {
+            "domId": "nav-profile",
+            "targetPageId": "page-profile",
+            "hideEdge": true,
+            "transitionLabel": "我的"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-shelf",
+      "title": "书库 · 视觉草稿",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793291178000,
+      "canvasData": {
+        "x": 0,
+        "y": 346,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-e0ae5f21",
+          "measuredAt": 1793320537301
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/shelf.html",
+        "interactions": [
+          {
+            "domId": "nav-now",
+            "targetPageId": "page-now",
+            "hideEdge": true,
+            "transitionLabel": "此刻"
+          },
+          {
+            "domId": "nav-profile",
+            "targetPageId": "page-profile",
+            "hideEdge": true,
+            "transitionLabel": "我的"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-profile",
+      "title": "我的 · 视觉草稿",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793291178000,
+      "canvasData": {
+        "x": 169,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/profile.html",
+        "interactions": [
+          {
+            "domId": "nav-now",
+            "targetPageId": "page-now",
+            "hideEdge": true,
+            "transitionLabel": "此刻"
+          },
+          {
+            "domId": "nav-shelf",
+            "targetPageId": "page-shelf",
+            "hideEdge": true,
+            "transitionLabel": "书库"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-reader",
+      "title": "阅读 · 视觉草稿",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793291178000,
+      "canvasData": {
+        "x": 169,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader.html",
+        "interactions": [
+          {
+            "domId": "back-now",
+            "targetPageId": "page-now",
+            "hideEdge": true,
+            "transitionLabel": "返回此刻"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-app-icon",
+      "title": "应用图标 · 视觉草稿",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793291178000,
+      "canvasData": {
+        "x": 338,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/app-icon.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "image-001",
+      "title": "《故乡》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204781,
+      "canvasData": {
+        "x": 0,
+        "y": 692,
+        "naturalSize": {
+          "width": 233,
+          "height": 332
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-hometown.png"
+      }
+    },
+    {
+      "id": "image-002",
+      "title": "《春》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204782,
+      "canvasData": {
+        "x": 169,
+        "y": 692,
+        "naturalSize": {
+          "width": 144,
+          "height": 203
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-spring.png"
+      }
+    },
+    {
+      "id": "image-003",
+      "title": "《飞鸟集》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204783,
+      "canvasData": {
+        "x": 338,
+        "y": 692,
+        "naturalSize": {
+          "width": 144,
+          "height": 203
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-birds.png"
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "mobile",
+    "projectName": "听页 · Apple Books 视觉草稿",
+    "designLibrary": null
+  }
+}

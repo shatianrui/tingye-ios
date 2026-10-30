@@ -1,0 +1,110 @@
+{
+  "success": true,
+  "repairedPages": [
+    {
+      "htmlSrc": "pages/now.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "now"
+    },
+    {
+      "htmlSrc": "pages/shelf.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "shelf"
+    },
+    {
+      "htmlSrc": "pages/profile.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "profile"
+    }
+  ],
+  "skippedPages": [
+    {
+      "htmlSrc": "pages/reader.html",
+      "reason": "immersive reader outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/book-detail.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/library-management.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/import.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/remote-sources.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/reader-contents.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/reader-preferences.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/reader-annotations.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/original-pdf.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/comic.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/player.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/voice.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/stats.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/reading-calendar.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/settings-reading.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/settings-general.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/settings-data.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/settings-about.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/states.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/accessibility.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    },
+    {
+      "htmlSrc": "pages/app-icon.html",
+      "reason": "secondary flow or specification board outside global tab shell"
+    }
+  ],
+  "failedPages": [],
+  "repairCount": 3,
+  "previousFailedReportDetected": false,
+  "checkedAt": "2026-10-30T01:53:43.011Z"
+}

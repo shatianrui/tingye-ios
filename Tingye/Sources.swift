@@ -101,38 +101,26 @@ struct SourcesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                Text("把想读的书，带到身边。")
+                    .font(.caption).foregroundStyle(Theme.ink2)
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("BRING YOUR BOOKS")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                    Text("把书，带进来。")
-                        .scaledFont(32, weight: .semibold, relativeTo: .largeTitle).lineSpacing(3)
+                    ThemeIcon(symbol: Icon.folder, size: 32).foregroundStyle(Theme.accent)
+                    Text("从文件导入").scaledFont(20, weight: .bold, relativeTo: .title3)
                         .foregroundStyle(Theme.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("EPUB · TXT · PDF · MOBI · 漫画 · 备份")
+                    Text("本机、iCloud 云盘或已连接的网盘")
                         .font(.caption).foregroundStyle(Theme.ink2)
+                    Button("选择文件") { importing = true }
+                        .buttonStyle(PrimaryButtonStyle(height: 50))
+                        .disabled(model.busy)
+                        .accessibilityIdentifier("sources.importFile")
                 }
-                .padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
-
-                if let report = model.importReport {
-                    NavigationLink { ImportResultsView() } label: {
-                        SourceActionRow(icon: Icon.importFile, title: "最近导入结果", subtitle: report.summary)
-                    }.buttonStyle(.plain)
-                }
-                sourceSectionTitle("本地文件")
-                VStack(spacing: 12) {
-                    Button { importing = true } label: {
-                        SourceActionRow(icon: Icon.folder, title: "从文件导入", subtitle: "本机、iCloud 云盘、网盘或已连接的服务器")
-                    }
-                    .disabled(model.busy)
-                    .opacity(model.busy ? 0.45 : 1)
-                    NavigationLink(value: "wifi-transfer") {
-                        SourceActionRow(icon: Icon.wifi, title: "从电脑传书", subtitle: "同一 WiFi 下，用浏览器发送文件")
-                    }
+                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                NavigationLink(value: "wifi-transfer") {
+                    SourceActionRow(icon: Icon.wifi, title: "从电脑传书", subtitle: "同一 WiFi 下，用浏览器发送文件")
                 }
                 .buttonStyle(.plain)
-
-                sourceSectionTitle(sources.isEmpty ? "远程书库" : "远程书库 · \(sources.count) 个连接")
+                sourceSectionTitle(sources.isEmpty ? "连接远程书库" : "远程书库 · \(sources.count) 个连接")
                 VStack(spacing: 12) {
                     ForEach(sources) { source in
                         HStack(spacing: 0) {
@@ -163,17 +151,24 @@ struct SourcesView: View {
                         }
                     }
                     Button { editing = RemoteSource(kind: .webdav, name: "", url: "https://") } label: {
-                        SourceActionRow(icon: Icon.server, title: "连接 WebDAV", subtitle: "坚果云、群晖、Nextcloud 等文件服务器")
+                        SourceActionRow(icon: Icon.server, title: "WebDAV", subtitle: "坚果云、群晖、Nextcloud 等文件服务器")
                     }
                     Button { editing = RemoteSource(kind: .smb, name: "", url: "smb://") } label: {
-                        SourceActionRow(icon: Icon.server, title: "连接 SMB", subtitle: "局域网 NAS、电脑共享文件夹")
+                        SourceActionRow(icon: Icon.server, title: "SMB", subtitle: "局域网 NAS、电脑共享文件夹")
                     }
                     .accessibilityIdentifier("sources.addSMB")
                     Button { editing = RemoteSource(kind: .opds, name: "", url: "https://") } label: {
-                        SourceActionRow(icon: Icon.catalog, title: "连接 OPDS", subtitle: "Calibre-Web、Talebook 等书目服务")
+                        SourceActionRow(icon: Icon.catalog, title: "OPDS", subtitle: "Calibre-Web、Talebook 等书目服务")
                     }
                 }
                 .buttonStyle(.plain)
+                Text("支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ 等格式。")
+                    .font(.caption).foregroundStyle(Theme.ink2)
+                if let report = model.importReport {
+                    NavigationLink { ImportResultsView() } label: {
+                        SourceActionRow(icon: Icon.importFile, title: "最近导入结果", subtitle: report.summary)
+                    }.buttonStyle(.plain)
+                }
                 if !sources.isEmpty {
                     Text("连接只保存在这台设备。移除连接不会删除服务器文件或已导入的书籍。")
                         .font(.caption).foregroundStyle(Theme.ink2)
@@ -212,7 +207,7 @@ struct SourcesView: View {
         } message: { Text("将移除「\(removing?.name ?? "")」的地址和本机登录凭据。服务器文件及已导入书籍会保留。") }
     }
     private func sourceSectionTitle(_ title: String) -> some View {
-        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2)
+        Text(L(title)).scaledFont(20, weight: .bold, relativeTo: .title3).foregroundStyle(Theme.ink)
     }
 
     private func remove(_ source: RemoteSource) {
@@ -229,7 +224,7 @@ struct ImportHubView: View {
         NavigationStack {
             SourcesView()
                 .navigationTitle("添加书籍")
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarTitleDisplayMode(.large)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("完成") { dismiss() }.fontWeight(.semibold)
@@ -259,7 +254,7 @@ private struct SourceActionRow: View {
             ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink).accessibilityHidden(true)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 64)
-        .glassCard(cornerRadius: 0)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .contentShape(Rectangle())
     }
 }
@@ -368,6 +363,16 @@ struct WebDAVBrowser: View {
     private var shown: [WebDAVItem] { query.isEmpty ? items : items.filter { $0.name.localizedCaseInsensitiveContains(query) } }
     var body: some View {
         List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(loading ? "WebDAV · 正在连接" : error == nil ? "WebDAV · 已连接" : "WebDAV · 连接失败")
+                        .font(.caption).foregroundStyle(Theme.ink2)
+                    Text(path.isEmpty ? source.name : path.removingPercentEncoding ?? path)
+                        .font(.subheadline).foregroundStyle(Theme.ink)
+                        .lineLimit(2)
+                }.padding(.vertical, 4)
+            }
+            .listRowBackground(Theme.surface2)
             if let error {
                 Section {
                     Label(error, systemImage: Icon.warning).foregroundStyle(Theme.danger)
@@ -390,10 +395,11 @@ struct WebDAVBrowser: View {
                 ContentUnavailableView(query.isEmpty ? "空文件夹" : "未找到匹配文件", systemImage: query.isEmpty ? Icon.folder : Icon.search)
             }
         }
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle(path.isEmpty ? source.name : (path as NSString).lastPathComponent.removingPercentEncoding ?? path)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
@@ -574,12 +580,12 @@ struct OPDSBrowser: View {
         HStack(spacing: 16) {
             AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { BookCoverView(title: entry.title, color: "gray", width: 44) }
                 .frame(width: 44, height: 63)
-                .clipShape(Rectangle())
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             VStack(alignment: .leading, spacing: 6) {
                 Text(entry.title).font(Theme.serifSemibold(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
                 if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
                 Text(acquisition.fileExtension.uppercased()).font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.accent)
-                    .padding(.horizontal, 6).padding(.vertical, 2).background(Rectangle().fill(Theme.accentSoft))
+                    .padding(.horizontal, 6).padding(.vertical, 2).background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
             Spacer()
             Label("导入", systemImage: Icon.downloadFile)
@@ -709,54 +715,38 @@ struct WiFiTransferView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("不用数据线，让书来到身边")
+                Text("连接同一 WiFi，即可开始。")
                     .font(.caption).foregroundStyle(Theme.ink2)
-                VStack(alignment: .leading, spacing: 20) {
-                    ThemeIcon(symbol: Icon.wifi, size: 24).foregroundStyle(Theme.accent).accessibilityHidden(true)
-                    Text("连接同一 WiFi")
-                        .font(Theme.serif(26, relativeTo: .title)).foregroundStyle(Theme.ink)
-                    Text("在电脑浏览器打开以下地址，即可发送书籍。")
-                        .font(.subheadline).foregroundStyle(Theme.ink2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(24).frame(maxWidth: .infinity, minHeight: 180, alignment: .leading)
-                .background(Theme.surface, in: Rectangle())
-
-                if let address = server.address {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(address).font(.headline).monospacedDigit()
-                            .lineLimit(1).minimumScaleFactor(0.5).textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 16) {
+                    ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.accent)
+                    Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
+                        .scaledFont(20, weight: .bold, relativeTo: .title3).foregroundStyle(Theme.ink)
+                    if let address = server.address {
+                        Text("在电脑浏览器打开").font(.caption).foregroundStyle(Theme.ink2)
+                        Text(address).font(.subheadline.weight(.medium)).monospacedDigit()
+                            .lineLimit(2).truncationMode(.middle).textSelection(.enabled)
                             .foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        HStack(spacing: 16) {
-                            Button {
-                                UIPasteboard.general.string = address
-                                copiedAddress = true
-                                Haptics.light()
-                            } label: {
-                                Text(copiedAddress ? "地址已复制" : "复制地址").frame(minHeight: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("复制后可发送到准备传书的设备")
-                            Text("等待连接").accessibilityLabel("传书服务已开启，等待接收文件")
-                            Spacer(minLength: 0)
-                        }
-                        .font(.caption).foregroundStyle(Theme.accent)
-                    }
-                    .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 8)
-                    .background(Theme.accentSoft, in: Rectangle())
-                } else if let error = server.error {
-                    VStack(alignment: .leading, spacing: 12) {
+                        Text("完整链接包含本次传书凭证")
+                            .font(.caption).foregroundStyle(Theme.ink2)
+                        Button {
+                            UIPasteboard.general.string = address
+                            copiedAddress = true
+                            Haptics.light()
+                        } label: { Text(copiedAddress ? "地址已复制" : "复制完整地址") }
+                        .buttonStyle(PrimaryButtonStyle(height: 50))
+                        .accessibilityHint("复制后可发送到准备传书的设备")
+                    } else if let error = server.error {
                         Label(error, systemImage: Icon.warning).font(.subheadline).foregroundStyle(Theme.danger)
                         Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
                             .buttonStyle(SecondaryButtonStyle())
+                    } else {
+                        ProgressView("正在启动传书服务…").font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(20).background(Theme.surface, in: Rectangle())
-                } else {
-                    ProgressView("正在启动传书服务…").font(.subheadline)
-                        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.surface, in: Rectangle())
                 }
+                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 HStack(spacing: 12) {
                     ThemeIcon(symbol: Icon.downloadFile, size: 24).foregroundStyle(Theme.ink).accessibilityHidden(true)
@@ -769,31 +759,36 @@ struct WiFiTransferView: View {
                         .font(.caption).foregroundStyle(Theme.accent).monospacedDigit()
                 }
                 .padding(16).frame(minHeight: 64)
-                .background(Theme.surface, in: Rectangle())
-                if !server.received.isEmpty {
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                if server.received.isEmpty {
+                    Text("还没有收到文件。\n从电脑选择文件，接收后会自动加入书库。")
+                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                } else {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(server.received.reversed().enumerated()), id: \.offset) { _, line in
                             Text(line).font(.caption)
                                 .foregroundStyle(line.hasPrefix("✗") ? Theme.danger : Theme.ink2)
                                 .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.surface, in: Rectangle())
+                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
                     }
                 }
-                Text("传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；单个文件最大 100 MB。")
+                Text("传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；文件大小不限。")
                     .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 24)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
         .navigationTitle("从电脑传书")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 12) {
-                Button("前往书架") { finishTransfer(goToShelf: true) }.buttonStyle(PrimaryButtonStyle())
+                Button("返回书库") { finishTransfer(goToShelf: true) }.buttonStyle(PrimaryButtonStyle())
                 Button("结束传书") { finishTransfer(goToShelf: false) }.buttonStyle(SecondaryButtonStyle())
             }
             .padding(.horizontal, Theme.inset).padding(.vertical, 12)
@@ -836,7 +831,6 @@ final class WiFiTransferServer: ObservableObject {
     var onFile: ((URL) async -> String)?
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "tingye.wifi-transfer")
-    nonisolated static let maxBytes = 100 * 1024 * 1024
     /// 本次服务的访问口令（去掉易混淆字符，便于手输）。
     private(set) var token = ""
 
@@ -995,7 +989,7 @@ private final class TransferConnection: @unchecked Sendable {
             let length = Int(headers["content-length"] ?? "") ?? 0
             let rawName = headers["x-file-name"].flatMap { $0.removingPercentEncoding } ?? "upload.txt"
             let name = (rawName as NSString).lastPathComponent
-            guard length > 0, length <= WiFiTransferServer.maxBytes else { respond(413, type: "text/plain; charset=utf-8", body: Data("文件为空或超过 100 MB".utf8)); return }
+            guard length > 0 else { respond(422, type: "text/plain; charset=utf-8", body: Data("文件为空".utf8)); return }
             guard ImportableFile.accepts(name) else { respond(415, type: "text/plain; charset=utf-8", body: Data("不支持的格式：\(name)".utf8)); return }
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("wifi-" + UUID().uuidString)
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -1054,7 +1048,7 @@ private final class TransferConnection: @unchecked Sendable {
     </style></head><body><main>
     <div class="eyebrow">听页 · 传书</div><h1>从电脑，把书送到这一页。</h1><p class="intro">保持手机传书页面开启，两个设备连接同一 WiFi。</p>
     <div id="drop"><span class="asset" aria-hidden="true"></span><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
-    <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。单个文件不超过 100 MB。</p></main>
+    <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
     <script>
     const drop=document.getElementById('drop'),list=document.getElementById('list'),pick=document.getElementById('pick'),clear=document.getElementById('clear');
     const queue=[];let active=false;

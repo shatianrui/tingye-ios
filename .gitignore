@@ -1,5 +1,7 @@
 build/
+.build-dd/
 DerivedData/
 *.xcuserstate
 xcuserdata/
 .DS_Store
+.trae-html-share-packages/

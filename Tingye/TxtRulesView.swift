@@ -60,17 +60,19 @@ struct TxtRulesView: View {
                 TextField("粘贴一段原文试试", text: $sample, axis: .vertical).lineLimit(3...8)
                 ForEach(Array(previewTitles.enumerated()), id: \.offset) { index, title in
                     HStack(spacing: 12) {
-                        Text(String(format: "%02d", index + 1)).font(Theme.serif(15)).foregroundStyle(Theme.accent).monospacedDigit()
+                        Text(String(format: "%02d", index + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.accent).monospacedDigit()
                         Text(title).lineLimit(1)
                     }
                 }
             } header: { Text("预览（\(previewTitles.count) 章）") }
             .listRowBackground(Theme.surface)
         }
+        .tint(Theme.accent)
+        .foregroundStyle(Theme.ink)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle("TXT 分章规则")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private func ruleRow(name: String, pattern: String, selected: Bool) -> some View {

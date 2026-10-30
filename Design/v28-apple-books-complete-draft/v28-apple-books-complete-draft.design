@@ -1,0 +1,557 @@
+{
+  "data": [
+    {
+      "id": "page-now",
+      "title": "此刻 · 完整设计",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/now.html",
+        "interactions": [
+          {"domId":"cta-reader","targetPageId":"page-reader","transitionLabel":"继续阅读"},
+          {"domId":"nav-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"书库"},
+          {"domId":"nav-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-shelf",
+      "title": "书库 · 完整设计",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600001,
+      "canvasData": {
+        "x": 169,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/shelf.html",
+        "interactions": [
+          {"domId":"open-book-detail","targetPageId":"page-book-detail","transitionLabel":"书籍详情"},
+          {"domId":"open-library-management","targetPageId":"page-library-management","transitionLabel":"管理书库"},
+          {"domId":"nav-now","targetPageId":"page-now","hideEdge":true,"transitionLabel":"此刻"},
+          {"domId":"nav-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-profile",
+      "title": "我的 · 完整设计",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600002,
+      "canvasData": {
+        "x": 338,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/profile.html",
+        "interactions": [
+          {"domId":"open-stats","targetPageId":"page-stats","transitionLabel":"阅读统计"},
+          {"domId":"open-reading-calendar","targetPageId":"page-reading-calendar","transitionLabel":"阅读日历"},
+          {"domId":"open-settings-reading","targetPageId":"page-settings-reading","transitionLabel":"阅读设置"},
+          {"domId":"open-settings-general","targetPageId":"page-settings-general","transitionLabel":"通用设置"},
+          {"domId":"open-settings-data","targetPageId":"page-settings-data","transitionLabel":"数据与隐私"},
+          {"domId":"open-settings-about","targetPageId":"page-settings-about","transitionLabel":"关于听页"},
+          {"domId":"nav-now","targetPageId":"page-now","hideEdge":true,"transitionLabel":"此刻"},
+          {"domId":"nav-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"书库"}
+        ]
+      }
+    },
+    {
+      "id": "page-reader",
+      "title": "阅读 · 正文与四键",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600003,
+      "canvasData": {
+        "x": 507,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader.html",
+        "interactions": [
+          {"domId":"back-now","targetPageId":"page-now","hideEdge":true,"transitionLabel":"返回此刻"},
+          {"domId":"open-player","targetPageId":"page-player","transitionLabel":"独立听书"},
+          {"domId":"reader-contents","targetPageId":"page-reader-contents","transitionLabel":"目录"},
+          {"domId":"reader-preferences","targetPageId":"page-reader-preferences","transitionLabel":"排版"},
+          {"domId":"reader-annotations","targetPageId":"page-reader-annotations","transitionLabel":"摘记"},
+          {"domId":"reader-more","targetPageId":"page-settings-reading","transitionLabel":"更多阅读工具"}
+        ]
+      }
+    },
+    {
+      "id": "page-book-detail",
+      "title": "书籍详情",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600004,
+      "canvasData": {
+        "x": 0,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/book-detail.html",
+        "interactions": [
+          {"domId":"detail-back-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"返回书库"},
+          {"domId":"detail-read","targetPageId":"page-reader","transitionLabel":"阅读"},
+          {"domId":"detail-listen","targetPageId":"page-player","transitionLabel":"听书"}
+        ]
+      }
+    },
+    {
+      "id": "page-library-management",
+      "title": "书库管理",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600005,
+      "canvasData": {
+        "x": 169,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/library-management.html",
+        "interactions": [
+          {"domId":"management-back-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"返回书库"}
+        ]
+      }
+    },
+    {
+      "id": "page-import",
+      "title": "导入书籍",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600006,
+      "canvasData": {
+        "x": 338,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/import.html",
+        "interactions": [
+          {"domId":"import-back-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"返回书库"},
+          {"domId":"open-remote-sources","targetPageId":"page-remote-sources","transitionLabel":"远程书库"}
+        ]
+      }
+    },
+    {
+      "id": "page-remote-sources",
+      "title": "远程书库",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600007,
+      "canvasData": {
+        "x": 507,
+        "y": 346,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/remote-sources.html",
+        "interactions": [
+          {"domId":"remote-back-shelf","targetPageId":"page-shelf","hideEdge":true,"transitionLabel":"返回书库"}
+        ]
+      }
+    },
+    {
+      "id": "page-reader-contents",
+      "title": "目录与搜索",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600008,
+      "canvasData": {
+        "x": 0,
+        "y": 692,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader-contents.html",
+        "interactions": [
+          {"domId":"contents-close-reader","targetPageId":"page-reader","hideEdge":true,"transitionLabel":"关闭目录"}
+        ]
+      }
+    },
+    {
+      "id": "page-reader-preferences",
+      "title": "阅读排版",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600009,
+      "canvasData": {
+        "x": 169,
+        "y": 692,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader-preferences.html",
+        "interactions": [
+          {"domId":"preferences-close-reader","targetPageId":"page-reader","hideEdge":true,"transitionLabel":"关闭排版"}
+        ]
+      }
+    },
+    {
+      "id": "page-reader-annotations",
+      "title": "划线与摘记",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600010,
+      "canvasData": {
+        "x": 338,
+        "y": 692,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reader-annotations.html",
+        "interactions": [
+          {"domId":"annotations-close-reader","targetPageId":"page-reader","hideEdge":true,"transitionLabel":"关闭摘记"}
+        ]
+      }
+    },
+    {
+      "id": "page-original-pdf",
+      "title": "原书图文与 PDF",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600011,
+      "canvasData": {
+        "x": 507,
+        "y": 692,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/original-pdf.html",
+        "interactions": [
+          {"domId":"pdf-back-detail","targetPageId":"page-book-detail","hideEdge":true,"transitionLabel":"返回书籍详情"}
+        ]
+      }
+    },
+    {
+      "id": "page-comic",
+      "title": "漫画阅读",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600012,
+      "canvasData": {
+        "x": 0,
+        "y": 1038,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/comic.html",
+        "interactions": [
+          {"domId":"comic-back-detail","targetPageId":"page-book-detail","hideEdge":true,"transitionLabel":"返回书籍详情"}
+        ]
+      }
+    },
+    {
+      "id": "page-player",
+      "title": "听书播放",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600013,
+      "canvasData": {
+        "x": 169,
+        "y": 1038,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/player.html",
+        "interactions": [
+          {"domId":"player-back-reader","targetPageId":"page-reader","hideEdge":true,"transitionLabel":"返回阅读器"},
+          {"domId":"open-voice","targetPageId":"page-voice","transitionLabel":"语音与角色"},
+          {"domId":"confirm-end","targetPageId":"page-reader","hideEdge":true,"transitionLabel":"结束听书并返回"}
+        ]
+      }
+    },
+    {
+      "id": "page-voice",
+      "title": "语音与角色",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600014,
+      "canvasData": {
+        "x": 338,
+        "y": 1038,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/voice.html",
+        "interactions": [
+          {"domId":"voice-back-player","targetPageId":"page-player","hideEdge":true,"transitionLabel":"返回听书播放"}
+        ]
+      }
+    },
+    {
+      "id": "page-stats",
+      "title": "阅读统计",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600015,
+      "canvasData": {
+        "x": 507,
+        "y": 1038,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/stats.html",
+        "interactions": [
+          {"domId":"stats-back-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"返回我的"},
+          {"domId":"open-calendar","targetPageId":"page-reading-calendar","transitionLabel":"阅读日历"}
+        ]
+      }
+    },
+    {
+      "id": "page-reading-calendar",
+      "title": "阅读日历",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600016,
+      "canvasData": {
+        "x": 0,
+        "y": 1384,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/reading-calendar.html",
+        "interactions": [
+          {"domId":"calendar-back-stats","targetPageId":"page-stats","hideEdge":true,"transitionLabel":"返回阅读统计"}
+        ]
+      }
+    },
+    {
+      "id": "page-settings-reading",
+      "title": "阅读设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600017,
+      "canvasData": {
+        "x": 169,
+        "y": 1384,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings-reading.html",
+        "interactions": [
+          {"domId":"settings-reading-back-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"返回我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-settings-general",
+      "title": "通用设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600018,
+      "canvasData": {
+        "x": 338,
+        "y": 1384,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings-general.html",
+        "interactions": [
+          {"domId":"settings-general-back-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"返回我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-settings-data",
+      "title": "数据与隐私",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600019,
+      "canvasData": {
+        "x": 507,
+        "y": 1384,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings-data.html",
+        "interactions": [
+          {"domId":"settings-data-back-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"返回我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-settings-about",
+      "title": "关于听页",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600020,
+      "canvasData": {
+        "x": 0,
+        "y": 1730,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings-about.html",
+        "interactions": [
+          {"domId":"settings-about-back-profile","targetPageId":"page-profile","hideEdge":true,"transitionLabel":"返回我的"}
+        ]
+      }
+    },
+    {
+      "id": "page-states",
+      "title": "全局状态",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600021,
+      "canvasData": {
+        "x": 169,
+        "y": 1730,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/states.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-accessibility",
+      "title": "无障碍与深色",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600022,
+      "canvasData": {
+        "x": 338,
+        "y": 1730,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/accessibility.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-app-icon",
+      "title": "应用图标 · 三套正式变体",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1793321600023,
+      "canvasData": {
+        "x": 507,
+        "y": 1730,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/app-icon.html",
+        "interactions": [
+          {"domId":"open-accessibility","targetPageId":"page-accessibility","transitionLabel":"可访问性规范"}
+        ]
+      }
+    },
+    {
+      "id": "image-001",
+      "title": "《故乡》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204781,
+      "canvasData": {
+        "x": 0,
+        "y": 2076,
+        "naturalSize": {
+          "width": 233,
+          "height": 332
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-hometown.png"
+      }
+    },
+    {
+      "id": "image-002",
+      "title": "《春》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204782,
+      "canvasData": {
+        "x": 169,
+        "y": 2076,
+        "naturalSize": {
+          "width": 144,
+          "height": 203
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-spring.png"
+      }
+    },
+    {
+      "id": "image-003",
+      "title": "《飞鸟集》书封",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793292204783,
+      "canvasData": {
+        "x": 338,
+        "y": 2076,
+        "naturalSize": {
+          "width": 144,
+          "height": 203
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/cover-birds.png"
+      }
+    },
+    {
+      "id": "image-004",
+      "title": "AppIcon · 标准 1024px",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793324901324,
+      "devMetadata": {
+        "imageSrc": "assets/app-icon-standard.png"
+      },
+      "canvasData": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "image-005",
+      "title": "AppIcon · 深色 1024px",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793324901325,
+      "devMetadata": {
+        "imageSrc": "assets/app-icon-dark.png"
+      },
+      "canvasData": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "image-006",
+      "title": "AppIcon · 着色 1024px",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1793324901326,
+      "devMetadata": {
+        "imageSrc": "assets/app-icon-tinted.png"
+      },
+      "canvasData": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "mobile",
+    "projectName": "听页 · Apple Books 完整设计 v28",
+    "designLibrary": null
+  }
+}

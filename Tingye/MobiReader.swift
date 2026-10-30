@@ -79,10 +79,9 @@ enum MobiReader {
             switch compression {
             case 1: raw.append(contentsOf: chunk)
             case 2: raw.append(contentsOf: palmDOC(chunk))
-            case 17480: raw.append(contentsOf: try huff!.unpack(chunk, limit: HuffCDIC.maximumBytes - raw.count))
+            case 17480: raw.append(contentsOf: try huff!.unpack(chunk))
             default: throw ReaderError.message("不支持这种 MOBI 压缩方式（\(compression)）。")
             }
-            guard raw.count <= 60 * 1024 * 1024 else { throw ReaderError.message("MOBI 正文过大。") }
         }
         guard let html = String(data: raw, encoding: encoding) ?? String(data: raw, encoding: .utf8) ?? String(data: raw, encoding: gbEncoding) ?? String(data: raw, encoding: .windowsCP1252) else {
             throw ReaderError.message("MOBI 正文编码无法识别。")
@@ -99,7 +98,6 @@ enum MobiReader {
         // 没有分页标记的单篇长文按标题 / 字数再拆
         if chapters.count == 1, let only = chapters.first, only.text.count > 30_000 { chapters = BookImporter.splitText(only.text, title: title) }
         guard !chapters.isEmpty else { throw ReaderError.message("MOBI 中没有找到可阅读的文字。") }
-        guard chapters.count <= 3000 else { throw ReaderError.message("书籍超过 3000 章 / 分页片段，请拆分后导入。") }
 
         var extras: [String: JSONValue] = ["category": .string("其他")]
         if firstImage > 0, let coverIndex {
@@ -183,12 +181,10 @@ enum MobiReader {
 
 /// HUFF/CDIC 解压（亚马逊工具生成的 MOBI 常用），算法与 calibre 的 HuffReader 相同。
 final class HuffCDIC {
-    static let maximumBytes = 60 * 1024 * 1024
     private var dict1: [(length: Int, term: Bool, max: UInt64)] = []
     private var minCode: [UInt64] = []
     private var maxCode: [UInt64] = []
     private var dictionary: [(bytes: [UInt8], done: Bool)?] = []
-    private var dictionaryBytes = 0
     private var depth = 0
 
     init(_ records: [ArraySlice<UInt8>]) throws {
@@ -222,16 +218,14 @@ final class HuffCDIC {
                 guard off >= n * 2, 18 + off <= cdic.count else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
                 let blen = Int(MobiReader.u16(cdic, 16 + off))
                 let start = 18 + off, end = start + (blen & 0x7FFF)
-                let cost = (blen & 0x7FFF) + MemoryLayout<(bytes: [UInt8], done: Bool)?>.stride
-                guard end <= cdic.count, cost <= Self.maximumBytes - dictionaryBytes else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏或过大。") }
-                dictionaryBytes += cost
+                guard end <= cdic.count else { throw ReaderError.message("MOBI 的 CDIC 压缩表损坏。") }
                 dictionary.append((Array(cdic[start..<end]), blen & 0x8000 != 0))
             }
         }
         guard !dictionary.isEmpty, phraseCount == dictionary.count else { throw ReaderError.message("MOBI 的 CDIC 压缩表缺失或不完整。") }
     }
 
-    func unpack(_ input: [UInt8], limit: Int = HuffCDIC.maximumBytes) throws -> [UInt8] {
+    func unpack(_ input: [UInt8], limit: Int = Int.max) throws -> [UInt8] {
         depth += 1; defer { depth -= 1 }
         guard depth < 32, limit >= 0 else { throw ReaderError.message("MOBI 压缩数据异常。") }
         var data = input + [UInt8](repeating: 0, count: 8)
@@ -267,8 +261,6 @@ final class HuffCDIC {
             else {
                 dictionary[r] = nil
                 let expanded = try unpack(entry.bytes, limit: limit - out.count)
-                guard expanded.count <= Self.maximumBytes - (dictionaryBytes - entry.bytes.count) else { throw ReaderError.message("MOBI 压缩字典过大。") }
-                dictionaryBytes += expanded.count - entry.bytes.count
                 dictionary[r] = (expanded, true)
                 out += expanded
             }
@@ -293,7 +285,6 @@ enum ComicImporter {
             .map(\.path)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         guard !images.isEmpty else { throw ReaderError.message("压缩包里没有图片；ZIP 只支持漫画 / 图集（CBZ）。") }
-        guard images.count <= 3000 else { throw ReaderError.message("图片超过 3000 张，请拆分后导入。") }
         var resources: [String: JSONValue] = [:]
         var chapters: [Chapter] = []
         for (index, path) in images.enumerated() {

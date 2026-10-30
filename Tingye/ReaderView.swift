@@ -82,10 +82,9 @@ private struct UncheckedBox<T>: @unchecked Sendable { let value: T }
 
 struct ReaderView: View {
     @AppStorage(GeneralSettings.hideHomeIndicatorKey) private var hideHomeIndicator = true
-    @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var measuredStripHeight: CGFloat = 64
+    @State private var measuredStripHeight: CGFloat = 52
     @State private var measuredToolsHeight: CGFloat = 240
     @State private var measuredTopBarHeight: CGFloat = 76
     @Environment(\.colorScheme) private var colorScheme
@@ -105,7 +104,7 @@ struct ReaderView: View {
     @State private var attributed = NSAttributedString(string: "")
     @State private var sheet: ReaderSheet?
     @State private var ready = false
-    @State private var following = true
+    @State private var following = false
     @State private var chrome = false
     @State private var doublePage = false
     @State private var dayPaper: String?
@@ -138,24 +137,17 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
-    /// 报刊风格：强调色就是当前纸上的墨色，与听书页的黑色播放键、墨线一致；任何纸色都天然有足够对比。
-    /// 靛蓝随纸色取值：默认纸跟随外观，深色纸提亮，浅色纸用标准靛蓝；主色上的字相应取白或纸色。
-    private var readerAccent: Color {
-        if prefs.kind == .paper { return Theme.clay }
-        return prefs.kind.dark ? Color(hex: 0xF0F0F0) : Color(hex: 0x1F1F1F)
-    }
-    private var readerOnAccent: Color {
-        if prefs.kind == .paper { return Theme.onClay }
-        return prefs.kind.dark ? prefs.background : .white
-    }
-    private var readerPanelPaper: Color { paper == "paper" ? Theme.surface : prefs.background }
+    /// 控件以当前纸色决定明暗；固定浅色纸在深色 App 中仍使用标准钴蓝。
+    private var readerAccent: Color { isDarkPaper ? Color(hex: 0x8DA7FF) : Color(hex: 0x315BEE) }
+    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x17233A) : .white }
+    private var readerPanelPaper: Color { isDarkPaper ? Color(hex: 0x192236) : .white }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
     private var sentences: [Sentence] { document.sentences(chapter) }
     private var active: Bool { player.book?.id == book.id }
     private var entry: ShelfEntry? { model.entries.first(where: { $0.id == book.id }) }
     private var marked: Bool { entry?.bookmarks.contains { $0.chapter == chapter && $0.position == sentencePosition } == true }
-    private var highlightRange: NSRange? { active && player.chapter == chapter ? player.sentenceRange : nil }
+    private var highlightRange: NSRange? { active && following && player.chapter == chapter ? player.sentenceRange : nil }
     private var originalHTML: String? { original ? current.fields["document"]?.object?["html"]?.string : nil }
     private var chapterProgress: Double {
         let total = sentences.count
@@ -164,7 +156,8 @@ struct ReaderView: View {
     }
     private var chapterProgressLabel: String { "\(Int(chapterProgress * 100))%" }
     private var pageLabel: String {
-        if document.isPDF || scrolling || originalHTML != nil { return "第 \(chapter + 1) / \(chapters.count) 章" }
+        if document.isPDF { return "第 \(chapter + 1) / \(chapters.count) 页" }
+        if scrolling || originalHTML != nil { return "第 \(chapter + 1) / \(chapters.count) 章" }
         let shown = doublePage ? min(pages.count, pageIndex + 2) : pageIndex + 1
         return "\(shown) / \(max(1, pages.count))"
     }
@@ -183,31 +176,28 @@ struct ReaderView: View {
         }
     }
 
-    /// 听条占用的高度：正在听时正文底部让出这块，高亮句不会被听条盖住（只在开始 / 结束听书时重新分页一次）。
-    private var stripReserve: CGFloat { max(76, measuredStripHeight + 12) }
-
     var body: some View {
+        let showsListeningStrip = active && (!chrome || selection != nil)
         ZStack(alignment: .bottom) {
-            prefs.background.ignoresSafeArea()
-            if let pdf = document.pdf {
-                PDFReader(data: pdf, page: $chapter).ignoresSafeArea(edges: .bottom)
-                    .padding(.bottom, active ? stripReserve : 0)
-                    .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
-                    .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
-            } else {
-                textContent
-            }
-
-            // 工具浮在正文上，不触发重新分页；大字号 / 横屏时工具区独立滚动，保留返回入口。
+            (document.isPDF ? Theme.bg : prefs.background).ignoresSafeArea()
             GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    topBar
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredTopBarHeight = $0 }
-                        .offset(y: chrome ? 0 : -16)
-                        .opacity(chrome ? 1 : 0)
-                        .allowsHitTesting(chrome)
-                        .accessibilityHidden(!chrome)
-                    Spacer(minLength: 12)
+                // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
+                let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
+                let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
+                ZStack(alignment: .bottom) {
+                    Group {
+                        if let pdf = document.pdf {
+                            PDFReader(data: pdf, page: $chapter)
+                                .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
+                                .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
+                        } else {
+                            textContent
+                        }
+                    }
+                    .padding(.bottom, active ? max(66, measuredStripHeight + 12) : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+
                     VStack(spacing: 10) {
                         if let selection { selectionPanel(selection).transition(.move(edge: .bottom).combined(with: .opacity)) }
                         if autoTurn > 0 && selection == nil && !active && !chrome {
@@ -215,7 +205,7 @@ struct ReaderView: View {
                                 Label("自动翻页 · 每 \(autoTurn) 秒 · 轻点停止", systemImage: Icon.autoTurn)
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 12).frame(minHeight: 44)
-                                    .glassSurface(in: Rectangle(), interactive: true)
+                                    .background(readerPanelPaper, in: Capsule())
                             }
                             .buttonStyle(.plain).foregroundStyle(prefs.secondary)
                         }
@@ -229,22 +219,29 @@ struct ReaderView: View {
                             }
                             .scrollBounceBehavior(.basedOnSize)
                             .accessibilityIdentifier("reader.tools")
-                            .frame(height: min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - 24)))
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        } else if active {
-                            if !following && selection == nil { returnPill }
-                            listeningStrip.transition(.move(edge: .bottom).combined(with: .opacity))
+                            .frame(height: toolsHeight)
+                        } else if showsListeningStrip {
+                            listeningStrip
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
                         }
                     }
                     .frame(maxWidth: 760)
-                    .padding(.horizontal, 24).padding(.bottom, 12)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, chrome || active || selection != nil || autoTurn > 0 ? 12 : 0)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                .overlay(alignment: .top) {
+                    if chrome {
+                        topBar
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredTopBarHeight = $0 }
+                    }
+                }
             }
         }
         .foregroundStyle(prefs.foreground)
         .toolbar(.hidden, for: .navigationBar)
-        .statusBarHidden(!chrome)
+        // 状态栏显隐同样会改变部分设备的安全区，阅读时保持一致。
+        .statusBarHidden(true)
         .persistentSystemOverlays(!chrome && hideHomeIndicator ? .hidden : .automatic)
         .keepScreenAwake()
         .background(WindowAppearance(style: prefs.kind.dark ? .dark : UIUserInterfaceStyle(appearance: appearance), restore: UIUserInterfaceStyle(appearance: appearance)))
@@ -274,26 +271,30 @@ struct ReaderView: View {
         .feedbackOverlay()
         .respectReducedMotion()
         .onAppear {
-            model.recordActivity(active && player.playing ? .listening : .reading, for: book.id)
+            model.setReadingSurface(book.id, visible: true)
+            model.recordActivity(.reading, for: book.id)
             let progress = entry?.progress ?? .init()
             chapter = min(max(0, progress.chapter), chapters.count - 1); sentencePosition = progress.position
             jumpRevision += 1
-            // 朗读暂停后若手动读到别处，重新打开时停在保存的位置，而不是被拉回暂停处。
-            following = active && (player.playing || (player.chapter == chapter && player.position == sentencePosition))
+            // 翻开书先恢复阅读位置；后台音频不能把正文拉去另一章。
+            following = false
             if let jump = model.readerJump, jump.id == book.id, chapters.indices.contains(jump.chapter) {
                 // 今日一句「从这句读」：一次性定位，不打断正在进行的朗读跟随之外的东西。
                 model.readerJump = nil
                 following = false
                 chapter = jump.chapter; sentencePosition = max(0, jump.position)
             }
-            followSpeech()
+            persist()
         }
         .onChange(of: player.position) { _, _ in followSpeech() }
         .onChange(of: player.chapter) { _, _ in followSpeech() }
         // 逐字进度单独订阅：只在需要翻页时改动页码，不让整页（含悬浮面板）随每个字重算。
         .onReceive(player.followPublisher.removeDuplicates()) { _ in if !scrolling { followSpeech() } }
-        .onDisappear { persist(); model.readerClosed(book.id) }
-        .task { while !Task.isCancelled { do { try await Task.sleep(for: .seconds(5)) } catch { return }; if scenePhase == .active && !player.playing { model.recordReading(seconds: 5, bookID: book.id, title: book.title) } } }
+        .onDisappear { model.setReadingSurface(book.id, visible: false); persist(); model.readerClosed(book.id) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { followSpeech() } else { persist() }
+        }
+        .onChange(of: sheet) { _, value in model.setReadingSurface(book.id, visible: value != .focus) }
         #if DEBUG
         .task {
             switch UIReview.screen {
@@ -311,7 +312,7 @@ struct ReaderView: View {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .focus: PlayerView(player: player, fromReader: true)
-                case .contents: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? []) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)
         }
@@ -324,7 +325,7 @@ struct ReaderView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Text(book.title)
-                    .font(Theme.kicker).tracking(1.5)
+                    .font(.caption)
                     .lineLimit(1)
                     .foregroundStyle(prefs.foreground)
                 Text("·")
@@ -339,7 +340,7 @@ struct ReaderView: View {
                         Image(systemName: Icon.listening)
                             .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
                         Text("正在朗读")
-                            .font(Theme.kicker).tracking(1.5)
+                            .font(.caption2.weight(.medium))
                     }
                     .foregroundStyle(readerAccent)
                     .accessibilityElement(children: .ignore)
@@ -349,27 +350,33 @@ struct ReaderView: View {
             .font(.system(size: 12))
             .frame(height: 46, alignment: .bottom)
             .padding(.bottom, 10)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(prefs.foreground.opacity(0.85))
-                    .frame(height: 1)
-            }
             .opacity(chrome ? 0 : 1)
             .accessibilityHidden(chrome)
+
+            if originalHTML == nil {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("第 \(chapter + 1) 章").font(.caption).foregroundStyle(prefs.secondary)
+                    Text(current.title)
+                        .font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(prefs.foreground)
+                        .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 20).padding(.bottom, 8)
+            }
 
             GeometryReader { geometry in
                 Group {
                     if let html = originalHTML {
                         let displayedChapter = chapter, requestedRevision = jumpRevision
-                        OriginalBookView(html: html, css: current.fields["document"]?.object?["css"]?.string ?? "", book: book, chapter: chapter, foreground: prefs.foreground, paper: prefs.background, preferences: prefs, highlight: highlightRange, spokenSource: player.followPublisher, follow: following, highlightColor: prefs.highlightBand, readingPosition: sentencePosition, positionRevision: jumpRevision, onPositionChange: { position in
+                        OriginalBookView(html: html, css: current.fields["document"]?.object?["css"]?.string ?? "", book: book, chapter: chapter, foreground: prefs.foreground, paper: prefs.background, accent: readerAccent, preferences: prefs, highlight: highlightRange, spokenSource: player.followPublisher, follow: following, highlightColor: prefs.highlightBand, readingPosition: sentencePosition, positionRevision: jumpRevision, onPositionChange: { position in
                             guard chapter == displayedChapter, jumpRevision == requestedRevision else { return }
                             sentencePosition = position
                             model.saveProgress(book.id, chapter: chapter, position: position)
-                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onResumeFollow: { following = true; followSpeech() }, onEdgeTurn: { delta in following = false; jump(chapter: chapter + delta, position: 0) })
+                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onEdgeTurn: { delta in following = false; jump(chapter: chapter + delta, position: 0) })
                             // WebKit 视口宽取整，滚动分页按实际宽度；宽度取整后二者一致，翻页不累积亚像素错位。
-                            .frame(width: geometry.size.width.rounded(.down))
+                            .frame(width: geometry.size.width.rounded(.down), height: geometry.size.height)
                     } else if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
-                    else if current.text.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("在「字样」中打开原书图文，或在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
+                    else if current.text.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("在「更多」中打开原书图文，或在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
                     else if scrolling {
                         ScrollingText(attributed: attributed, highlight: highlightRange, color: prefs.highlight, marks: chapterMarks, initialOffset: currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? highlightRange?.location : nil, onSelect: { select(offset: $0) }) { offset in
                             following = false; let position = Sentence.index(at: offset, in: sentences)
@@ -404,7 +411,10 @@ struct ReaderView: View {
                         .accessibilityAction(named: "下一页") { turn(1) }.accessibilityAction(named: "上一页") { turn(-1) }
                         .accessibilityAction(named: "显示阅读工具") { chrome = true }
                     }
-                }.task(id: RebuildKey(chapter: chapter, size: geometry.size, prefs: prefs, automaticDouble: automaticDouble)) { await rebuild(size: geometry.size) }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+                .task(id: RebuildKey(chapter: chapter, size: geometry.size, prefs: prefs, automaticDouble: automaticDouble)) { await rebuild(size: geometry.size) }
             }
             .padding(.top, 18)
             .padding(.bottom, 6)
@@ -417,12 +427,10 @@ struct ReaderView: View {
             .font(.caption2)
             .foregroundStyle(prefs.secondary)
             .frame(minHeight: 26)
-            .overlay(alignment: .top) { Rectangle().fill(prefs.secondary.opacity(0.18)).frame(height: 0.5) }
             .opacity(chrome ? 0 : 1)
             .accessibilityHidden(chrome)
         }
         .padding(.horizontal, margin)
-        .padding(.bottom, active ? stripReserve : 0)
     }
 
     // MARK: 导航、章节进度与阅读操作
@@ -432,11 +440,17 @@ struct ReaderView: View {
             Button { dismiss() } label: { barIcon(Icon.back) }
                 .accessibilityLabel("返回书架")
                 .accessibilityIdentifier("reader.back")
-            VStack(alignment: .leading, spacing: 3) {
-                Text(book.title).font(Theme.kicker).tracking(1.5).foregroundStyle(prefs.secondary).lineLimit(1)
-                Text(current.title).font(Theme.serifBold(18 * uiScale)).serifEmbolden(18 * uiScale).lineLimit(1)
+            VStack(spacing: 4) {
+                Text(book.title).font(.caption).foregroundStyle(prefs.secondary)
+                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                if document.isPDF || originalHTML != nil {
+                    Text(document.isPDF ? "原书 PDF · \(chapter + 1) / \(chapters.count) 页" : "原书图文 · \(current.title)")
+                        .font(.caption2).foregroundStyle(prefs.secondary).lineLimit(1)
+                } else {
+                    Text(current.title).font(Theme.serifBold(18, relativeTo: .headline)).lineLimit(1)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
             Button {
                 Haptics.selection()
@@ -456,7 +470,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground, rule: .bottom)
+        .background(document.isPDF ? Theme.bg : prefs.background, in: RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 12)
         .frame(maxWidth: 760)
         .padding(.top, 4)
@@ -468,45 +482,55 @@ struct ReaderView: View {
     }
 
     private var chapterBar: some View {
-        VStack(spacing: 4) {
-            HStack {
-                Text(document.isPDF ? "页码进度" : "章节进度").font(Theme.kicker).tracking(1.5).foregroundStyle(prefs.foreground)
-                Spacer()
-                Text("\(chapter + 1) / \(chapters.count)").monospacedDigit()
-                    .accessibilityIdentifier("reader.currentChapter")
-            }
-            .font(Theme.sans(12 * uiScale)).foregroundStyle(prefs.secondary)
-            .padding(.horizontal, 8).padding(.top, 12)
-            if chapters.count > 1 {
-                ChapterScrubber(chapter: chapter, count: chapters.count, isPDF: document.isPDF, tint: readerAccent, onStep: { changeChapter($0) }) { value in
-                    following = false; jump(chapter: value, position: 0)
+        VStack(spacing: 12) {
+            VStack(spacing: 2) {
+                HStack {
+                    Text(document.isPDF ? "页码进度" : "章节进度")
+                    Spacer()
+                    Text("\(chapter + 1) / \(chapters.count)").monospacedDigit()
+                        .accessibilityIdentifier("reader.currentChapter")
                 }
-            } else {
-                Text(pageLabel).font(.system(size: 12)).monospacedDigit().foregroundStyle(prefs.secondary).frame(height: 44)
+                .font(.caption).foregroundStyle(prefs.secondary)
+                if chapters.count > 1 {
+                    ChapterScrubber(chapter: chapter, count: chapters.count, isPDF: document.isPDF, tint: readerAccent, onStep: { changeChapter($0) }) { value in
+                        following = false; jump(chapter: value, position: 0)
+                    }
+                } else {
+                    Text(pageLabel).font(.caption).monospacedDigit().foregroundStyle(prefs.secondary).frame(minHeight: 44)
+                }
             }
-            // 四个位置固定：目录 → 排版 → 听书 → 更多；播放状态不再让其他按键挪位。
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
-                readerAction(Icon.contents, "目录") { sheet = .contents }
-                    .accessibilityIdentifier("reader.contents")
-                readerAction(Icon.typography, "排版") { sheet = .preferences }
-                    .accessibilityIdentifier("reader.preferences")
-                readerAction(Icon.listen, active ? "听书页" : "听书", selected: active) { openListening() }
-                    .accessibilityLabel(active ? "进入听书页" : "开始听书并进入听书页")
-                    .accessibilityIdentifier(active ? "reader.expandPlayer" : "reader.listen")
-                moreMenu
+            .padding(.horizontal, 12).padding(.top, 10)
+            .background(document.isPDF ? Theme.bg : prefs.background, in: RoundedRectangle(cornerRadius: 16))
+
+            // 四项工具共享圆角白色表面，读听状态不会改变按钮位置。
+            VStack(spacing: 8) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
+                    readerAction(Icon.contents, "目录") { sheet = .contents }
+                        .accessibilityIdentifier("reader.contents")
+                    readerAction(Icon.typography, "排版") { sheet = .preferences }
+                        .accessibilityIdentifier("reader.preferences")
+                    readerAction(Icon.note, "摘记") { sheet = .notes }
+                        .accessibilityLabel("查看本书摘记")
+                        .accessibilityIdentifier("reader.notes")
+                    moreMenu
+                }
+                if active {
+                    listeningControls(showsPlayerLink: true)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
+                }
             }
-            if active {
-                Rectangle().fill(prefs.secondary.opacity(0.2)).frame(height: 0.5).padding(.horizontal, 8)
-                listeningControls(showsPlayerLink: false)
-            }
+            .padding(8)
+            .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
         }
-        .padding(.horizontal, 8).padding(.bottom, 8)
         .foregroundStyle(prefs.foreground)
-        .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
     }
 
     private var moreMenu: some View {
         Menu {
+            Section("查找与整理") {
+                Button { sheet = .search } label: { Label("书内搜索", systemImage: Icon.search) }
+                    .accessibilityIdentifier("reader.search")
+            }
             Section("阅读外观") {
                 Button { toggleNightMode() } label: {
                     Label(isDarkPaper ? "切换日间纸色" : "切换夜间纸色", systemImage: Icon.dayNight(isDark: isDarkPaper))
@@ -514,13 +538,25 @@ struct ReaderView: View {
             }
             if !document.isPDF {
                 Section("阅读方式") {
-                    Toggle(isOn: $original) { Label("原书图文", systemImage: Icon.original) }
+                    if current.fields["document"]?.object?["html"]?.string != nil {
+                        Toggle(isOn: $original) { Label("原书图文", systemImage: Icon.original) }
+                    }
                     if !scrolling && originalHTML == nil {
                         Picker(selection: $autoTurn) {
                             Text("关闭").tag(0)
                             ForEach([10, 20, 30, 45, 60], id: \.self) { Text("每 \($0) 秒翻一页").tag($0) }
                         } label: { Label("自动翻页", systemImage: Icon.autoTurn) }
                     }
+                }
+            }
+            Section("辅助听书") {
+                Button { startReadingAloud() } label: { Label("从当前阅读位置听", systemImage: Icon.listen) }
+                    .accessibilityIdentifier("reader.startListening")
+                if active {
+                    Button { following = true; followSpeech() } label: { Label("跟随朗读位置", systemImage: Icon.listening) }
+                    Button { sheet = .focus } label: { Label("听书设置与控制", systemImage: Icon.listen) }
+                        .accessibilityIdentifier("reader.openPlayer")
+                    Button { player.stop(); following = false } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
                 }
             }
             Section("书籍") {
@@ -539,7 +575,7 @@ struct ReaderView: View {
         }
         .foregroundStyle(selected ? readerAccent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .overlay(alignment: .top) { if selected { Rectangle().fill(readerAccent).frame(width: 28, height: 3) } }
+        .background(selected ? readerAccent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
         .contentShape(Rectangle())
     }
 
@@ -552,7 +588,8 @@ struct ReaderView: View {
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
             .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
+            .contentShape(Rectangle())
+            .onTapGesture { }
     }
 
     /// 听条内容：单独作为听条显示，或在工具层打开时并入章节栏。
@@ -570,9 +607,9 @@ struct ReaderView: View {
             } else { listeningStatus }
             Button { togglePlayback() } label: {
                 ZStack {
-                    Rectangle().fill(readerAccent)
-                    if player.buffering { ProgressView().tint(readerOnAccent) }
-                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(readerOnAccent) }
+                    Circle().fill(prefs.foreground.opacity(0.07))
+                    if player.buffering { ProgressView().tint(prefs.foreground) }
+                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(prefs.foreground) }
                 }
                 .frame(width: 46, height: 46)
             }
@@ -581,11 +618,7 @@ struct ReaderView: View {
             .accessibilityIdentifier("reader.toggle")
         }
         .foregroundStyle(prefs.foreground)
-        .padding(.horizontal, 12).padding(.vertical, 8).frame(minHeight: 64)
-        .overlay(alignment: .top) {
-            ProgressBar(value: player.progress, track: prefs.foreground.opacity(0.12), tint: readerAccent, height: 3)
-                .accessibilityHidden(true)
-        }
+        .padding(.horizontal, 8).padding(.vertical, 4).frame(minHeight: 52)
         .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
             if value.translation.height < -24 { sheet = .focus }
         })
@@ -593,29 +626,29 @@ struct ReaderView: View {
 
     private var listeningStatus: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(player.buffering ? "正在准备声音…" : (player.playing ? "边读边听" : "朗读已暂停"))
-                .font(Theme.kicker).tracking(1.5)
+            Text(player.buffering ? "正在准备声音…" : (player.playing ? (following ? "跟随朗读" : "辅助听书中") : "朗读已暂停"))
+                .font(.caption.weight(.medium))
             Text(player.error ?? "第 \(player.chapter + 1) 章 · \(player.rate.rateText)× · \(player.timingLabel)")
                 .font(.caption).foregroundStyle(player.error == nil ? prefs.secondary : Theme.danger)
                 .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
         }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 
     private var returnPill: some View {
         Button { following = true; followSpeech() } label: {
             Label(player.chapter == chapter ? "回到朗读处" : "回到朗读处 · 第 \(player.chapter + 1) 章", systemImage: Icon.listening)
-                .font(.caption.weight(.semibold)).foregroundStyle(readerOnAccent)
-                .padding(.horizontal, 16).frame(minHeight: 44)
-                .background(readerAccent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                .font(.caption).foregroundStyle(prefs.secondary)
+                .padding(.horizontal, 12).frame(minHeight: 44)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("reader.returnToSpeech")
     }
 
-    private func openListening() {
-        if !active { togglePlayback() }
-        sheet = .focus
+    private func startReadingAloud() {
+        persist()
+        model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: sentencePosition))
+        following = true
     }
 
     // MARK: 行为
@@ -645,26 +678,25 @@ struct ReaderView: View {
     }
     private func locate(_ offset: Int) { let index = pages.firstIndex(where: { NSLocationInRange(offset, $0) }) ?? (offset >= attributed.length ? max(0, pages.count - 1) : 0); pageIndex = doublePage ? index / 2 * 2 : index }
     private func followSpeech() {
-        guard following, active else { return }
-        if chapter != player.chapter, chapters.indices.contains(player.chapter) { ready = false; chapter = player.chapter; return }
+        guard following, active, scenePhase == .active else { return }
+        if chapter != player.chapter, chapters.indices.contains(player.chapter) { ready = false; chapter = player.chapter }
         sentencePosition = player.position
         if ready, !scrolling { locate(player.followOffset ?? currentOffset) }
+        persist()
     }
-    /// 跟随朗读时进度由播放器写入；手动翻页或跳章（即使朗读已暂停）则保存阅读页自己的位置。
-    private func persist() { if !active || !following { model.saveProgress(book.id, chapter: chapter, position: sentencePosition) } }
+    /// 阅读只保存眼前的正文位置；听书回调保存另一份位置。
+    private func persist() { model.saveProgress(book.id, chapter: chapter, position: sentencePosition) }
     private func toggleChrome() { withAnimation(.snappy(duration: 0.24)) { chrome.toggle() } }
     private func togglePlayback() {
         if active {
-            let resuming = !player.playing
             player.toggle()
-            if resuming { following = true; followSpeech() }
-        } else { persist(); model.startListening(book, showPlayer: false); following = true }
+        } else { startReadingAloud() }
     }
     private func listenAt(offset: Int) {
         sentencePosition = Sentence.index(at: offset, in: sentences)
         model.saveProgress(book.id, chapter: chapter, position: sentencePosition)
         if active { player.seek(chapter: chapter, position: sentencePosition); if !player.playing { player.resume() } }
-        else { model.startListening(book, showPlayer: false) }
+        else { model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: sentencePosition)) }
         following = true
     }
     // MARK: 划线与笔记
@@ -706,7 +738,7 @@ struct ReaderView: View {
             canExtendBack: value.start > 0,
             canExtendForward: value.end + 1 < sentences.count,
             tint: prefs.foreground,
-            paper: paper == "paper" ? Theme.surface : prefs.background,
+            paper: readerPanelPaper,
             accent: readerAccent,
             onMark: { color, style in
                 Haptics.selection()
@@ -758,9 +790,7 @@ struct ReaderView: View {
             if reduceMotion || pageTurn == "none" { pageIndex = next }
             else { withAnimation(.easeInOut(duration: 0.3)) { pageIndex = next } }
             sentencePosition = Sentence.index(at: pages[next].location, in: sentences)
-            // 手动翻回正在朗读的那一页时恢复自动跟随。
-            if let spoken = active && player.chapter == chapter ? player.followOffset : nil,
-               (next..<min(pages.count, next + (doublePage ? 2 : 1))).contains(where: { NSLocationInRange(spoken, pages[$0]) }) { following = true; followSpeech() }
+            // 手动阅读始终由读者决定位置；只有显式“回到朗读处”才恢复跟随。
             persist()
         }
     }
@@ -782,7 +812,7 @@ struct ReaderView: View {
     }
 }
 private struct RebuildKey: Equatable { let chapter: Int; let size: CGSize; let prefs: ReaderPreferences; let automaticDouble: Bool }
-enum ReaderSheet: String, Identifiable { case contents, preferences, voice, focus; var id: String { rawValue } }
+enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice, focus; var id: String { rawValue } }
 
 final class CoreTextPageView: UIView {
     var onSelect: ((Int) -> Void)?
@@ -835,7 +865,11 @@ final class CoreTextPageView: UIView {
 struct NativeTextPage: UIViewRepresentable {
     let attributed: NSAttributedString
     var onSelect: ((Int) -> Void)? = nil
-    func makeUIView(context: Context) -> CoreTextPageView { CoreTextPageView() }
+    func makeUIView(context: Context) -> CoreTextPageView {
+        let view = CoreTextPageView()
+        view.accessibilityIdentifier = "reader.nativePage"
+        return view
+    }
     func updateUIView(_ view: CoreTextPageView, context: Context) { view.attributed = attributed; view.onSelect = onSelect }
 }
 /// 连续滚动：只在朗读句变化时增删高亮属性，不重设整章文字。
@@ -939,12 +973,43 @@ final class ReaderScrollTextView: UITextView {
     }
 }
 
+#if DEBUG
+/// UI 回归读取 PDFKit 的真实页位置与缩放，避免仅凭 SwiftUI 状态误判正文没有移动。
+private final class ReviewPDFView: PDFView {
+    override var accessibilityValue: String? {
+        get {
+            guard UIReview.isolated, let document, let currentPage else { return super.accessibilityValue }
+            let rect = convert(currentPage.bounds(for: displayBox), from: currentPage)
+            let state: [String: Double] = ["page": Double(document.index(for: currentPage)), "scale": scaleFactor,
+                                           "pageX": rect.minX, "pageY": rect.minY,
+                                           "pageWidth": rect.width, "pageHeight": rect.height]
+            guard let data = try? JSONSerialization.data(withJSONObject: state, options: .sortedKeys) else { return nil }
+            return String(data: data, encoding: .utf8)
+        }
+        set { super.accessibilityValue = newValue }
+    }
+}
+#endif
+
 struct PDFReader: UIViewRepresentable {
     let data: Data
     @Binding var page: Int
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PDFView {
-        let view = PDFView(); view.document = PDFDocument(data: data); view.autoScales = true; view.displayMode = .singlePageContinuous; view.backgroundColor = UIColor(Theme.bg)
+#if DEBUG
+        let view: PDFView = ReviewPDFView()
+        if UIReview.isolated {
+            view.isAccessibilityElement = true
+            view.accessibilityIdentifier = "reader.pdf"
+            view.accessibilityLabel = "PDF 正文"
+        }
+#else
+        let view = PDFView()
+#endif
+        view.document = PDFDocument(data: data); view.autoScales = true
+        view.displayMode = .singlePageContinuous; view.displayDirection = .vertical
+        view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        view.backgroundColor = UIColor(Theme.bg)
         context.coordinator.observer = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak coordinator = context.coordinator] _ in
             guard let coordinator, let current = view.currentPage, let doc = view.document else { return }
             let index = doc.index(for: current)
@@ -954,6 +1019,7 @@ struct PDFReader: UIViewRepresentable {
     }
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
+        view.backgroundColor = UIColor(Theme.bg)
         if let doc = view.document, let target = doc.page(at: page), view.currentPage !== target { view.go(to: target) }
     }
     final class Coordinator {
@@ -965,24 +1031,58 @@ struct PDFReader: UIViewRepresentable {
 
 // MARK: - 目录
 
-struct ContentsView: View {
-    private struct SearchHit: Identifiable, Sendable {
-        var id: Int { index }
+/// 全文检索保留同章内每一次命中，使用 UTF-16 坐标与正文定位保持一致。
+enum ReaderSearch {
+    struct Match: Identifiable, Sendable {
+        var id: String { "\(index):\(offset)" }
         let index: Int
         let snippet: String
         let offset: Int
     }
+    static func matches(in chapters: [Chapter], query: String, limit: Int = 200) -> [Match] {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty, limit > 0 else { return [] }
+        var results: [Match] = []
+        for (index, chapter) in chapters.enumerated() {
+            if Task.isCancelled { return [] }
+            let text = chapter.text as NSString
+            var cursor = 0, matchedBody = false
+            while cursor < text.length {
+                if Task.isCancelled { return [] }
+                let range = text.range(of: keyword, options: .caseInsensitive, range: NSRange(location: cursor, length: text.length - cursor))
+                guard range.location != NSNotFound, range.length > 0 else { break }
+                matchedBody = true
+                let start = max(0, range.location - 24), end = min(text.length, NSMaxRange(range) + 64)
+                let context = text.rangeOfComposedCharacterSequences(for: NSRange(location: start, length: end - start))
+                let snippet = (context.location > 0 ? "…" : "") + text.substring(with: context) + (NSMaxRange(context) < text.length ? "…" : "")
+                results.append(Match(index: index, snippet: snippet, offset: range.location))
+                if results.count >= limit { return results }
+                cursor = NSMaxRange(range)
+            }
+            if !matchedBody, chapter.title.localizedCaseInsensitiveContains(keyword) {
+                results.append(Match(index: index, snippet: String(chapter.text.prefix(80)), offset: 0))
+                if results.count >= limit { return results }
+            }
+        }
+        return results
+    }
+}
+
+struct ContentsView: View {
     let book: Book
     let chapters: [Chapter]
     let currentChapter: Int
     /// 正在朗读的章（朗读这本书时），目录里标出声波
     var listeningChapter: Int? = nil
     let bookmarks: [Bookmark]
+    var initialMode: Int = 0
+    var startsSearching: Bool = false
     let jump: (Int, Int) -> Void
     @Environment(\.dismiss) var dismiss
     @State private var query = ""
-    @State private var hits: [SearchHit]? = nil
+    @State private var hits: [ReaderSearch.Match]? = nil
     @State private var mode = 0
+    @State private var searchPresented = false
     @State private var bookmarkToRemove: Bookmark?
     @EnvironmentObject var model: AppModel
     private var noteCount: Int { model.entries.first { $0.id == book.id }?.notes.count ?? 0 }
@@ -997,24 +1097,41 @@ struct ContentsView: View {
                 .padding(.vertical, 8)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
-                Picker("目录类型", selection: $mode) { Text("章节").tag(0); Text("书签 \(bookmarks.count)").tag(1); Text("笔记 \(noteCount)").tag(3); Text("插图").tag(2) }
-                    .pickerStyle(.segmented).listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 12, trailing: 0))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        contentsTab("章节", value: 0)
+                        contentsTab("书签 \(bookmarks.count)", value: 1)
+                        contentsTab("笔记 \(noteCount)", value: 3)
+                        contentsTab("插图", value: 2)
+                    }
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 12, trailing: 0))
                 if mode == 0 {
                     if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ForEach(Array(chapters.enumerated()), id: \.offset) { index, chapter in
                             chapterRow(index: index, chapter: chapter, snippet: nil, matchOffset: nil)
                         }
                     } else if let hits {
+                        if !hits.isEmpty {
+                            Text(hits.count >= 200 ? "显示前 200 处匹配，可输入更完整的词句缩小范围。" : "找到 \(hits.count) 处匹配")
+                                .font(.caption).foregroundStyle(Theme.ink2)
+                                .accessibilityIdentifier("reader.searchResultCount")
+                                .listRowBackground(Color.clear)
+                        }
                         ForEach(hits) { hit in
                             if chapters.indices.contains(hit.index) {
                                 chapterRow(index: hit.index, chapter: chapters[hit.index], snippet: hit.snippet, matchOffset: hit.offset)
                             }
                         }
                     }
+                    if hits?.isEmpty == true && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
+                    }
                 } else if mode == 3 {
                     NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in jump(note.chapter, note.start) }
                 } else if mode == 1 {
-                    if bookmarks.isEmpty { Text("在阅读页底部轻点「书签」，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
+                    if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
                     ForEach(bookmarks.sorted { ($0.chapter, $0.position) < ($1.chapter, $1.position) }) { bookmark in
                         HStack(spacing: 10) {
                             Button { jump(bookmark.chapter, bookmark.position) } label: {
@@ -1048,31 +1165,16 @@ struct ContentsView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden).background(Theme.bg)
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: "搜索章节与全文")
+            .searchable(text: $query, isPresented: $searchPresented, prompt: "搜索章节与全文")
             .task(id: query) {
                 let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !keyword.isEmpty else { hits = nil; return }
+                mode = 0
+                hits = nil
                 do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
                 let snapshot = UncheckedBox(value: chapters)
-                let results = await Task.detached(priority: .userInitiated) { () -> [SearchHit] in
-                    var found: [SearchHit] = []
-                    for (index, chapter) in snapshot.value.enumerated() {
-                        if Task.isCancelled { return [] }
-                        let titleMatch = chapter.title.localizedCaseInsensitiveContains(keyword)
-                        let ns = chapter.text as NSString
-                        let range = ns.range(of: keyword, options: .caseInsensitive)
-                        guard titleMatch || range.location != NSNotFound else { continue }
-                        let excerpt: String
-                        if range.location != NSNotFound {
-                            let start = max(0, range.location - 20), end = min(ns.length, NSMaxRange(range) + 60)
-                            excerpt = ns.substring(with: ns.rangeOfComposedCharacterSequences(for: NSRange(location: start, length: end - start)))
-                        } else {
-                            excerpt = String(chapter.text.prefix(80))
-                        }
-                        found.append(SearchHit(index: index, snippet: excerpt, offset: range.location == NSNotFound ? 0 : range.location))
-                    }
-                    return found
-                }.value
+                let searchTask = Task.detached(priority: .userInitiated) { ReaderSearch.matches(in: snapshot.value, query: keyword) }
+                let results = await withTaskCancellationHandler { await searchTask.value } onCancel: { searchTask.cancel() }
                 if !Task.isCancelled { hits = results }
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
@@ -1085,13 +1187,27 @@ struct ContentsView: View {
                 }
                 Button("取消", role: .cancel) { bookmarkToRemove = nil }
             } message: { _ in Text("正文与阅读进度会保留。") }
-            .onAppear { proxy.scrollTo(currentChapter, anchor: .center) }
+            .onAppear {
+                mode = initialMode
+                if initialMode == 0 { proxy.scrollTo("chapter:\(currentChapter)", anchor: .center) }
+                searchPresented = startsSearching
+            }
         }
+    }
+    private func contentsTab(_ title: String, value: Int) -> some View {
+        Button { mode = value } label: {
+            Text(title).font(.caption)
+                .foregroundStyle(mode == value ? Theme.onAccent : Theme.ink3)
+                .padding(.horizontal, 14).frame(minHeight: 44)
+                .background(mode == value ? Theme.accent : Theme.surface2, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(mode == value ? .isSelected : [])
     }
     private func chapterRow(index: Int, chapter: Chapter, snippet: String?, matchOffset: Int?) -> some View {
         Button { open(index, chapter, matchOffset: matchOffset) } label: {
             HStack(spacing: 12) {
-                Text("\(index + 1)").font(.system(size: 13, weight: index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink3).frame(minWidth: 26, alignment: .leading)
+                Text(String(format: "%02d", index + 1)).font(.caption.weight(index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink3).frame(minWidth: 26, alignment: .leading)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(chapter.title).font(.body.weight(index == currentChapter ? .semibold : .regular)).foregroundStyle(Theme.ink)
                     if let snippet, !snippet.isEmpty { Text(snippet).font(.caption).lineLimit(2).foregroundStyle(Theme.ink2) }
@@ -1101,13 +1217,18 @@ struct ContentsView: View {
                 if index == currentChapter {
                     Text("在读").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.accent)
                         .padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(Theme.accent.opacity(0.09), in: Rectangle())
+                        .background(Theme.accent.opacity(0.09), in: Capsule())
                 }
-            }.padding(.vertical, 9)
+            }
+            .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
         .listRowSeparator(.hidden)
-        .listRowBackground(index == currentChapter ? Theme.accentSoft : Theme.surface)
-        .id(index)
+        .listRowBackground(Color.clear)
+        .id(matchOffset.map { "\(index):\($0)" } ?? "chapter:\(index)")
     }
     private func open(_ index: Int, _ chapter: Chapter, matchOffset: Int?) {
         guard let matchOffset else { jump(index, 0); return }
@@ -1207,7 +1328,6 @@ private struct IllustrationRow: View {
 /// 字样：第一屏放常用项（字号、字体、纸色、翻页方式），其余收进「更多排版」。
 /// 在阅读页以半高 sheet 打开，正文实时预览；从设置进入时显示示例文字。
 struct ReadingPreferencesView: View {
-    @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
     var showsPreview = true
     @Environment(\.dismiss) var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -1222,40 +1342,40 @@ struct ReadingPreferencesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("每一行，都读得舒服")
-                    .font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                Text("设置只影响正文，原书图文也会同步应用。")
+                    .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                 if showsPreview {
-                    Text("我所记得的故乡全不如此。\n我的故乡好得多了。")
+                    Text("清晨，湖面还没有醒来。\n让光缓缓移过纸面。")
                         .font(Font(ReaderPreferences(fontSize: size, font: font).uiFont))
                         .lineSpacing(spacing)
                         .foregroundStyle(ReaderPreferences(paper: paper).foreground)
                         .padding(20)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(paper == "paper" ? Theme.surface : ReaderPreferences(paper: paper).background, in: Rectangle())
+                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: 16))
                         .accessibilityLabel("排版预览")
                 }
 
                 VStack(spacing: 0) {
                     HStack(spacing: 8) {
-                        Text("字号").font(Theme.sans(15 * uiScale, weight: .medium))
+                        Text("字号").font(Theme.sans(15, weight: .medium))
                         stepButton("A−", label: "减小字号") { size = max(14, size - 1) }
                         Spacer(minLength: 0)
-                        Text("\(Int(size))").font(Theme.sans(15 * uiScale, weight: .medium)).monospacedDigit()
+                        Text("\(Int(size))").font(Theme.sans(15, weight: .medium)).monospacedDigit()
                         stepButton("A+", label: "增大字号") { size = min(34, size + 1) }
                     }
                     Slider(value: $size, in: 14...34, step: 1)
                         .accessibilityLabel("字号").accessibilityValue("\(Int(size))")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Theme.surface, in: Rectangle())
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("字体").font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                        Text("字体").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                         Spacer()
                         NavigationLink { MyFontsView() } label: {
                             Text(font.hasPrefix("custom:") ? (FontLibrary.fonts.first { "custom:" + $0.postScript == font }?.name ?? "我的字体") : "我的字体")
-                                .font(Theme.sans(12 * uiScale)).lineLimit(2).frame(minHeight: 44)
+                                .font(Theme.sans(12)).lineLimit(2).frame(minHeight: 44)
                         }
                     }
                     if dynamicTypeSize.isAccessibilitySize {
@@ -1267,7 +1387,7 @@ struct ReadingPreferencesView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("纸色").font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                        Text("纸色").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                         Spacer()
                         Menu {
                             Picker("全部纸色", selection: $paper) {
@@ -1278,26 +1398,30 @@ struct ReadingPreferencesView: View {
                                 Text(ReaderPaper(rawValue: paper)?.name ?? "暖纸")
                                 Image(systemName: Icon.collapse).font(.caption2)
                             }
-                            .font(Theme.sans(12 * uiScale)).frame(minHeight: 44)
+                            .font(Theme.sans(12)).frame(minHeight: 44)
                         }
                         .accessibilityLabel("全部纸色")
                     }
-                    HStack(spacing: 12) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: dynamicTypeSize.isAccessibilitySize ? 3 : 5), spacing: 12) {
                         ForEach(mainPapers) { item in
                             Button { Haptics.selection(); paper = item.rawValue } label: {
-                                Rectangle()
-                                    .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
-                                    .frame(maxWidth: .infinity).frame(height: 58)
-                                    .overlay {
-                                        Rectangle()
-                                            .strokeBorder(paper == item.rawValue ? Theme.accent : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
-                                    }
-                                    .overlay {
-                                        if paper == item.rawValue {
-                                            ThemeIcon(symbol: Icon.checkmark, size: 20)
-                                                .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
+                                VStack(spacing: 8) {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
+                                        .frame(maxWidth: .infinity).frame(height: 44)
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .strokeBorder(paper == item.rawValue ? Theme.accent : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
                                         }
-                                    }
+                                        .overlay {
+                                            if paper == item.rawValue {
+                                                ThemeIcon(symbol: Icon.checkmark, size: 18)
+                                                    .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
+                                            }
+                                        }
+                                    Text(item.name).font(.caption2).foregroundStyle(Theme.ink3)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(item.name)
@@ -1327,9 +1451,9 @@ struct ReadingPreferencesView: View {
                     HStack(spacing: 12) {
                         ThemeIcon(symbol: Icon.moreTypography, size: 24)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("更多排版").font(Theme.sans(15 * uiScale, weight: .medium))
+                            Text("更多排版").font(Theme.sans(15, weight: .medium))
                             Text("行距、段距、页边距与简繁转换")
-                                .font(Theme.sans(12 * uiScale)).foregroundStyle(Theme.ink3)
+                                .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         ThemeIcon(symbol: Icon.disclosure, size: 18)
@@ -1337,7 +1461,7 @@ struct ReadingPreferencesView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(16)
                     .frame(minHeight: 64)
-                    .background(Theme.surface, in: Rectangle())
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(.plain)
             }
@@ -1350,7 +1474,7 @@ struct ReadingPreferencesView: View {
         .navigationTitle("阅读排版").navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("完成") { dismiss() }
-                .buttonStyle(PrimaryButtonStyle(height: 48))
+                .buttonStyle(PrimaryButtonStyle(height: 50))
                 .padding(.horizontal, 24).padding(.vertical, 12)
                 .frame(maxWidth: 620).frame(maxWidth: .infinity)
                 .background(Theme.bg)
@@ -1367,11 +1491,11 @@ struct ReadingPreferencesView: View {
 
     private func fontChip(_ key: String, _ title: String) -> some View {
         Button { Haptics.selection(); font = key } label: {
-            Text(L(title)).font(Theme.sans(12 * uiScale))
-                .foregroundStyle(font == key ? Theme.accent : Theme.ink3)
+            Text(L(title)).font(Theme.sans(12))
+                .foregroundStyle(font == key ? Theme.onAccent : Theme.ink3)
                 .padding(.horizontal, 6)
                 .frame(maxWidth: .infinity, minHeight: 44)
-                .background(font == key ? Theme.accentSoft : Theme.surface, in: Rectangle())
+                .background(font == key ? Theme.accent : Theme.surface2, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(font == key ? .isSelected : [])
@@ -1379,7 +1503,7 @@ struct ReadingPreferencesView: View {
 
     private func stepButton(_ text: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(text).font(Theme.sans(15 * uiScale, weight: .medium))
+            Text(text).font(Theme.sans(15, weight: .medium))
                 .foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityLabel(label)
@@ -1470,11 +1594,8 @@ private struct MoreTypographyView: View {
 }
 
 private extension View {
-    /// 工具条保持用户纸色：方角细边，靠正文一侧压一条墨线，与听书页的报刊栏线一致。
-    func readerPaperPanel(paper: Color, ink: Color, rule: VerticalEdge = .top) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.radius)
-        return self.background(shape.fill(paper))
-            .overlay(shape.strokeBorder(ink.opacity(0.12), lineWidth: 0.5))
-            .overlay(alignment: rule == .top ? .top : .bottom) { Rectangle().fill(ink).frame(height: 1) }
+    /// 阅读工具采用实体圆角表面，深浅取决于正文纸色，而非系统材质。
+    func readerPaperPanel(paper: Color, ink: Color) -> some View {
+        self.background(paper, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

@@ -1,0 +1,87 @@
+{
+  "app": "听页",
+  "version": "1.24.0",
+  "build": "121",
+  "recordedAt": "2026-10-23T21:05:21.069128+08:00",
+  "platforms": {
+    "ios": {
+      "uploadedAt": "2026-10-23 20:49:26.604 +08:00",
+      "uploadStatus": "succeeded",
+      "exportExitCode": 0,
+      "archive": "build/Tingye-121.xcarchive",
+      "uploadLog": "build/upload-121.log",
+      "architectures": [
+        "arm64"
+      ],
+      "archiveChecksPassed": 28,
+      "binarySHA256": "ad84fe3c7c0fd68e6438decec022be0f508b7652439b535a98fc5b99014dd0e1",
+      "dSYMUUIDs": [
+        [
+          "80125A66-CB10-3D53-A5A5-5BBF0970C4D0",
+          "arm64"
+        ]
+      ],
+      "testflightStatus": "available-to-current-tester"
+    },
+    "mac": {
+      "uploadedAt": "2026-10-23 20:59:35.596 +08:00",
+      "uploadStatus": "succeeded",
+      "exportExitCode": 0,
+      "archive": "build/Tingye-121-mac.xcarchive",
+      "uploadLog": "build/upload-121-mac.log",
+      "architectures": [
+        "arm64",
+        "x86_64"
+      ],
+      "archiveChecksPassed": 29,
+      "binarySHA256": "f54573286c3aeebc65ef6c6e00ed19cdfb137f6ae107335790b6b246116df430",
+      "dSYMUUIDs": [
+        [
+          "6A464FAF-518A-328C-A1CC-E31128B7E73F",
+          "x86_64"
+        ],
+        [
+          "F16402C8-63B5-31AB-B4A4-B7049A52F77F",
+          "arm64"
+        ]
+      ],
+      "testflightStatus": "available-to-current-tester"
+    }
+  },
+  "tests": {
+    "core": 100,
+    "ui": 20,
+    "passed": 120,
+    "failed": 0,
+    "skipped": 0,
+    "environment": "iPhone 17e / iOS 27.0 Simulator"
+  },
+  "frozenSourceFiles": 149,
+  "sourceFreezeVerified": true,
+  "iosAvailability": {
+    "checkedAt": "2026-10-23T21:03:14.575485+08:00",
+    "source": "macOS TestFlight native application, iOS platform selected and refreshed",
+    "version": "1.24.0",
+    "build": "121",
+    "installActionVisible": true,
+    "sizeMB": 54.2,
+    "status": "available-to-current-tester",
+    "installationPerformed": false,
+    "note": "TestFlight page shows 1.24.0 Build 121 and 安装. This confirms availability to the signed-in tester; no new testers were invited."
+  },
+  "macFirstAttempt": "Failed at upload completion with expired account credentials; fresh-session retry succeeded without changing the archive.",
+  "releaseNotesFile": "TestFlight-121-更新说明.txt",
+  "appStoreReviewSubmitted": false,
+  "testerGroupsChanged": false,
+  "gitCommitCreated": false,
+  "macAvailability": {
+    "checkedAt": "2026-10-23T21:05:21.069128+08:00",
+    "source": "macOS TestFlight native application, macOS platform selected and refreshed",
+    "version": "1.24.0",
+    "build": "121",
+    "updateActionVisible": true,
+    "sizeMB": 60.5,
+    "status": "available-to-current-tester",
+    "installationPerformed": false
+  }
+}

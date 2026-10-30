@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "repairedPages": [
+    {
+      "htmlSrc": "pages/now.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "now"
+    },
+    {
+      "htmlSrc": "pages/shelf.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "shelf"
+    },
+    {
+      "htmlSrc": "pages/profile.html",
+      "action": "replace-data-mobile-nav-global",
+      "activeKey": "profile"
+    }
+  ],
+  "skippedPages": [
+    {
+      "htmlSrc": "pages/reader.html",
+      "reason": "Immersive reader is outside the global tab shell"
+    },
+    {
+      "htmlSrc": "pages/app-icon.html",
+      "reason": "App icon specification board is outside the global tab shell"
+    }
+  ],
+  "failedPages": [],
+  "repairCount": 3,
+  "previousFailedReportDetected": false,
+  "checkedAt": "2026-10-29T17:06:01.244Z"
+}

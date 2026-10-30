@@ -34,6 +34,8 @@ final class AppModel: ObservableObject {
     @Published var sortOrder = "recent"
     @Published var selectedBook: Book?
     @Published var showingPlayer = false
+    /// 当前真正显示正文的书；展开全屏听书页时暂时清空。
+    @Published private(set) var visibleReadingBookID: String?
     /// 一次性跳转目标：阅读页打开时消费（今日一句「从这句读」），不改动书架上的进度，直到读者在那里翻页或关闭。
     var readerJump: (id: String, chapter: Int, position: Int)?
     @Published var readingSeconds: [String: Double] = [:]
@@ -89,6 +91,13 @@ final class AppModel: ObservableObject {
     /// 书库目录名。旧版登录过的用户沿用原账号目录，避免书籍、进度与 iCloud 存档"消失"。
     let owner: String
     var lastBook: ShelfEntry? { entries.filter(\.local).max { $0.progress.updatedAt < $1.progress.updatedAt } }
+    var lastReadingBook: ShelfEntry? {
+        visibleEntries.filter { $0.local && ($0.started || $0.lastReadAt != nil) }
+            .max { readingRecency(for: $0) < readingRecency(for: $1) }
+    }
+    func readingRecency(for entry: ShelfEntry) -> Double {
+        max(entry.lastReadAt ?? 0, entry.progress.updatedAt)
+    }
 
     init(disk suppliedDisk: LibraryDisk? = nil, progressSync: ProgressSync? = nil) {
         owner = suppliedDisk?.root.lastPathComponent ?? LocalOwner.resolve()
@@ -98,7 +107,7 @@ final class AppModel: ObservableObject {
                 disk = suppliedDisk; entries = try suppliedDisk.catalog(); indexLibrary()
             } else { try loadLibrary() }
         } catch { message = error.localizedDescription }
-        player.onProgress = { [weak self] id, chapter, position in self?.saveProgress(id, chapter: chapter, position: position) }
+        player.onProgress = { [weak self] id, chapter, position in self?.saveListeningProgress(id, chapter: chapter, position: position) }
         sync.start { [weak self] in self?.pullProgress() }
         // 朗读暂停或结束后，合并期间被搁置的远端进度（延后一拍，等播放器状态落定）。
         playbackObserver = player.$playing.removeDuplicates().filter { !$0 }.dropFirst()
@@ -160,6 +169,12 @@ final class AppModel: ObservableObject {
     }
     func recordActivity(_ activity: ReadingActivity, for id: String) {
         guard !restoringLibrary, let index = entries.firstIndex(where: { $0.id == id }) else { return }
+        if activity == .reading {
+            entries[index].lastReadAt = ReadingProgress.now
+            entries[index].lastActivity = .reading
+            scheduleCatalogSave()
+            return
+        }
         guard entries[index].lastActivity != activity || (activity == .listening && entries[index].hasListened != true) else { return }
         entries[index].lastActivity = activity
         if activity == .listening { entries[index].hasListened = true }
@@ -169,7 +184,7 @@ final class AppModel: ObservableObject {
         let history = sessions.filter { $0.bookID == entry.id }
         let latest = history.max { $0.end < $1.end }
         let current = player.book?.id == entry.id
-        return ResumeActions(started: entry.started || entry.lastActivity != nil,
+        return ResumeActions(started: entry.started || entry.lastReadAt != nil,
                              lastActivity: entry.lastActivity ?? (latest?.listening == true ? .listening : .reading),
                              hasListened: current || entry.hasListened == true || history.contains(where: \.listening),
                              playing: current && player.playing)
@@ -364,6 +379,18 @@ final class AppModel: ObservableObject {
         if sync.push(entries[i]) { sync.recordCommit(1) }
         scheduleCatalogSave()
     }
+    /// 听书进度独立存盘，不推送到 iCloud 的阅读位置，也不改变最近阅读排序。
+    func saveListeningProgress(_ id: String, chapter: Int, position: Int) {
+        guard !restoringLibrary, let index = entries.firstIndex(where: { $0.id == id }), entries[index].local else { return }
+        let chapter = min(max(0, chapter), max(0, entries[index].chapterCount - 1))
+        let count = entries[index].sentenceCounts.flatMap { $0.indices.contains(chapter) ? $0[chapter] : nil }
+        let position = count.map { min(max(0, position), max(0, $0 - 1)) } ?? max(0, position)
+        let previous = entries[index].listeningProgress
+        guard previous?.chapter != chapter || previous?.position != position else { return }
+        entries[index].listeningProgress = .init(chapter: chapter, position: position, updatedAt: ReadingProgress.now)
+        entries[index].hasListened = true
+        scheduleCatalogSave()
+    }
     func bookmark(_ id: String, chapter: Int, position: Int, excerpt: String) {
         guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
@@ -435,13 +462,28 @@ final class AppModel: ObservableObject {
         }
         if !failures.isEmpty { throw ReaderError.message(failures.joined(separator: "\n")) }
     }
-    func startListening(_ book: Book, showPlayer: Bool = true) {
+    func startListening(_ book: Book, showPlayer: Bool = true, from position: ReadingProgress? = nil) {
         guard !restoringLibrary else { return }
         guard book.fields["comic"]?.bool != true else { message = "漫画没有可以朗读的文字。"; return }
-        let progress = entries.first(where: { $0.id == book.id })?.progress ?? .init()
+        let entry = entries.first(where: { $0.id == book.id })
+        let progress = position ?? entry?.listeningProgress ?? entry?.progress ?? .init()
         recordActivity(.listening, for: book.id)
         player.start(book: book, chapter: progress.chapter, position: progress.position)
         showingPlayer = showPlayer
+    }
+    /// 明确从某章或某句开始听，只定位声音，不改变阅读位置。
+    func listen(_ id: String, chapter: Int, position: Int = 0, showPlayer: Bool = true) {
+        guard !restoringLibrary else { return }
+        if player.book?.id == id {
+            recordActivity(.listening, for: id)
+            player.seek(chapter: chapter, position: position)
+            if !player.playing { player.resume() }
+            showingPlayer = showPlayer
+        } else {
+            run("正在准备朗读") { [self] in
+                startListening(try await loadBook(id), showPlayer: showPlayer, from: .init(chapter: chapter, position: position))
+            }
+        }
     }
     /// 所有「听书」入口共用：正在听这本书时只继续并打开听读页，不从头重建朗读。
     func listen(_ id: String, showPlayer: Bool = true) {
@@ -493,6 +535,11 @@ final class AppModel: ObservableObject {
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .first { !$0.isEmpty }
             next[index].progress.chapter = max(0, min(row.progress.chapter, value.chapters.count - 1))
+            if var listening = row.listeningProgress {
+                listening.chapter = min(max(0, listening.chapter), max(0, counts.count - 1))
+                listening.position = min(max(0, listening.position), max(0, counts[listening.chapter] - 1))
+                next[index].listeningProgress = listening
+            }
             catalogSaveTask?.cancel(); catalogDirty = false
             try disk?.saveCatalog(next); entries = next
         }
@@ -508,26 +555,32 @@ final class AppModel: ObservableObject {
         }
         let old = try await loadBook(id)
         let rule = TxtChapterRules.activeRegex(), maxLength = TxtChapterRules.maxLength
-        let (value, counts, newChapter) = try await Task.detached(priority: .userInitiated) { [disk] () -> (Book, [Int], Int) in
+        let (value, counts, newChapter, newListeningChapter) = try await Task.detached(priority: .userInitiated) { [disk] () -> (Book, [Int], Int, Int?) in
             let source = old.chapters.map { $0.title == old.title || $0.title == "卷首" ? $0.text : $0.title + "\n" + $0.text }.joined(separator: "\n")
             var next = old
             next.fields["chapters"] = .array(BookImporter.splitText(source, title: old.title, rule: rule, maxLength: maxLength).map { .object($0.fields) })
-            guard next.chapters.count <= 3000 else { throw ReaderError.message("新规则切出的章节超过 3000 章，请换一条更严格的规则。") }
             next.fields["nativeReadChapters"] = nil
-            let offset = old.chapters.prefix(max(0, row.progress.chapter)).reduce(0) { $0 + $1.text.count }
-            var total = 0, target = 0
-            for (index, chapter) in next.chapters.enumerated() {
-                if total + chapter.text.count > offset { target = index; break }
-                total += chapter.text.count; target = index
+            func mappedChapter(_ progress: ReadingProgress) -> Int {
+                let offset = old.chapters.prefix(max(0, progress.chapter)).reduce(0) { $0 + $1.text.count }
+                var total = 0, target = 0
+                for (index, chapter) in next.chapters.enumerated() {
+                    if total + chapter.text.count > offset { target = index; break }
+                    total += chapter.text.count; target = index
+                }
+                return target
             }
             try disk?.write(next)
-            return (next, next.chapters.map { Sentence.split($0.text).count }, target)
+            return (next, next.chapters.map { Sentence.split($0.text).count }, mappedChapter(row.progress), row.listeningProgress.map(mappedChapter))
         }.value
         forget(id); remember(value); indexLibrary()
         if let index = entries.firstIndex(where: { $0.id == id }) {
             var next = entries
             next[index].chapterCount = value.chapters.count
             next[index].sentenceCounts = counts
+            if let newListeningChapter, var listening = row.listeningProgress {
+                listening.chapter = newListeningChapter; listening.position = 0
+                next[index].listeningProgress = listening
+            }
             catalogSaveTask?.cancel(); catalogDirty = false
             try disk?.saveCatalog(next); entries = next
         }
@@ -540,6 +593,19 @@ final class AppModel: ObservableObject {
         flushPendingSaves()
         guard selectedBook?.id != id else { return }
         pullProgress()
+    }
+    func setReadingSurface(_ id: String, visible: Bool) {
+        if visible { visibleReadingBookID = id }
+        else if visibleReadingBookID == id { visibleReadingBookID = nil }
+    }
+    /// 全应用只用一个时钟。前台正文优先归为阅读，后台播放归为听书，避免同一时间重复计入。
+    func recordUsageTick(seconds: Double, appActive: Bool) {
+        guard !restoringLibrary else { return }
+        if appActive, let id = visibleReadingBookID, let entry = entries.first(where: { $0.id == id }) {
+            recordReading(seconds: seconds, bookID: id, title: entry.title)
+        } else if player.playing && !player.buffering, let book = player.book {
+            recordReading(seconds: seconds, bookID: book.id, title: book.title, listening: true)
+        }
     }
     /// 记一段阅读或听书时间：按日累计（统计图表），并合并进这本书的当前阅读记录。
     func recordReading(seconds: Double, bookID: String? = nil, title: String = "", listening: Bool = false) {

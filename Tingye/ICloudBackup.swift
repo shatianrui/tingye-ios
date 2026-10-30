@@ -19,8 +19,19 @@ struct ICloudArchive: Codable, Sendable {
         var group: String?
         var hidden: Bool?
         var highlights: [Highlight]?
+        var listeningProgress: ReadingProgress?
+        var lastReadAt: Double?
         func validated() throws -> Self {
             let packet = try packet.validated(id: packet.book.id)
+            if let listeningProgress {
+                guard packet.book.chapters.indices.contains(listeningProgress.chapter), listeningProgress.position >= 0,
+                      listeningProgress.updatedAt.isFinite, listeningProgress.updatedAt >= 0 else {
+                    throw ReaderError.message("iCloud 备份中的听书位置无效，本机书架未更改。")
+                }
+            }
+            if let lastReadAt, !lastReadAt.isFinite || lastReadAt < 0 {
+                throw ReaderError.message("iCloud 备份中的阅读时间无效，本机书架未更改。")
+            }
             for mark in bookmarks {
                 guard packet.book.chapters.indices.contains(mark.chapter), mark.position >= 0 else {
                     throw ReaderError.message("iCloud 备份中《\(packet.book.title)》的书签无效，本机书架未更改。")
@@ -213,6 +224,8 @@ extension LibraryDisk {
             var row = ShelfEntry(book: book, progress: item.packet.progress)
             row.bookmarks = item.bookmarks
             row.group = item.group; row.hidden = item.hidden; row.highlights = item.highlights
+            row.listeningProgress = item.listeningProgress; row.lastReadAt = item.lastReadAt
+            row.hasListened = item.listeningProgress != nil
             if let i = next.firstIndex(where: { $0.id == book.id }) { row.addedAt = next[i].addedAt }
             if let i = next.firstIndex(where: { $0.id == book.id }) {
                 row.cloudRevision = next[i].cloudRevision; row.backupAt = next[i].backupAt
@@ -397,7 +410,7 @@ extension AppModel {
                 do { book = try await Task.detached(priority: .utility) { try disk.read(row.id) }.value }
                 catch { throw ReaderError.message("读取《\(row.title)》失败，未写入备份：\(error.localizedDescription)") }
                 try Task.checkCancellation()
-                items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights))
+                items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt))
                 step(id, .readingLocal, completed: index + 1, total: rows.count)
             }
             step(id, .writing, detail: "正在把 \(items.count) 本书写入一份新快照（单个文件，无法细分进度）。")
@@ -688,7 +701,7 @@ final class ProgressSync: ObservableObject {
               let time = (value["t"] as? NSNumber)?.doubleValue, time.isFinite else { return nil }
         return ReadingProgress(chapter: chapter, position: position, updatedAt: time)
     }
-    /// 合并远端进度。`protected` 中的书（正在阅读或朗读）保留本机位置，稍后再合并。
+    /// 合并远端阅读进度。`protected` 中正在阅读的书保留本机位置，稍后再合并。
     func merge(_ entries: [ShelfEntry], protected: Set<String>) -> (entries: [ShelfEntry], applied: [String], kept: Int) {
         var next = entries, applied: [String] = [], kept = 0
         for i in next.indices {
@@ -721,15 +734,13 @@ extension AppModel {
         guard !restoringLibrary, sync.enabled else { return }
         var protected = Set<String>()
         if let id = selectedBook?.id { protected.insert(id) }
-        if let id = player.book?.id, player.playing { protected.insert(id) }
         let (next, applied, kept) = sync.merge(entries, protected: protected)
         if !applied.isEmpty {
             guard let disk else { sync.recordFailure("合并其他设备的阅读进度失败：本机书架尚未就绪。"); return }
             do { try disk.saveCatalog(next) }
             catch { sync.recordFailure("合并其他设备的阅读进度失败：" + error.localizedDescription); return }
             entries = next
-            // 已暂停的朗读停在旧位置，继续播放会写回旧进度；停止后从新位置重新开始。
-            if let id = player.book?.id, applied.contains(id) { player.stop() }
+            // 听书位置独立保存；合并阅读位置不打断正在播放或暂停的声音。
         }
         sync.recordMerge(applied: applied.count, kept: kept)
         sync.recordCommit(entries.reduce(0) { $0 + (sync.push($1) ? 1 : 0) })

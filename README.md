@@ -1,6 +1,22 @@
 # 听页 · 原生 iOS / Mac Catalyst
 
-纯 Swift / SwiftUI 本地阅读与听书应用，最低 iOS 17。最新 TestFlight 上传版本为 **1.23.0（118）· v21「瑞士网格 Swiss Grid」+ [Pow](https://github.com/EmergeTools/Pow) 1.0.6 动效**（翻页动画可选 滑动 / 淡入 / 模糊 / 无且仅手动翻页触发、书签点亮、封面与漫画页载入过渡、主按钮按压下陷，均遵循「减少动态效果」；另含 SMB 会话复用与 WiFi 传书口令，见[发布历史](docs/RELEASE_HISTORY.md)）。iOS/iPadOS 与 Mac Catalyst 均已收到 Apple 上传成功回执，回执为处理中；**尚未确认 TestFlight 可安装**，未提交正式 App Store 审核。
+纯 Swift / SwiftUI 本地阅读应用，听书作为辅助能力，最低 iOS 17。
+
+最新上传版本为 **1.24.0（123）· 悬浮阅读菜单**。iOS / iPadOS 与 Mac Catalyst 均已收到 `Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0。iOS TestFlight 已显示 **1.24.0 Build 123** 与「安装」（54.2 MB），确认当前测试账号可安装；Mac TestFlight 已显示 **1.24.0 Build 123** 与「更新」（60.6 MB），确认当前测试账号可更新。详见[123 发布证据](docs/testflight-123.json)和[发布历史](docs/RELEASE_HISTORY.md)。
+
+阅读页顶部导航、底部菜单现在覆盖正文显示，开合菜单时保留正文视口、分页与阅读位置；原书图文和 PDF 同步，PDF 缩放保持。首页始终以阅读为主操作，正文固定「目录 / 排版 / 摘记 / 更多」，读听位置独立保存，延续[阅读优先改动与兼容说明](docs/READING-FIRST.md)。
+
+123 发布前 **112 项核心 + 12 项相关 UI 回归最终通过**，iPhone SE 3 另补 3 个重叠场景；这次没有重跑完整 UI 套件，也不沿用 122 的 135 项总数作为本轮结果。Mac Catalyst Debug 编译通过，双端 Release 归档成功，iOS 28 项 / Mac 29 项包检查通过，149 个构建输入前后哈希一致。相关回归后仅将构建号 122 递增为 123，业务代码、UI 与资源未变。测试范围与打包事实见 [123 验收记录](docs/VALIDATION-123.md)。
+
+## 历史发布摘录
+
+以下为历史版本当时的发布记录，不代表构建 123 的验收或发布状态。
+
+**1.24.0（122）** 完成阅读优先、读听位置独立、同章多处搜索与单一计时时钟；当时 **112 核心 + 23 UI = 135 项测试全部通过**，双端 Release 归档与上传成功。iOS TestFlight 已确认「安装」（54.2 MB），Mac 已确认「更新」（60.6 MB），均为 Build 122。详见 [122 验收记录](docs/VALIDATION-122.md)与[122 发布证据](docs/testflight-122.json)。
+
+**1.24.0（121）** 完成图标与全界面重设计、原书图文阅读更新；该版本的验收与发布事实保留在 [121 验收记录](docs/VALIDATION-121.md)和[发布历史](docs/RELEASE_HISTORY.md)。
+
+历史上传版本 **1.23.0（118）· v21「瑞士网格 Swiss Grid」+ [Pow](https://github.com/EmergeTools/Pow) 1.0.6 动效**（翻页动画可选 滑动 / 淡入 / 模糊 / 无且仅手动翻页触发、书签点亮、封面与漫画页载入过渡、主按钮按压下陷，均遵循「减少动态效果」；另含 SMB 会话复用与 WiFi 传书口令，见[发布历史](docs/RELEASE_HISTORY.md)）。iOS/iPadOS 与 Mac Catalyst 均已收到 Apple 上传成功回执，回执为处理中；**尚未确认 TestFlight 可安装**，未提交正式 App Store 审核。
 
 2026-10-22 完成 **v20「刊 · Folio」杂志排版重设计**（用户选定方向，主色指定为 Claude 陶土橙 `#D97757`）：象牙纸 `#FAF9F5` / 炭黑 `#141413`、报头双线与编号、宋体大标题、直角块状按钮；页签改为 `01/02/03` 编号 + 宋体「书 / 读 / 己」与陶土下划线；听书页为大号引语 + 陶土播放块 + Ⅰ–Ⅳ 工具栏。**应用图标改为报头式「听」**（双线 + 宋体「听」+ 陶土题条 + NO.20，日间 / 深色 / 着色三变体，1024px 无 alpha）。[Figma 原稿](https://www.figma.com/design/evqePR3n5p2o0ToOVKtfKX)、[设计说明](Design/v20-folio/DESIGN.md)、[日间](Design/v20-folio/runtime/light-overview.jpg) / [深色](Design/v20-folio/runtime/dark-overview.jpg)运行截图。功能、导航、数据协议与已保存的阅读偏好不变。随后按用户要求以 **1.22.0（111）** 归档并上传 iOS 与 Mac Catalyst，两端均收到 `Upload succeeded`，**尚未确认 TestFlight 可安装**，未提交正式审核（见[发布历史](docs/RELEASE_HISTORY.md)）。以下为历史记录。
 
@@ -16,29 +32,30 @@
 
 2026-10-20 已完成 iOS 与 Mac Catalyst Release 归档并上传 App Store Connect：iPhone 17e **102 项回归通过**，iPhone SE 3 **16 项 UI 回归通过**。两个平台均收到上传成功回执，回执状态为 Apple 正在处理，**尚未确认 TestFlight 可安装**；未提交正式 App Store 审核、未更改测试组。证据见 [验收记录](docs/ACCEPTANCE.md) 与 [发布历史](docs/RELEASE_HISTORY.md)。
 
-功能键的布局与状态契约沿用 [交互规范](Design/v15-focus/ACTIONS.md)（v16 未改动功能键分层，仅替换视觉与页签架构）。
+功能键职责与读听位置分离继续沿用[交互规范](Design/v15-focus/ACTIONS.md)；当前导航名称、视觉与布局以以下实现说明为准。
 
 ## 当前实现与设计基线
 
-当前 UI 实现为 v26 **「微信读书风格」**：纯白底 `#FFFFFF`（深色 `#121212`）、黑字 `#1F1F1F`、灰阶层次（`#595959` / `#6E6E6E`），苹方无衬线标题；主色即墨黑，只留给主按钮（黑色胶囊）、进度、播放键与选中态，不引入额外彩色（仅危险红、听书绿点缀）；卡片 16pt、徽章 6pt、按钮胶囊圆润圆角，条目间极淡分隔线 `#EFEFEF`，续读大卡为浅灰圆角卡。**应用图标同步重设计为极简单色**（纯色底 + 居中苹方粗「听」，无描边 / 印章 / 声弧 / 字标，日间 / 深色 / 着色三变体，1024px 无 alpha，渲染管线 `Design/v26-wereader/render-app-icon-v26.swift`）。v25「墨青 · 靛蓝书卷」、v24「温暖纸质 · 灯下书斋」、v23「刊红 TIME」、v22「Times」、v21「瑞士网格 Swiss Grid」及更早稿件为历史，交互契约继续沿用。
+当前 UI 延续 121 的 Figma **暖白与钴蓝**方案：背景 `#FAF9F6`（深色 `#101725`）、正文 `#17233A`（深色 `#F3F5FA`）、强调色 `#315BEE`（深色 `#8DA7FF`），白色内容表面、浅蓝选中态与独立暖纸阅读区。界面使用思源黑体，书名与文学内容使用思源宋体；阅读正文继续遵循用户保存的字体偏好。卡片与按钮圆角 16pt，主按钮高 50pt。**应用图标为展开书页与三道声波**，日间采用蓝底暖白书页，包含深色与着色三种 1024px 无 alpha 资源。[可编辑 Figma](https://www.figma.com/design/dYtodq4gYGkOJw1EPODDMY?node-id=16-22)包含 43 个界面与状态；[交互原型](https://www.figma.com/proto/dYtodq4gYGkOJw1EPODDMY?node-id=17-1342&starting-point-node-id=17%3A1342)用于浏览主要流程。v26「微信读书风格」及此前方案均为历史。
 
-三个页签：**书 / 读 / 己**。
+三个页签：**此刻 / 书库 / 我的**。
 
-- **读**：编辑式标题与搜索、暖沙续读书签卡、最近在读列表、七日阅读记录、待读清单。上次阅读优先「继续阅读」，上次听书优先「继续听」，从未听过不称「继续听」。正在播放优先展示听书状态。
-- **书**：文字「添加 / 整理」、书籍 / 漫画切换、独立「筛选 / 排序 / 显示方式」、文字「详情」。搜索时收起页首与类型栏，小屏键盘上方可直接操作结果。隐藏书籍入口归「更多」。新用户默认列表，已有网格 / 列表选择保持；辅助功能大字号使用列表，格式说明收在空态与导入面板。
-- **己**：统计（日 / 周 / 月 / 年 / 全部、阅读目标、逐次记录、导出）+ 今日摘句 + 设置题录清单（阅读排版 / 字体 / 声音 / 外观 / 传书 / 备份 / 书摘 / 更多设置）。
-- **听书**：暖沙书名标签、可展开封面、陶橙短竖线与暖色跟读高亮；常用工具固定「目录 / 语速 / 声音 / 定时」，音频输出在声音设置。显示「本章第 X / Y 句」和**估算**剩余分钟，可拖动句子进度。大字号 / 低高度窗口仅固定播放与跳句；迷你播放器只保留展开与播放，不再放直接结束。
-- **阅读**：分页、连续滚动、原书图文、PDF、漫画；正文阅读工具固定「目录 / 排版 / 听书 / 更多」，日夜切换归「更多」。翻章只定位正文，不连带跳转声音；听条只管状态与播放。新安装默认系统字体，已保存的字体和独立纸色选择不被重置；默认纸色为宣纸。
+- **此刻**：续读主卡、最近在读、今日阅读与连续天数、待读清单。主操作始终为「开始阅读 / 继续阅读」，按实际阅读记录选书，不因上次听书或另一书正在播放而改为听书主入口；听书保留为次要操作。首页今日阅读与连续天数只取阅读会话，是纯阅读数字，不混入仅听音频的时间。
+- **书库**：点书默认翻开正文，列表显示阅读百分比、所在章节或漫画页码及最近阅读日期，最近排序只使用阅读记录；听书保留在书籍菜单。搜索、添加与整理、书籍 / 漫画切换、独立筛选 / 排序 / 显示方式及详情继续可用。搜索时收起页首与类型栏，小屏键盘上方可操作结果。隐藏书籍入口归「更多」。新用户默认列表，已有网格 / 列表选择保持；辅助功能大字号使用列表，格式说明收在空态与导入面板。
+- **我的**：本月读听概览、阅读足迹、我的书摘、今日摘句与独立设置页。阅读足迹保留日 / 周 / 月 / 年 / 全部、读听分类、阅读目标、逐次记录和导出；设置保留阅读排版、字体、声音与朗读、外观、传书、备份及更多选项。
+- **听书**：完整听书页保留书籍封面、钴蓝朗读状态与跟读句、句子进度、圆形播放键及「回到原文」。常用工具为「目录 / 语速 / 声音 / 定时」，音频输出在声音设置。进度按「本章第 X / Y 句」显示，剩余时间为**估算**，可拖动句子进度。大字号 / 低高度窗口保持播放与跳句可用；底部迷你播放器采用中性辅助样式，展开与播放相互独立，结束听书另行确认。
+- **阅读**：正文工具固定「目录 / 排版 / 摘记 / 更多」，「摘记」直达本书划线与笔记。「更多」提供书内搜索、日夜纸色和辅助听书；选择「从当前阅读位置听」后留在正文，不自动跳到播放器，完整听书控制需主动打开。阅读与听书分别保存位置；正常翻章只定位正文，主动跟随朗读时正文随之定位。书内搜索保留同一章节的多处命中，全书最多显示前 200 处，并可逐处跳转。原书图文保留出版物图片、表格与内容结构；顶部导航和底部菜单覆盖正文显示，开合时保持正文视口、分页与阅读位置，原书图文同步保持位置，PDF 同时保持页内位置与缩放。新安装默认系统字体，保存的字体和独立纸色不重置，默认纸色为宣纸。固定浅纸在深色 App 中仍使用适合浅纸的蓝色控件和跟读高亮；漫画继续使用独立图片阅读器。
 - **反馈**：普通成功用可关闭的非阻断提示；导入记录逐项状态、成功数和失败原因，失败可重新选择文件。删除、还原等破坏性操作仍需确认。提示消失后可在导入面板查看最近结果。
-- **无障碍**：关键标题、按钮、页签与说明跟随 Dynamic Type；封面与主题小字对比度有自动化断言；主要图标操作至少 44pt；支持系统「减少动态效果」。
+- **无障碍**：关键标题、按钮、页签与说明跟随 Dynamic Type，避免自定义字体重复缩放；最大字号阅读工具面板可滚动，顶部返回入口保持可达。封面与主题小字对比度有自动化断言；主要图标操作至少 44pt；支持系统「减少动态效果」。
 
 ## 数据与服务边界
 
 - 没有听页账号或自有服务器。书籍、进度、书摘、统计保存在本机。
-- 系统声音可离线朗读。智谱 GLM、MiniMax、Microsoft Azure、ElevenLabs 使用用户自己的密钥由设备直连，密钥存 Keychain。
+- 使用单一 5 秒计时时钟：前台正文可见时，边听边读只计阅读；离开正文或进入后台后，实际播放的音频计为听书。同一时段不重复累计，首页只展示纯阅读记录。
+- 系统声音可离线朗读。智谱 GLM、MiniMax、Microsoft Azure、ElevenLabs 使用用户自己的密钥由设备直连；也可配置兼容 OpenAI `/audio/speech` 的自定义 TTS 服务。密钥存 Keychain，自建服务可按其要求不填密钥。
 - 云朗读会发送当前句及少量预取句子；试听也会联网，费用由服务商决定。不会把示例测试或本地估算声称为付费云语音实听验收。
-- iCloud Drive **手动快照**备份书籍、资源、进度和书摘；恢复前校验并确认，只替换对应书籍，其余保留。
-- iCloud 键值存储**自动同步阅读位置**，不自动传输书籍；两台设备需要各自持有相同书籍。上传 / 到达时间由系统决定，不保证即时同步。
+- iCloud Drive **手动快照**备份书籍、资源、阅读位置、独立听书位置和书摘；恢复前校验并确认，只替换对应书籍，其余保留。听书位置平时保存在本机，手动快照可将其带出并恢复。
+- iCloud 键值存储**只自动同步阅读位置**，不自动同步听书位置或传输书籍；两台设备需要各自持有相同书籍。上传 / 到达时间由系统决定，不保证即时同步。
 - 隐藏书籍与应用锁通过系统生物识别或设备密码验证。
 - 锁屏使用系统「正在播放」，**没有实时活动 / 灵动岛自定义扩展**。
 
@@ -47,20 +64,20 @@
 | 能力 | 范围 |
 | --- | --- |
 | 导入 | TXT、EPUB、MOBI / AZW / AZW3、PDF、HTML、Markdown、DOCX、CBZ / 图片 ZIP、听页备份 JSON |
-| 传书 | 系统文件、WiFi 传书、WebDAV、OPDS；SMB 通过系统文件 App 接入 |
+| 传书 | 系统文件、WiFi 传书、WebDAV、OPDS、应用内 SMB 连接与浏览导入 |
 | 阅读 | CoreText 分页、连续滚动、目录、搜索、书签、划线笔记、原书图文、字体导入、七种纸色 |
 | 听书 | 变速、逐句定位、跟读、睡眠定时、锁屏控制、云语音预取、分角色音色（Beta） |
 | 统计 | 日 / 周 / 月 / 年 / 全部、阅读目标、逐次记录、导出 |
 
-限制：不支持 DRM、RAR / CBR 和扫描 PDF 的 OCR 朗读。新导入文件最大 100 MB，解压资源最大 130 MB，正文最大 400 万 UTF-16 字符 / 3000 章；PDF 最大 22 MB。复杂出版物 CSS、固定版式和跨章节锚点不保证完整复刻。
+限制：不支持 DRM、RAR / CBR 和扫描 PDF 的 OCR 朗读。导入不设固定文件大小、解压资源、正文字数或章节数上限，实际可打开规模受设备可用存储与内存影响。复杂出版物 CSS、固定版式和跨章节锚点不保证完整复刻。
 
-位置协议仍为「章 + 句子序号」，没有改成字符偏移。新增本机使用方式字段为可选，旧目录可解码，不改变跨端 `BackupPacket v2`。
+位置协议仍为「章 + 句子序号」，没有改成字符偏移。阅读位置与听书位置分别保存，新增字段可选，旧目录与旧快照仍可解码。旧共享进度无法重建两条历史分支，因此保留原位置，并作为首次听书的回退位置；之后分别更新。跨端 `BackupPacket v2` 仍承载阅读位置，独立听书位置由本机目录及手动 iCloud 快照的可选字段保存，详见[兼容说明](docs/READING-FIRST.md)。
 
 本机书库：`Documents/TingyeNative/<owner>/Books`。`owner` 是 `guest` 或迁移保留的旧账号目录名，不是新账号系统。
 
 ## 构建与测试
 
-打开 `Tingye.xcodeproj`，选择 `Tingye` scheme。Swift Package Manager 固定使用 ZIPFoundation 0.9.20，不需要 Node、CocoaPods 或 React Native。
+打开 `Tingye.xcodeproj`，选择 `Tingye` scheme。Swift Package Manager 锁定 ZIPFoundation 0.9.20、Pow 1.0.6 与 SMBClient 0.3.1，不需要 Node、CocoaPods 或 React Native。
 
 ```sh
 # 核心测试 + UI 流程回归（设备名称按本机运行时调整）
@@ -78,12 +95,13 @@ xcodebuild -project Tingye.xcodeproj -scheme Tingye -configuration Debug \
   -destination 'generic/platform=macOS,variant=Mac Catalyst' CODE_SIGNING_ALLOWED=NO build
 ```
 
-- `TingyeTests/NativeCoreTests.swift`：导入、存储、备份恢复、进度合并、语音、文字安全、主题对比度、动作语义和导入反馈。
-- `TingyeUITests/DesignFlowTests.swift`：首页首屏与搜索、书架整理 / 详情 / 独立筛选排序、播放器句子拖动与暂停、最大字号与横屏、混合导入、阅读四键 / 日夜、读听定位分离、迷你播放器与结束确认。
+- `TingyeTests/NativeCoreTests.swift`：导入、存储、备份恢复、进度合并、语音、文字安全、主题对比度、动作语义和导入反馈；原书图文还覆盖字体与纸色、图片比例、分页、阅读位置恢复和视口变化后的句子可见性。
+- `TingyeUITests/DesignFlowTests.swift`：首页首屏与搜索、书库整理 / 详情 / 独立筛选排序、播放器句子拖动与暂停、朗读状态、最大字号与横屏、混合导入、阅读四键 / 日夜、读听定位分离、迷你播放器与结束确认、设置返回路由。原书用例等待 WebView 内的真实章节标题、段落和插图图注可见后再检查排版与跳章。
 - UI 测试通过 `-ui-fixture` 使用临时书库、关闭同步并强制系统声音，**不改用户书库、不调用付费接口**。这些入口只编译到 Debug。
 - `-uireview <场景>` 仍可用于人工走查；配合 `-ui-fixture` 检查长书名、长句；通过模拟器系统字号或启动参数 `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL` 检查最大辅助功能字号（包括弹出的 sheet）。不加 `-ui-fixture` 时会使用模拟器现有书库。
-- `-ui-fixture -ui-showcase` 可使用公版节选、示意书封和模拟阅读记录进行视觉走查；只在 Debug 的临时书库中生效，不代表用户实际阅读记录。
-- v19 本轮设计与测试证据见 [余白验收记录](Design/v19-margin/VALIDATION.md)；之前的发布验收与未覆盖项目保留在 [验收清单](docs/ACCEPTANCE.md)。模拟器与离线测试不能代替真实语音、蓝牙、来电和跨设备 iCloud 验收。
+- `-ui-fixture -ui-showcase` 可使用公版节选、示意书封和模拟阅读记录进行视觉走查；只在 Debug 的临时书库中生效，不代表用户实际阅读记录。`reader-original` 与 `reader-pdf` 场景另有真实图文结构及 PDF 数据样本，避免用纯文字替代原文渲染器。
+- 当前 **1.24.0（123）** 最终通过 **112 核心 + 12 项相关 UI 回归**，iPhone SE 3 补充 3 个重叠场景；未重跑完整 UI 套件。Mac Catalyst Debug 编译、双端 Release 归档及 iOS 28 项 / Mac 29 项包检查通过，149 个构建输入哈希复核一致。时间点、复测范围与边界见 [123 验收记录](docs/VALIDATION-123.md)，两端上传和当前 TestFlight 状态见[123 发布证据](docs/testflight-123.json)。
+- 历史版本 **1.24.0（122）** 当时完成 **112 核心 + 23 UI = 135 项测试**，**1.24.0（121）** 当时完成 **100 核心 + 20 项 UI 回归**；两版均完成双端 Release 归档与包检查，分别见 [122 验收记录](docs/VALIDATION-122.md)和 [121 验收记录](docs/VALIDATION-121.md)。历史验收与未覆盖项目保留在[验收清单](docs/ACCEPTANCE.md)。模拟器与离线测试不能代替真实语音、蓝牙、来电和跨设备 iCloud 验收。
 
 `create-project.rb` 是工程重建辅助脚本，日常开发无需执行；重建后仍须审查签名、资源及 Xcode 构建配置差异。发布版本和构建号只有在准备实际归档时才递增。
 
@@ -97,15 +115,23 @@ xcodebuild -project Tingye.xcodeproj -scheme Tingye -configuration Debug \
 | `Tingye/ShelfView.swift` | 搜索整理、导入选择器与逐项结果 |
 | `Tingye/PlayerView.swift` / `SpeechPlayer.swift` | 听书界面 / 播放与合成 |
 | `Tingye/AppModel.swift` / `Models.swift` | 书库协调、行为记录、导入反馈与数据模型 |
-| `Tingye/ReaderView.swift` / `OriginalBookView.swift` | 原生文字阅读 / 原书图文 |
+| `Tingye/ReaderView.swift` / `OriginalBookView.swift` | 原生文字阅读 / 原书图文与视口重排 |
+| `Tingye/ReaderAnnotations.swift` / `ComicReaderView.swift` | 划线笔记 / 漫画阅读与缩略图 |
 | `Tingye/ICloudBackup.swift` | 快照、还原事务、进度同步 |
 
 ## 文档与许可
 
-- [当前余白设计规范与 Figma](Design/v19-margin/DESIGN.md)
+- [当前 Figma：听页品牌与 iOS UI 重设计](https://www.figma.com/design/dYtodq4gYGkOJw1EPODDMY?node-id=16-22)
+- [阅读优先：1.24.0（122）改动与兼容说明](docs/READING-FIRST.md)
+- [当前版本验收：1.24.0（123）](docs/VALIDATION-123.md)
+- [123 上传与 TestFlight 状态](docs/testflight-123.json)
+- [历史版本验收：1.24.0（122）](docs/VALIDATION-122.md)
+- [122 上传与 TestFlight 状态](docs/testflight-122.json)
+- [历史版本验收：1.24.0（121）](docs/VALIDATION-121.md)
+- [历史余白设计规范](Design/v19-margin/DESIGN.md)
 - [交互基线：专注版设计规范（方案 B）](Design/v15-focus/DESIGN.md)
 - [上一轮可用性修订记录](Design/v14-editorial/USABILITY.md)
 - [核心链路与真机验收清单](docs/ACCEPTANCE.md)
 - [发布与旧设计历史](docs/RELEASE_HISTORY.md)
 
-示例书籍为公开作品节选。思源宋体、霞鹜文楷的 OFL，以及 ZIPFoundation 的 MIT 许可随 App 资源附带。UI 与业务代码为 Swift，原书图文使用系统 WKWebView，不依赖外部网页运行时。
+示例书籍为公开作品节选。思源宋体、思源黑体、霞鹜文楷与霞鹜新晰黑的 OFL，以及 ZIPFoundation、SMBClient 等依赖的许可随 App 资源附带。UI 与业务代码为 Swift，原书图文使用系统 WKWebView，不依赖外部网页运行时。

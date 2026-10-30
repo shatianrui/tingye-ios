@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用图标 · 视觉草稿</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="icon-board">
+        <style id="critical-layout">
+            body {
+                margin: 0;
+                background: var(--ty-background);
+                font-family: var(--ty-font-sans);
+            }
+
+            .icon-board,
+            .icon-board * {
+                box-sizing: border-box;
+            }
+
+            .icon-board {
+                width: 100%;
+                max-width: 960px;
+                min-height: 100vh;
+                margin: 0 auto;
+                padding: 40px 20px 32px;
+                background: var(--ty-background);
+                color: var(--ty-foreground);
+                font-family: var(--ty-font-sans);
+            }
+
+            .hero {
+                display: grid;
+                gap: 32px;
+                align-items: center;
+            }
+
+            .hero-copy {
+                display: grid;
+                min-width: 0;
+                gap: 12px;
+            }
+
+            .hero-title,
+            .section-title {
+                margin: 0;
+                color: var(--ty-foreground);
+                font-family: var(--ty-font-sans);
+                text-wrap: balance;
+                word-break: keep-all;
+                overflow-wrap: break-word;
+            }
+
+            .hero-title {
+                font-size: 30px;
+                font-weight: 700;
+                line-height: 1.22;
+                letter-spacing: -0.02em;
+            }
+
+            .hero-subtitle,
+            .hero-statement,
+            .section-note,
+            .principle-list dd {
+                overflow-wrap: break-word;
+                text-wrap: pretty;
+            }
+
+            .hero-subtitle,
+            .hero-statement,
+            .section-note {
+                margin: 0;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+
+            .hero-subtitle,
+            .section-note {
+                color: var(--ty-muted-foreground);
+            }
+
+            .hero-statement {
+                margin-top: 8px;
+                color: var(--ty-foreground);
+            }
+
+            .master-figure,
+            .icon-figure,
+            .size-figure {
+                min-width: 0;
+                margin: 0;
+            }
+
+            .master-figure {
+                display: grid;
+                justify-items: center;
+                gap: 16px;
+            }
+
+            .master-caption,
+            .variant-meta,
+            .size-caption {
+                color: var(--ty-muted-foreground);
+                font-size: 13px;
+                line-height: 1.5;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            .app-icon {
+                --icon-bg: var(--ty-neutral-900);
+                --icon-fg: var(--ty-neutral-0);
+                display: grid;
+                flex: none;
+                place-items: center;
+                aspect-ratio: 1;
+                overflow: hidden;
+                border-radius: 22%;
+                background: var(--icon-bg);
+                color: var(--icon-fg);
+            }
+
+            .app-icon svg {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            .app-icon--master {
+                width: min(248px, 72vw);
+            }
+
+            .app-icon--dark {
+                --icon-bg: var(--ty-neutral-950);
+            }
+
+            .app-icon--light {
+                --icon-bg: var(--ty-primary-100);
+                --icon-fg: var(--ty-neutral-950);
+            }
+
+            .app-icon--variant {
+                width: 72px;
+            }
+
+            .app-icon--60 {
+                width: 60px;
+            }
+
+            .app-icon--40 {
+                width: 40px;
+            }
+
+            .app-icon--24 {
+                width: 24px;
+            }
+
+            .board-section {
+                margin-top: 48px;
+                padding-top: 32px;
+                border-top: 1px solid var(--ty-hairline);
+            }
+
+            .section-heading {
+                display: grid;
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+
+            .section-title {
+                font-size: 22px;
+                font-weight: 600;
+                line-height: 1.28;
+                letter-spacing: -0.01em;
+            }
+
+            .variant-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 16px;
+                max-width: 560px;
+            }
+
+            .icon-figure {
+                display: grid;
+                justify-items: center;
+                align-content: start;
+                gap: 12px;
+            }
+
+            .icon-figure figcaption {
+                display: grid;
+                justify-items: center;
+                gap: 4px;
+            }
+
+            .variant-name {
+                color: var(--ty-foreground);
+                font-size: 16px;
+                line-height: 1.6;
+                white-space: nowrap;
+            }
+
+            .size-checks {
+                display: flex;
+                align-items: flex-end;
+                gap: 28px;
+                min-height: 92px;
+            }
+
+            .size-figure {
+                display: grid;
+                justify-items: center;
+                gap: 12px;
+            }
+
+            .principle-list {
+                margin: 0;
+            }
+
+            .principle-list > div {
+                display: grid;
+                grid-template-columns: 56px minmax(0, 1fr);
+                gap: 16px;
+                padding: 16px 0;
+                border-top: 1px solid var(--ty-hairline);
+            }
+
+            .principle-list > div:last-child {
+                border-bottom: 1px solid var(--ty-hairline);
+            }
+
+            .principle-list dt {
+                color: var(--ty-foreground);
+                font-size: 16px;
+                font-weight: 600;
+                line-height: 1.6;
+                white-space: nowrap;
+            }
+
+            .principle-list dd {
+                min-width: 0;
+                margin: 0;
+                color: var(--ty-muted-foreground);
+                font-size: 16px;
+                line-height: 1.6;
+            }
+
+            .board-footer {
+                display: flex;
+                justify-content: space-between;
+                gap: 16px;
+                margin-top: 32px;
+                color: var(--ty-muted-foreground);
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .board-footer span {
+                white-space: nowrap;
+            }
+
+            @media (hover: hover) and (pointer: fine) {
+                .app-icon {
+                    transition: transform 160ms cubic-bezier(.2, .8, .2, 1);
+                }
+
+                .master-figure:hover .app-icon,
+                .icon-figure:hover .app-icon,
+                .size-figure:hover .app-icon {
+                    transform: translateY(-2px);
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .app-icon {
+                    transition-duration: 0.01ms;
+                }
+
+                .master-figure:hover .app-icon,
+                .icon-figure:hover .app-icon,
+                .size-figure:hover .app-icon {
+                    transform: none;
+                }
+            }
+
+            @media (min-width: 768px) {
+                .icon-board {
+                    padding: 64px 40px 40px;
+                }
+
+                .hero {
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    gap: 64px;
+                }
+
+                .hero-title {
+                    font-size: 64px;
+                }
+
+                .app-icon--master {
+                    width: 280px;
+                }
+
+                .app-icon--variant {
+                    width: 88px;
+                }
+
+                .board-section {
+                    margin-top: 64px;
+                    padding-top: 40px;
+                }
+
+                .section-title {
+                    font-size: 28px;
+                }
+            }
+        </style>
+
+        <section class="hero" aria-labelledby="page-title">
+            <header class="hero-copy">
+                <h1 id="page-title" class="hero-title" style="text-wrap: balance; word-break: keep-all; overflow-wrap: break-word;">听页</h1>
+                <p class="hero-subtitle">应用图标 · 视觉草稿</p>
+                <p class="hero-statement">以书页为形，以声波为识。</p>
+            </header>
+
+            <figure class="master-figure">
+                <div class="app-icon app-icon--master">
+                    <svg viewBox="0 0 256 256" role="img" aria-labelledby="master-icon-title">
+                        <title id="master-icon-title">听页打开书页与三道声波图标</title>
+                        <defs>
+                            <symbol id="tingye-open-book-sound" viewBox="0 0 256 256">
+                                <g fill="currentColor">
+                                    <path d="M43 125C71 117 99 124 122 142V211C96 193 70 188 43 194Z"/>
+                                    <path d="M213 125C185 117 157 124 134 142V211C160 193 186 188 213 194Z"/>
+                                </g>
+                                <g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round">
+                                    <path d="M108 119A20 20 0 0 1 148 119"/>
+                                    <path d="M90 108A38 38 0 0 1 166 108"/>
+                                    <path d="M70 94A58 58 0 0 1 186 94"/>
+                                </g>
+                            </symbol>
+                        </defs>
+                        <use href="#tingye-open-book-sound"/>
+                    </svg>
+                </div>
+                <figcaption class="master-caption">主母版 · 单色几何</figcaption>
+            </figure>
+        </section>
+
+        <section class="board-section" aria-labelledby="variants-title">
+            <div class="section-heading">
+                <h2 id="variants-title" class="section-title">外观变体</h2>
+                <p class="section-note">同一几何，仅切换平台语义色。</p>
+            </div>
+            <div class="variant-grid">
+                <figure class="icon-figure">
+                    <div class="app-icon app-icon--variant">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="标准外观，黑底白色书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption>
+                        <span class="variant-name">标准</span>
+                        <span class="variant-meta ty-numeric">#1F1F1F</span>
+                    </figcaption>
+                </figure>
+                <figure class="icon-figure">
+                    <div class="app-icon app-icon--variant app-icon--dark">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="深色外观，深黑底白色书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption>
+                        <span class="variant-name">深色</span>
+                        <span class="variant-meta ty-numeric">#121212</span>
+                    </figcaption>
+                </figure>
+                <figure class="icon-figure">
+                    <div class="app-icon app-icon--variant app-icon--light">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="浅灰外观，浅灰底黑色书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption>
+                        <span class="variant-name">浅灰</span>
+                        <span class="variant-meta ty-numeric">#E8E8E8</span>
+                    </figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section class="board-section" aria-labelledby="sizes-title">
+            <div class="section-heading">
+                <h2 id="sizes-title" class="section-title">小尺寸检查</h2>
+                <p class="section-note">同一矢量比例，不拉伸、不重绘。</p>
+            </div>
+            <div class="size-checks">
+                <figure class="size-figure">
+                    <div class="app-icon app-icon--60">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="60 像素书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption class="size-caption ty-numeric">60 px</figcaption>
+                </figure>
+                <figure class="size-figure">
+                    <div class="app-icon app-icon--40">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="40 像素书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption class="size-caption ty-numeric">40 px</figcaption>
+                </figure>
+                <figure class="size-figure">
+                    <div class="app-icon app-icon--24">
+                        <svg viewBox="0 0 256 256" role="img" aria-label="24 像素书页声波图标">
+                            <use href="#tingye-open-book-sound"/>
+                        </svg>
+                    </div>
+                    <figcaption class="size-caption ty-numeric">24 px</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section class="board-section" aria-labelledby="principles-title">
+            <div class="section-heading">
+                <h2 id="principles-title" class="section-title">构成原则</h2>
+            </div>
+            <dl class="principle-list">
+                <div>
+                    <dt>书页</dt>
+                    <dd>打开的双页建立阅读识别，中央负形固定书脊。</dd>
+                </div>
+                <div>
+                    <dt>声波</dt>
+                    <dd>三道粗弧线向上展开，在小尺寸保留听书线索。</dd>
+                </div>
+                <div>
+                    <dt>留白</dt>
+                    <dd>各边保留至少 14% 安全边距，不添加文字。</dd>
+                </div>
+            </dl>
+        </section>
+
+        <footer class="board-footer">
+            <span>听页</span>
+            <span>单色图标系统</span>
+        </footer>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,1294 @@
+{
+  "schemaVersion": "1.0",
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": "2026.10.13.09.48.16",
+    "version_source": "skill-release-manifest.json",
+    "release": "canonical-image-node-append-plugin-0.1.3",
+    "read_status": "loaded"
+  },
+  "project": {
+    "operation": "create",
+    "projectName": "听页 · Apple Books 视觉草稿",
+    "deviceType": "mobile",
+    "operatingMode": "free-explore",
+    "resolvedLane": "complex_html_page",
+    "intentProfile": {
+      "caseFamily": "free_exploration",
+      "sourceType": "text",
+      "complexity": "multi-page"
+    },
+    "selectedIntentWorkflowRead": true,
+    "contextRequirementsLoaded": [
+      {
+        "path": "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "delivery-quality/page-rendering-quality-gate.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "delivery-quality/design-artifact-validation.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "delivery-quality/delivery-evidence-contract.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "visual-experience/visual-experience-guidelines.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      },
+      {
+        "path": "visual-experience/visual-checkpoint-protocol.md",
+        "readStatus": "loaded",
+        "bodyRead": true
+      }
+    ],
+    "contextReadScope": "lane-declared context requirements only; no cross-lane runbooks",
+    "readScopeLedger": [
+      {
+        "scope": "complex_html_page",
+        "status": "complete",
+        "crossLaneReads": 0
+      },
+      {
+        "actor": "page-sub-agent",
+        "lane": "complex_html_page",
+        "path": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "reason": "page runtime guide",
+        "scopeClass": "page-runtime",
+        "declaredBeforeRead": true,
+        "recordedAt": "2026-10-29T16:44:55.731Z",
+        "nodeId": "page-now",
+        "htmlSrc": "pages/now.html"
+      },
+      {
+        "actor": "page-sub-agent",
+        "lane": "complex_html_page",
+        "path": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md",
+        "reason": "dispatch contract",
+        "scopeClass": "dispatch-contract",
+        "declaredBeforeRead": true,
+        "recordedAt": "2026-10-29T16:44:55.731Z",
+        "nodeId": "page-now",
+        "htmlSrc": "pages/now.html"
+      }
+    ],
+    "styleDefinitionBrief": "Apple Books 式原生阅读体验：纯白底、黑字、灰阶层级、封面主导、细分隔线与黑色胶囊主操作，保留听页品牌。",
+    "designRead": "移动阅读应用 / 深度阅读用户 / 原生克制 / 中等偏低密度 / 避免卡片堆叠与过度装饰",
+    "designDials": {
+      "layoutVariance": 2,
+      "motionIntensity": 1,
+      "visualDensity": 2
+    },
+    "sharedProjectShellContract": {
+      "navigationShell": "primary tabs use flow-bottom navigation; reader and icon board are outside global nav",
+      "typographySystem": "PingFang SC UI; Songti SC only for reading body; 400/600/700 weights",
+      "radiusScale": "4px badges, 8px inputs, 16px cards, pill only for true pill buttons and segmented controls",
+      "surfaceDepthModel": "white surfaces with #EFEFEF hairlines; static shadow alpha <= 0.05; deeper elevation only for floating layers",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states",
+        "identical 64px three-tab navigation on primary pages"
+      ],
+      "mobileNavigation": {
+        "applies": true,
+        "type": "bottom-tab",
+        "items": [
+          {
+            "key": "now",
+            "label": "此刻",
+            "icon": "book-open"
+          },
+          {
+            "key": "shelf",
+            "label": "书库",
+            "icon": "library"
+          },
+          {
+            "key": "profile",
+            "label": "我的",
+            "icon": "user-round"
+          }
+        ],
+        "heightPx": 64,
+        "position": "flow-bottom",
+        "activeState": "primary icon+label color only; geometry stays identical",
+        "structure": {
+          "navTag": "nav",
+          "navClass": "w-full h-[64px] shrink-0 border-t border-border bg-background",
+          "innerClass": "w-full max-w-md mx-auto grid grid-cols-3 h-full",
+          "itemTag": "a",
+          "itemClass": "min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full",
+          "iconClass": "w-5 h-5 shrink-0",
+          "labelClass": "text-[11px] leading-none whitespace-nowrap max-w-full truncate",
+          "activeRule": "only color/font-weight/data-active may change; no class changes that affect layout",
+          "markerAttr": "data-mobile-nav=\"global\"",
+          "canonicalHtmlByKey": {
+            "now": "<nav data-mobile-nav=\"global\" class=\"w-full h-[64px] shrink-0 border-t border-border bg-background\"><div class=\"w-full max-w-md mx-auto grid grid-cols-3 h-full\"><a href=\"#\" data-nav-key=\"now\" data-active=\"true\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-primary\"><i data-lucide=\"book-open\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate font-semibold\">此刻</span></a><a href=\"#\" data-nav-key=\"shelf\" data-dom-id=\"nav-shelf\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"library\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">书库</span></a><a href=\"#\" data-nav-key=\"profile\" data-dom-id=\"nav-profile\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"user-round\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">我的</span></a></div></nav>",
+            "shelf": "<nav data-mobile-nav=\"global\" class=\"w-full h-[64px] shrink-0 border-t border-border bg-background\"><div class=\"w-full max-w-md mx-auto grid grid-cols-3 h-full\"><a href=\"#\" data-nav-key=\"now\" data-dom-id=\"nav-now\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"book-open\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">此刻</span></a><a href=\"#\" data-nav-key=\"shelf\" data-active=\"true\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-primary\"><i data-lucide=\"library\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate font-semibold\">书库</span></a><a href=\"#\" data-nav-key=\"profile\" data-dom-id=\"nav-profile\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"user-round\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">我的</span></a></div></nav>",
+            "profile": "<nav data-mobile-nav=\"global\" class=\"w-full h-[64px] shrink-0 border-t border-border bg-background\"><div class=\"w-full max-w-md mx-auto grid grid-cols-3 h-full\"><a href=\"#\" data-nav-key=\"now\" data-dom-id=\"nav-now\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"book-open\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">此刻</span></a><a href=\"#\" data-nav-key=\"shelf\" data-dom-id=\"nav-shelf\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-muted-foreground\"><i data-lucide=\"library\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate\">书库</span></a><a href=\"#\" data-nav-key=\"profile\" data-active=\"true\" class=\"min-w-0 min-h-[44px] flex flex-col items-center justify-center gap-1 px-1 h-full text-primary\"><i data-lucide=\"user-round\" class=\"w-5 h-5 shrink-0\"></i><span class=\"text-[11px] leading-none whitespace-nowrap max-w-full truncate font-semibold\">我的</span></a></div></nav>"
+          }
+        }
+      }
+    },
+    "cssPreflightEvidence": {
+      "prefixMode": "standard",
+      "brandPrefix": "ty",
+      "status": "passed",
+      "cssFile": "colors_and_type.css",
+      "preflightFile": ".preflight/preflight.html",
+      "runtime": "Trae CN Electron 22.21.1"
+    },
+    "visualQualityCheckpoints": [
+      {
+        "checkpointId": "vq-anchor",
+        "dimension": "visual-anchor",
+        "expected": "book covers and reading content lead; UI chrome stays quiet",
+        "evidenceTarget": "pages/now.html#primary-region"
+      },
+      {
+        "checkpointId": "vq-hierarchy",
+        "dimension": "information-hierarchy",
+        "expected": "large native title, primary reading action, then secondary reading data",
+        "evidenceTarget": "pages/now.html#content"
+      },
+      {
+        "checkpointId": "vq-structure",
+        "dimension": "composition-structure",
+        "expected": "single-column native flow with deliberate whitespace and no card wall",
+        "evidenceTarget": "pages/now.html#layout"
+      },
+      {
+        "checkpointId": "vq-implementation",
+        "dimension": "implementation-strategy",
+        "expected": "responsive static CSS, local cover assets, Lucide icons, tokenized black-white-gray system",
+        "evidenceTarget": "pages/now.html#implementation"
+      }
+    ],
+    "validationRunDiscipline": {
+      "maxFullValidationRuns": 2,
+      "softWarningsTriggerRepair": false,
+      "blockingRepairMode": "targeted-once",
+      "forbiddenRepairTriggers": [
+        "soft-warning-only",
+        "provenance-warning-only",
+        "style-warning-only"
+      ]
+    },
+    "lowValueCallWatchdog": {
+      "applies": true,
+      "noProgressNextAction": "enter_readiness_or_blocked_summary"
+    },
+    "generationTree": {
+      "root": {
+        "nodeId": "gen-root",
+        "kind": "project-shell",
+        "pageIds": [
+          "page-now",
+          "page-shelf",
+          "page-profile",
+          "page-reader",
+          "page-app-icon"
+        ],
+        "output": "",
+        "sharedRegions": [
+          "brand tokens",
+          "typography",
+          "mobile bottom navigation on primary tabs"
+        ],
+        "privateRegions": [],
+        "mutableSlots": [
+          "activeNavItem"
+        ],
+        "status": "generated",
+        "children": [
+          {
+            "nodeId": "gen-page-now",
+            "kind": "page-leaf",
+            "pageIds": [
+              "page-now"
+            ],
+            "output": "pages/now.html",
+            "sharedRegions": [
+              "mobile bottom navigation"
+            ],
+            "privateRegions": [
+              "continue reading",
+              "recent books",
+              "reading summary"
+            ],
+            "mutableSlots": [
+              "activeNavItem=now"
+            ],
+            "status": "generated",
+            "children": []
+          },
+          {
+            "nodeId": "gen-page-shelf",
+            "kind": "page-leaf",
+            "pageIds": [
+              "page-shelf"
+            ],
+            "output": "pages/shelf.html",
+            "sharedRegions": [
+              "mobile bottom navigation"
+            ],
+            "privateRegions": [
+              "library header",
+              "search",
+              "filters",
+              "book list"
+            ],
+            "mutableSlots": [
+              "activeNavItem=shelf"
+            ],
+            "status": "generated",
+            "children": []
+          },
+          {
+            "nodeId": "gen-page-profile",
+            "kind": "page-leaf",
+            "pageIds": [
+              "page-profile"
+            ],
+            "output": "pages/profile.html",
+            "sharedRegions": [
+              "mobile bottom navigation"
+            ],
+            "privateRegions": [
+              "reading overview",
+              "reading footprint",
+              "settings list"
+            ],
+            "mutableSlots": [
+              "activeNavItem=profile"
+            ],
+            "status": "generated",
+            "children": []
+          },
+          {
+            "nodeId": "gen-page-reader",
+            "kind": "page-leaf",
+            "pageIds": [
+              "page-reader"
+            ],
+            "output": "pages/reader.html",
+            "sharedRegions": [],
+            "privateRegions": [
+              "reader chrome",
+              "chapter body",
+              "reading tools"
+            ],
+            "mutableSlots": [],
+            "status": "generated",
+            "children": []
+          },
+          {
+            "nodeId": "gen-page-app-icon",
+            "kind": "page-leaf",
+            "pageIds": [
+              "page-app-icon"
+            ],
+            "output": "pages/app-icon.html",
+            "sharedRegions": [],
+            "privateRegions": [
+              "app icon master",
+              "appearance variants",
+              "small size checks"
+            ],
+            "mutableSlots": [],
+            "status": "generated",
+            "children": []
+          }
+        ]
+      }
+    },
+    "wiringPlan": [
+      {
+        "source": "page-now",
+        "target": "page-reader",
+        "domId": "cta-reader",
+        "transitionLabel": "继续阅读"
+      }
+    ],
+    "hiddenInteractionPlan": [
+      {
+        "source": "page-now",
+        "target": "page-shelf",
+        "domId": "nav-shelf",
+        "hideEdge": true,
+        "transitionLabel": "书库"
+      },
+      {
+        "source": "page-now",
+        "target": "page-profile",
+        "domId": "nav-profile",
+        "hideEdge": true,
+        "transitionLabel": "我的"
+      },
+      {
+        "source": "page-shelf",
+        "target": "page-now",
+        "domId": "nav-now",
+        "hideEdge": true,
+        "transitionLabel": "此刻"
+      },
+      {
+        "source": "page-shelf",
+        "target": "page-profile",
+        "domId": "nav-profile",
+        "hideEdge": true,
+        "transitionLabel": "我的"
+      },
+      {
+        "source": "page-profile",
+        "target": "page-now",
+        "domId": "nav-now",
+        "hideEdge": true,
+        "transitionLabel": "此刻"
+      },
+      {
+        "source": "page-profile",
+        "target": "page-shelf",
+        "domId": "nav-shelf",
+        "hideEdge": true,
+        "transitionLabel": "书库"
+      },
+      {
+        "source": "page-reader",
+        "target": "page-now",
+        "domId": "back-now",
+        "hideEdge": true,
+        "transitionLabel": "返回此刻"
+      }
+    ],
+    "dispatchPreflightManifest": [
+      {
+        "recorded_at": "2026-10-29T16:44:55.731Z",
+        "generatedBy": "build-page-dispatch-manifest.mjs",
+        "packetType": "ComplexPagePacket",
+        "laneContract": {
+          "resolvedLane": "complex_html_page",
+          "packetType": "ComplexPagePacket",
+          "pageRuntimeGuide": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+          "dispatchContract": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md"
+        },
+        "taskLinePresent": true,
+        "outputPathPresent": true,
+        "sharedTemplate": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "nodeId": "page-now",
+        "htmlSrc": "pages/now.html",
+        "supplementaryReads": [],
+        "allowedWritePaths": [
+          "pages/now.html",
+          "assets/"
+        ],
+        "forbiddenWriteRoots": [
+          "*.design",
+          "runtime-orchestration-summary.json",
+          "validation-report.json",
+          "finish-readiness-report.json",
+          "restore-contract-report.json",
+          "page-generation-summary.json"
+        ],
+        "toolPolicy": {
+          "todoWriteAllowed": false,
+          "validationScriptsAllowed": false,
+          "previewAllowed": false,
+          "helperScriptsAllowed": false,
+          "designFileWriteAllowed": false,
+          "allowedWritePaths": [
+            "pages/now.html",
+            "assets/"
+          ]
+        },
+        "skillRuntime": {
+          "skillDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design",
+          "deterministicToolDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling",
+          "toolPaths": {
+            "applyHtmlHeadContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs",
+            "recordDispatchCompletion": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs",
+            "buildPageDispatchManifest": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/build-page-dispatch-manifest.mjs",
+            "validateDesignWorkspace": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-design-workspace.mjs",
+            "validateFinishReadiness": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs",
+            "validateRestoreContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-restore-contract.mjs"
+          },
+          "requiredForPageSubAgent": [
+            "applyHtmlHeadContract",
+            "recordDispatchCompletion"
+          ],
+          "pathInjection": "absolute",
+          "pathContract": "Do not use {SKILL_DIR} placeholders inside Page Sub-Agent packets; use toolPaths.* absolute paths.",
+          "commandTemplates": {
+            "recordDispatchCompletion": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --node-id='page-now' --html-src='pages/now.html' --status=completed --changed-files=<comma-separated-project-relative-files> --trace-digest=<main-agent-runtime-trace-digest> --tool-ledger-json=<tool-ledger-json-or-file>"
+          }
+        },
+        "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+        "htmlFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/now.html",
+        "brandPrefix": "ty",
+        "aestheticsMode": "free-explore",
+        "toolDisciplineBlockPresent": true,
+        "fillHtmlHeadCommand": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/now.html' --title='此刻 · 视觉草稿' --lang='zh-CN' --prefix='ty'",
+        "headFillMode": "skeleton-first",
+        "viewportMode": "document-scroll",
+        "completionSchemaExpected": "full",
+        "restoreFields": null,
+        "restoreContractStatus": null,
+        "restoreCompactPacket": null,
+        "deterministicCommands": null,
+        "sourceAuthorityLock": null,
+        "preDispatchFileHashes": {
+          "v27-apple-books-draft.design": "6aaa016560f366f8db8ee091bb44561421f64acf87b293c74cf4c74b906714b7"
+        },
+        "contextPreflight": {
+          "workflowPath": "intent-workflows/intent-project-complex-build/INTENT_WORKFLOW.md",
+          "requiredContextFiles": [
+            "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+            "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+            "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+            "delivery-quality/page-rendering-quality-gate.md",
+            "delivery-quality/design-artifact-validation.md",
+            "delivery-quality/delivery-evidence-contract.md",
+            "visual-experience/visual-experience-guidelines.md",
+            "visual-experience/visual-checkpoint-protocol.md"
+          ],
+          "optionalContextFiles": [],
+          "passed": true
+        },
+        "pageSliceOnly": true,
+        "requiredFieldsPresent": true,
+        "missingFields": [],
+        "fillHtmlHeadCommandValid": true,
+        "mobileNavigation": {
+          "required": true,
+          "appliesToThisPage": true,
+          "activeKey": "now",
+          "contractPresent": true,
+          "structurePresent": true,
+          "canonicalHtmlIncluded": true,
+          "canonicalHtmlSource": "sharedProjectShellContract.mobileNavigation.structure.canonicalHtmlByKey.now",
+          "structureHash": "11c43754f27adeac3460b86e2d7c4d5e36d75cb6b1dfd7ac9bc67e68af8aeb46",
+          "missingFields": []
+        },
+        "persistedToSummary": true,
+        "taskQueryAudited": false,
+        "proofSource": "summary-only",
+        "largeWorkflowFilesInTaskQuery": null
+      },
+      {
+        "recorded_at": "2026-10-29T16:44:55.731Z",
+        "generatedBy": "build-page-dispatch-manifest.mjs",
+        "packetType": "ComplexPagePacket",
+        "laneContract": {
+          "resolvedLane": "complex_html_page",
+          "packetType": "ComplexPagePacket",
+          "pageRuntimeGuide": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+          "dispatchContract": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md"
+        },
+        "taskLinePresent": true,
+        "outputPathPresent": true,
+        "sharedTemplate": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "nodeId": "page-shelf",
+        "htmlSrc": "pages/shelf.html",
+        "supplementaryReads": [],
+        "allowedWritePaths": [
+          "pages/shelf.html",
+          "assets/"
+        ],
+        "forbiddenWriteRoots": [
+          "*.design",
+          "runtime-orchestration-summary.json",
+          "validation-report.json",
+          "finish-readiness-report.json",
+          "restore-contract-report.json",
+          "page-generation-summary.json"
+        ],
+        "toolPolicy": {
+          "todoWriteAllowed": false,
+          "validationScriptsAllowed": false,
+          "previewAllowed": false,
+          "helperScriptsAllowed": false,
+          "designFileWriteAllowed": false,
+          "allowedWritePaths": [
+            "pages/shelf.html",
+            "assets/"
+          ]
+        },
+        "skillRuntime": {
+          "skillDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design",
+          "deterministicToolDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling",
+          "toolPaths": {
+            "applyHtmlHeadContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs",
+            "recordDispatchCompletion": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs",
+            "buildPageDispatchManifest": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/build-page-dispatch-manifest.mjs",
+            "validateDesignWorkspace": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-design-workspace.mjs",
+            "validateFinishReadiness": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs",
+            "validateRestoreContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-restore-contract.mjs"
+          },
+          "requiredForPageSubAgent": [
+            "applyHtmlHeadContract",
+            "recordDispatchCompletion"
+          ],
+          "pathInjection": "absolute",
+          "pathContract": "Do not use {SKILL_DIR} placeholders inside Page Sub-Agent packets; use toolPaths.* absolute paths.",
+          "commandTemplates": {
+            "recordDispatchCompletion": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --node-id='page-shelf' --html-src='pages/shelf.html' --status=completed --changed-files=<comma-separated-project-relative-files> --trace-digest=<main-agent-runtime-trace-digest> --tool-ledger-json=<tool-ledger-json-or-file>"
+          }
+        },
+        "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+        "htmlFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/shelf.html",
+        "brandPrefix": "ty",
+        "aestheticsMode": "free-explore",
+        "toolDisciplineBlockPresent": true,
+        "fillHtmlHeadCommand": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/shelf.html' --title='书库 · 视觉草稿' --lang='zh-CN' --prefix='ty'",
+        "headFillMode": "skeleton-first",
+        "viewportMode": "document-scroll",
+        "completionSchemaExpected": "full",
+        "restoreFields": null,
+        "restoreContractStatus": null,
+        "restoreCompactPacket": null,
+        "deterministicCommands": null,
+        "sourceAuthorityLock": null,
+        "preDispatchFileHashes": {
+          "v27-apple-books-draft.design": "6aaa016560f366f8db8ee091bb44561421f64acf87b293c74cf4c74b906714b7"
+        },
+        "contextPreflight": {
+          "workflowPath": "intent-workflows/intent-project-complex-build/INTENT_WORKFLOW.md",
+          "requiredContextFiles": [
+            "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+            "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+            "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+            "delivery-quality/page-rendering-quality-gate.md",
+            "delivery-quality/design-artifact-validation.md",
+            "delivery-quality/delivery-evidence-contract.md",
+            "visual-experience/visual-experience-guidelines.md",
+            "visual-experience/visual-checkpoint-protocol.md"
+          ],
+          "optionalContextFiles": [],
+          "passed": true
+        },
+        "pageSliceOnly": true,
+        "requiredFieldsPresent": true,
+        "missingFields": [],
+        "fillHtmlHeadCommandValid": true,
+        "mobileNavigation": {
+          "required": true,
+          "appliesToThisPage": true,
+          "activeKey": "shelf",
+          "contractPresent": true,
+          "structurePresent": true,
+          "canonicalHtmlIncluded": true,
+          "canonicalHtmlSource": "sharedProjectShellContract.mobileNavigation.structure.canonicalHtmlByKey.shelf",
+          "structureHash": "11c43754f27adeac3460b86e2d7c4d5e36d75cb6b1dfd7ac9bc67e68af8aeb46",
+          "missingFields": []
+        },
+        "persistedToSummary": true,
+        "taskQueryAudited": false,
+        "proofSource": "summary-only",
+        "largeWorkflowFilesInTaskQuery": null
+      },
+      {
+        "recorded_at": "2026-10-29T16:44:55.731Z",
+        "generatedBy": "build-page-dispatch-manifest.mjs",
+        "packetType": "ComplexPagePacket",
+        "laneContract": {
+          "resolvedLane": "complex_html_page",
+          "packetType": "ComplexPagePacket",
+          "pageRuntimeGuide": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+          "dispatchContract": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md"
+        },
+        "taskLinePresent": true,
+        "outputPathPresent": true,
+        "sharedTemplate": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "nodeId": "page-profile",
+        "htmlSrc": "pages/profile.html",
+        "supplementaryReads": [],
+        "allowedWritePaths": [
+          "pages/profile.html",
+          "assets/"
+        ],
+        "forbiddenWriteRoots": [
+          "*.design",
+          "runtime-orchestration-summary.json",
+          "validation-report.json",
+          "finish-readiness-report.json",
+          "restore-contract-report.json",
+          "page-generation-summary.json"
+        ],
+        "toolPolicy": {
+          "todoWriteAllowed": false,
+          "validationScriptsAllowed": false,
+          "previewAllowed": false,
+          "helperScriptsAllowed": false,
+          "designFileWriteAllowed": false,
+          "allowedWritePaths": [
+            "pages/profile.html",
+            "assets/"
+          ]
+        },
+        "skillRuntime": {
+          "skillDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design",
+          "deterministicToolDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling",
+          "toolPaths": {
+            "applyHtmlHeadContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs",
+            "recordDispatchCompletion": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs",
+            "buildPageDispatchManifest": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/build-page-dispatch-manifest.mjs",
+            "validateDesignWorkspace": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-design-workspace.mjs",
+            "validateFinishReadiness": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs",
+            "validateRestoreContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-restore-contract.mjs"
+          },
+          "requiredForPageSubAgent": [
+            "applyHtmlHeadContract",
+            "recordDispatchCompletion"
+          ],
+          "pathInjection": "absolute",
+          "pathContract": "Do not use {SKILL_DIR} placeholders inside Page Sub-Agent packets; use toolPaths.* absolute paths.",
+          "commandTemplates": {
+            "recordDispatchCompletion": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --node-id='page-profile' --html-src='pages/profile.html' --status=completed --changed-files=<comma-separated-project-relative-files> --trace-digest=<main-agent-runtime-trace-digest> --tool-ledger-json=<tool-ledger-json-or-file>"
+          }
+        },
+        "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+        "htmlFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/profile.html",
+        "brandPrefix": "ty",
+        "aestheticsMode": "free-explore",
+        "toolDisciplineBlockPresent": true,
+        "fillHtmlHeadCommand": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/profile.html' --title='我的 · 视觉草稿' --lang='zh-CN' --prefix='ty'",
+        "headFillMode": "skeleton-first",
+        "viewportMode": "document-scroll",
+        "completionSchemaExpected": "full",
+        "restoreFields": null,
+        "restoreContractStatus": null,
+        "restoreCompactPacket": null,
+        "deterministicCommands": null,
+        "sourceAuthorityLock": null,
+        "preDispatchFileHashes": {
+          "v27-apple-books-draft.design": "6aaa016560f366f8db8ee091bb44561421f64acf87b293c74cf4c74b906714b7"
+        },
+        "contextPreflight": {
+          "workflowPath": "intent-workflows/intent-project-complex-build/INTENT_WORKFLOW.md",
+          "requiredContextFiles": [
+            "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+            "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+            "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+            "delivery-quality/page-rendering-quality-gate.md",
+            "delivery-quality/design-artifact-validation.md",
+            "delivery-quality/delivery-evidence-contract.md",
+            "visual-experience/visual-experience-guidelines.md",
+            "visual-experience/visual-checkpoint-protocol.md"
+          ],
+          "optionalContextFiles": [],
+          "passed": true
+        },
+        "pageSliceOnly": true,
+        "requiredFieldsPresent": true,
+        "missingFields": [],
+        "fillHtmlHeadCommandValid": true,
+        "mobileNavigation": {
+          "required": true,
+          "appliesToThisPage": true,
+          "activeKey": "profile",
+          "contractPresent": true,
+          "structurePresent": true,
+          "canonicalHtmlIncluded": true,
+          "canonicalHtmlSource": "sharedProjectShellContract.mobileNavigation.structure.canonicalHtmlByKey.profile",
+          "structureHash": "11c43754f27adeac3460b86e2d7c4d5e36d75cb6b1dfd7ac9bc67e68af8aeb46",
+          "missingFields": []
+        },
+        "persistedToSummary": true,
+        "taskQueryAudited": false,
+        "proofSource": "summary-only",
+        "largeWorkflowFilesInTaskQuery": null
+      },
+      {
+        "recorded_at": "2026-10-29T16:44:55.731Z",
+        "generatedBy": "build-page-dispatch-manifest.mjs",
+        "packetType": "ComplexPagePacket",
+        "laneContract": {
+          "resolvedLane": "complex_html_page",
+          "packetType": "ComplexPagePacket",
+          "pageRuntimeGuide": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+          "dispatchContract": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md"
+        },
+        "taskLinePresent": true,
+        "outputPathPresent": true,
+        "sharedTemplate": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "nodeId": "page-reader",
+        "htmlSrc": "pages/reader.html",
+        "supplementaryReads": [],
+        "allowedWritePaths": [
+          "pages/reader.html",
+          "assets/"
+        ],
+        "forbiddenWriteRoots": [
+          "*.design",
+          "runtime-orchestration-summary.json",
+          "validation-report.json",
+          "finish-readiness-report.json",
+          "restore-contract-report.json",
+          "page-generation-summary.json"
+        ],
+        "toolPolicy": {
+          "todoWriteAllowed": false,
+          "validationScriptsAllowed": false,
+          "previewAllowed": false,
+          "helperScriptsAllowed": false,
+          "designFileWriteAllowed": false,
+          "allowedWritePaths": [
+            "pages/reader.html",
+            "assets/"
+          ]
+        },
+        "skillRuntime": {
+          "skillDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design",
+          "deterministicToolDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling",
+          "toolPaths": {
+            "applyHtmlHeadContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs",
+            "recordDispatchCompletion": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs",
+            "buildPageDispatchManifest": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/build-page-dispatch-manifest.mjs",
+            "validateDesignWorkspace": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-design-workspace.mjs",
+            "validateFinishReadiness": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs",
+            "validateRestoreContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-restore-contract.mjs"
+          },
+          "requiredForPageSubAgent": [
+            "applyHtmlHeadContract",
+            "recordDispatchCompletion"
+          ],
+          "pathInjection": "absolute",
+          "pathContract": "Do not use {SKILL_DIR} placeholders inside Page Sub-Agent packets; use toolPaths.* absolute paths.",
+          "commandTemplates": {
+            "recordDispatchCompletion": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --node-id='page-reader' --html-src='pages/reader.html' --status=completed --changed-files=<comma-separated-project-relative-files> --trace-digest=<main-agent-runtime-trace-digest> --tool-ledger-json=<tool-ledger-json-or-file>"
+          }
+        },
+        "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+        "htmlFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/reader.html",
+        "brandPrefix": "ty",
+        "aestheticsMode": "free-explore",
+        "toolDisciplineBlockPresent": true,
+        "fillHtmlHeadCommand": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/reader.html' --title='阅读 · 视觉草稿' --lang='zh-CN' --prefix='ty'",
+        "headFillMode": "skeleton-first",
+        "viewportMode": "document-scroll",
+        "completionSchemaExpected": "full",
+        "restoreFields": null,
+        "restoreContractStatus": null,
+        "restoreCompactPacket": null,
+        "deterministicCommands": null,
+        "sourceAuthorityLock": null,
+        "preDispatchFileHashes": {
+          "v27-apple-books-draft.design": "6aaa016560f366f8db8ee091bb44561421f64acf87b293c74cf4c74b906714b7"
+        },
+        "contextPreflight": {
+          "workflowPath": "intent-workflows/intent-project-complex-build/INTENT_WORKFLOW.md",
+          "requiredContextFiles": [
+            "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+            "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+            "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+            "delivery-quality/page-rendering-quality-gate.md",
+            "delivery-quality/design-artifact-validation.md",
+            "delivery-quality/delivery-evidence-contract.md",
+            "visual-experience/visual-experience-guidelines.md",
+            "visual-experience/visual-checkpoint-protocol.md"
+          ],
+          "optionalContextFiles": [],
+          "passed": true
+        },
+        "pageSliceOnly": true,
+        "requiredFieldsPresent": true,
+        "missingFields": [],
+        "fillHtmlHeadCommandValid": true,
+        "mobileNavigation": {
+          "required": false,
+          "appliesToThisPage": false,
+          "omitReason": "Immersive reader is outside the global tab shell",
+          "canonicalHtmlIncluded": false,
+          "missingFields": []
+        },
+        "persistedToSummary": true,
+        "taskQueryAudited": false,
+        "proofSource": "summary-only",
+        "largeWorkflowFilesInTaskQuery": null
+      },
+      {
+        "recorded_at": "2026-10-29T16:44:55.731Z",
+        "generatedBy": "build-page-dispatch-manifest.mjs",
+        "packetType": "ComplexPagePacket",
+        "laneContract": {
+          "resolvedLane": "complex_html_page",
+          "packetType": "ComplexPagePacket",
+          "pageRuntimeGuide": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+          "dispatchContract": "intent-workflows/intent-project-complex-build/complex-page-dispatch-contract.md"
+        },
+        "taskLinePresent": true,
+        "outputPathPresent": true,
+        "sharedTemplate": "intent-workflows/intent-project-complex-build/complex-page-runtime.md",
+        "nodeId": "page-app-icon",
+        "htmlSrc": "pages/app-icon.html",
+        "supplementaryReads": [],
+        "allowedWritePaths": [
+          "pages/app-icon.html",
+          "assets/"
+        ],
+        "forbiddenWriteRoots": [
+          "*.design",
+          "runtime-orchestration-summary.json",
+          "validation-report.json",
+          "finish-readiness-report.json",
+          "restore-contract-report.json",
+          "page-generation-summary.json"
+        ],
+        "toolPolicy": {
+          "todoWriteAllowed": false,
+          "validationScriptsAllowed": false,
+          "previewAllowed": false,
+          "helperScriptsAllowed": false,
+          "designFileWriteAllowed": false,
+          "allowedWritePaths": [
+            "pages/app-icon.html",
+            "assets/"
+          ]
+        },
+        "skillRuntime": {
+          "skillDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design",
+          "deterministicToolDir": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling",
+          "toolPaths": {
+            "applyHtmlHeadContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs",
+            "recordDispatchCompletion": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs",
+            "buildPageDispatchManifest": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/build-page-dispatch-manifest.mjs",
+            "validateDesignWorkspace": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-design-workspace.mjs",
+            "validateFinishReadiness": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs",
+            "validateRestoreContract": "/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-restore-contract.mjs"
+          },
+          "requiredForPageSubAgent": [
+            "applyHtmlHeadContract",
+            "recordDispatchCompletion"
+          ],
+          "pathInjection": "absolute",
+          "pathContract": "Do not use {SKILL_DIR} placeholders inside Page Sub-Agent packets; use toolPaths.* absolute paths.",
+          "commandTemplates": {
+            "recordDispatchCompletion": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/record-dispatch-completion.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --node-id='page-app-icon' --html-src='pages/app-icon.html' --status=completed --changed-files=<comma-separated-project-relative-files> --trace-digest=<main-agent-runtime-trace-digest> --tool-ledger-json=<tool-ledger-json-or-file>"
+          }
+        },
+        "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+        "htmlFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/app-icon.html",
+        "brandPrefix": "ty",
+        "aestheticsMode": "free-explore",
+        "toolDisciplineBlockPresent": true,
+        "fillHtmlHeadCommand": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/apply-html-head-contract.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/pages/app-icon.html' --title='应用图标 · 视觉草稿' --lang='zh-CN' --prefix='ty'",
+        "headFillMode": "skeleton-first",
+        "viewportMode": "document-scroll",
+        "completionSchemaExpected": "full",
+        "restoreFields": null,
+        "restoreContractStatus": null,
+        "restoreCompactPacket": null,
+        "deterministicCommands": null,
+        "sourceAuthorityLock": null,
+        "preDispatchFileHashes": {
+          "v27-apple-books-draft.design": "6aaa016560f366f8db8ee091bb44561421f64acf87b293c74cf4c74b906714b7"
+        },
+        "contextPreflight": {
+          "workflowPath": "intent-workflows/intent-project-complex-build/INTENT_WORKFLOW.md",
+          "requiredContextFiles": [
+            "shared-runtime/runtime-boundaries/lane-runtime-contracts.md",
+            "shared-runtime/agent-dispatch-runtime/lane-dispatch-index.md",
+            "shared-runtime/agent-dispatch-runtime/shared-page-rendering-kernel.md",
+            "delivery-quality/page-rendering-quality-gate.md",
+            "delivery-quality/design-artifact-validation.md",
+            "delivery-quality/delivery-evidence-contract.md",
+            "visual-experience/visual-experience-guidelines.md",
+            "visual-experience/visual-checkpoint-protocol.md"
+          ],
+          "optionalContextFiles": [],
+          "passed": true
+        },
+        "pageSliceOnly": true,
+        "requiredFieldsPresent": true,
+        "missingFields": [],
+        "fillHtmlHeadCommandValid": true,
+        "mobileNavigation": {
+          "required": false,
+          "appliesToThisPage": false,
+          "omitReason": "App icon specification board is outside the global tab shell",
+          "canonicalHtmlIncluded": false,
+          "missingFields": []
+        },
+        "persistedToSummary": true,
+        "taskQueryAudited": false,
+        "proofSource": "summary-only",
+        "largeWorkflowFilesInTaskQuery": null
+      }
+    ],
+    "validationHistory": [],
+    "validationRepairLedger": [],
+    "validationSnapshot": {},
+    "artifactReadinessEvidence": {},
+    "expectedDispatches": [
+      {
+        "nodeId": "page-now",
+        "pageId": "page-now",
+        "targetPageId": "page-now",
+        "htmlSrc": "pages/now.html",
+        "packetType": "ComplexPagePacket",
+        "status": "completed",
+        "changedFiles": [
+          "pages/now.html"
+        ],
+        "toolCallLedger": {
+          "source": "main-agent-runtime-trace",
+          "traceDigest": "3c718910-ebf0-4219-9c04-ad22bc1463f4",
+          "todoWriteCalls": 0,
+          "previewCalls": 0,
+          "validationScriptCalls": 0,
+          "helperScriptWrites": 0
+        },
+        "recordedAt": "2026-10-29T17:06:01.350Z",
+        "source": "record-dispatch-completion.mjs"
+      },
+      {
+        "nodeId": "page-shelf",
+        "pageId": "page-shelf",
+        "targetPageId": "page-shelf",
+        "htmlSrc": "pages/shelf.html",
+        "packetType": "ComplexPagePacket",
+        "status": "completed",
+        "changedFiles": [
+          "pages/shelf.html"
+        ],
+        "toolCallLedger": {
+          "source": "main-agent-runtime-trace",
+          "traceDigest": "5bcd72e4-c525-4f8b-b63c-e8f7a67fee85",
+          "todoWriteCalls": 0,
+          "previewCalls": 0,
+          "validationScriptCalls": 0,
+          "helperScriptWrites": 0
+        },
+        "recordedAt": "2026-10-29T17:02:47.006Z",
+        "source": "record-dispatch-completion.mjs"
+      },
+      {
+        "nodeId": "page-profile",
+        "pageId": "page-profile",
+        "targetPageId": "page-profile",
+        "htmlSrc": "pages/profile.html",
+        "packetType": "ComplexPagePacket",
+        "status": "completed",
+        "changedFiles": [
+          "pages/profile.html"
+        ],
+        "toolCallLedger": {
+          "source": "main-agent-runtime-trace",
+          "traceDigest": "ad66a615-b7e1-467d-a916-ae2fd0f3c9de",
+          "todoWriteCalls": 0,
+          "previewCalls": 0,
+          "validationScriptCalls": 0,
+          "helperScriptWrites": 0
+        },
+        "recordedAt": "2026-10-29T17:02:47.112Z",
+        "source": "record-dispatch-completion.mjs"
+      },
+      {
+        "nodeId": "page-reader",
+        "pageId": "page-reader",
+        "targetPageId": "page-reader",
+        "htmlSrc": "pages/reader.html",
+        "packetType": "ComplexPagePacket",
+        "status": "completed",
+        "changedFiles": [
+          "pages/reader.html"
+        ],
+        "toolCallLedger": {
+          "source": "main-agent-runtime-trace",
+          "traceDigest": "6d9e9904-55be-4184-8860-09f7837585e9",
+          "todoWriteCalls": 0,
+          "previewCalls": 0,
+          "validationScriptCalls": 0,
+          "helperScriptWrites": 0
+        },
+        "recordedAt": "2026-10-29T17:02:47.218Z",
+        "source": "record-dispatch-completion.mjs"
+      },
+      {
+        "nodeId": "page-app-icon",
+        "pageId": "page-app-icon",
+        "targetPageId": "page-app-icon",
+        "htmlSrc": "pages/app-icon.html",
+        "packetType": "ComplexPagePacket",
+        "status": "completed",
+        "changedFiles": [
+          "pages/app-icon.html"
+        ],
+        "toolCallLedger": {
+          "source": "main-agent-runtime-trace",
+          "traceDigest": "88841b20-1c34-4b84-be15-fbf94745ee8a",
+          "todoWriteCalls": 0,
+          "previewCalls": 0,
+          "validationScriptCalls": 0,
+          "helperScriptWrites": 0
+        },
+        "recordedAt": "2026-10-29T17:02:47.327Z",
+        "source": "record-dispatch-completion.mjs"
+      }
+    ],
+    "mainAgentPostDispatchMutations": [
+      {
+        "path": "v27-apple-books-draft.design",
+        "reason": "Registered planned page interactions after HTML dispatch completion",
+        "owner": "main-agent",
+        "recordedAt": "2026-10-29T17:06:01.350Z",
+        "source": "record-dispatch-completion.mjs"
+      }
+    ]
+  },
+  "designSource": {
+    "operatingMode": "free-explore",
+    "cssFilePath": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft/colors_and_type.css",
+    "brandPrefix": "ty",
+    "styleConstraints": {
+      "radiusMax": 16,
+      "staticShadowAlphaMax": 0.05
+    },
+    "shapeSystem": "4/8/16px with pill reserved for true pill buttons",
+    "iconPolicy": "Lucide 1.5px for UI; original inline vector only for app icon master; no emoji icons"
+  },
+  "pages": [
+    {
+      "nodeId": "page-now",
+      "generationNodeId": "gen-page-now",
+      "htmlSrc": "pages/now.html",
+      "title": "此刻 · 视觉草稿",
+      "pageIndex": 1,
+      "pageType": "task-driven",
+      "viewportMode": "document-scroll",
+      "visualNorthStar": "Apple Books-like reading home led by the current book cover and one clear continue action",
+      "compositionPattern": "Large / medium / small stacked",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states",
+        "identical 64px three-tab navigation on primary pages"
+      ],
+      "componentPlan": [],
+      "imagePlan": [
+        {
+          "role": "critical-hero",
+          "sectionType": "hero",
+          "filename": "cover-hometown.png",
+          "status": "reused"
+        },
+        {
+          "role": "supporting-content",
+          "sectionType": "product",
+          "filename": "cover-spring.png",
+          "status": "reused"
+        },
+        {
+          "role": "supporting-content",
+          "sectionType": "product",
+          "filename": "cover-birds.png",
+          "status": "reused"
+        }
+      ],
+      "chartsRequired": false,
+      "miniProgramStyle": false,
+      "mobileNavigationActiveKey": "now",
+      "domIdsRequired": [
+        "cta-reader",
+        "nav-shelf",
+        "nav-profile"
+      ],
+      "qualityRisks": [
+        "mobile",
+        "cover-to-text balance"
+      ],
+      "supplementaryReads": []
+    },
+    {
+      "nodeId": "page-shelf",
+      "generationNodeId": "gen-page-shelf",
+      "htmlSrc": "pages/shelf.html",
+      "title": "书库 · 视觉草稿",
+      "pageIndex": 2,
+      "pageType": "information-dense",
+      "viewportMode": "document-scroll",
+      "visualNorthStar": "Native Apple Books library with calm search, lightweight filters and generous book rows",
+      "compositionPattern": "Large / medium / small stacked",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states",
+        "identical 64px three-tab navigation on primary pages"
+      ],
+      "componentPlan": [],
+      "imagePlan": [
+        {
+          "role": "supporting-content",
+          "sectionType": "product",
+          "filename": "cover-hometown.png",
+          "status": "reused"
+        },
+        {
+          "role": "supporting-content",
+          "sectionType": "product",
+          "filename": "cover-spring.png",
+          "status": "reused"
+        },
+        {
+          "role": "supporting-content",
+          "sectionType": "product",
+          "filename": "cover-birds.png",
+          "status": "reused"
+        }
+      ],
+      "chartsRequired": false,
+      "miniProgramStyle": false,
+      "mobileNavigationActiveKey": "shelf",
+      "domIdsRequired": [
+        "nav-now",
+        "nav-profile"
+      ],
+      "qualityRisks": [
+        "mobile",
+        "book row alignment"
+      ],
+      "supplementaryReads": []
+    },
+    {
+      "nodeId": "page-profile",
+      "generationNodeId": "gen-page-profile",
+      "htmlSrc": "pages/profile.html",
+      "title": "我的 · 视觉草稿",
+      "pageIndex": 3,
+      "pageType": "information-dense",
+      "viewportMode": "document-scroll",
+      "visualNorthStar": "A quiet native reading profile where monthly progress and reading footprint outrank settings",
+      "compositionPattern": "Large / medium / small stacked",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states",
+        "identical 64px three-tab navigation on primary pages"
+      ],
+      "componentPlan": [],
+      "imagePlan": [],
+      "chartsRequired": false,
+      "miniProgramStyle": false,
+      "mobileNavigationActiveKey": "profile",
+      "domIdsRequired": [
+        "nav-now",
+        "nav-shelf"
+      ],
+      "qualityRisks": [
+        "mobile",
+        "stat alignment"
+      ],
+      "supplementaryReads": []
+    },
+    {
+      "nodeId": "page-reader",
+      "generationNodeId": "gen-page-reader",
+      "htmlSrc": "pages/reader.html",
+      "title": "阅读 · 视觉草稿",
+      "pageIndex": 4,
+      "pageType": "task-driven",
+      "viewportMode": "document-scroll",
+      "visualNorthStar": "Immersive Apple Books-like reading with warm white paper retained only inside the reader and unobtrusive tools",
+      "compositionPattern": "Large / medium / small stacked",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states"
+      ],
+      "componentPlan": [],
+      "imagePlan": [],
+      "chartsRequired": false,
+      "miniProgramStyle": false,
+      "mobileNavigationApplies": false,
+      "mobileNavigationOmitReason": "Immersive reader is outside the global tab shell",
+      "domIdsRequired": [
+        "back-now"
+      ],
+      "qualityRisks": [
+        "mobile",
+        "reading measure",
+        "tool overlap"
+      ],
+      "supplementaryReads": []
+    },
+    {
+      "nodeId": "page-app-icon",
+      "generationNodeId": "gen-page-app-icon",
+      "htmlSrc": "pages/app-icon.html",
+      "title": "应用图标 · 视觉草稿",
+      "pageIndex": 5,
+      "pageType": "showcase",
+      "viewportMode": "document-scroll",
+      "visualNorthStar": "A distinctive monochrome open-book mark with three subtle sound arcs, legible from 1024px down to 40px",
+      "compositionPattern": "P-3 Editorial Cover",
+      "continuityAnchors": [
+        "large native titles with clear section rhythm",
+        "black primary controls and neutral selected states"
+      ],
+      "componentPlan": [],
+      "imagePlan": [],
+      "chartsRequired": false,
+      "miniProgramStyle": false,
+      "mobileNavigationApplies": false,
+      "mobileNavigationOmitReason": "App icon specification board is outside the global tab shell",
+      "domIdsRequired": [],
+      "qualityRisks": [
+        "mobile",
+        "small-size icon clarity"
+      ],
+      "supplementaryReads": []
+    }
+  ],
+  "assets": [
+    {
+      "filename": "cover-hometown.png",
+      "role": "critical-hero",
+      "sectionType": "hero",
+      "status": "reused",
+      "ownerPages": [
+        "page-now",
+        "page-shelf"
+      ],
+      "description": "《故乡》现有示意书封"
+    },
+    {
+      "filename": "cover-spring.png",
+      "role": "supporting-content",
+      "sectionType": "product",
+      "status": "reused",
+      "ownerPages": [
+        "page-now",
+        "page-shelf"
+      ],
+      "description": "《春》现有示意书封"
+    },
+    {
+      "filename": "cover-birds.png",
+      "role": "supporting-content",
+      "sectionType": "product",
+      "status": "reused",
+      "ownerPages": [
+        "page-now",
+        "page-shelf"
+      ],
+      "description": "《飞鸟集》现有示意书封"
+    }
+  ],
+  "wiringPlan": [],
+  "hiddenInteractionPlan": []
+}

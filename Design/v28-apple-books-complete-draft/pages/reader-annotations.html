@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>划线与摘记</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+  <main class="annotations-page">
+    <style id="critical-layout">
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--ty-surface-sunken);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+      button, textarea { font: inherit; }
+      .annotations-page {
+        width: 100%;
+        max-width: 480px;
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--ty-background);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+      }
+      .annotations-page svg { width: 20px; height: 20px; flex: none; stroke-width: 1.5; }
+      .context-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 60px;
+        padding: max(8px, env(safe-area-inset-top)) 20px 8px;
+        border-bottom: 1px solid var(--ty-hairline);
+      }
+      .context-back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-size: 13px; }
+      .selection-count { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+      .context-article { padding: 24px 24px 20px; }
+      .context-chapter { margin: 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+      .context-title { margin: 8px 0 24px; font-size: 26px; font-weight: 600; line-height: 1.25; }
+      .context-body { font-family: var(--ty-font-serif); font-size: 18px; line-height: 1.95; text-align: justify; }
+      .context-body p { margin: 0 0 1.25em; overflow-wrap: break-word; }
+      .context-body p:last-child { margin-bottom: 0; }
+      .context-body mark { padding: 2px 0; background: var(--ty-neutral-200); color: var(--ty-foreground); }
+      .selection-panel {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0 20px 28px;
+        padding: 4px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        background: var(--ty-popover);
+        box-shadow: var(--ty-shadow-float);
+      }
+      .selection-action, .close-button, .save-button {
+        border: 0;
+        color: var(--ty-foreground);
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 140ms cubic-bezier(.2,.8,.2,1), color 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms cubic-bezier(.2,.8,.2,1);
+      }
+      .selection-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 0 8px;
+        border-radius: var(--ty-radius-sm);
+        background: transparent;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      .selection-action svg { width: 18px; height: 18px; }
+      .sheet {
+        border-top: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-lg) var(--ty-radius-lg) 0 0;
+        background: var(--ty-popover);
+        box-shadow: var(--ty-shadow-float);
+      }
+      .sheet-handle { width: 36px; height: 4px; margin: 8px auto 4px; border-radius: var(--ty-radius-sm); background: var(--ty-neutral-300); }
+      .sheet-header {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px 8px;
+        border-bottom: 1px solid var(--ty-hairline);
+      }
+      .sheet-header h1 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; text-align: center; }
+      .close-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        min-height: 44px;
+        padding: 0;
+        border-radius: var(--ty-radius-md);
+        background: transparent;
+      }
+      .note-editor { padding: 22px 20px 24px; }
+      .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+      .section-heading h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
+      .section-meta { color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .selected-quote {
+        margin: 0 0 20px;
+        padding: 2px 0 2px 14px;
+        border-left: 2px solid var(--ty-primary-300);
+        font-family: var(--ty-font-serif);
+        font-size: 16px;
+        line-height: 1.85;
+        overflow-wrap: break-word;
+      }
+      .note-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; line-height: 1.45; }
+      .note-input {
+        display: block;
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 1px solid var(--ty-input);
+        border-radius: var(--ty-radius-md);
+        background: var(--ty-background);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+        font-size: 15px;
+        line-height: 1.65;
+        resize: vertical;
+      }
+      .note-input::placeholder { color: var(--ty-muted-foreground); }
+      .editor-meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+      .save-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 48px;
+        margin-top: 18px;
+        padding: 10px 16px;
+        border-radius: var(--ty-radius-md);
+        background: var(--ty-primary);
+        color: var(--ty-primary-foreground);
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .save-button svg { width: 18px; height: 18px; }
+      .all-notes { padding: 22px 20px 8px; border-top: 1px solid var(--ty-hairline); }
+      .notes-list { margin: 0; padding: 0; list-style: none; }
+      .note-item { padding: 18px 0; }
+      .note-item + .note-item { border-top: 1px solid var(--ty-hairline); }
+      .note-quote { margin: 0; font-family: var(--ty-font-serif); font-size: 16px; line-height: 1.8; overflow-wrap: break-word; }
+      .note-copy { margin: 10px 0 0; font-size: 14px; line-height: 1.65; overflow-wrap: break-word; }
+      .note-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 10px 0 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+      .sheet-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 16px;
+        padding: 16px 20px max(16px, env(safe-area-inset-bottom));
+        border-top: 1px solid var(--ty-hairline);
+        color: var(--ty-muted-foreground);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .selection-action:focus-visible, .close-button:focus-visible, .save-button:focus-visible, .note-input:focus-visible {
+        outline: 2px solid var(--ty-ring);
+        outline-offset: -3px;
+      }
+      .note-input:focus-visible { outline-offset: 2px; }
+      .selection-action:active, .close-button:active, .save-button:active { transform: translateY(1px); }
+      @media (hover: hover) {
+        .selection-action:hover, .close-button:hover { background: var(--ty-muted); }
+        .save-button:hover { background: var(--ty-primary-600); }
+      }
+      @media (max-width: 359px) {
+        .context-article { padding-right: 20px; padding-left: 20px; }
+        .selection-panel { margin-right: 16px; margin-left: 16px; gap: 4px; }
+        .note-editor, .all-notes { padding-right: 16px; padding-left: 16px; }
+        .selection-action { gap: 4px; padding-right: 4px; padding-left: 4px; }
+      }
+      @media (min-width: 640px) {
+        .annotations-page { border-right: 1px solid var(--ty-hairline); border-left: 1px solid var(--ty-hairline); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .selection-action, .close-button, .save-button { transition-duration: .01ms; }
+      }
+    </style>
+
+    <section class="reader-context" aria-label="保留选文的底层正文">
+      <header class="context-header">
+        <div class="context-back"><i data-lucide="chevron-left" aria-hidden="true"></i><span>故乡</span></div>
+        <span class="selection-count">已选 11 字</span>
+      </header>
+      <article class="context-article">
+        <p class="context-chapter">第四章</p>
+        <p class="context-title">故乡</p>
+        <div class="context-body">
+          <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。<mark>我的心禁不住悲凉起来了。</mark></p>
+          <p>阿！这不是我二十年来时时记得的故乡？</p>
+        </div>
+      </article>
+      <div class="selection-panel" role="toolbar" aria-label="选字操作">
+        <button type="button" class="selection-action"><i data-lucide="copy" aria-hidden="true"></i><span>复制</span></button>
+        <button type="button" class="selection-action"><i data-lucide="highlighter" aria-hidden="true"></i><span>划线</span></button>
+        <button type="button" class="selection-action" aria-pressed="true"><i data-lucide="square-pen" aria-hidden="true"></i><span>摘记</span></button>
+      </div>
+    </section>
+
+    <section class="sheet" aria-labelledby="annotations-title">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="sheet-header">
+        <span aria-hidden="true"></span>
+        <h1 id="annotations-title">摘记</h1>
+        <button type="button" class="close-button" data-dom-id="annotations-close-reader" aria-label="关闭摘记并返回正文"><i data-lucide="x" aria-hidden="true"></i></button>
+      </header>
+
+      <form class="note-editor" aria-labelledby="note-editor-title">
+        <div class="section-heading"><h2 id="note-editor-title">笔记编辑</h2><span class="section-meta">第四章 · 第42页</span></div>
+        <blockquote class="selected-quote">我的心禁不住悲凉起来了。</blockquote>
+        <label class="note-label" for="note-content">笔记内容</label>
+        <textarea class="note-input" id="note-content" name="note-content" maxlength="500">现实的萧索与记忆中的美好形成落差，“悲凉”既是眼前所见，也是久别后的陌生感。</textarea>
+        <div class="editor-meta"><span>与所选原文一同保存</span><span>38 / 500</span></div>
+        <button type="submit" class="save-button" data-dom-id="save-note"><i data-lucide="check" aria-hidden="true"></i><span>保存摘记</span></button>
+      </form>
+
+      <section class="all-notes" aria-labelledby="all-notes-title">
+        <div class="section-heading"><h2 id="all-notes-title">全部摘记</h2><span class="section-meta">3条</span></div>
+        <ol class="notes-list">
+          <li class="note-item">
+            <blockquote class="note-quote">我的心禁不住悲凉起来了。</blockquote>
+            <p class="note-copy">现实的萧索与记忆中的美好形成落差，“悲凉”既是眼前所见，也是久别后的陌生感。</p>
+            <p class="note-meta"><span>第四章</span><span>今天 09:42</span></p>
+          </li>
+          <li class="note-item">
+            <blockquote class="note-quote">我所记得的故乡全不如此。我的故乡好得多了。</blockquote>
+            <p class="note-copy">记忆会修饰故乡，也会加深现实中的失落。</p>
+            <p class="note-meta"><span>第四章</span><span>今天 09:36</span></p>
+          </li>
+          <li class="note-item">
+            <blockquote class="note-quote">于是我自己解释说：故乡本也如此。</blockquote>
+            <p class="note-copy">自我安慰无法真正消解乡愁。</p>
+            <p class="note-meta"><span>第四章</span><span>昨天 21:18</span></p>
+          </li>
+        </ol>
+      </section>
+
+      <footer class="sheet-footer"><span>《故乡》 · 鲁迅</span><span>3条摘记 · 仅自己可见</span></footer>
+    </section>
+  </main>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

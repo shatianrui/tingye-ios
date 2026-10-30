@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>听书播放</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+  <main class="player-page">
+    <style id="critical-layout">
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--ty-surface-sunken);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+      }
+      button, input { font: inherit; }
+      button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      button { cursor: pointer; }
+      .player-shell {
+        width: 100%;
+        max-width: 560px;
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--ty-background);
+      }
+      .player-shell svg { width: 20px; height: 20px; flex: none; stroke-width: 1.5; }
+      .topbar {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 8px;
+        min-height: 60px;
+        padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+        border-bottom: 1px solid var(--ty-hairline);
+      }
+      .topbar-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center; }
+      .icon-button, .skip-button, .speed-button, .timer-button, .choice-button, .chapter-row, .mini-toggle {
+        border: 0;
+        background: transparent;
+        color: var(--ty-foreground);
+        transition: background-color 140ms cubic-bezier(.2,.8,.2,1), color 140ms cubic-bezier(.2,.8,.2,1), border-color 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms cubic-bezier(.2,.8,.2,1);
+      }
+      .icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        border-radius: var(--ty-radius-md);
+        text-decoration: none;
+      }
+      .icon-button.end { justify-self: end; }
+      button:focus-visible, a:focus-visible, input:focus-visible {
+        outline: 2px solid var(--ty-ring);
+        outline-offset: 3px;
+      }
+      button:active, a:active { transform: translateY(1px); }
+      button:disabled { cursor: default; opacity: .38; }
+      .player-content { padding: 28px 20px 0; }
+      .player-hero { text-align: center; }
+      .player-cover {
+        display: block;
+        width: 168px;
+        height: auto;
+        margin: 0 auto;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-sm);
+        background: var(--ty-surface-sunken);
+        box-shadow: var(--ty-shadow-hairline);
+      }
+      .player-hero h1 {
+        margin: 24px 0 0;
+        font-size: 27px;
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: -.02em;
+        overflow-wrap: anywhere;
+      }
+      .now-chapter { margin: 8px 0 0; color: var(--ty-muted-foreground); font-size: 14px; line-height: 1.6; }
+      .narrator-line { margin: 4px 0 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+      .playback-progress { margin-top: 24px; }
+      .progress-slider { display: block; width: 100%; min-height: 44px; margin: 0; accent-color: var(--ty-primary); cursor: pointer; }
+      .time-row { display: flex; justify-content: space-between; gap: 16px; color: var(--ty-muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+      .main-controls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .skip-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        min-height: 68px;
+        padding: 8px 4px;
+        border-radius: var(--ty-radius-md);
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .skip-button svg { width: 25px; height: 25px; }
+      .play-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        min-height: 72px;
+        padding: 10px 8px;
+        border: 0;
+        border-radius: var(--ty-radius-lg);
+        background: var(--ty-primary);
+        color: var(--ty-primary-foreground);
+        font-family: var(--ty-font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms cubic-bezier(.2,.8,.2,1);
+      }
+      .play-toggle svg { width: 28px; height: 28px; }
+      .secondary-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+      .speed-button, .timer-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 10px 12px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        font-size: 14px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .player-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--ty-hairline); }
+      .section-title { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+      .section-note { margin: 8px 0 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.6; }
+      .mini-player {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        background: var(--ty-surface-sunken);
+      }
+      .mini-cover { display: block; width: 48px; height: auto; border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-sm); }
+      .mini-copy { min-width: 0; }
+      .mini-copy strong { display: block; font-size: 14px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+      .mini-copy span { display: block; margin-top: 2px; color: var(--ty-muted-foreground); font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+      .mini-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        min-height: 44px;
+        padding: 0;
+        border-radius: var(--ty-radius-md);
+      }
+      .chapter-list { margin: 16px 0 0; padding: 0; border-top: 1px solid var(--ty-hairline); list-style: none; }
+      .chapter-list li { border-bottom: 1px solid var(--ty-hairline); }
+      .chapter-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        min-height: 60px;
+        padding: 12px 0;
+        text-align: left;
+      }
+      .chapter-name { min-width: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+      .chapter-name small { display: block; margin-top: 2px; color: var(--ty-muted-foreground); font-size: 12px; line-height: 1.5; }
+      .chapter-time { display: inline-flex; align-items: center; gap: 8px; color: var(--ty-muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .chapter-row[aria-current="true"] .chapter-time { color: var(--ty-foreground); }
+      .timer-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+      .choice-button {
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 6px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        color: var(--ty-muted-foreground);
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .choice-button[aria-pressed="true"] { border-color: var(--ty-foreground); color: var(--ty-foreground); }
+      .confirmation-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+      .action-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 10px 14px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        background: transparent;
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 140ms cubic-bezier(.2,.8,.2,1), color 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1);
+      }
+      .action-button.primary { border-color: var(--ty-primary); background: var(--ty-primary); color: var(--ty-primary-foreground); }
+      .error-heading { display: flex; align-items: center; gap: 10px; }
+      .error-heading svg { color: var(--state-error); }
+      .error-heading h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+      .retry-audio { margin-top: 16px; }
+      .page-footer {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-top: 28px;
+        padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--ty-hairline);
+        color: var(--ty-muted-foreground);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      @media (hover: hover) {
+        .icon-button:hover, .skip-button:hover, .speed-button:hover, .timer-button:hover, .choice-button:hover, .chapter-row:hover, .mini-toggle:hover, .action-button:hover { background: var(--ty-muted); }
+        .play-toggle:hover, .action-button.primary:hover { background: var(--ty-primary-600); }
+      }
+      @media (max-width: 350px) {
+        .player-content { padding-right: 16px; padding-left: 16px; }
+        .page-footer { padding-right: 16px; padding-left: 16px; }
+        .player-hero h1 { font-size: 24px; }
+        .player-cover { width: 148px; }
+        .timer-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .confirmation-actions { grid-template-columns: minmax(0, 1fr); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .icon-button, .skip-button, .speed-button, .timer-button, .choice-button, .chapter-row, .mini-toggle, .play-toggle, .action-button, button, a { transition-duration: .01ms; }
+      }
+    </style>
+
+    <div class="player-shell">
+      <header class="topbar" aria-label="听书导航">
+        <a href="reader.html" class="icon-button" data-dom-id="player-back-reader" aria-label="返回阅读器">
+          <i data-lucide="chevron-left" aria-hidden="true"></i>
+        </a>
+        <p class="topbar-title">听书播放</p>
+        <a href="voice.html" class="icon-button end" data-dom-id="open-voice" aria-label="打开语音与角色设置">
+          <i data-lucide="audio-lines" aria-hidden="true"></i>
+        </a>
+      </header>
+
+      <div class="player-content">
+        <section class="player-hero" aria-labelledby="audiobook-title">
+          <img class="player-cover" src="../assets/cover-hometown.png" width="168" height="240" alt="《故乡》有声版封面" fetchpriority="high" decoding="async">
+          <h1 id="audiobook-title">故乡</h1>
+          <p class="now-chapter">第三章 · 船舱里的冬天</p>
+          <p class="narrator-line">演播 林默 · 系统云语音增强</p>
+          <div class="playback-progress">
+            <label for="audio-progress" class="section-note">播放进度 · 本章 44%</label>
+            <input class="progress-slider" id="audio-progress" type="range" min="0" max="2536" value="1104" aria-label="音频播放进度">
+            <div class="time-row"><span>18:24</span><span>-23:52</span></div>
+          </div>
+          <div class="main-controls" aria-label="播放控制">
+            <button type="button" class="skip-button" aria-label="后退 15 秒">
+              <i data-lucide="rotate-ccw" aria-hidden="true"></i><span>后退 15 秒</span>
+            </button>
+            <button type="button" class="play-toggle" aria-label="暂停播放">
+              <i data-lucide="pause" aria-hidden="true"></i><span>暂停</span>
+            </button>
+            <button type="button" class="skip-button" aria-label="前进 15 秒">
+              <i data-lucide="rotate-cw" aria-hidden="true"></i><span>前进 15 秒</span>
+            </button>
+          </div>
+          <div class="secondary-controls">
+            <button type="button" class="speed-button" aria-label="调整倍速，当前 1.0 倍"><i data-lucide="gauge" aria-hidden="true"></i>1.0× 倍速</button>
+            <a href="#sleep-timer" class="timer-button"><i data-lucide="timer" aria-hidden="true"></i>定时关闭</a>
+          </div>
+        </section>
+
+        <section class="player-section" aria-labelledby="mini-title">
+          <h2 class="section-title" id="mini-title">迷你播放</h2>
+          <p class="section-note">离开独立播放页后，保留本章进度与核心控制。</p>
+          <div class="mini-player" aria-label="迷你播放器预览">
+            <img class="mini-cover" src="../assets/cover-hometown.png" width="48" height="68" alt="《故乡》封面缩略图" loading="lazy" decoding="async">
+            <div class="mini-copy"><strong>第三章 · 船舱里的冬天</strong><span>18:24 / 42:16 · 1.0×</span></div>
+            <button type="button" class="mini-toggle" aria-label="暂停迷你播放"><i data-lucide="pause" aria-hidden="true"></i></button>
+          </div>
+        </section>
+
+        <section class="player-section" aria-labelledby="audio-chapters-title">
+          <h2 class="section-title" id="audio-chapters-title">音频章节</h2>
+          <p class="section-note">播放进度独立于文字阅读位置。</p>
+          <ul class="chapter-list">
+            <li>
+              <button type="button" class="chapter-row">
+                <span class="chapter-name">第二章 · 离乡之前<small>已听完</small></span>
+                <span class="chapter-time">38:06</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="chapter-row" aria-current="true">
+                <span class="chapter-name">第三章 · 船舱里的冬天<small>已播放 18:24</small></span>
+                <span class="chapter-time"><i data-lucide="volume-2" aria-hidden="true"></i>42:16</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="chapter-row">
+                <span class="chapter-name">第四章 · 故乡<small>未播放</small></span>
+                <span class="chapter-time">46:32</span>
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <section class="player-section" id="sleep-timer" aria-labelledby="timer-title">
+          <h2 class="section-title" id="timer-title">定时关闭</h2>
+          <p class="section-note">到达设定时间后暂停，并保留当前播放位置。</p>
+          <div class="timer-choices" role="group" aria-label="定时关闭时长">
+            <button type="button" class="choice-button" aria-pressed="false">15 分钟</button>
+            <button type="button" class="choice-button" aria-pressed="false">30 分钟</button>
+            <button type="button" class="choice-button" aria-pressed="false">60 分钟</button>
+            <button type="button" class="choice-button" aria-pressed="true">本章结束</button>
+          </div>
+        </section>
+
+        <section class="player-section" aria-labelledby="end-title">
+          <h2 class="section-title" id="end-title">结束听书</h2>
+          <p class="section-note">当前进度已保存。结束后返回书籍详情，迷你播放器将关闭。</p>
+          <div class="confirmation-actions">
+            <button type="button" class="action-button" data-dom-id="cancel-end"><i data-lucide="play" aria-hidden="true"></i>继续收听</button>
+            <button type="button" class="action-button primary" data-dom-id="confirm-end"><i data-lucide="square" aria-hidden="true"></i>结束并返回</button>
+          </div>
+        </section>
+
+        <section class="player-section" role="alert" aria-labelledby="audio-error-title">
+          <div class="error-heading"><i data-lucide="circle-alert" aria-hidden="true"></i><h2 id="audio-error-title">音频中断</h2></div>
+          <p class="section-note">网络连接失败，已缓冲内容仍可播放。重新加载将从 18:24 继续。</p>
+          <button type="button" class="action-button retry-audio" data-dom-id="retry-audio"><i data-lucide="rotate-cw" aria-hidden="true"></i>重新加载</button>
+        </section>
+      </div>
+
+      <footer class="page-footer">
+        <span>《故乡》有声版 · 演播 林默</span>
+        <span>本章已下载 · 播放位置已同步</span>
+      </footer>
+    </div>
+  </main>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -181,7 +181,6 @@ struct SMBBrowser: View {
     private func download(_ item: SMBEntry) {
         guard let share else { return }
         let remote = join(item.name)
-        guard item.size <= 100 * 1024 * 1024 else { model.message = "文件超过 100 MB，无法导入。"; return }
         model.run("正在下载《\((item.name as NSString).deletingPathExtension)》") { [model, connection] in
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("smb-" + UUID().uuidString)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

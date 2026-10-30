@@ -45,7 +45,7 @@ struct TingyeApp: App {
 
 #if DEBUG
 /// 无头模拟器 UI 走查：以 `-uireview <场景>` 启动后直达对应界面，供截图核查。
-/// 场景：now / shelf / shelf-list / shelf-edit / sources[-wifi|-webdav]（经书库导入面板）/ stats / profile / detail / chapters / appearance / backup /
+/// 场景：now / now-listening（另一书的辅助听书）/ shelf / shelf-list / shelf-edit / sources[-wifi|-webdav]（经书库导入面板）/ stats / profile / detail / chapters / appearance / backup /
 /// reader[-nochrome|-contents|-preferences|-voice|-listen] / player[-chapters|-voice] / miniplayer。
 enum UIReview {
     static var isolated: Bool { ProcessInfo.processInfo.arguments.contains("-ui-fixture") }
@@ -68,12 +68,26 @@ enum UIReview {
         let text = (1...12).map { "第\($0)句，" + String(repeating: "安静读书，", count: 22) + "这一段结束。" }.joined()
         let first = Book(id: "ui-long", title: "一本用来检查长标题和阅读体验的书", author: "测试作者", format: "TXT", chapters: [.init(title: "第一章：长句与听书进度", text: text), .init(title: "第二章", text: text)])
         let second = Book(id: "ui-recent", title: "最近在读", format: "TXT", chapters: [.init(title: "正文", text: "另一段阅读。")])
-        let books = showcase ? showcaseBooks() : [first, second]
+        let books: [Book]
+        if screen?.hasPrefix("reader-original") == true { books = [originalReviewBook()] }
+        else if screen == "reader-pdf" { books = [pdfReviewBook()] }
+        else { books = showcase ? showcaseBooks() : [first, second] }
         guard !books.isEmpty else { throw ReaderError.message("预览示例未加载。") }
         for book in books { try disk.write(book) }
         let rows = books.enumerated().map { index, book in
             var row = ShelfEntry(book: book, progress: .init(chapter: 0, position: showcase ? (index == 0 ? 4 : 1) : (index == 0 ? 1 : 0), updatedAt: Double(books.count - index) * 100))
             row.lastActivity = .reading
+            if screen == "now-listening" {
+                // 隔离回归：最近读过第一本，之后只听了第二本，首页续读仍应属于第一本。
+                let readAt = ReadingProgress.now - (book.id == "ui-long" ? 60_000 : 86_400_000)
+                row.progress = .init(chapter: book.id == "ui-long" ? 1 : 0, position: 0, updatedAt: readAt)
+                row.lastReadAt = readAt
+                if book.id == "ui-recent" {
+                    row.lastActivity = .listening
+                    row.hasListened = true
+                    row.listeningProgress = .init(chapter: 0, position: 0, updatedAt: ReadingProgress.now)
+                }
+            }
             return row
         }
         try disk.saveCatalog(rows)
@@ -93,16 +107,46 @@ enum UIReview {
         }
         return model
     }
+
+    /// 图文和 PDF 使用独立样本，确保截图及交互测试确实覆盖原文渲染器。
+    @MainActor private static func originalReviewBook() -> Book {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 240)).image { ctx in
+            UIColor(hex: 0xDFE7E0).setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 600, height: 240))
+            UIColor(hex: 0xF9E4AC).setFill(); UIBezierPath(ovalIn: CGRect(x: 440, y: 35, width: 80, height: 80)).fill()
+            UIColor(hex: 0x6A8E7A).setFill()
+            let hills = UIBezierPath(); hills.move(to: CGPoint(x: 0, y: 190))
+            hills.addCurve(to: CGPoint(x: 600, y: 150), controlPoint1: CGPoint(x: 180, y: 50), controlPoint2: CGPoint(x: 350, y: 260))
+            hills.addLine(to: CGPoint(x: 600, y: 240)); hills.addLine(to: CGPoint(x: 0, y: 240)); hills.close(); hills.fill()
+        }
+        let paragraph = "把日子放慢一点，书页里的风景便渐渐清晰。窗前的树影映在纸上，随微风轻轻移动。阅读让我们与远方相遇，也让平凡的片刻有了回声。"
+        let html = "<h2>第一章 · 纸上的风景</h2><p>\(paragraph)</p><figure><img src='tingye-resource:r0'><figcaption>午后，山色与树影。</figcaption></figure><blockquote>留一点安静，给正在读的这一页。</blockquote><table><tr><th>时间</th><th>阅读札记</th></tr><tr><td>清晨</td><td>读几页，迎接一天。</td></tr><tr><td>傍晚</td><td>听一章，慢慢回家。</td></tr></table>" + String(repeating: "<p>\(paragraph)</p>", count: 12)
+        let css = "h2{font-size:1.35em;margin:0 0 1em}figure{margin:1em 0}figcaption{font-size:.72em;text-align:center;margin-top:.5em}blockquote{margin:1em 0;padding:.6em 1em;border-left:2px solid #8da7ff}td,th{border:1px solid #aab4c3}"
+        let chapters = [Chapter(title: "第一章 · 纸上的风景", text: HTMLText.chapter(html, title: "第一章 · 纸上的风景").text, extras: ["document": .object(["html": .string(html), "css": .string(css)])]), Chapter(title: "第二章 · 安静的回声", text: paragraph, extras: ["document": .object(["html": .string("<h2>第二章 · 安静的回声</h2><p>\(paragraph)</p>"), "css": .string(css)])])]
+        return Book(id: "ui-original", title: "纸上的风景", author: "听页 · 原文排版示例", format: "EPUB", chapters: chapters, extras: ["resources": .object(["r0": .string("data:image/png;base64," + (image.pngData()?.base64EncodedString() ?? ""))])])
+    }
+
+    @MainActor private static func pdfReviewBook() -> Book {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            for index in 1...2 {
+                context.beginPage()
+                UIColor(hex: 0xF6F0E4).setFill(); context.cgContext.fill(CGRect(x: 0, y: 0, width: 400, height: 600))
+                ("纸上的风景" as NSString).draw(at: CGPoint(x: 36, y: 48), withAttributes: [.font: UIFont(name: Theme.serifName, size: 28) ?? UIFont.systemFont(ofSize: 28), .foregroundColor: UIColor(hex: 0x17233A)])
+                (String(repeating: "把日子放慢一点，书页里的风景便渐渐清晰。\n\n", count: 9) as NSString).draw(in: CGRect(x: 36, y: 110, width: 328, height: 400), withAttributes: [.font: UIFont.systemFont(ofSize: 16), .foregroundColor: UIColor(hex: 0x17233A)])
+                ("PDF 原版页面 · \(index)" as NSString).draw(at: CGPoint(x: 36, y: 556), withAttributes: [.font: UIFont.systemFont(ofSize: 11), .foregroundColor: UIColor(hex: 0x647084)])
+            }
+        }
+        return Book(id: "ui-pdf", title: "纸上的风景 · 原版", format: "PDF", chapters: (1...2).map { Chapter(title: "第 \($0) 页", text: "把日子放慢一点，书页里的风景便渐渐清晰。") }, extras: ["pdf": .string(data.base64EncodedString())])
+    }
     /// 使用项目已有的公版节选与本地绘制的示意书封；不从网络取图，也不改写 Samples。
     @MainActor private static func showcaseBooks() -> [Book] {
         Samples.books.enumerated().map { index, source in
             var book = source
             let renderer = UIGraphicsImageRenderer(size: CGSize(width: 240, height: 344))
             let image = renderer.image { context in
-                let palettes: [(UInt32, UInt32, UInt32)] = [(0x1F1F1F, 0x4A4A4A, 0x6E6E6E), (0xF0F0F0, 0xBFBFBF, 0x8A8A8A), (0xE6E6E6, 0xA6A6A6, 0x737373)]
+                let palettes: [(UInt32, UInt32, UInt32)] = [(0x233D36, 0x547467, 0x86A693), (0xE9DFC4, 0xB5A175, 0x8D825F), (0xDCE6EF, 0x859BB2, 0x536E8A)]
                 let palette = palettes[index % palettes.count]
                 UIColor(hex: palette.0).setFill(); context.fill(CGRect(x: 0, y: 0, width: 240, height: 344))
-                UIColor(hex: index == 0 ? 0xBFBFBF : 0xFFFFFF).setFill()
+                UIColor(hex: index == 0 ? 0xEAD9A6 : 0xFCF7E9).setFill()
                 UIBezierPath(ovalIn: CGRect(x: 139, y: 133, width: 63, height: 63)).fill()
                 for layer in 0..<2 {
                     UIColor(hex: layer == 0 ? palette.1 : palette.2).setFill()
@@ -112,7 +156,7 @@ enum UIReview {
                     path.addCurve(to: CGPoint(x: 240, y: y - 8), controlPoint1: CGPoint(x: 90, y: y - 70), controlPoint2: CGPoint(x: 150, y: y + 58))
                     path.addLine(to: CGPoint(x: 240, y: 344)); path.addLine(to: CGPoint(x: 0, y: 344)); path.close(); path.fill()
                 }
-                let foreground = UIColor(hex: index == 0 ? 0xF0F0F0 : 0x1F1F1F)
+                let foreground = UIColor(hex: index == 0 ? 0xFCF7E9 : 0x17233A)
                 (book.title as NSString).draw(in: CGRect(x: 28, y: 36, width: 190, height: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 31, weight: .medium), .foregroundColor: foreground, .kern: 4])
                 (book.author as NSString).draw(at: CGPoint(x: 30, y: 91), withAttributes: [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: foreground])
                 ("听页 · 示例节选" as NSString).draw(at: CGPoint(x: 27, y: 315), withAttributes: [.font: UIFont.systemFont(ofSize: 11), .foregroundColor: UIColor.white])
@@ -146,14 +190,14 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
         TabView(selection: $model.tab) {
-            tabRoot { ShelfView() }
-                .tabItem { Label("书", systemImage: Icon.shelf) }
-                .tag(0)
             tabRoot { NowView(player: model.player) }
-                .tabItem { Label("读", systemImage: Icon.read) }
+                .tabItem { Label("此刻", systemImage: Icon.read) }
                 .tag(1)
+            tabRoot { ShelfView() }
+                .tabItem { Label("书库", systemImage: Icon.shelf) }
+                .tag(0)
             tabRoot { StatsView(ji: true) }
-                .tabItem { Label("己", systemImage: Icon.profile) }
+                .tabItem { Label("我的", systemImage: Icon.profile) }
                 .tag(2)
         }
         .toolbar(.hidden, for: .tabBar)
@@ -167,7 +211,7 @@ struct RootView: View {
             // 书架首次载入后只续读一次；之后切页、回前台都不再自动打开。
             guard !resumedOnLaunch, count > 0 else { return }
             resumedOnLaunch = true
-            if resumeOnLaunch, model.selectedBook == nil, let last = model.lastBook, last.started, !last.isComic { model.open(last) }
+            if resumeOnLaunch, model.selectedBook == nil, let last = model.lastReadingBook, !last.isComic { model.open(last) }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -179,12 +223,10 @@ struct RootView: View {
                 if phase == .background { model.hiddenUnlocked = false; model.notice = nil }
             }
         }
-        .task {
+        .task(id: scenePhase) {
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(5)) } catch { return }
-                if model.player.playing && !model.player.buffering, let book = model.player.book {
-                    model.recordReading(seconds: 5, bookID: book.id, title: book.title, listening: true)
-                }
+                model.recordUsageTick(seconds: 5, appActive: scenePhase == .active)
             }
         }
         #if DEBUG
@@ -226,6 +268,16 @@ struct RootView: View {
     private func driveUIReview() {
         guard let screen = UIReview.screen else { return }
         if screen == "now" { model.tab = 1; return }
+        if screen == "now-listening", UIReview.isolated {
+            model.tab = 1
+            if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
+                model.run("正在准备辅助听书") { [model] in
+                    model.startListening(try model.book(entry.id), showPlayer: false)
+                    model.player.pause()
+                }
+            }
+            return
+        }
         if screen == "import-results", UIReview.isolated {
             model.tab = 0
             model.run("正在导入书籍") {
@@ -240,7 +292,7 @@ struct RootView: View {
             return
         }
         if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { model.tab = 0; return }
-        if screen.hasPrefix("stats") || ["profile", "appearance", "backup"].contains(screen) { model.tab = 2; return }
+        if screen.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(screen) { model.tab = 2; return }
         if screen == "comic", let comic = model.entries.first(where: \.isComic) { model.open(comic); return }
         guard let entry = model.lastBook ?? model.entries.first(where: \.local) else { return }
         if screen == "reader-original" {
@@ -279,11 +331,11 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 杂志页签：顶部一道墨线；选中项顶上压一条刊红短杠，图标与宋体粗字转墨色，未选中为灰。
+/// 阅读、书库与个人记录各有入口；迷你播放器作为正在进行的辅助操作。
 private struct LibraryNavigationBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var player: SpeechPlayer
-    private let items = [("书", Icon.shelf), ("读", Icon.read), ("己", Icon.profile)]
+    private let items = [(title: "此刻", icon: Icon.read, tag: 1), (title: "书库", icon: Icon.shelf, tag: 0), (title: "我的", icon: Icon.profile, tag: 2)]
     var body: some View {
         VStack(spacing: 0) {
             if player.book != nil {
@@ -292,33 +344,29 @@ private struct LibraryNavigationBar: View {
             }
             HStack(spacing: 6) {
                 ForEach(items.indices, id: \.self) { index in
-                    let selected = model.tab == index
-                    Button { Haptics.selection(); model.tab = index } label: {
-                        VStack(spacing: 3) {
-                            ThemeIcon(symbol: items[index].1, size: 20, weight: selected ? .semibold : .regular)
-                            Text(L(items[index].0))
-                                .font(selected ? Theme.serifBold(12) : Theme.serif(12))
+                    let selected = model.tab == items[index].tag
+                    Button { model.tab = items[index].tag } label: {
+                        VStack(spacing: 2) {
+                            ThemeIcon(symbol: items[index].icon, size: 23, weight: selected ? .semibold : .regular)
+                            Text(L(items[index].title))
+                                .font(.custom("NotoSansCJKsc-Regular", size: 10, relativeTo: .caption2).weight(.medium))
                         }
-                        .foregroundStyle(selected ? Theme.ink : Theme.ink3)
+                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 50)
-                        .padding(.top, 8)
-                        .overlay(alignment: .top) {
-                            Rectangle().fill(selected ? Theme.clay : .clear).frame(width: 36, height: 4)
-                                .accessibilityHidden(true)
-                        }
+                        .padding(.top, 4)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.96))
                     .accessibilityAddTraits(selected ? .isSelected : [])
-                    .accessibilityLabel(L(items[index].0))
-                    .accessibilityIdentifier("navigation.tab.\(index)")
+                    .accessibilityLabel(L(items[index].title))
+                    .accessibilityIdentifier("navigation.tab.\(items[index].tag)")
                 }
             }
             .frame(maxWidth: 560)
             .padding(.horizontal, Theme.inset)
             .frame(maxWidth: .infinity)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.rulePaint).frame(height: 1) }
-            .background(Theme.bg.ignoresSafeArea(edges: .bottom))
+            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 0.5) }
+            .background(Theme.surface.ignoresSafeArea(edges: .bottom))
         }
         .animation(Theme.smoothSpring, value: player.book?.id)
     }
@@ -351,7 +399,7 @@ extension UIUserInterfaceStyle {
 
 // MARK: - 迷你播放器（底部导航上方）
 
-/// 迷你播放器只负责「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
+/// 迷你播放器以中性样式保留「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
 struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -363,14 +411,14 @@ struct MiniPlayer: View {
                 layout {
                     Button { model.showingPlayer = true } label: {
                         HStack(spacing: 12) {
-                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 30)
+                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(Theme.serifBold(15, relativeTo: .subheadline)).serifEmbolden(15)
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .monospacedDigit()
                                     .foregroundStyle(Theme.ink3)
                                     .lineLimit(1)
@@ -388,14 +436,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.onClay)
+                                ProgressView().controlSize(.small).tint(Theme.ink2)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 18)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 16)
                             }
                         }
-                        .foregroundStyle(Theme.onClay)
-                        .frame(width: 38, height: 38)
-                        .background(Theme.clay, in: Rectangle())
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 32, height: 32)
+                        .background(Theme.surface, in: Circle())
                         .contentShape(Rectangle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
@@ -406,16 +454,18 @@ struct MiniPlayer: View {
                 }
                 .padding(.leading, Theme.inset - 4)
                 .padding(.trailing, Theme.inset - 8)
-                .padding(.vertical, 6)
+                .padding(.vertical, 4)
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            // 新闻纸色通栏：顶部细线兼作进度线，刊红部分为已听进度。
-            .background(Theme.surface2)
-            .overlay(alignment: .top) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.clay, height: 3)
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(alignment: .bottom) {
+                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
+                    .padding(.horizontal, 16)
                     .accessibilityHidden(true)
             }
+            .padding(.horizontal, 16).padding(.vertical, 4)
+            .background(Theme.surface)
         }
     }
     private var subtitle: String {

@@ -6,7 +6,7 @@ import UserNotifications
 /// 按日的总时长来自 `readingSeconds`（旧版本也有）；时段与排行来自 1.14 起记录的 `sessions`。
 struct StatsView: View {
     @EnvironmentObject var model: AppModel
-    /// 余白：阅读足迹与设置题录共用己页签；独立统计入口保持可用。
+    /// 我的概览与独立阅读统计共用数据；设置保留单独的导航层级。
     var ji = false
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @AppStorage(ReadingReminder.enabledKey) private var reminderEnabled = false
@@ -14,16 +14,16 @@ struct StatsView: View {
     @State private var reminderDraft = false
     @State private var reminderTime = Date()
     @State private var reminderDenied = false
-    @AppStorage("app.appearance") private var appearance = "system"
     @State private var period: Period = .day
     @State private var offset = 0
     @State private var editingGoal = false
     @State private var goalDraft = 30
     @State private var export: ExportedBook?
     @State private var settingsRoute: SettingsDestination?
-    @State private var showingImportHub = false
     @State private var showingCalendar = false
-    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 52
+    @State private var showingStats = false
+    @State private var showingSettings = false
+    @ScaledMetric(relativeTo: .largeTitle) private var durationSize = 36
     @Environment(\.dynamicTypeSize) private var typeSize
     private var summaryLayout: AnyLayout {
         typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 14))
@@ -58,73 +58,40 @@ struct StatsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack(alignment: .center, spacing: 8) {
-                    PageMasthead(title: "阅读足迹", subtitle: "把时间，留给想读的那一页。", kicker: "TINGYE / YOU", issue: "\(Calendar.current.component(.year, from: Date())) · W\(calendar.component(.weekOfYear, from: Date()))")
-                    Button("日历") { showingCalendar = true }
-                        .font(.subheadline.weight(.medium))
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("stats.calendar")
-                    Button("目标") { editGoal() }
-                        .font(.subheadline.weight(.medium))
-                        .frame(minHeight: 44)
-                    Menu {
-                        Button { exportStats() } label: { Label("导出全部阅读数据", systemImage: Icon.share) }
-                    } label: {
-                        ThemeIcon(symbol: Icon.more, size: 22).frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel("更多阅读数据操作")
-                }
-                .font(.subheadline).foregroundStyle(Theme.ink2)
-                .padding(.bottom, -14)
-                Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
-                // 区间切换：2pt 墨框分段，选中实心墨底
-                HStack(spacing: 0) {
-                    ForEach(Period.allCases) { item in
-                        Button { period = item } label: {
-                            Text(L(item.rawValue)).font(.subheadline.weight(period == item ? .bold : .medium))
-                                .foregroundStyle(period == item ? Theme.onInk : Theme.ink)
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .background(period == item ? Theme.ink : .clear)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(period == item ? .isSelected : [])
-                        .accessibilityLabel("按" + item.rawValue + "查看")
-                    }
-                }
-                .overlay { Rectangle().strokeBorder(Theme.rulePaint, lineWidth: 2) }
-                .onChange(of: period) { _, _ in offset = 0 }
-                if period != .all { periodNavigation }
-                header
-                chart
-                if period == .day && offset == 0 { goalCard }
-                if ji { settingsSection }
-                if period == .day && offset == 0 { DailyQuoteCard() }
-                sessionsCard
-                ranking
-                overview
+            VStack(alignment: .leading, spacing: 20) {
+                if ji { profileContent }
+                else { statisticsContent }
             }
             .padding(.horizontal, Theme.inset)
             .padding(.top, 12).padding(.bottom, 32)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
         .paperBackground()
-        .navigationTitle(ji ? "己" : "足迹")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle(ji ? "我的" : "阅读足迹")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar(ji ? .hidden : .visible, for: .navigationBar)
+        .navigationDestination(isPresented: $showingStats) {
+            StatsView().environmentObject(model)
+                .toolbar(.hidden, for: .tabBar)
+        }
+        .navigationDestination(isPresented: $showingSettings) {
+            SettingsDirectoryView().environmentObject(model)
+                .toolbar(.visible, for: .navigationBar)
+                .toolbar(.hidden, for: .tabBar)
+        }
         .navigationDestination(item: $settingsRoute) { route in
             settingsDestinationView(route)
                 .toolbar(.visible, for: .navigationBar)
                 .toolbar(.hidden, for: .tabBar)
         }
-        .sheet(isPresented: $showingImportHub) { ImportHubView().environmentObject(model).tint(Theme.accent) }
         #if DEBUG
         .task {
             if let screen = UIReview.screen, settingsRoute == nil {
                 if screen == "appearance" { settingsRoute = .appearance }
                 else if screen == "backup" { settingsRoute = .backup }
-                else if screen == "profile" { settingsRoute = .profile }
+                else if screen == "privacy" { settingsRoute = .profile }
+                else if screen == "settings" { showingSettings = true }
+                else if screen == "stats-detail" && ji { showingStats = true }
             }
         }
         #endif
@@ -136,35 +103,139 @@ struct StatsView: View {
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
     }
 
+    private var profileContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("我的").scaledFont(28, weight: .bold, relativeTo: .title)
+                Spacer()
+                Button { showingSettings = true } label: {
+                    ThemeIcon(symbol: Icon.settings, size: 22).frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("设置")
+                .accessibilityIdentifier("profile.settings")
+            }
+            Text("在每一天，留下阅读的痕迹。")
+                .font(.caption).foregroundStyle(Theme.ink2)
+            monthlyFootprint
+            profileEntry("阅读足迹", value: "查看统计") { showingStats = true }
+                .accessibilityIdentifier("profile.stats")
+            profileEntry("我的书摘", value: "\(model.noteCount) 条") { settingsRoute = .notes }
+                .accessibilityIdentifier("profile.notes")
+            if model.visibleEntries.contains(where: { $0.local && !$0.isComic }) {
+                DailyQuoteCard(compact: true)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("今日摘句").font(.caption2.weight(.medium))
+                    Text("把日子过慢一点，\n让喜欢的文字多停留一会儿。")
+                        .font(Theme.serifSemibold(23, relativeTo: .title2)).lineSpacing(7)
+                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(Theme.onWarm)
+                }
+                .foregroundStyle(Theme.onWarm)
+                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            profileEntry("设置", value: "阅读 · 声音 · 数据") { showingSettings = true }
+            Text("无需账号，你的书留在你的设备。")
+                .font(.caption).foregroundStyle(Theme.ink2)
+        }
+        .foregroundStyle(Theme.ink)
+    }
+
+    private var monthlyFootprint: some View {
+        let currentMonth = calendar.dateInterval(of: .month, for: Date())
+        let seconds = model.readingSeconds.reduce(0.0) { total, item in
+            guard let date = Self.date(fromKey: item.key), currentMonth?.contains(date) == true else { return total }
+            return total + item.value
+        }
+        let finished = model.visibleEntries.filter { $0.started && $0.readFraction >= 0.995 }.count
+        let streak = AppModel.readingStreak(model.readingSeconds).current
+        return Button { showingStats = true } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("这个月，读听了").font(.caption)
+                Text(Self.preciseDuration(seconds)).scaledFont(36, weight: .bold, relativeTo: .largeTitle)
+                    .minimumScaleFactor(0.6).lineLimit(1).monospacedDigit()
+                ViewThatFits(in: .horizontal) {
+                    HStack { Text("累计读完 \(finished) 本"); Spacer(); Text("连续阅读 \(streak) 天") }
+                    VStack(alignment: .leading, spacing: 6) { Text("累计读完 \(finished) 本"); Text("连续阅读 \(streak) 天") }
+                }
+                .font(.caption)
+            }
+            .foregroundStyle(Theme.onAccent)
+            .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("查看完整阅读统计")
+    }
+
+    private func profileEntry(_ title: String, value: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                Spacer(minLength: 8)
+                Text(value).font(.caption).foregroundStyle(Theme.ink2)
+                ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink2)
+            }
+            .padding(16).frame(maxWidth: .infinity, minHeight: 56)
+            .background(Theme.surface)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var statisticsContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if period != .all { periodNavigation }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Period.allCases) { item in
+                        Button { period = item } label: {
+                            Text(L(item.rawValue)).font(.caption.weight(.medium))
+                                .foregroundStyle(period == item ? Theme.onAccent : Theme.ink2)
+                                .padding(.horizontal, 16).frame(minHeight: 40)
+                                .background(period == item ? Theme.accent : Theme.surface2, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(period == item ? .isSelected : [])
+                        .accessibilityLabel("按" + item.rawValue + "查看")
+                    }
+                }
+            }
+            .onChange(of: period) { _, _ in offset = 0 }
+            VStack(alignment: .leading, spacing: 14) { header; chart }
+                .padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            goalCard
+            sessionsCard
+            Button("导出阅读记录") { exportStats() }
+                .buttonStyle(SecondaryButtonStyle(height: 50))
+            ranking
+            overview
+        }
+    }
+
+    private static func preciseDuration(_ seconds: Double) -> String {
+        let minutes = max(0, Int(seconds / 60))
+        return minutes >= 60 ? "\(minutes / 60) 小时 \(minutes % 60) 分" : "\(minutes) 分钟"
+    }
+
     // MARK: 头部：总时长 + 区间与前后切换
 
     private var header: some View {
         let reading = periodSessions.filter { !$0.listening }.reduce(0) { $0 + $1.seconds }
         let listening = periodSessions.filter(\.listening).reduce(0) { $0 + $1.seconds }
         let unclassified = max(0, totalSeconds - reading - listening)
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(period == .day && offset == 0 ? "今天 · 留给阅读的时间" : "留给阅读的时间")
-                .font(Theme.kicker).tracking(1.5).foregroundStyle(Theme.accent)
-            // 封面大数字：黑体特粗 + 下压刊红粗杠
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text(Self.durationNumber(totalSeconds))
-                        .font(.system(size: durationSize * 1.9, weight: .black)).monospacedDigit()
-                        .minimumScaleFactor(0.5).lineLimit(1)
-                    Text(Self.durationUnit(totalSeconds)).font(.body.weight(.semibold)).foregroundStyle(Theme.ink2)
-                }
-                Rectangle().fill(Theme.clay).frame(width: 96, height: 6).accessibilityHidden(true)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            .foregroundStyle(Theme.ink).accessibilityElement(children: .combine)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(period == .day && offset == 0 ? "今天读听时长" : "本期读听时长")
+                .font(.caption).foregroundStyle(Theme.ink2)
+            Text(Self.preciseDuration(totalSeconds))
+                .font(.system(size: durationSize, weight: .bold)).monospacedDigit()
+                .minimumScaleFactor(0.6).lineLimit(1)
+                .foregroundStyle(Theme.ink)
             summaryLayout {
-                Label { Text("阅读 \(Int(reading / 60)) 分钟") } icon: { Rectangle().fill(Theme.ink).frame(width: 8, height: 8) }
-                    .foregroundStyle(Theme.ink)
-                Label { Text("听书 \(Int(listening / 60)) 分钟") } icon: { Rectangle().fill(Theme.clay).frame(width: 8, height: 8) }
-                    .foregroundStyle(Theme.accent)
+                Text("阅读 " + Self.preciseDuration(reading))
+                Text("听书 " + Self.preciseDuration(listening))
             }
-            .font(.subheadline)
-            .labelStyle(TightLabelStyle())
+            .font(.caption).foregroundStyle(Theme.ink2)
             if unclassified >= 60 {
                 Text("另有 \(Int(unclassified / 60)) 分钟旧版记录未区分阅读与听书")
                     .font(.caption2).foregroundStyle(Theme.ink2)
@@ -229,7 +300,7 @@ struct StatsView: View {
         let ids = Set(periodSessions.map(\.bookID))
         let finished = model.entries.filter { $0.started && $0.readFraction >= 0.995 }.count
         return VStack(alignment: .leading, spacing: 16) {
-            SectionTitle(title: "阅读足迹", number: "05")
+            SectionTitle(title: "阅读概览")
             Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 18) {
                 GridRow {
                     metric("本期在读", period == .all ? model.entries.filter(\.started).count : ids.count, "本", icon: Icon.read)
@@ -270,26 +341,29 @@ struct StatsView: View {
     private var goalCard: some View {
         let today = model.readingSeconds[AppModel.dayKey(Date())] ?? 0
         let fraction = min(1, today / Double(max(1, goalMinutes) * 60))
-        let remaining = max(0, goalMinutes - Int(today / 60))
-        return Button { editGoal() } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle(title: "每日目标", number: "02")
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(Int(today / 60))").font(Theme.display(34, relativeTo: .title)).monospacedDigit()
-                    Text("/ \(goalMinutes) 分钟").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.ink2)
-                    Spacer(minLength: 4)
-                    Text(fraction >= 1 ? "已完成 ✓" : "还差 \(remaining) 分钟")
-                        .font(.system(size: 14, weight: .medium)).foregroundStyle(fraction >= 1 ? Theme.accent : Theme.ink2)
-                }
-                .foregroundStyle(Theme.ink)
-                ProgressBar(value: fraction, track: Theme.line, tint: Theme.clay, height: 6)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("每日目标").scaledFont(20, weight: .bold, relativeTo: .title3)
+                Spacer()
+                Button("修改") { editGoal() }.font(.caption).frame(minHeight: 44)
             }
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
+            Button { editGoal() } label: {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("今天 \(Int(today / 60)) / \(goalMinutes) 分钟").font(.subheadline.weight(.medium))
+                        Spacer(minLength: 8)
+                        Text(fraction >= 1 ? "已完成 ✓" : "\(Int(fraction * 100))%")
+                            .font(.caption).monospacedDigit()
+                    }
+                    ProgressBar(value: fraction, track: Theme.line, tint: Theme.accent, height: 4)
+                }
+                .foregroundStyle(Theme.onWarm)
+                .padding(16).background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("每日目标 \(goalMinutes) 分钟，已读 \(Int(today / 60)) 分钟")
+            .accessibilityHint("轻点调整每日目标")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("每日目标 \(goalMinutes) 分钟，已读 \(Int(today / 60)) 分钟")
-        .accessibilityHint("轻点调整每日目标")
     }
 
     private func saveGoal() {
@@ -375,15 +449,15 @@ struct StatsView: View {
         }()
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .lastTextBaseline) {
-                SectionTitle(title: "阅读节奏", number: "01")
+                Text("阅读节奏").font(.caption.weight(.medium)).foregroundStyle(Theme.ink2)
                 Text(period == .day ? (offset == 0 ? "本周 · 分钟" : "所在周 · 分钟") : unit == .day ? "分钟 / 天" : "分钟 / 月")
                     .font(.caption2).foregroundStyle(Theme.ink2)
                     .fixedSize()
             }
             Chart(points, id: \.date) { point in
                 BarMark(x: .value("日期", point.date, unit: unit), y: .value("分钟", point.minutes))
-                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.clay : Theme.ink.opacity(0.18))
-                    .cornerRadius(6)
+                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.accent : Theme.accentSoft)
+                    .cornerRadius(8)
             }
             .chartXScale(domain: displayed.start...displayed.end)
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
@@ -408,7 +482,13 @@ struct StatsView: View {
         let list = periodSessions.sorted { $0.start > $1.start }
         if period == .day || period == .week {
             VStack(alignment: .leading, spacing: 0) {
-                SectionTitle(title: "逐次记录", number: "03").padding(.bottom, 6)
+                HStack {
+                    Text("逐次记录").scaledFont(20, weight: .bold, relativeTo: .title3)
+                    Spacer()
+                    Button("查看日历") { showingCalendar = true }
+                        .font(.caption).frame(minHeight: 44)
+                        .accessibilityIdentifier("stats.calendar")
+                }.padding(.bottom, 6)
                 if list.isEmpty {
                     Label("开始阅读或听书后，这里会留下记录。", systemImage: Icon.duration)
                         .font(.footnote).foregroundStyle(Theme.ink2)
@@ -454,7 +534,7 @@ struct StatsView: View {
         let rows = totals.sorted { $0.value.seconds > $1.value.seconds }.prefix(10)
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                SectionTitle(title: "与这些书相伴", number: "04")
+                SectionTitle(title: "与这些书相伴")
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.key) { index, row in
                         let entry = model.entries.first { $0.id == row.key }
@@ -472,62 +552,6 @@ struct StatsView: View {
                 }
             }
         }
-    }
-
-    // MARK: 己 · 设置题录清单
-
-    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
-
-    private var settingsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(Theme.rulePaint).frame(height: Theme.ruleHeavy).accessibilityHidden(true)
-            SectionTitle(text: "设置")
-                .frame(minHeight: 44)
-            settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
-                .accessibilityIdentifier("profile.reading")
-            settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
-            settingsEntry(icon: Icon.voice, title: "声音与朗读", subtitle: "语音服务、音色与朗读设置") { settingsRoute = .voice }
-            settingsEntry(icon: Icon.appearance, title: "外观模式", value: appearanceName) { settingsRoute = .appearance }
-                .accessibilityIdentifier("profile.appearance")
-            settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
-                .accessibilityIdentifier("profile.general")
-            settingsEntry(icon: Icon.list, title: "菜单", subtitle: "选中文字后面板的顺序与显示") { settingsRoute = .menu }
-                .accessibilityIdentifier("profile.menu")
-            settingsEntry(icon: Icon.contents, title: "TXT 分章规则", subtitle: "自定义正则与章节最大字数") { settingsRoute = .txtRules }
-                .accessibilityIdentifier("profile.txtRules")
-            settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
-            settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
-                .accessibilityIdentifier("profile.backup")
-            settingsEntry(icon: Icon.highlight, title: "全部书摘与笔记", value: "\(model.noteCount) 条") { settingsRoute = .notes }
-            settingsEntry(icon: Icon.server, title: "空间整理", subtitle: "查看占用、清理缓存、修复书库索引") { settingsRoute = .storage }
-                .accessibilityIdentifier("profile.storage")
-            settingsEntry(icon: Icon.settings, title: "更多设置", subtitle: "应用锁、隐藏书籍、隐私与关于") { settingsRoute = .profile }
-        }
-        .padding(.horizontal, 16).padding(.bottom, 10)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .padding(.top, 8)
-    }
-
-    private func settingsEntry(icon: String, title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ThemeIcon(symbol: icon, size: 22, weight: .medium)
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 28, height: 28)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                    if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
-                ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
-            }
-            .frame(minHeight: 56)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressButtonStyle(scale: 0.99))
-        .overlay(alignment: .bottom) { RowDivider() }
     }
 
     // MARK: 工具
@@ -561,6 +585,78 @@ struct StatsView: View {
             export = ExportedBook(url: url)
         } catch { model.message = error.localizedDescription }
     }
+}
+
+/// 设置目录独立持有下一层路由，返回外观或阅读排版时仍停留在目录。
+/// 不能复用「我的」的 destination state，否则 SwiftUI 会替换设置目录这一层。
+private struct SettingsDirectoryView: View {
+    @EnvironmentObject var model: AppModel
+    @AppStorage("app.appearance") private var appearance = "system"
+    @State private var settingsRoute: SettingsDestination?
+    @State private var showingImportHub = false
+
+    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
+
+    var body: some View {
+        List {
+            Section {
+                settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
+                    .accessibilityIdentifier("profile.reading")
+                settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
+                settingsEntry(icon: Icon.voice, title: "声音与朗读", value: model.player.voiceLabel) { settingsRoute = .voice }
+                settingsEntry(icon: Icon.appearance, title: "外观", value: appearanceName) { settingsRoute = .appearance }
+                    .accessibilityIdentifier("profile.appearance")
+            } header: { Text("阅读与聆听") }
+            .listRowBackground(Theme.surface)
+            Section {
+                settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
+                    .accessibilityIdentifier("profile.general")
+                settingsEntry(icon: Icon.list, title: "菜单", subtitle: "选中文字后的操作顺序与显示") { settingsRoute = .menu }
+                    .accessibilityIdentifier("profile.menu")
+                settingsEntry(icon: Icon.contents, title: "TXT 分章规则", subtitle: "自定义规则与章节最大字数") { settingsRoute = .txtRules }
+                    .accessibilityIdentifier("profile.txtRules")
+            } header: { Text("通用与高级") }
+            .listRowBackground(Theme.surface)
+            Section {
+                settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
+                settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
+                    .accessibilityIdentifier("profile.backup")
+                settingsEntry(icon: Icon.server, title: "空间整理", subtitle: "查看占用、清理缓存与修复索引") { settingsRoute = .storage }
+                    .accessibilityIdentifier("profile.storage")
+                settingsEntry(icon: Icon.settings, title: "隐私与关于", subtitle: "应用锁、隐藏书籍、隐私与版本") { settingsRoute = .profile }
+            } header: { Text("数据与隐私") } footer: { Text("听页 · 书籍保存在本机") }
+            .listRowBackground(Theme.surface)
+        }
+        .listStyle(.insetGrouped).scrollContentBackground(.hidden)
+        .background(Theme.bg).tint(Theme.accent)
+        .navigationTitle("设置").navigationBarTitleDisplayMode(.large)
+        .navigationDestination(item: $settingsRoute) { route in
+            settingsDestinationView(route)
+                .toolbar(.visible, for: .navigationBar)
+                .toolbar(.hidden, for: .tabBar)
+        }
+        .sheet(isPresented: $showingImportHub) {
+            ImportHubView().environmentObject(model).tint(Theme.accent)
+        }
+    }
+
+    private func settingsEntry(icon: String, title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                    if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+                ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
+            }
+            .frame(minHeight: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressButtonStyle(scale: 0.99))
+    }
+
 }
 
 /// 图例标签：方块与文字紧贴。

@@ -9,7 +9,14 @@
       "canvasData": {
         "x": 0,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 955,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-14d8b2ce",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/home.html",
@@ -54,8 +61,15 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 0,
-        "y": 760,
-        "group": 0
+        "y": 692,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-9f9077d3",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/library.html",
@@ -100,7 +114,14 @@
       "canvasData": {
         "x": 169,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1326,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-b1898ac8",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/book-detail.html",
@@ -133,7 +154,14 @@
       "canvasData": {
         "x": 338,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1821,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-b2a0f864",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/reader.html",
@@ -161,7 +189,14 @@
       "canvasData": {
         "x": 507,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-8e1e78b3",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/player.html",
@@ -183,8 +218,15 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 0,
-        "y": 1168,
-        "group": 0
+        "y": 1038,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1090,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-e4835b61",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/profile.html",
@@ -217,8 +259,15 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 169,
-        "y": 1168,
-        "group": 0
+        "y": 1038,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 962,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-d40954e6",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/settings.html",
@@ -240,8 +289,15 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 169,
-        "y": 760,
-        "group": 0
+        "y": 692,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1024,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-3a2efef5",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/import.html",
@@ -263,8 +319,15 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 0,
-        "y": 388,
-        "group": 0
+        "y": 346,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-4b3448e8",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/search.html",
@@ -291,12 +354,163 @@
       "createdAt": 1792613066000,
       "canvasData": {
         "x": 0,
-        "y": 1595,
-        "group": 0
+        "y": 1384,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1837,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-5644887c",
+          "measuredAt": 1793291107879
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/icon-board.html",
         "interactions": []
+      }
+    },
+    {
+      "id": "image-001",
+      "title": "v25 预览 · 读·首页 日间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094662,
+      "canvasData": {
+        "x": 0,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1170,
+          "height": 2532
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-now-light.png"
+      }
+    },
+    {
+      "id": "image-002",
+      "title": "v25 预览 · 书架 日间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094663,
+      "canvasData": {
+        "x": 169,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1170,
+          "height": 2532
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-shelf-light.png"
+      }
+    },
+    {
+      "id": "image-003",
+      "title": "v25 预览 · 听书播放器 日间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094664,
+      "canvasData": {
+        "x": 338,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1170,
+          "height": 2532
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-player-light.png"
+      }
+    },
+    {
+      "id": "image-004",
+      "title": "v25 预览 · 读·首页 夜间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094665,
+      "canvasData": {
+        "x": 507,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1170,
+          "height": 2532
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-now-dark.png"
+      }
+    },
+    {
+      "id": "image-005",
+      "title": "v25 预览 · 听书播放器 夜间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094666,
+      "canvasData": {
+        "x": 676,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1170,
+          "height": 2532
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-player-dark.png"
+      }
+    },
+    {
+      "id": "image-006",
+      "title": "v25 图标 · 日间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094667,
+      "canvasData": {
+        "x": 845,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-icon-light.png"
+      }
+    },
+    {
+      "id": "image-007",
+      "title": "v25 图标 · 夜间",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094668,
+      "canvasData": {
+        "x": 1014,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-icon-dark.png"
+      }
+    },
+    {
+      "id": "image-008",
+      "title": "v25 图标 · 着色",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1792716094669,
+      "canvasData": {
+        "x": 1183,
+        "y": 1730,
+        "naturalSize": {
+          "width": 1024,
+          "height": 1024
+        }
+      },
+      "devMetadata": {
+        "imageSrc": "assets/v25-icon-tinted.png"
       }
     }
   ],

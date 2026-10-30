@@ -1,0 +1,69 @@
+{
+  "root": {
+    "nodeId": "gen-root",
+    "kind": "project-shell",
+    "pageIds": ["page-now", "page-shelf", "page-profile", "page-reader", "page-app-icon"],
+    "output": "",
+    "sharedRegions": ["brand tokens", "typography", "mobile bottom navigation on primary tabs"],
+    "privateRegions": [],
+    "mutableSlots": ["activeNavItem"],
+    "status": "generated",
+    "children": [
+      {
+        "nodeId": "gen-page-now",
+        "kind": "page-leaf",
+        "pageIds": ["page-now"],
+        "output": "pages/now.html",
+        "sharedRegions": ["mobile bottom navigation"],
+        "privateRegions": ["continue reading", "recent books", "reading summary"],
+        "mutableSlots": ["activeNavItem=now"],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-shelf",
+        "kind": "page-leaf",
+        "pageIds": ["page-shelf"],
+        "output": "pages/shelf.html",
+        "sharedRegions": ["mobile bottom navigation"],
+        "privateRegions": ["library header", "search", "filters", "book list"],
+        "mutableSlots": ["activeNavItem=shelf"],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-profile",
+        "kind": "page-leaf",
+        "pageIds": ["page-profile"],
+        "output": "pages/profile.html",
+        "sharedRegions": ["mobile bottom navigation"],
+        "privateRegions": ["reading overview", "reading footprint", "settings list"],
+        "mutableSlots": ["activeNavItem=profile"],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-reader",
+        "kind": "page-leaf",
+        "pageIds": ["page-reader"],
+        "output": "pages/reader.html",
+        "sharedRegions": [],
+        "privateRegions": ["reader chrome", "chapter body", "reading tools"],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-app-icon",
+        "kind": "page-leaf",
+        "pageIds": ["page-app-icon"],
+        "output": "pages/app-icon.html",
+        "sharedRegions": [],
+        "privateRegions": ["app icon master", "appearance variants", "small size checks"],
+        "mutableSlots": [],
+        "status": "generated",
+        "children": []
+      }
+    ]
+  }
+}

@@ -53,29 +53,34 @@ struct GeneralSettingsView: View {
                 }
                 .accessibilityIdentifier("general.language")
             } footer: { Text("支持简体中文、繁體中文、English、日本語。在系统设置的「听页 › 语言」中切换。") }
+            .listRowBackground(Theme.surface)
             Section {
                 Toggle("启动时自动继续上次阅读", isOn: $resumeOnLaunch)
                     .accessibilityIdentifier("general.resumeOnLaunch")
             } header: { Text("首页") } footer: { Text("打开 App 时直接回到最近阅读的那本书与位置。") }
+            .listRowBackground(Theme.surface)
             Section {
                 Toggle("达成每日目标时提示", isOn: $goalNotice)
             } header: { Text("阅读目标") } footer: { Text("在 App 内显示提示；后台听书时以通知提醒。") }
+            .listRowBackground(Theme.surface)
             Section {
                 Picker("默认阅读方式", selection: $comicMode) {
                     ForEach(ComicPreset.modes, id: \.value) { Text($0.label).tag($0.value) }
                 }
                 .accessibilityIdentifier("general.comicMode")
             } header: { Text("漫画") } footer: { Text("用于还没单独设置过的漫画；在漫画里切换方向只影响那一部。") }
+            .listRowBackground(Theme.surface)
             Section {
                 Toggle("震动反馈", isOn: $haptics)
                 Toggle("阅读时自动隐藏 Home 指示条", isOn: $hideHomeIndicator)
                 Toggle("阅读与听书时保持屏幕常亮", isOn: $keepAwake)
             } header: { Text("交互") } footer: { Text("震动反馈只在部分按钮和翻页时出现；屏幕常亮只在阅读与听书页面生效，离开即恢复系统休眠。") }
+            .listRowBackground(Theme.surface)
         }
-        .tint(Theme.clay)
+        .tint(Theme.accent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle("通用设置")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
     }
 }

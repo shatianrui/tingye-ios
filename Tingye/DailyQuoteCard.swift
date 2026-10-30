@@ -8,6 +8,7 @@ struct DailyQuoteCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 兼容历史调用；专注版不显示装饰编号。
     var number: String? = nil
+    var compact = false
     @State private var quote: DailyQuote?
 
     /// 每天固定轮换一本，而不是总是第一本。
@@ -21,10 +22,7 @@ struct DailyQuoteCard: View {
     var body: some View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
-                SectionTitle(text: "今日一句", number: number)
-                Text("“").font(Theme.serifBold(52, relativeTo: .largeTitle)).foregroundStyle(Theme.accent)
-                    .frame(height: 30, alignment: .top)
-                    .accessibilityHidden(true)
+                Text("今日摘句").font(.caption2.weight(.medium)).foregroundStyle(Theme.onWarm)
                 Group {
                     if let quote, quote.entryID == entry.id {
                         Text(quote.text)
@@ -32,40 +30,40 @@ struct DailyQuoteCard: View {
                         Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
                     }
                 }
-                .font(Theme.serif(20, relativeTo: .title3))
-                .serifEmbolden(20)
+                .font(Theme.serifSemibold(23, relativeTo: .title2))
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.onWarm)
                 .changeEffect(.shine(duration: 1.0), value: quote == nil, isEnabled: !reduceMotion)
                 Text("—— " + sourceLine(entry))
                     .font(Theme.serif(13, relativeTo: .caption))
-                    .foregroundStyle(Theme.ink2)
+                    .foregroundStyle(Theme.onWarm)
                     .lineLimit(2)
-                HStack(spacing: 10) {
-                    Button {
-                        Haptics.light()
-                        if let quote, quote.entryID == entry.id { model.open(entry, chapter: quote.chapter, position: quote.position) }
-                        else { model.open(entry) }
-                    } label: { Text(quote?.entryID == entry.id ? "从这句读" : "开始阅读") }
-                    .buttonStyle(PrimaryButtonStyle(height: 44))
-                    Button { model.listen(entry.id) } label: { Text("听这本书") }
-                    .buttonStyle(SecondaryButtonStyle(height: 44))
-                }
-                .padding(.top, 2)
-                if let quote, quote.entryID == entry.id {
-                    QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
-                        HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享摘句卡片") }
-                            .font(.footnote.weight(.medium)).foregroundStyle(Theme.accent)
-                            .frame(minHeight: 44)
+                if !compact {
+                    HStack(spacing: 10) {
+                        Button {
+                            Haptics.light()
+                            if let quote, quote.entryID == entry.id { model.open(entry, chapter: quote.chapter, position: quote.position) }
+                            else { model.open(entry) }
+                        } label: { Text(quote?.entryID == entry.id ? "从这句读" : "开始阅读") }
+                        .buttonStyle(PrimaryButtonStyle(height: 44))
+                        Button { model.listen(entry.id) } label: { Text("听这本书") }
+                        .buttonStyle(SecondaryButtonStyle(height: 44))
                     }
-                    .accessibilityIdentifier("quote.share")
+                    .padding(.top, 2)
+                    if let quote, quote.entryID == entry.id {
+                        QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
+                            HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享摘句卡片").underline() }
+                                .font(.footnote.weight(.medium)).foregroundStyle(Theme.onWarm)
+                                .frame(minHeight: 44)
+                        }
+                        .accessibilityIdentifier("quote.share")
+                    }
                 }
             }
-            .padding(16)
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // 刊内摘句框：浅灰平底、零圆角，与封面卡同一语汇
-            .background(Theme.surface2)
+            .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }
@@ -74,6 +72,10 @@ struct DailyQuoteCard: View {
                         Label("分享摘句卡片", systemImage: Icon.share)
                     }
                 }
+            }
+            .accessibilityAction(named: "从这句读") {
+                if let quote, quote.entryID == entry.id { model.open(entry, chapter: quote.chapter, position: quote.position) }
+                else { model.open(entry) }
             }
             .task(id: entry.id + AppModel.dayKey(Date())) { await loadQuote(entry) }
         }
@@ -137,29 +139,28 @@ struct QuoteShareCard: View {
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
             }
             .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
-            .foregroundStyle(Color(hex: 0x1F1F1F))
-            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 4).padding(.top, 10)
-            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 1).padding(.top, 4)
+            .foregroundStyle(Color(hex: 0x17233A))
+            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6).padding(.top, 20)
             Spacer(minLength: 48)
             Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
                 .frame(height: 80, alignment: .top).offset(x: -6)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x1F1F1F))
+                .foregroundStyle(Color(hex: 0x17233A))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 48)
-            Rectangle().fill(Theme.clay).frame(width: 120, height: 12)
-            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x1F1F1F)).padding(.top, 20)
+            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6)
+            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x17233A)).padding(.top, 20)
             let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
             if !byline.isEmpty {
-                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x666666)).padding(.top, 6)
+                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x647084)).padding(.top, 6)
             }
-            Rectangle().fill(Color(hex: 0x1F1F1F)).frame(height: 1).padding(.top, 28)
+            Rectangle().fill(Color(hex: 0x17233A)).frame(height: 1).padding(.top, 28)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFFFFFF))
+        .background(Color(hex: 0xFAF9F6))
         .environment(\.colorScheme, .light)
     }
 

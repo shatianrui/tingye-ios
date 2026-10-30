@@ -1569,30 +1569,30 @@
         }
       }
     },
-    "PDF 无法读取、已加密或超过 22 MB。": {
+    "PDF 无法读取或已加密。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The PDF can’t be read, is encrypted, or exceeds 22 MB."
+            "value": "The PDF can’t be read or is encrypted."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF を読み取れないか、暗号化されているか、22 MB を超えています。"
+            "value": "PDF を読み取れないか、暗号化されています。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF 无法读取、已加密或超过 22 MB。"
+            "value": "PDF 无法读取或已加密。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "PDF 無法讀取、已加密或超過 22 MB。"
+            "value": "PDF 無法讀取或已加密。"
           }
         }
       }
@@ -3865,30 +3865,30 @@
         }
       }
     },
-    "书籍格式无效，或超过 400 万字 / 3000 章限制。": {
+    "书籍格式无效。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invalid book format, or over the 4 million characters / 3000 chapters limit."
+            "value": "Invalid book format."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "本の形式が無効か、400 万字 / 3000 章の上限を超えています。"
+            "value": "本の形式が無効です。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书籍格式无效，或超过 400 万字 / 3000 章限制。"
+            "value": "书籍格式无效。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "書籍格式無效，或超過 400 萬字 / 3000 章限制。"
+            "value": "書籍格式無效。"
           }
         }
       }
@@ -4845,30 +4845,30 @@
         }
       }
     },
-    "传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；单个文件最大 100 MB。": {
+    "传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；文件大小不限。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stay on this page while transferring; the screen stays on. Leaving closes the service immediately. Each file up to 100 MB."
+            "value": "Stay on this page while transferring; the screen stays on. Leaving closes the service immediately. No fixed file size limit."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "転送中はこのページを開いたままにしてください（画面は点灯したままです）。離れるとすぐにサービスを終了します。1 ファイル最大 100 MB。"
+            "value": "転送中はこのページを開いたままにしてください（画面は点灯したままです）。離れるとすぐにサービスを終了します。ファイルサイズの固定上限はありません。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；单个文件最大 100 MB。"
+            "value": "传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；文件大小不限。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "傳書時請停留在此頁，屏幕會保持常亮。離開後服務立即關閉；單個文件最大 100 MB。"
+            "value": "傳書時請停留在此頁，屏幕會保持常亮。離開後服務立即關閉；文件大小不限。"
           }
         }
       }
@@ -14085,30 +14085,30 @@
         }
       }
     },
-    "文件为空或超过 100 MB": {
+    "文件为空": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The file is empty or exceeds 100 MB"
+            "value": "The file is empty"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ファイルが空か 100 MB を超えています"
+            "value": "ファイルが空です"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件为空或超过 100 MB"
+            "value": "文件为空"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件為空或超過 100 MB"
+            "value": "文件為空"
           }
         }
       }

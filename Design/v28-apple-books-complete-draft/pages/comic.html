@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漫画阅读</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+  <main class="comic-page">
+    <style id="critical-layout">
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--ty-surface-sunken);
+        color: var(--ty-foreground);
+        font-family: var(--ty-font-sans);
+      }
+      button, input, select { font: inherit; }
+      button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      button { cursor: pointer; }
+      .comic-shell {
+        width: 100%;
+        max-width: 640px;
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--ty-background);
+      }
+      .comic-shell svg { width: 20px; height: 20px; flex: none; stroke-width: 1.5; }
+      .topbar {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 8px;
+        min-height: 60px;
+        padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+        border-bottom: 1px solid var(--ty-hairline);
+      }
+      .topbar-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center; }
+      .icon-button, .chapter-row, .segment-button, .background-option {
+        border: 0;
+        background: transparent;
+        color: var(--ty-foreground);
+        transition: background-color 140ms cubic-bezier(.2,.8,.2,1), color 140ms cubic-bezier(.2,.8,.2,1), border-color 140ms cubic-bezier(.2,.8,.2,1), transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms cubic-bezier(.2,.8,.2,1);
+      }
+      .icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        border-radius: var(--ty-radius-md);
+        text-decoration: none;
+      }
+      .icon-button.end { justify-self: end; }
+      button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 2px solid var(--ty-ring);
+        outline-offset: 3px;
+      }
+      button:active, a:active { transform: translateY(1px); }
+      button:disabled { cursor: default; opacity: .38; }
+      .comic-content { padding: 24px 20px 0; }
+      .comic-heading { margin-bottom: 20px; }
+      .comic-heading h1 {
+        margin: 0;
+        font-size: 27px;
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: -.02em;
+        overflow-wrap: anywhere;
+      }
+      .comic-heading p { margin: 8px 0 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.5; }
+      .reading-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        padding: 12px 0;
+        border-top: 1px solid var(--ty-hairline);
+        border-bottom: 1px solid var(--ty-hairline);
+        color: var(--ty-muted-foreground);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .reading-status span { display: inline-flex; align-items: center; gap: 8px; }
+      .reading-status svg { width: 17px; height: 17px; }
+      .comic-spread { margin: 24px 0 0; }
+      .comic-spread > img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-sm);
+        background: var(--ty-surface-sunken);
+      }
+      .comic-spread figcaption { margin-top: 10px; color: var(--ty-muted-foreground); font-size: 12px; line-height: 1.5; }
+      .storyboards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        margin-top: 16px;
+        border: 1px solid var(--ty-hairline);
+        background: var(--ty-hairline);
+      }
+      .story-cell {
+        min-width: 0;
+        padding: 20px;
+        background: var(--ty-background);
+      }
+      .story-number { display: block; color: var(--ty-muted-foreground); font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+      .story-cell h2 { margin: 10px 0 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
+      .story-cell p { margin: 10px 0 0; font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+      .story-cell blockquote { margin: 16px 0 0; padding-left: 12px; border-left: 1px solid var(--ty-neutral-300); font-size: 15px; line-height: 1.8; }
+      .section-block { padding: 28px 0 0; }
+      .section-title { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+      .section-note { margin: 8px 0 0; color: var(--ty-muted-foreground); font-size: 13px; line-height: 1.6; }
+      .chapter-list { margin: 16px 0 0; padding: 0; border-top: 1px solid var(--ty-hairline); list-style: none; }
+      .chapter-list li { border-bottom: 1px solid var(--ty-hairline); }
+      .chapter-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        min-height: 64px;
+        padding: 12px 0;
+        text-align: left;
+      }
+      .chapter-name { min-width: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+      .chapter-name small { display: block; margin-top: 3px; color: var(--ty-muted-foreground); font-size: 12px; line-height: 1.5; }
+      .chapter-meta { display: inline-flex; align-items: center; gap: 8px; color: var(--ty-muted-foreground); font-size: 12px; white-space: nowrap; }
+      .chapter-row[aria-current="page"] .chapter-meta { color: var(--ty-foreground); }
+      .settings-group { margin-top: 20px; }
+      .settings-group + .settings-group { padding-top: 20px; border-top: 1px solid var(--ty-hairline); }
+      .setting-label { display: block; margin-bottom: 10px; font-size: 14px; font-weight: 600; line-height: 1.5; }
+      .segment-control {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+        padding: 4px;
+        border-radius: var(--ty-radius-md);
+        background: var(--ty-muted);
+      }
+      .segment-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 12px;
+        border-radius: var(--ty-radius-sm);
+        color: var(--ty-muted-foreground);
+        font-size: 14px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .segment-button[aria-pressed="true"] { background: var(--ty-background); color: var(--ty-foreground); box-shadow: var(--ty-shadow-hairline); }
+      .brightness-value { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+      .brightness-value output { color: var(--ty-muted-foreground); font-size: 14px; font-variant-numeric: tabular-nums; }
+      .brightness-slider { display: block; width: 100%; min-height: 44px; margin: 0; accent-color: var(--ty-primary); cursor: pointer; }
+      .background-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .background-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 8px;
+        border: 1px solid var(--ty-hairline);
+        border-radius: var(--ty-radius-md);
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .background-option[aria-pressed="true"] { border-color: var(--ty-foreground); }
+      .swatch { width: 16px; height: 16px; flex: none; border: 1px solid var(--ty-hairline); border-radius: var(--ty-radius-sm); }
+      .swatch.paper { background: var(--ty-neutral-0); }
+      .swatch.gray { background: var(--ty-neutral-100); }
+      .swatch.ink { background: var(--ty-neutral-950); }
+      .page-footer {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin-top: 28px;
+        padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--ty-hairline);
+        color: var(--ty-muted-foreground);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      @media (hover: hover) {
+        .icon-button:hover, .chapter-row:hover, .segment-button:hover, .background-option:hover { background: var(--ty-muted); }
+        .segment-button[aria-pressed="true"]:hover { background: var(--ty-background); }
+      }
+      @media (max-width: 430px) {
+        .storyboards { grid-template-columns: minmax(0, 1fr); }
+      }
+      @media (max-width: 350px) {
+        .comic-content { padding-right: 16px; padding-left: 16px; }
+        .page-footer { padding-right: 16px; padding-left: 16px; }
+        .comic-heading h1 { font-size: 24px; }
+        .background-options { grid-template-columns: minmax(0, 1fr); }
+        .background-option { justify-content: flex-start; padding-left: 16px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .icon-button, .chapter-row, .segment-button, .background-option, button, a { transition-duration: .01ms; }
+      }
+    </style>
+
+    <div class="comic-shell">
+      <header class="topbar" aria-label="漫画导航">
+        <button type="button" class="icon-button" data-dom-id="comic-back-detail" aria-label="返回漫画详情">
+          <i data-lucide="chevron-left" aria-hidden="true"></i>
+        </button>
+        <p class="topbar-title">漫画阅读</p>
+        <a href="#display-settings" class="icon-button end" aria-label="前往显示设置">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+        </a>
+      </header>
+
+      <div class="comic-content">
+        <header class="comic-heading">
+          <h1>夏日飞鸟</h1>
+          <p>《飞鸟集》漫画版 · 第一话 · 第 8 页</p>
+        </header>
+        <div class="reading-status" aria-label="漫画阅读状态">
+          <span><i data-lucide="panels-top-left" aria-hidden="true"></i>纵向 · 单页</span>
+          <span class="ty-numeric">8 / 36</span>
+        </div>
+
+        <figure class="comic-spread">
+          <img src="../assets/cover-birds.png" width="600" height="840" alt="《飞鸟集》漫画版封面，作为第一话卷首画页" fetchpriority="high" decoding="async">
+          <figcaption>卷首画页 · 夏日飞鸟来到窗前，故事由此展开</figcaption>
+          <div class="storyboards" aria-label="第一话分镜文字">
+            <section class="story-cell" aria-labelledby="panel-one">
+              <span class="story-number">分镜 01 · 远景</span>
+              <h2 id="panel-one">窗前</h2>
+              <p>夏天的飞鸟，飞到我的窗前唱歌，又飞去了。</p>
+              <blockquote>“歌声不必留下，夏天会记得。”</blockquote>
+            </section>
+            <section class="story-cell" aria-labelledby="panel-two">
+              <span class="story-number">分镜 02 · 近景</span>
+              <h2 id="panel-two">落叶</h2>
+              <p>秋天的黄叶，它们没有什么可唱，只叹息一声，飞落在那里。</p>
+              <blockquote>“等下一阵风，再告诉你远方。”</blockquote>
+            </section>
+          </div>
+        </figure>
+
+        <section class="section-block" aria-labelledby="chapter-title">
+          <h2 class="section-title" id="chapter-title">章节</h2>
+          <p class="section-note">共 12 话，当前阅读位置会自动保存。</p>
+          <ul class="chapter-list">
+            <li>
+              <button type="button" class="chapter-row" aria-current="page">
+                <span class="chapter-name">第一话 · 夏日飞鸟<small>36 页 · 阅读至第 8 页</small></span>
+                <span class="chapter-meta"><i data-lucide="book-open" aria-hidden="true"></i>当前</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="chapter-row">
+                <span class="chapter-name">第二话 · 流萤<small>32 页 · 约 12 分钟</small></span>
+                <span class="chapter-meta">未读<i data-lucide="chevron-right" aria-hidden="true"></i></span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="chapter-row">
+                <span class="chapter-name">第三话 · 群星<small>40 页 · 约 15 分钟</small></span>
+                <span class="chapter-meta">未读<i data-lucide="chevron-right" aria-hidden="true"></i></span>
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <section class="section-block" id="display-settings" aria-labelledby="settings-title">
+          <h2 class="section-title" id="settings-title">显示设置</h2>
+          <p class="section-note">设置只作用于漫画阅读，不改变文字书排版。</p>
+
+          <div class="settings-group">
+            <span class="setting-label" id="direction-label">阅读方向</span>
+            <div class="segment-control" role="group" aria-labelledby="direction-label">
+              <button type="button" class="segment-button" aria-pressed="true"><i data-lucide="move-vertical" aria-hidden="true"></i>纵向</button>
+              <button type="button" class="segment-button" aria-pressed="false"><i data-lucide="move-horizontal" aria-hidden="true"></i>横向</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <span class="setting-label" id="layout-label">页面布局</span>
+            <div class="segment-control" role="group" aria-labelledby="layout-label">
+              <button type="button" class="segment-button" aria-pressed="true"><i data-lucide="rectangle-vertical" aria-hidden="true"></i>单页</button>
+              <button type="button" class="segment-button" aria-pressed="false"><i data-lucide="columns-2" aria-hidden="true"></i>双页</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="brightness-value">
+              <label class="setting-label" for="comic-brightness">亮度</label>
+              <output for="comic-brightness">80%</output>
+            </div>
+            <input class="brightness-slider" id="comic-brightness" type="range" min="20" max="100" value="80" aria-label="漫画显示亮度">
+          </div>
+
+          <div class="settings-group">
+            <span class="setting-label" id="background-label">阅读背景</span>
+            <div class="background-options" role="group" aria-labelledby="background-label">
+              <button type="button" class="background-option" aria-pressed="true"><span class="swatch paper" aria-hidden="true"></span>纸白</button>
+              <button type="button" class="background-option" aria-pressed="false"><span class="swatch gray" aria-hidden="true"></span>浅灰</button>
+              <button type="button" class="background-option" aria-pressed="false"><span class="swatch ink" aria-hidden="true"></span>墨黑</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="page-footer">
+        <span>《飞鸟集》漫画版 · 共 12 话</span>
+        <span>第一话已读 22% · 设置已同步</span>
+      </footer>
+    </div>
+  </main>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

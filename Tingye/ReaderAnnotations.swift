@@ -94,9 +94,8 @@ struct ReaderSelection: Equatable {
 
 // MARK: - 选择面板
 
-/// 长按正文后浮在底部的玻璃面板：颜色、样式、动作。已有划线时显示它的颜色与样式，可直接改或删除。
+/// 长按正文后的圆角选段面板；保留颜色、样式与动作的可配置顺序。
 struct SelectionPanel: View {
-    @ScaledMetric(relativeTo: .body) private var uiScale: CGFloat = 1
     let text: String
     let existing: Highlight?
     let canExtendBack: Bool
@@ -147,7 +146,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("选段与标注").font(Theme.sans(18 * uiScale, weight: .medium))
+                Text("选段与标注").font(Theme.sans(18, weight: .medium))
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -166,12 +165,22 @@ struct SelectionPanel: View {
             }
             .buttonStyle(.plain)
             Text(text)
-                .font(Theme.serif(16)).lineLimit(3).lineSpacing(5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Picker("选段操作", selection: $tool) {
-                ForEach(tools, id: \.self) { Text($0.rawValue).tag($0) }
+                .font(Theme.serif(18, relativeTo: .body)).lineLimit(3).lineSpacing(7)
+                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(tools, id: \.self) { item in
+                        Button { tool = item } label: {
+                            Text(item.rawValue).font(.caption.weight(.medium))
+                                .foregroundStyle(tool == item ? paper : tint)
+                                .padding(.horizontal, 16).frame(minHeight: 44)
+                                .background(tool == item ? accent : tint.opacity(0.06), in: Capsule())
+                        }
+                        .buttonStyle(.plain).accessibilityAddTraits(tool == item ? .isSelected : [])
+                    }
+                }
             }
-            .pickerStyle(.segmented)
             Group {
                 switch tool {
                 case .mark: markTools
@@ -193,7 +202,7 @@ struct SelectionPanel: View {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(tint.opacity(0.06), in: Rectangle())
+                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
                         }
@@ -207,7 +216,7 @@ struct SelectionPanel: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(maxWidth: 520)
-        .glassSurface(in: Rectangle())
+        .background(paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var markTools: some View {
@@ -225,7 +234,7 @@ struct SelectionPanel: View {
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(chosenColor == item.key ? tint.opacity(0.06) : .clear, in: Rectangle())
+                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
@@ -241,7 +250,7 @@ struct SelectionPanel: View {
                         Label(title, systemImage: icon).font(.caption.weight(.medium))
                             .foregroundStyle(chosenStyle == style ? accent : tint)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Rectangle())
+                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
@@ -263,10 +272,10 @@ struct SelectionPanel: View {
                 ThemeIcon(symbol: icon, size: 20)
                 Text(L(title))
             }
-                .font(Theme.sans(15 * uiScale, weight: .medium))
-                .foregroundStyle(prominent ? accent : tint)
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .background(prominent ? accent.opacity(0.14) : tint.opacity(0.06), in: Rectangle())
+                .font(Theme.sans(15, weight: .medium))
+                .foregroundStyle(prominent ? paper : tint)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(prominent ? accent : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -283,39 +292,47 @@ struct NoteEditor: View {
     @FocusState private var focused: Bool
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(quote)
-                    .font(Theme.serif(15))
-                    .foregroundStyle(Theme.ink2)
-                    .lineLimit(4)
-                    .padding(.leading, 12)
-                    .overlay(alignment: .leading) { RoundedRectangle(cornerRadius: 1.5).fill(Theme.accent).frame(width: 3) }
-                TextEditor(text: $text)
-                    .focused($focused)
-                    .scrollContentBackground(.hidden)
-                    .padding(10)
-                    .background(Rectangle().fill(Theme.surface))
-                    .overlay {
-                        Rectangle()
-                            .strokeBorder(Theme.line, lineWidth: 0.6)
-                    }
-                    .overlay(alignment: .topLeading) {
-                        if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
-                    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("选中的原文").font(.caption).foregroundStyle(Theme.ink3)
+                    Text(quote)
+                        .font(Theme.serif(19, relativeTo: .body))
+                        .foregroundStyle(Theme.ink).lineSpacing(8)
+                        .lineLimit(6).padding(20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16))
+                    Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
+                    TextEditor(text: $text)
+                        .font(.body).foregroundStyle(Theme.ink)
+                        .focused($focused)
+                        .scrollContentBackground(.hidden)
+                        .padding(10).frame(minHeight: 180)
+                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .topLeading) {
+                            if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
+                        }
+                        .accessibilityLabel("我的想法")
+                    Button("保存笔记", action: save).buttonStyle(PrimaryButtonStyle(height: 50))
+                    Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle(height: 50))
+                }
+                .padding(24)
+                .frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
-            .padding(24)
-            .frame(maxWidth: 760).frame(maxWidth: .infinity)
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.bg)
             .navigationTitle("笔记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("保存") { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }.fontWeight(.semibold) }
+                ToolbarItem(placement: .confirmationAction) { Button("保存", action: save).fontWeight(.semibold) }
             }
             .onAppear { focused = true }
         }
-        .presentationDetents([.medium, .large])
+        .tint(Theme.accent)
+        .presentationDetents([.large])
     }
+    private func save() { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
+
 }
 
 // MARK: - 书摘列表
@@ -409,23 +426,23 @@ struct NoteRow: View {
                 Spacer()
                 Text(note.date.formatted(date: .abbreviated, time: .omitted))
             }
-            .font(.system(size: 11))
+            .font(.caption2)
             .foregroundStyle(Theme.ink3)
             Text(note.text)
-                .font(Theme.serif(15))
-                .lineSpacing(4)
+                .font(Theme.serif(17, relativeTo: .body))
+                .lineSpacing(6)
                 .foregroundStyle(Theme.ink)
                 .lineLimit(5)
                 .padding(.leading, 11)
                 .overlay(alignment: .leading) { RoundedRectangle(cornerRadius: 1.5).fill(ReaderMark.color(note.color)).frame(width: 2.5) }
             if let text = note.note {
                 Text(text)
-                    .font(.system(size: 13.5))
+                    .font(.subheadline)
                     .foregroundStyle(Theme.ink2)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.wash, in: Rectangle())
+                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
                     .padding(.top, 2)
             }
         }

@@ -6,8 +6,6 @@ import ZIPFoundation
 enum BookImporter {
     struct Imported: Sendable { let book: Book; var progress = ReadingProgress() }
     static func read(_ url: URL) throws -> Imported {
-        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size <= 100 * 1024 * 1024 else { throw ReaderError.message("文件超过 100 MB，请拆分导入。") }
         let title = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension.lowercased()
         if ext == "epub" { return Imported(book: try epub(url).validated()) }
@@ -16,7 +14,7 @@ enum BookImporter {
         if ["cbz", "zip"].contains(ext) { return Imported(book: try ComicImporter.book(url, title: title).validated()) }
         let data = try Data(contentsOf: url)
         if ext == "pdf" {
-            guard data.count <= 22 * 1024 * 1024, let document = PDFDocument(data: data), !document.isLocked, document.pageCount > 0 else { throw ReaderError.message("PDF 无法读取、已加密或超过 22 MB。") }
+            guard let document = PDFDocument(data: data), !document.isLocked, document.pageCount > 0 else { throw ReaderError.message("PDF 无法读取或已加密。") }
             let chapters = (0..<document.pageCount).map { Chapter(title: "第 \($0 + 1) 页", text: document.page(at: $0)?.string ?? "") }
             return Imported(book: try Book(title: title, format: "PDF", chapters: chapters, extras: ["pdf": .string(data.base64EncodedString())]).validated())
         }
@@ -186,22 +184,11 @@ enum BookImporter {
 
 final class SafeArchive {
     let archive: Archive
-    var extracted = 0
-    init(url: URL) throws {
-        archive = try Archive(url: url, accessMode: .read)
-        var count = 0, total: UInt64 = 0
-        for entry in archive {
-            count += 1; total += entry.uncompressedSize
-            guard count <= 20_000, total <= 130 * 1024 * 1024 else { throw ReaderError.message("压缩书籍解压后过大。") }
-        }
-    }
+    init(url: URL) throws { archive = try Archive(url: url, accessMode: .read) }
     func data(_ path: String) throws -> Data {
-        guard let entry = archive[path], entry.type == .file, entry.uncompressedSize <= 30 * 1024 * 1024 else { throw ReaderError.message("压缩书籍缺少资源或单个资源过大：\(path)") }
+        guard let entry = archive[path], entry.type == .file else { throw ReaderError.message("压缩书籍缺少资源：\(path)") }
         var data = Data()
-        _ = try archive.extract(entry) { chunk in
-            guard self.extracted + chunk.count <= 130 * 1024 * 1024 else { throw ReaderError.message("书籍资源超过大小限制。") }
-            self.extracted += chunk.count; data.append(chunk)
-        }
+        _ = try archive.extract(entry) { chunk in data.append(chunk) }
         return data
     }
 }

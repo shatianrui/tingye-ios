@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导入书籍</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+<style id="critical-layout">
+  *,*::before,*::after{box-sizing:border-box}html{background:var(--ty-surface-sunken)}body{margin:0;min-width:0;min-height:100vh;background:var(--ty-surface-sunken);color:var(--ty-foreground);font-family:var(--ty-font-sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  button,input{font:inherit}button,a,input{-webkit-tap-highlight-color:transparent}button{cursor:pointer}a{color:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ty-ring);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.45}svg{width:20px;height:20px;flex:0 0 auto;stroke-width:1.5}
+  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;clip-path:inset(50%);white-space:nowrap;border:0}
+  .board{width:100%;max-width:1400px;min-height:100vh;margin:0 auto;padding:32px 20px 0}.board-heading{max-width:720px;margin:0 0 28px}.board-heading h1{margin:0;font-size:30px;font-weight:700;line-height:1.22;letter-spacing:-.02em}.board-heading p{margin:8px 0 0;color:var(--ty-muted-foreground)}
+  .screen-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}.screen-wrap{min-width:0;margin:0}.screen-label{margin:0 0 10px;color:var(--ty-muted-foreground);font-size:13px;font-weight:500}.phone-screen{width:100%;max-width:430px;margin:0 auto;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--ty-background)}.screen-content{padding:20px}
+  .app-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin-bottom:20px}.app-header h2{margin:0;text-align:center;font-size:17px;font-weight:600;line-height:1.35}.header-note{align-self:center;justify-self:end;color:var(--ty-muted-foreground);font-size:13px;white-space:nowrap}
+  .icon-button,.text-button,.primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;border-radius:var(--ty-radius-md);text-decoration:none;white-space:nowrap;transition:background-color 140ms cubic-bezier(.2,.8,.2,1),color 140ms cubic-bezier(.2,.8,.2,1),border-color 140ms cubic-bezier(.2,.8,.2,1),opacity 140ms cubic-bezier(.2,.8,.2,1),transform 140ms cubic-bezier(.2,.8,.2,1)}.icon-button{padding:0;border:1px solid transparent;background:transparent;color:var(--ty-foreground)}.icon-button:hover,.text-button:hover{background:var(--ty-muted)}.text-button{padding:0 12px;border:1px solid transparent;background:transparent;color:var(--ty-foreground)}
+  .primary-button{padding:0 16px;border:1px solid var(--ty-primary);background:var(--ty-primary);color:var(--ty-primary-foreground)}.primary-button:hover{background:var(--ty-neutral-600);border-color:var(--ty-neutral-600)}.secondary-button{padding:0 16px;border:1px solid var(--ty-border);background:var(--ty-background);color:var(--ty-foreground)}.secondary-button:hover{background:var(--ty-muted)}.icon-button:active,.text-button:active,.primary-button:active,.secondary-button:active{transform:translateY(1px)}
+  .section-intro{margin:0 0 20px;color:var(--ty-muted-foreground);font-size:15px;line-height:1.65}.section-title{margin:0 0 8px;font-size:20px;font-weight:600;line-height:1.3}.method-list{margin:0;padding:0;list-style:none;border-top:1px solid var(--ty-hairline)}.method-list li{border-bottom:1px solid var(--ty-hairline)}.method-row{display:grid;grid-template-columns:32px minmax(0,1fr) 20px;gap:12px;align-items:center;width:100%;min-height:76px;padding:12px 0;border:0;background:transparent;color:var(--ty-foreground);text-align:left;text-decoration:none;transition:background-color 140ms cubic-bezier(.2,.8,.2,1),opacity 140ms cubic-bezier(.2,.8,.2,1)}.method-row:hover{background:var(--ty-surface-sunken)}.method-row:active{opacity:.72}.method-row>svg:first-child{width:24px;height:24px}.method-copy{min-width:0}.method-copy strong{display:block;font-size:16px;font-weight:600;line-height:1.4}.method-copy span{display:block;margin-top:4px;color:var(--ty-muted-foreground);font-size:13px;line-height:1.5;overflow-wrap:anywhere}.method-arrow{color:var(--ty-neutral-500)}
+  .format-note{margin:20px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.65}.format-note strong{color:var(--ty-foreground);font-weight:500}.action-status{min-height:22px;margin:12px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.6;overflow-wrap:anywhere}.action-status.success{color:var(--state-success)}.action-status.error{color:var(--state-error)}
+  .wifi-state{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-top:1px solid var(--ty-hairline);border-bottom:1px solid var(--ty-hairline)}.wifi-state svg{margin-top:2px;color:var(--state-success)}.wifi-state strong{display:block;font-size:16px;font-weight:600}.wifi-state p{margin:4px 0 0;color:var(--ty-muted-foreground);font-size:13px}.address-label{display:block;margin:20px 0 8px;font-size:13px;font-weight:500}.address-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px}.address-input{width:100%;min-width:0;min-height:48px;padding:0 12px;border:1px solid var(--ty-input);border-radius:var(--ty-radius-md);background:var(--ty-surface-sunken);color:var(--ty-foreground);font-family:var(--ty-font-mono);font-size:13px}.steps{margin:24px 0;padding:0;list-style:none;counter-reset:wifi-step}.steps li{position:relative;padding:0 0 20px 40px;counter-increment:wifi-step}.steps li::before{content:counter(wifi-step);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid var(--ty-border);border-radius:var(--ty-radius-full);color:var(--ty-foreground);font-size:13px;font-variant-numeric:tabular-nums}.steps strong{display:block;font-weight:600;line-height:1.5}.steps p{margin:4px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.6}.wifi-warning{margin:0 0 20px;padding-top:16px;border-top:1px solid var(--ty-hairline);color:var(--ty-muted-foreground);font-size:13px}.full-button{width:100%}
+  .result-summary{margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid var(--ty-hairline)}.result-summary strong{display:block;font-size:22px;font-weight:600;line-height:1.3}.result-summary span{display:block;margin-top:6px;color:var(--ty-muted-foreground);font-size:13px}.result-list{margin:0;padding:0;list-style:none}.result-item{padding:16px 0;border-bottom:1px solid var(--ty-hairline)}.result-heading{display:flex;align-items:flex-start;gap:10px}.result-heading>svg{margin-top:3px}.result-heading.success>svg{color:var(--state-success)}.result-heading.failed>svg{color:var(--state-error)}.result-name{min-width:0;flex:1}.result-name strong{display:block;font-size:16px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}.result-name span{display:block;margin-top:4px;color:var(--ty-muted-foreground);font-size:13px;font-variant-numeric:tabular-nums}.result-detail{margin:8px 0 0 30px;color:var(--ty-muted-foreground);font-size:13px;line-height:1.6}.result-item .secondary-button{margin:12px 0 0 30px}.result-item .action-status{margin-left:30px}.result-footer{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:20px}.result-footer .primary-button{width:100%}
+  .app-footer{width:100%;max-width:1400px;margin:32px auto 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--ty-hairline);color:var(--ty-muted-foreground);font-size:13px}.footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}.app-footer p{margin:0}.footer-links{display:flex;flex-wrap:wrap;gap:8px 16px}.footer-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}.footer-links a:hover{color:var(--ty-foreground)}
+  @media (min-width:760px){.board{padding:48px 32px 0}.screen-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.phone-screen{max-width:none}.app-footer{padding-right:32px;padding-left:32px}}@media (min-width:1180px){.screen-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (max-width:359px){.board{padding-right:12px;padding-left:12px}.screen-content{padding:16px}.method-row{grid-template-columns:28px minmax(0,1fr) 20px;gap:8px}.result-detail,.result-item .secondary-button,.result-item .action-status{margin-left:0}}
+  @media (hover:none){.method-row:hover{background:transparent}.icon-button:hover,.text-button:hover{background:transparent}.primary-button:hover{background:var(--ty-primary);border-color:var(--ty-primary)}}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+<main class="board">
+  <header class="board-heading"><h1>导入书籍</h1><p>从文件、局域网或远程书库添加内容；每一本书都有独立、可追踪的导入结果。</p></header>
+  <div class="screen-grid">
+    <figure class="screen-wrap">
+      <figcaption class="screen-label">添加书籍</figcaption>
+      <section class="phone-screen" aria-label="添加书籍画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="shelf.html" data-dom-id="import-back-shelf" aria-label="返回书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>添加书籍</h2><span class="header-note">3 种方式</span></header>
+          <p class="section-intro">选择书籍所在的位置。导入后仍会保留原文件，听页只复制你确认的内容。</p>
+          <ul class="method-list">
+            <li><button class="method-row" id="choose-files" type="button"><i data-lucide="folder-open" aria-hidden="true"></i><span class="method-copy"><strong>从文件选取</strong><span>浏览本机与“文件”App，可一次选择多本</span></span><i class="method-arrow" data-lucide="chevron-right" aria-hidden="true"></i></button></li>
+            <li><a class="method-row" href="#wifi-import"><i data-lucide="wifi" aria-hidden="true"></i><span class="method-copy"><strong>Wi-Fi 传书</strong><span>用同一网络下的电脑浏览器发送书籍</span></span><i class="method-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+            <li><a class="method-row" href="remote-sources.html" data-dom-id="open-remote-sources"><i data-lucide="cloud" aria-hidden="true"></i><span class="method-copy"><strong>远程书库</strong><span>从 WebDAV、SMB 或 OPDS 来源选择书籍</span></span><i class="method-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+          </ul>
+          <input class="visually-hidden" id="epub-files" type="file" multiple accept=".epub,.pdf,.txt,.mobi,.azw3">
+          <p class="format-note"><strong>支持格式</strong><br>EPUB、PDF、TXT、MOBI 与 AZW3。受数字版权保护的文件可能无法读取，失败时不会覆盖书库中的同名书籍。</p>
+          <p class="action-status" id="file-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+    </figure>
+    <figure class="screen-wrap" id="wifi-import">
+      <figcaption class="screen-label">Wi-Fi 传书 · 服务已开启</figcaption>
+      <section class="phone-screen" aria-label="Wi-Fi 传书画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="shelf.html" aria-label="返回书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>Wi-Fi 传书</h2><span></span></header>
+          <div class="wifi-state"><i data-lucide="circle-check" aria-hidden="true"></i><div><strong id="wifi-state-title">传书服务已开启</strong><p id="wifi-state-detail">仅限当前局域网访问，关闭后地址立即失效。</p></div></div>
+          <label class="address-label" for="wifi-address">在电脑浏览器中打开</label>
+          <div class="address-row"><input class="address-input" id="wifi-address" type="text" value="http://192.168.1.8:8080" readonly><button class="icon-button secondary-button" id="copy-address" type="button" aria-label="复制传书地址"><i data-lucide="copy" aria-hidden="true"></i></button></div>
+          <ol class="steps">
+            <li><strong>连接同一 Wi-Fi</strong><p>确认电脑与这台 iPhone 使用同一个局域网，不要开启访客隔离。</p></li>
+            <li><strong>选择电脑中的书籍</strong><p>将文件拖入网页，或点击“选择文件”。单次最多发送 20 本。</p></li>
+            <li><strong>返回听页确认导入</strong><p>传输完成后会逐本校验格式与完整性，再写入书库。</p></li>
+          </ol>
+          <p class="wifi-warning">传书期间请保持听页在前台。地址不包含账户信息，也不要转发到公共网络。</p>
+          <button class="secondary-button full-button" id="toggle-wifi" type="button" aria-pressed="true"><i data-lucide="square" aria-hidden="true"></i><span>停止传书</span></button>
+          <p class="action-status" id="copy-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+    </figure>
+    <figure class="screen-wrap">
+      <figcaption class="screen-label">逐项导入结果 · 失败可重试</figcaption>
+      <section class="phone-screen" aria-label="书籍导入结果画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="shelf.html" aria-label="返回书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>导入结果</h2><span class="header-note">3 项</span></header>
+          <p class="result-summary"><strong id="result-count">2 本已导入，1 本失败</strong><span>成功书籍已加入“稍后阅读”，原文件未被移动。</span></p>
+          <ul class="result-list">
+            <li class="result-item"><div class="result-heading success"><i data-lucide="circle-check" aria-hidden="true"></i><div class="result-name"><strong>故乡.epub</strong><span>4.6 MB · 已导入</span></div></div><p class="result-detail">已识别书名、作者与封面，阅读进度从第一章开始。</p></li>
+            <li class="result-item"><div class="result-heading success"><i data-lucide="circle-check" aria-hidden="true"></i><div class="result-name"><strong>春.epub</strong><span>2.8 MB · 已导入</span></div></div><p class="result-detail">文件校验完成，已保存到本机书库。</p></li>
+            <li class="result-item" id="failed-item"><div class="result-heading failed" id="failed-heading"><i data-lucide="circle-x" aria-hidden="true"></i><div class="result-name"><strong>飞鸟集.epub</strong><span id="failed-meta">12.4 MB · 导入失败</span></div></div><p class="result-detail" id="failure-reason">文件在传输中断，校验未通过。请保持当前网络后重试，已成功的两本书无需重新导入。</p><button class="secondary-button" id="retry-import" data-dom-id="retry-import" type="button"><i data-lucide="rotate-cw" aria-hidden="true"></i><span>重试此项</span></button><p class="action-status error" id="retry-status" role="status" aria-live="polite"></p></li>
+          </ul>
+          <div class="result-footer"><a class="primary-button" href="shelf.html">完成并返回书库</a><a class="secondary-button" href="#wifi-import">继续传书</a></div>
+        </div>
+      </section>
+    </figure>
+  </div>
+</main>
+<footer class="app-footer"><div class="footer-inner"><p>听页 · 导入逐项校验，失败不会影响已完成内容。</p><nav class="footer-links" aria-label="页脚导航"><a href="shelf.html">书库</a><a href="remote-sources.html">远程书库</a><a href="profile.html">存储管理</a></nav><p>v28 · 中文界面</p></div></footer>
+<script>
+  (() => {
+    const fileInput = document.getElementById('epub-files');
+    document.getElementById('choose-files').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const count = fileInput.files.length;
+      document.getElementById('file-status').textContent = count ? `已选择 ${count} 个文件，将在确认格式后开始导入。` : '未选择文件，书库没有变化。';
+    });
+    const address = document.getElementById('wifi-address');
+    document.getElementById('copy-address').addEventListener('click', async () => {
+      const status = document.getElementById('copy-status');
+      try { await navigator.clipboard.writeText(address.value); status.textContent = '传书地址已复制，可粘贴到电脑浏览器。'; }
+      catch { address.focus(); address.select(); status.textContent = '已选中传书地址，请使用系统复制命令。'; }
+    });
+    const wifiButton = document.getElementById('toggle-wifi');
+    wifiButton.addEventListener('click', () => {
+      const running = wifiButton.getAttribute('aria-pressed') === 'true';
+      wifiButton.setAttribute('aria-pressed', String(!running));wifiButton.querySelector('span').textContent = running ? '重新开启' : '停止传书';
+      document.getElementById('wifi-state-title').textContent = running ? '传书服务已停止' : '传书服务已开启';
+      document.getElementById('wifi-state-detail').textContent = running ? '电脑已无法访问此地址，重新开启后可继续传书。' : '仅限当前局域网访问，关闭后地址立即失效。';
+      address.disabled = running;document.getElementById('copy-address').disabled = running;
+    });
+    const retry = document.getElementById('retry-import');
+    retry.addEventListener('click', () => {
+      const status = document.getElementById('retry-status');
+      retry.disabled = true;status.className = 'action-status';status.textContent = '正在重新校验《飞鸟集.epub》…';
+      document.getElementById('failed-meta').textContent = '12.4 MB · 正在重试';
+      window.setTimeout(() => {
+        document.getElementById('failed-meta').textContent = '12.4 MB · 已导入';
+        document.getElementById('failure-reason').textContent = '文件校验完成，已加入“稍后阅读”。阅读进度从第一章开始。';
+        document.getElementById('result-count').textContent = '3 本已全部导入';
+        status.className = 'action-status success';status.textContent = '重试成功，无需再次导入。';retry.hidden = true;
+      }, 900);
+    });
+  })();
+</script>
+<script>lucide.createIcons();</script>
+</body>
+</html>

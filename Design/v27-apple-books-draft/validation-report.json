@@ -1,0 +1,104 @@
+{
+  "success": true,
+  "outcome": "passed",
+  "repairable": true,
+  "terminalViolations": [],
+  "terminalBlockingSummary": null,
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": "2026.10.13.09.48.16",
+    "version_source": "skill-release-manifest.json",
+    "runtime_skill_dir": null,
+    "recorded_at": null,
+    "expected_version": "2026.10.13.09.48.16",
+    "status": "matched",
+    "read_status": "loaded"
+  },
+  "operatingMode": "free-explore",
+  "renderBlockingErrorCount": 0,
+  "softWarningCount": 2,
+  "renderBlockingErrors": [],
+  "errorSignatures": [],
+  "softWarnings": [
+    "[mobile-navigation-consistency] 2 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--ty-radius-large: var(--ty-radius-lg)). Do not use 20px+ radii unless the user explicitly requested large rounded shapes."
+  ],
+  "repairPlanHints": [],
+  "repairActionTable": [],
+  "errorCount": 0,
+  "warningCount": 2,
+  "errors": [],
+  "warnings": [
+    "[mobile-navigation-consistency] 2 mobile page(s) do not expose a 3+ item data-nav-key nav cluster while sibling pages do. This is acceptable for detail/reward/modal pages only when planned explicitly.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--ty-radius-large: var(--ty-radius-lg)). Do not use 20px+ radii unless the user explicitly requested large rounded shapes."
+  ],
+  "validationRunDisciplineStatus": {
+    "declared": true,
+    "restoreMode": false,
+    "maxFullValidationRuns": 2,
+    "validationHistoryCount": 0,
+    "repairLedgerCount": 0,
+    "softWarningsTriggerRepair": false,
+    "terminalState": null,
+    "nextAction": null,
+    "violations": [],
+    "success": true
+  },
+  "terminalState": null,
+  "nextCheck": {
+    "type": "finish-readiness",
+    "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --check=all",
+    "fullValidationAllowed": false,
+    "reason": "workspace validation passed; run complete finish readiness before final delivery"
+  },
+  "repairBatch": [],
+  "repairContextPacket": {
+    "schema_version": "1.0",
+    "purpose": "small-context repair packet; read this before full validation-report.json",
+    "success": true,
+    "terminalState": null,
+    "skillProvenance": {
+      "name": "solo-design",
+      "version": "2026.10.13.09.48.16",
+      "version_source": "skill-release-manifest.json",
+      "runtime_skill_dir": null,
+      "recorded_at": null,
+      "expected_version": "2026.10.13.09.48.16",
+      "status": "matched",
+      "read_status": "loaded"
+    },
+    "renderBlockingErrorCount": 0,
+    "softWarningCount": 2,
+    "renderBlockingErrors": [],
+    "repairActionTable": [],
+    "nextCheck": {
+      "type": "finish-readiness",
+      "command": "node '/Users/a1234/.trae-cn/plugins/trae-remote-official/trae-design/0.1.3/skills/solo-design/shared-runtime/deterministic-tooling/validate-finish-readiness.mjs' '/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft' --check=all",
+      "fullValidationAllowed": false,
+      "reason": "workspace validation passed; run complete finish readiness before final delivery"
+    },
+    "forbidden": [
+      "do not read validator source",
+      "do not rerun full validation when nextCheck.fullValidationAllowed=false",
+      "do not start preview/browser unless user explicitly asks",
+      "do not hand-edit repair ledger fields"
+    ]
+  },
+  "projectFileHashes": {
+    "v27-apple-books-draft.design": "9f8ee9147f8dc93e72511e193dbc82e1a31f134ad58dce59ea84a3a2b4345d4c",
+    "colors_and_type.css": "5f48e702e3fc245fc0ec53c1c8ea89970a6893f88fe52a7ae85752882ff02480",
+    "runtime-orchestration-summary.json": "aff2627a48a92b3b54d9e873bc15c243def37fdf8a475d8cf71ead14a74690fd",
+    "pages/app-icon.html": "bd3324063f654ff767ad5ed8f2a800ac17e621eff9f8e0d2443afbef70aa1a79",
+    "pages/now.html": "1807d248dfcd116dc69ac0ea99b6bcd7296277c4cfc4741da90778544dd7187e",
+    "pages/profile.html": "dca7e0e82fe639d0d7eddaa17ec41ad174534ef2793a6dfad6ae543f492dc12e",
+    "pages/reader.html": "9867b268dfdbd014c90e43f4266cabbaecaff17918e4c5649eec31f3c80fa111",
+    "pages/shelf.html": "6d726f008ef6e9ff283d0257b8d050d33d0ea6d18431bd7a44f8da45c5406e59",
+    "assets/cover-birds.png": "c582799692829ea5a2055a9e520b11efc10fee74744b23e3cb7c3340d34441a0",
+    "assets/cover-hometown.png": "8452d5b2e6181ed6b8b78a750a056d13861db5b0d62a63417f16228bc83ec7a8",
+    "assets/cover-spring.png": "f968440eaa20f6d5430e195c937302aaea4fc52a79b1eaf16fcd4a72e7f6f1b8"
+  },
+  "designDir": "/Users/a1234/Desktop/tingye-ios/Design/v27-apple-books-draft",
+  "expectedPages": 5,
+  "requireInteractions": "cta-reader:now.html,nav-shelf:now.html,nav-profile:now.html,nav-now:shelf.html,nav-profile:shelf.html,nav-now:profile.html,nav-shelf:profile.html,back-now:reader.html",
+  "checkedAt": "2026-10-29T17:07:36.588Z"
+}

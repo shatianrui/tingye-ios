@@ -84,12 +84,10 @@ struct Book: Codable, Identifiable, Equatable, Sendable {
     func encode(to encoder: Encoder) throws { try fields.encode(to: encoder) }
     func validated() throws -> Book {
         guard Self.validID(id), fields["title"]?.string != nil,
-              let raw = fields["chapters"]?.array, !raw.isEmpty, raw.count <= 3000,
-              raw.allSatisfy({ $0.object?["title"]?.string != nil && $0.object?["text"]?.string != nil }),
-              chapters.reduce(0, { $0 + $1.text.utf16.count }) <= 4_000_000 else {
-            throw ReaderError.message("书籍格式无效，或超过 400 万字 / 3000 章限制。")
+              let raw = fields["chapters"]?.array, !raw.isEmpty,
+              raw.allSatisfy({ $0.object?["title"]?.string != nil && $0.object?["text"]?.string != nil }) else {
+            throw ReaderError.message("书籍格式无效。")
         }
-        if let value = fields["pdf"]?.string, value.utf8.count > 30 * 1024 * 1024 { throw ReaderError.message("PDF 超过 22 MB，请拆分导入。") }
         return self
     }
     static func validID(_ value: String) -> Bool { value.range(of: "^[a-zA-Z0-9_-]{1,100}$", options: .regularExpression) != nil }
@@ -123,6 +121,11 @@ struct ShelfEntry: Codable, Identifiable, Sendable {
     /// Local derived index; never added to the cross-platform BackupPacket.
     var sentenceCounts: [Int]?
     var progress: ReadingProgress
+    /// 听书只更新这份本机位置；progress 始终是阅读与跨设备续读的位置。
+    /// 旧目录没有此字段，首次听书沿用旧进度，不丢失历史位置。
+    var listeningProgress: ReadingProgress?
+    /// 最近主动翻开阅读的时间，不会被后台朗读刷新。
+    var lastReadAt: Double?
     var snapshotRevision: String?
     var cloudRevision: String?
     var backupAt: Double?
@@ -158,13 +161,13 @@ struct ShelfEntry: Codable, Identifiable, Sendable {
 
 enum ReadingActivity: String, Codable, Sendable { case reading, listening }
 
-/// 首页动作语义与样式共用，避免只有文案跟随行为、主次按钮却不变。
+/// 阅读始终是主要动作，听书状态仅用于辅助入口的文案。
 struct ResumeActions: Equatable {
     let started: Bool
     let lastActivity: ReadingActivity
     let hasListened: Bool
     let playing: Bool
-    var prefersListening: Bool { playing || lastActivity == .listening }
+    var prefersListening: Bool { false }
     var readingTitle: String { started ? "继续阅读" : "开始阅读" }
     var listeningTitle: String { playing ? "暂停朗读" : hasListened ? "继续听" : started ? "听这本书" : "开始听书" }
 }

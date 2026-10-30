@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>远程书库</title>
+    <style id="theme-vars">
+:root {
+  --ty-primary-50: #F5F5F5;
+  --ty-primary-100: #E8E8E8;
+  --ty-primary-200: #D1D1D1;
+  --ty-primary-300: #A3A3A3;
+  --ty-primary-400: #6E6E6E;
+  --ty-primary-500: #1F1F1F;
+  --ty-primary-600: #121212;
+  --ty-neutral-0: #FFFFFF;
+  --ty-neutral-50: #FAFAFA;
+  --ty-neutral-100: #F5F5F5;
+  --ty-neutral-200: #EFEFEF;
+  --ty-neutral-300: #D8D8D8;
+  --ty-neutral-400: #A3A3A3;
+  --ty-neutral-500: #6E6E6E;
+  --ty-neutral-600: #595959;
+  --ty-neutral-900: #1F1F1F;
+  --ty-neutral-950: #121212;
+  --state-success: #2E6B4F;
+  --state-error: #B43832;
+  --ty-background: var(--ty-neutral-0);
+  --ty-foreground: var(--ty-neutral-900);
+  --ty-card: var(--ty-neutral-0);
+  --ty-card-foreground: var(--ty-neutral-900);
+  --ty-popover: var(--ty-neutral-0);
+  --ty-popover-foreground: var(--ty-neutral-900);
+  --ty-primary: var(--ty-primary-500);
+  --ty-primary-foreground: var(--ty-neutral-0);
+  --ty-muted: var(--ty-neutral-100);
+  --ty-muted-foreground: var(--ty-neutral-600);
+  --ty-border: var(--ty-neutral-200);
+  --ty-input: var(--ty-neutral-200);
+  --ty-ring: var(--ty-primary-500);
+  --ty-surface-sunken: var(--ty-neutral-50);
+  --ty-hairline: var(--ty-neutral-200);
+  --ty-radius-sm: 4px;
+  --ty-radius-md: 8px;
+  --ty-radius-lg: 16px;
+  --ty-radius-full: 9999px;
+  --ty-radius-small: var(--ty-radius-sm);
+  --ty-radius-medium: var(--ty-radius-md);
+  --ty-radius-large: var(--ty-radius-lg);
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --ty-font-serif: "Songti SC", "Noto Serif SC", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+
+.dark {
+  --ty-background: var(--ty-neutral-950);
+  --ty-foreground: #F5F5F5;
+  --ty-card: #1B1B1B;
+  --ty-card-foreground: #F5F5F5;
+  --ty-popover: #1B1B1B;
+  --ty-popover-foreground: #F5F5F5;
+  --ty-primary: #F5F5F5;
+  --ty-primary-foreground: #121212;
+  --ty-muted: #242424;
+  --ty-muted-foreground: #A3A3A3;
+  --ty-border: #2C2C2C;
+  --ty-input: #2C2C2C;
+  --ty-ring: #F5F5F5;
+  --ty-surface-sunken: #181818;
+  --ty-hairline: #2C2C2C;
+  --ty-shadow-hairline: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --ty-shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ty-display,
+.ty-h1,
+.ty-h2,
+.ty-h3,
+.ty-body,
+.ty-caption,
+.ty-label {
+  font-family: var(--ty-font-sans);
+}
+
+.ty-display { font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; }
+.ty-h1 { font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.ty-h2 { font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+.ty-h3 { font-weight: 600; line-height: 1.35; }
+.ty-body { font-weight: 400; line-height: 1.6; }
+.ty-caption { font-weight: 400; font-size: 13px; line-height: 1.5; }
+.ty-label { font-weight: 500; font-size: 13px; line-height: 1.4; }
+.ty-reading { font-family: var(--ty-font-serif); font-weight: 400; line-height: 1.95; }
+.ty-numeric { font-family: var(--ty-font-sans); font-variant-numeric: tabular-nums; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ty-background);
+    --color-foreground: var(--ty-foreground);
+    --color-card: var(--ty-card);
+    --color-card-foreground: var(--ty-card-foreground);
+    --color-popover: var(--ty-popover);
+    --color-popover-foreground: var(--ty-popover-foreground);
+    --color-primary: var(--ty-primary);
+    --color-primary-foreground: var(--ty-primary-foreground);
+    --color-muted: var(--ty-muted);
+    --color-muted-foreground: var(--ty-muted-foreground);
+    --color-border: var(--ty-border);
+    --color-input: var(--ty-input);
+    --color-ring: var(--ty-ring);
+    --radius-sm: var(--ty-radius-sm);
+    --radius-md: var(--ty-radius-md);
+    --radius-lg: var(--ty-radius-lg);
+  }
+  @layer base {
+    body { background: var(--ty-background); color: var(--ty-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ty-background); }
+      .text-background { color: var(--ty-background); }
+      .border-background { border-color: var(--ty-background); }
+      .ring-background { --tw-ring-color: var(--ty-background); }
+      .bg-foreground { background-color: var(--ty-foreground); }
+      .text-foreground { color: var(--ty-foreground); }
+      .border-foreground { border-color: var(--ty-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ty-foreground); }
+      .bg-card { background-color: var(--ty-card); }
+      .text-card { color: var(--ty-card); }
+      .border-card { border-color: var(--ty-card); }
+      .ring-card { --tw-ring-color: var(--ty-card); }
+      .bg-card-foreground { background-color: var(--ty-card-foreground); }
+      .text-card-foreground { color: var(--ty-card-foreground); }
+      .border-card-foreground { border-color: var(--ty-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ty-card-foreground); }
+      .bg-popover { background-color: var(--ty-popover); }
+      .text-popover { color: var(--ty-popover); }
+      .border-popover { border-color: var(--ty-popover); }
+      .ring-popover { --tw-ring-color: var(--ty-popover); }
+      .bg-popover-foreground { background-color: var(--ty-popover-foreground); }
+      .text-popover-foreground { color: var(--ty-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ty-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ty-popover-foreground); }
+      .bg-primary { background-color: var(--ty-primary); }
+      .text-primary { color: var(--ty-primary); }
+      .border-primary { border-color: var(--ty-primary); }
+      .ring-primary { --tw-ring-color: var(--ty-primary); }
+      .bg-primary-foreground { background-color: var(--ty-primary-foreground); }
+      .text-primary-foreground { color: var(--ty-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ty-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ty-primary-foreground); }
+      .bg-muted { background-color: var(--ty-muted); }
+      .text-muted { color: var(--ty-muted); }
+      .border-muted { border-color: var(--ty-muted); }
+      .ring-muted { --tw-ring-color: var(--ty-muted); }
+      .bg-muted-foreground { background-color: var(--ty-muted-foreground); }
+      .text-muted-foreground { color: var(--ty-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ty-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ty-muted-foreground); }
+      .bg-border { background-color: var(--ty-border); }
+      .text-border { color: var(--ty-border); }
+      .border-border { border-color: var(--ty-border); }
+      .ring-border { --tw-ring-color: var(--ty-border); }
+      .bg-input { background-color: var(--ty-input); }
+      .text-input { color: var(--ty-input); }
+      .border-input { border-color: var(--ty-input); }
+      .ring-input { --tw-ring-color: var(--ty-input); }
+      .bg-ring { background-color: var(--ty-ring); }
+      .text-ring { color: var(--ty-ring); }
+      .border-ring { border-color: var(--ty-ring); }
+      .ring-ring { --tw-ring-color: var(--ty-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+<style id="critical-layout">
+  *,*::before,*::after{box-sizing:border-box}html{background:var(--ty-surface-sunken)}body{margin:0;min-width:0;min-height:100vh;background:var(--ty-surface-sunken);color:var(--ty-foreground);font-family:var(--ty-font-sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  button,input{font:inherit}button,a,input{-webkit-tap-highlight-color:transparent}button{cursor:pointer}a{color:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ty-ring);outline-offset:3px}button:disabled,input:disabled{cursor:not-allowed;opacity:.5}svg{width:20px;height:20px;flex:0 0 auto;stroke-width:1.5}
+  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;clip-path:inset(50%);white-space:nowrap;border:0}
+  .board{width:100%;max-width:1040px;min-height:100vh;margin:0 auto;padding:32px 20px 0}.board-heading{max-width:720px;margin:0 0 28px}.board-heading h1{margin:0;font-size:30px;font-weight:700;line-height:1.22;letter-spacing:-.02em}.board-heading p{margin:8px 0 0;color:var(--ty-muted-foreground)}
+  .screen-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}.screen-wrap{min-width:0;margin:0}.screen-label{margin:0 0 10px;color:var(--ty-muted-foreground);font-size:13px;font-weight:500}.phone-screen{width:100%;max-width:430px;margin:0 auto;border:1px solid var(--ty-hairline);border-radius:var(--ty-radius-lg);background:var(--ty-background)}.screen-content{padding:20px}
+  .app-header{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin-bottom:20px}.app-header h2{margin:0;text-align:center;font-size:17px;font-weight:600;line-height:1.35}.header-note{justify-self:end;color:var(--ty-muted-foreground);font-size:13px;white-space:nowrap}
+  .icon-button,.text-button,.primary-button,.secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;border-radius:var(--ty-radius-md);text-decoration:none;white-space:nowrap;transition:background-color 140ms cubic-bezier(.2,.8,.2,1),color 140ms cubic-bezier(.2,.8,.2,1),border-color 140ms cubic-bezier(.2,.8,.2,1),opacity 140ms cubic-bezier(.2,.8,.2,1),transform 140ms cubic-bezier(.2,.8,.2,1)}.icon-button{padding:0;border:1px solid transparent;background:transparent;color:var(--ty-foreground)}.icon-button:hover,.text-button:hover{background:var(--ty-muted)}.text-button{padding:0 8px;border:1px solid transparent;background:transparent;color:var(--ty-foreground)}.primary-button{padding:0 16px;border:1px solid var(--ty-primary);background:var(--ty-primary);color:var(--ty-primary-foreground)}.primary-button:hover{background:var(--ty-neutral-600);border-color:var(--ty-neutral-600)}.secondary-button{padding:0 16px;border:1px solid var(--ty-border);background:var(--ty-background);color:var(--ty-foreground)}.secondary-button:hover{background:var(--ty-muted)}.icon-button:active,.text-button:active,.primary-button:active,.secondary-button:active{transform:translateY(1px)}
+  .section-intro{margin:0 0 16px;color:var(--ty-muted-foreground);font-size:15px;line-height:1.65}.source-list{margin:0;padding:0;list-style:none;border-top:1px solid var(--ty-hairline)}.source-list li{border-bottom:1px solid var(--ty-hairline)}.source-row{display:grid;grid-template-columns:32px minmax(0,1fr) 20px;gap:12px;align-items:center;min-height:88px;padding:14px 0;color:var(--ty-foreground);text-decoration:none;transition:background-color 140ms cubic-bezier(.2,.8,.2,1),opacity 140ms cubic-bezier(.2,.8,.2,1)}a.source-row:hover{background:var(--ty-surface-sunken)}a.source-row:active{opacity:.72}.source-row>svg:first-child{width:24px;height:24px}.source-copy{min-width:0}.source-title{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.source-title strong{font-size:16px;font-weight:600;line-height:1.4}.protocol{color:var(--ty-muted-foreground);font-size:12px;font-weight:500}.source-copy>p{margin:5px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.55;overflow-wrap:anywhere}.source-copy .connection-ok{color:var(--state-success)}.source-arrow{color:var(--ty-neutral-500)}.add-note{margin:20px 0 0;padding-top:16px;border-top:1px solid var(--ty-hairline);color:var(--ty-muted-foreground);font-size:13px}.full-button{width:100%;margin-top:16px}
+  .form-context{margin:0 0 20px;padding-bottom:16px;border-bottom:1px solid var(--ty-hairline)}.form-context strong{display:block;font-size:16px;font-weight:600}.form-context span{display:block;margin-top:4px;color:var(--ty-muted-foreground);font-size:13px;overflow-wrap:anywhere}.field{display:block;margin:0 0 16px}.field>span{display:block;margin:0 0 6px;font-size:13px;font-weight:500}.field input{width:100%;min-width:0;min-height:48px;padding:0 12px;border:1px solid var(--ty-input);border-radius:var(--ty-radius-md);background:var(--ty-background);color:var(--ty-foreground);font-size:15px;line-height:1.5}.field input::placeholder{color:var(--ty-muted-foreground)}.field input[aria-invalid="true"]{border-color:var(--state-error)}.field-hint{display:block;margin-top:6px;color:var(--ty-muted-foreground);font-size:12px;line-height:1.55}.field-error{display:flex;align-items:flex-start;gap:6px;margin-top:6px;color:var(--state-error);font-size:13px;line-height:1.5}.field-error svg{width:16px;height:16px;margin-top:2px}.field-error[hidden]{display:none}.switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;margin:0 0 16px;padding:4px 0}.switch-row label{min-height:44px;display:flex;align-items:center;flex:1;cursor:pointer}.switch-row input{width:22px;height:22px;margin:0;accent-color:var(--ty-primary)}.form-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:20px}.form-actions .primary-button,.form-actions .secondary-button{width:100%}.form-status{min-height:22px;margin:12px 0 0;color:var(--ty-muted-foreground);font-size:13px;line-height:1.6}.form-status.success{color:var(--state-success)}.form-status.error{color:var(--state-error)}.validation-summary{display:flex;align-items:flex-start;gap:10px;margin:0 0 20px;padding:0 0 16px;border-bottom:1px solid var(--ty-hairline);color:var(--state-error)}.validation-summary svg{margin-top:3px}.validation-summary strong{display:block;font-size:15px;font-weight:600}.validation-summary p{margin:4px 0 0;color:var(--ty-muted-foreground);font-size:13px}.recovery-note{margin:16px 0 0;color:var(--ty-muted-foreground);font-size:13px}
+  .breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0 0 20px;color:var(--ty-muted-foreground);font-size:13px}.breadcrumb svg{width:14px;height:14px}.breadcrumb strong{color:var(--ty-foreground);font-weight:500}.browse-error{padding:24px 0;border-top:1px solid var(--ty-hairline);border-bottom:1px solid var(--ty-hairline);text-align:center}.browse-error>svg{width:28px;height:28px;color:var(--state-error)}.browse-error h3{margin:16px 0 0;font-size:20px;font-weight:600;line-height:1.3}.browse-error p{margin:10px 0 0;color:var(--ty-muted-foreground);font-size:14px;line-height:1.65}.browse-error .primary-button{margin-top:20px}.error-code{display:block;margin-top:16px;color:var(--ty-neutral-500);font-family:var(--ty-font-mono);font-size:12px;overflow-wrap:anywhere}.browse-tip{margin:16px 0 0;color:var(--ty-muted-foreground);font-size:13px}.remote-results{margin:20px 0 0}.remote-results[hidden]{display:none}.remote-results h3{margin:0 0 8px;font-size:16px;font-weight:600}.remote-results ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--ty-hairline)}.remote-results li{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-bottom:1px solid var(--ty-hairline)}.remote-results li svg{margin-top:3px}.remote-results strong{display:block;font-size:15px;font-weight:500;overflow-wrap:anywhere}.remote-results span{display:block;margin-top:4px;color:var(--ty-muted-foreground);font-size:13px}
+  .app-footer{width:100%;max-width:1040px;margin:32px auto 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--ty-hairline);color:var(--ty-muted-foreground);font-size:13px}.footer-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}.app-footer p{margin:0}.footer-links{display:flex;flex-wrap:wrap;gap:8px 16px}.footer-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}.footer-links a:hover{color:var(--ty-foreground)}
+  @media (min-width:800px){.board{padding:48px 32px 0}.screen-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.phone-screen{max-width:none}.app-footer{padding-right:32px;padding-left:32px}}@media (max-width:359px){.board{padding-right:12px;padding-left:12px}.screen-content{padding:16px}.source-row{grid-template-columns:28px minmax(0,1fr) 20px;gap:8px}}
+  @media (hover:none){a.source-row:hover{background:transparent}.icon-button:hover,.text-button:hover{background:transparent}.primary-button:hover{background:var(--ty-primary);border-color:var(--ty-primary)}}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+<main class="board">
+  <header class="board-heading"><h1>远程书库</h1><p>连接由你管理的网络来源；凭据、校验结果和目录错误都保留清晰上下文。</p></header>
+  <div class="screen-grid">
+    <figure class="screen-wrap">
+      <figcaption class="screen-label">已连接来源</figcaption>
+      <section class="phone-screen" aria-label="远程来源列表画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="shelf.html" data-dom-id="remote-back-shelf" aria-label="返回书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>远程书库</h2><a class="icon-button" href="#edit-default" aria-label="添加远程来源"><i data-lucide="plus" aria-hidden="true"></i></a></header>
+          <p class="section-intro">书籍保留在原始位置。只有点击导入时，听页才会将所选文件复制到本机。</p>
+          <ul class="source-list">
+            <li><a class="source-row" href="#browse-remote"><i data-lucide="server" aria-hidden="true"></i><div class="source-copy"><div class="source-title"><strong>家庭 NAS</strong><span class="protocol">WebDAV</span></div><p>nas.home.lan:5006/Books</p><p class="connection-ok">已连接 · 128 本书</p></div><i class="source-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+            <li><a class="source-row" href="#browse-remote"><i data-lucide="hard-drive" aria-hidden="true"></i><div class="source-copy"><div class="source-title"><strong>书房电脑</strong><span class="protocol">SMB</span></div><p>smb://192.168.1.10/Books</p><p>只读访问 · 86 本书</p></div><i class="source-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+            <li><a class="source-row" href="#browse-remote"><i data-lucide="rss" aria-hidden="true"></i><div class="source-copy"><div class="source-title"><strong>个人书目</strong><span class="protocol">OPDS</span></div><p>books.home.lan/opds</p><p>目录已同步 · 42 本书</p></div><i class="source-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></li>
+          </ul>
+          <a class="secondary-button full-button" href="#edit-default"><i data-lucide="plus" aria-hidden="true"></i>添加来源</a>
+          <p class="add-note">支持 WebDAV、SMB 与 OPDS 1.2/2.0。密码仅保存在本机钥匙串，不会写入书籍元数据。</p>
+        </div>
+      </section>
+    </figure>
+    <figure class="screen-wrap" id="edit-default">
+      <figcaption class="screen-label">编辑 WebDAV · 默认</figcaption>
+      <section class="phone-screen" aria-label="WebDAV 默认表单画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="remote-sources.html" aria-label="返回远程书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>编辑来源</h2><span class="header-note">WebDAV</span></header>
+          <p class="form-context"><strong>家庭 NAS</strong><span>上次连接：今天 09:42 · 配置可用</span></p>
+          <form id="default-form" novalidate>
+            <label class="field"><span>显示名称</span><input type="text" value="家庭 NAS" autocomplete="off"></label>
+            <label class="field"><span>服务器地址</span><input id="default-url" type="url" value="https://nas.home.lan:5006/Books" inputmode="url" autocomplete="url"><small class="field-hint">包含协议、端口与书籍目录，不在地址中填写密码。</small></label>
+            <label class="field"><span>用户名</span><input type="text" value="reader" autocomplete="username"></label>
+            <label class="field"><span>密码</span><input type="password" placeholder="已保存，留空则沿用" autocomplete="current-password"><small class="field-hint">已通过本机钥匙串安全保存。</small></label>
+            <div class="switch-row"><label for="default-https">仅允许加密连接</label><input id="default-https" type="checkbox" checked></div>
+            <div class="form-actions"><button class="primary-button" id="test-connection" type="submit"><i data-lucide="plug-zap" aria-hidden="true"></i>测试连接</button><a class="secondary-button" href="remote-sources.html">完成</a></div>
+            <p class="form-status" id="default-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </figure>
+    <figure class="screen-wrap">
+      <figcaption class="screen-label">编辑 WebDAV · 错误与恢复</figcaption>
+      <section class="phone-screen" aria-label="WebDAV 校验错误画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="remote-sources.html" aria-label="返回远程书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>编辑来源</h2><span class="header-note">未保存</span></header>
+          <div class="validation-summary" id="validation-summary" role="alert"><i data-lucide="circle-alert" aria-hidden="true"></i><div><strong>有 1 项需要修正</strong><p>其余输入已保留，无需重新填写。</p></div></div>
+          <form id="error-form" novalidate>
+            <label class="field"><span>显示名称</span><input type="text" value="家庭 NAS" autocomplete="off"></label>
+            <label class="field"><span>服务器地址</span><input id="error-url" type="text" value="nas.home.lan:5006/Books" inputmode="url" aria-invalid="true" aria-describedby="url-error"><small class="field-error" id="url-error"><i data-lucide="circle-alert" aria-hidden="true"></i><span>地址需以 https:// 开头，并保留完整目录路径。</span></small></label>
+            <label class="field"><span>用户名</span><input type="text" value="reader" autocomplete="username"></label>
+            <label class="field"><span>密码</span><input type="password" placeholder="已保存，留空则沿用" autocomplete="current-password"></label>
+            <div class="switch-row"><label for="error-https">仅允许加密连接</label><input id="error-https" type="checkbox" checked></div>
+            <div class="form-actions"><button class="primary-button" id="restore-config" type="button"><i data-lucide="history" aria-hidden="true"></i>恢复可用配置</button><button class="secondary-button" id="save-config" type="submit" disabled>保存更改</button></div>
+            <p class="form-status error" id="error-status" role="status" aria-live="polite">尚未测试此地址，原连接仍可正常使用。</p>
+          </form>
+          <p class="recovery-note">恢复会回填今天 09:42 的可用地址，不会删除当前用户名或修改已保存密码。</p>
+        </div>
+      </section>
+    </figure>
+    <figure class="screen-wrap" id="browse-remote">
+      <figcaption class="screen-label">目录浏览 · 连接失败重试</figcaption>
+      <section class="phone-screen" aria-label="远程目录失败画板">
+        <div class="screen-content">
+          <header class="app-header"><a class="icon-button" href="remote-sources.html" aria-label="返回远程书库"><i data-lucide="chevron-left" aria-hidden="true"></i></a><h2>浏览书库</h2><span class="header-note">WebDAV</span></header>
+          <nav class="breadcrumb" aria-label="当前目录"><span>家庭 NAS</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>Books</span><i data-lucide="chevron-right" aria-hidden="true"></i><strong>文学</strong></nav>
+          <section class="browse-error" id="browse-error"><i data-lucide="cloud-off" aria-hidden="true"></i><h3 id="browse-title">无法读取此目录</h3><p id="browse-description">与“家庭 NAS”的连接已超时。当前目录和来源配置已保留，请检查同一局域网后重试。</p><button class="primary-button" id="retry-remote" data-dom-id="retry-remote" type="button"><i data-lucide="rotate-cw" aria-hidden="true"></i><span>重新连接</span></button><span class="error-code">WebDAV · 请求超时 · 15 秒</span></section>
+          <p class="browse-tip">远程目录不可用时，已导入到本机的书籍不受影响。</p>
+          <section class="remote-results" id="remote-results" aria-live="polite" hidden><h3>文学 · 3 本书</h3><ul><li><i data-lucide="book" aria-hidden="true"></i><div><strong>故乡.epub</strong><span>4.6 MB · EPUB</span></div></li><li><i data-lucide="book" aria-hidden="true"></i><div><strong>春.epub</strong><span>2.8 MB · EPUB</span></div></li><li><i data-lucide="book" aria-hidden="true"></i><div><strong>飞鸟集.epub</strong><span>12.4 MB · EPUB</span></div></li></ul></section>
+        </div>
+      </section>
+    </figure>
+  </div>
+</main>
+<footer class="app-footer"><div class="footer-inner"><p>听页 · 远程来源由你掌控，连接错误不会清除配置。</p><nav class="footer-links" aria-label="页脚导航"><a href="import.html">导入书籍</a><a href="shelf.html">本机书库</a><a href="profile.html">隐私设置</a></nav><p>v28 · 中文界面</p></div></footer>
+<script>
+  (() => {
+    document.getElementById('default-form').addEventListener('submit', event => {
+      event.preventDefault();const status = document.getElementById('default-status');const button = document.getElementById('test-connection');
+      button.disabled = true;status.className = 'form-status';status.textContent = '正在验证加密连接与书籍目录…';
+      window.setTimeout(() => { status.className = 'form-status success';status.textContent = '连接成功，已找到 128 本书。配置尚未修改。';button.disabled = false; }, 800);
+    });
+    const restoredUrl = 'https://nas.home.lan:5006/Books';
+    document.getElementById('restore-config').addEventListener('click', () => {
+      const input = document.getElementById('error-url');input.value = restoredUrl;input.setAttribute('aria-invalid','false');input.removeAttribute('aria-describedby');
+      document.getElementById('url-error').hidden = true;document.getElementById('validation-summary').hidden = true;
+      document.getElementById('save-config').disabled = false;const status = document.getElementById('error-status');status.className = 'form-status success';status.textContent = '已恢复可用地址，其他输入保持不变。现在可以保存。';input.focus();
+    });
+    document.getElementById('error-form').addEventListener('submit', event => {
+      event.preventDefault();const status = document.getElementById('error-status');status.className = 'form-status success';status.textContent = '设置已保存，下次浏览目录时将使用此配置。';
+    });
+    const retry = document.getElementById('retry-remote');
+    retry.addEventListener('click', () => {
+      retry.disabled = true;retry.querySelector('span').textContent = '正在连接';
+      document.getElementById('browse-description').textContent = '正在重新连接“家庭 NAS”，并读取“文学”目录…';
+      window.setTimeout(() => {
+        document.getElementById('browse-title').textContent = '目录已恢复';document.getElementById('browse-description').textContent = '连接成功，已读取 3 本书。可继续浏览或选择导入。';
+        retry.hidden = true;document.getElementById('remote-results').hidden = false;
+      }, 900);
+    });
+  })();
+</script>
+<script>lucide.createIcons();</script>
+</body>
+</html>

@@ -19,7 +19,7 @@ struct StorageView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("听页共占用 " + StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
             } header: { Text("总占用") }
-            .listRowBackground(Theme.surface)
+            .listRowBackground(Theme.accentSoft)
 
             Section {
                 ForEach(usage) { item in
@@ -53,10 +53,12 @@ struct StorageView: View {
             } footer: { Text("书架上的封面、分类显示不对或书籍消失时，可以修复书库索引；书籍文件本身不会改动。") }
             .listRowBackground(Theme.surface)
         }
+        .tint(Theme.accent)
+        .foregroundStyle(Theme.ink)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .navigationTitle("空间整理")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .task { rescan() }
         .confirmationDialog("清理全部缓存？", isPresented: $confirmAll, titleVisibility: .visible) {
             Button("清理", role: .destructive) { StorageUsage.Kind.allCases.filter(\.clearable).forEach(clear) }

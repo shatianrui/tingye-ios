@@ -105,6 +105,16 @@ struct MyFontsView: View {
     var body: some View {
         List {
             Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("让文字更合心意", systemImage: Icon.fonts).font(.headline).foregroundStyle(Theme.ink)
+                    Text("山静似太古，日长如小年。")
+                        .font(Theme.serif(22)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("在阅读排版中选用内置字体，也可以导入自己的字体。原文阅读与文字模式共用字体偏好。")
+                        .font(.footnote).foregroundStyle(Theme.ink2)
+                }.padding(.vertical, 10)
+            }.listRowBackground(Theme.accentSoft)
+            Section {
                 ForEach(fonts) { item in
                     Button { font = "custom:" + item.postScript } label: {
                         HStack {
@@ -132,6 +142,8 @@ struct MyFontsView: View {
         }
         .navigationTitle("我的字体")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .paperBackground()
         .fileImporter(isPresented: $importing, allowedContentTypes: [.font, UTType(filenameExtension: "ttf") ?? .data, UTType(filenameExtension: "otf") ?? .data], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }
             var errors: [String] = []
