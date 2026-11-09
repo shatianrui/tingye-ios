@@ -515,11 +515,16 @@ struct OriginalBookView: UIViewRepresentable {
             scroll.setContentOffset(CGPoint(x: x, y: 0), animated: animates)
         }
         func apply(_ view: WKWebView) {
-            lastFollow = (spoken, follow)
             let documentKey = key
             view.evaluateJavaScript(readingScript + "\n" + script, in: nil, in: .defaultClient) { [weak self, weak view] _ in
                 guard let self, let view, self.key == documentKey else { return }
-                self.readSpokenPage(view)
+                if self.highlight != nil {
+                    self.lastFollow = nil
+                    self.refollow(view)
+                } else {
+                    self.lastFollow = (self.spoken, self.follow)
+                    self.readSpokenPage(view)
+                }
                 self.restorePosition(view)
             }
         }

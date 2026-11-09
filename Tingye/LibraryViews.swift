@@ -132,7 +132,7 @@ struct BookDetailView: View {
                 .accessibilityIdentifier("detail.reading")
                 if !entry.isComic {
                     Button { Haptics.light(); model.listen(entryID) } label: {
-                        Label(model.player.book?.id == entryID && model.player.playing ? "打开听书" : "听这本书", systemImage: Icon.listen)
+                        Label(model.player.book?.id == entryID && model.player.playing ? "回到朗读正文" : "听这本书", systemImage: Icon.listen)
                             .font(.caption).foregroundStyle(Theme.ink2)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .trailing)
                             .contentShape(Rectangle())

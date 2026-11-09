@@ -106,6 +106,12 @@ struct VoiceSettingsView: View {
         .feedbackOverlay()
         .respectReducedMotion()
         .onAppear { if loadedProvider.isEmpty { load(provider) } }
+        .onChange(of: provider) { old, new in
+            stopPreview()
+            drafts[old] = Draft(voice: voice, model: modelName, key: apiKey, male: maleVoice, female: femaleVoice)
+            fetchedVoices = []; notice = ""; error = nil
+            load(new)
+        }
         .onDisappear { stopPreview() }
     }
 
@@ -148,7 +154,10 @@ struct VoiceSettingsView: View {
 
     private func chinaVoiceLink(_ target: String, title: String, subtitle: String) -> some View {
         NavigationLink {
-            cloudConfiguration.onAppear { provider = target }
+            cloudConfiguration.onAppear {
+                if provider != target { provider = target }
+                else if loadedProvider != target { load(target) }
+            }
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
@@ -204,12 +213,6 @@ struct VoiceSettingsView: View {
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("voice.provider")
-            .onChange(of: provider) { old, new in
-                stopPreview()
-                drafts[old] = Draft(voice: voice, model: modelName, key: apiKey, male: maleVoice, female: femaleVoice)
-                fetchedVoices = []; notice = ""; error = nil
-                load(new)
-            }
         } header: { Text("选择朗读服务") } footer: { Text(providerNote) }
     }
 

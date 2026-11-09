@@ -202,6 +202,7 @@ final class AppModel: ObservableObject {
     /// 打开到指定的章与句。
     func open(_ entry: ShelfEntry, chapter: Int, position: Int) {
         readerJump = (entry.id, chapter, position)
+        listeningReaderID = nil
         openBook(entry)
     }
     private func openBook(_ entry: ShelfEntry) {

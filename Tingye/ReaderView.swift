@@ -318,7 +318,7 @@ struct ReaderView: View {
             Group {
                 switch value {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
-                case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)

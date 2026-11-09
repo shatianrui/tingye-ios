@@ -2657,6 +2657,12 @@ final class ReaderOnlyListeningTests: XCTestCase {
             XCTAssertNil(model.listeningReaderID)
             XCTAssertNil(model.readerJump)
             XCTAssertEqual(model.entries.first?.progress, reading)
+            model.showListeningReader()
+            XCTAssertEqual(model.listeningReaderID, book.id)
+            model.open(try XCTUnwrap(model.entries.first), chapter: 0, position: 2)
+            XCTAssertNil(model.listeningReaderID, "定位打开章节或摘句时必须清除遗留的听书跟随请求")
+            XCTAssertEqual(model.readerJump?.chapter, 0)
+            XCTAssertEqual(model.readerJump?.position, 2)
         }
     }
     func testRevealWithNoAudioDoesNotOpenAnyPage() throws {
