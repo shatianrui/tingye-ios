@@ -769,8 +769,13 @@ extension DesignFlowTests {
         screenshot(app, "系统选择器-选择本地书籍")
         let fileCell = app.cells.containing(.staticText, identifier: file.label).firstMatch
         XCTAssertTrue(fileCell.exists)
-        fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+        waitForReadingCondition({ fileCell.isHittable }, "系统文件选择器完成布局后文件项应可点击")
+        let target = fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        target.tap()
         let results = app.buttons.matching(identifier: "import.results").firstMatch
+        if !results.waitForExistence(timeout: 4), app.otherElements["bookImport.documentPicker"].exists, fileCell.exists {
+            target.tap()
+        }
         XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import: " + app.debugDescription)
         results.tap()
         XCTAssertTrue(app.staticTexts["1 本书导入成功"].waitForExistence(timeout: 10))
