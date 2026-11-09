@@ -456,7 +456,7 @@ final class AppModel: ObservableObject {
             importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-                let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.read(url) }.value
+                let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.readCoordinated(url) }.value
                 try checkOwner(captured); try await add(imported.book, progress: imported.progress)
                 importReport?.items[index].state = .imported(imported.book.id)
             } catch {
@@ -521,7 +521,7 @@ final class AppModel: ObservableObject {
         let captured = owner
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-        var value = try await Task.detached { try BookImporter.read(url).book }.value
+        var value = try await Task.detached { try BookImporter.readCoordinated(url).book }.value
         try checkOwner(captured)
         guard value.format.caseInsensitiveCompare(row.format) == .orderedSame else { throw ReaderError.message("请选择与原书相同格式的文件。") }
         value.fields["id"] = .string(id)

@@ -96,6 +96,7 @@ struct SourcesView: View {
     @State private var editing: RemoteSource?
     @State private var removing: RemoteSource?
     @State private var importing = false
+    @State private var batchImport = false
     @State private var wifi = false
 
     var body: some View {
@@ -109,10 +110,20 @@ struct SourcesView: View {
                         .foregroundStyle(Theme.ink)
                     Text("本机、iCloud 云盘或已连接的网盘")
                         .font(.caption).foregroundStyle(Theme.ink2)
-                    Button("选择文件") { importing = true }
+                    Button("选择文件") { batchImport = false; importing = true }
                         .buttonStyle(PrimaryButtonStyle(height: 50))
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
+                    Text("点选一本书后立即导入，无需再次确认。")
+                        .font(.caption).foregroundStyle(Theme.ink2)
+                    Button("批量选择文件") { batchImport = true; importing = true }
+                        .buttonStyle(SecondaryButtonStyle(height: 44))
+                        .disabled(model.busy)
+                        .accessibilityIdentifier("sources.importBatch")
+                    if batchImport {
+                        Text("批量模式请勾选文件，再点右上角「打开」或「完成」。")
+                            .font(.caption).foregroundStyle(Theme.ink2)
+                    }
                 }
                 .padding(24).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -180,7 +191,7 @@ struct SourcesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .paperBackground()
-        .bookImporter(isPresented: $importing)
+        .bookImporter(isPresented: $importing, allowsMultipleSelection: batchImport)
         .navigationDestination(for: String.self) { route in
             if route == "wifi-transfer" { WiFiTransferView() }
         }

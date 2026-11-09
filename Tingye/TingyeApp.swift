@@ -50,9 +50,18 @@ struct TingyeApp: App {
 enum UIReview {
     static var isolated: Bool { ProcessInfo.processInfo.arguments.contains("-ui-fixture") }
     static var showcase: Bool { isolated && ProcessInfo.processInfo.arguments.contains("-ui-showcase") }
+    static var localImportDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("LocalImportFixture", isDirectory: true)
+    }
     /// UI 回归只写临时书库，不修改用户书籍，也不连接云语音 / iCloud。
     @MainActor static func makeFixture() throws -> AppModel? {
         guard isolated else { return nil }
+        if screen == "sources-file-import" {
+            try FileManager.default.createDirectory(at: localImportDirectory, withIntermediateDirectories: true)
+            try Data("第一章 本地导入\n这是从系统文件选择器导入的测试正文。".utf8)
+                .write(to: localImportDirectory.appendingPathComponent("点击导入.txt"), options: .atomic)
+        }
         if ProcessInfo.processInfo.arguments.contains("-ui-reset-preferences") {
             // 仅自动化临时书库：写入可修改的初值。启动参数域会锁住 @AppStorage，无法测试用户切换。
             UserDefaults.standard.set("paper", forKey: "reader.paper")
