@@ -770,11 +770,25 @@ extension DesignFlowTests {
         let fileCell = app.cells.containing(.staticText, identifier: file.label).firstMatch
         XCTAssertTrue(fileCell.exists)
         waitForReadingCondition({ fileCell.isHittable }, "系统文件选择器完成布局后文件项应可点击")
-        let target = fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        let target = fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         target.tap()
         let results = app.buttons.matching(identifier: "import.results").firstMatch
-        if !results.waitForExistence(timeout: 4), app.otherElements["bookImport.documentPicker"].exists, fileCell.exists {
-            target.tap()
+        if !results.waitForExistence(timeout: 5), app.otherElements["bookImport.documentPicker"].exists {
+            // iOS 26 模拟器首次拉起 UIDocumentPicker 时，LocalStorageFileProvider 偶发冷启动超时（FP -1005 did=3）；
+            // 关闭并重新打开选择器即可挂载已就绪的 FileProvider 索引集合完成单击导入。
+            let cancel = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].buttons["取消"].firstMatch
+            if cancel.exists {
+                cancel.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            } else if app.buttons["取消"].exists {
+                app.buttons["取消"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            XCTAssertTrue(choose.waitForExistence(timeout: 10))
+            waitForReadingCondition({ choose.isHittable }, "关闭冷启动超时的文件选择器后应回到选择文件按钮")
+            choose.tap()
+            XCTAssertTrue(file.waitForExistence(timeout: 20), app.debugDescription)
+            waitForReadingCondition({ fileCell.exists && fileCell.isHittable }, "重新打开文件选择器后文件项应可点击")
+            Thread.sleep(forTimeInterval: 1.0)
+            fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         }
         XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import: " + app.debugDescription)
         results.tap()
