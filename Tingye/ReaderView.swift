@@ -22,12 +22,16 @@ enum NativeTypesetter {
         }
         return string
     }
-    static func pages(_ string: NSAttributedString, size: CGSize) -> [NSRange] {
+    static func pages(_ string: NSAttributedString, size: CGSize, isCancelled: () -> Bool = { Task.isCancelled }) -> [NSRange] {
+        guard !isCancelled() else { return [] }
         guard string.length > 0, size.width > 40, size.height > 40 else { return [NSRange(location: 0, length: string.length)] }
         let setter = CTFramesetterCreateWithAttributedString(string)
         let path = CGPath(rect: CGRect(origin: .zero, size: size), transform: nil)
         var result: [NSRange] = [], start = 0
         while start < string.length {
+            // A resize/font change cancels the old layout. Stop between frames
+            // instead of laying out an obsolete long chapter to completion.
+            guard !isCancelled() else { return [] }
             let frame = CTFramesetterCreateFrame(setter, CFRange(location: start, length: 0), path, nil)
             let visible = CTFrameGetVisibleStringRange(frame)
             var length = visible.length
@@ -735,7 +739,12 @@ struct ReaderView: View {
         let string = NativeTypesetter.attributed(current, preferences: prefs)
         let pageSize = CGSize(width: double ? (size.width - 36) / 2 : size.width, height: size.height)
         let box = UncheckedBox(value: string)
-        let result = scrolling ? [NSRange(location: 0, length: string.length)] : await Task.detached(priority: .userInitiated) { NativeTypesetter.pages(box.value, size: pageSize) }.value
+        let result: [NSRange]
+        if scrolling { result = [NSRange(location: 0, length: string.length)] }
+        else {
+            let layoutTask = Task.detached(priority: .userInitiated) { NativeTypesetter.pages(box.value, size: pageSize) }
+            result = await withTaskCancellationHandler { await layoutTask.value } onCancel: { layoutTask.cancel() }
+        }
         guard !Task.isCancelled else { return }
         doublePage = double; attributed = string; pages = result
         locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset); ready = true

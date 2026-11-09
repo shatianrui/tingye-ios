@@ -208,7 +208,7 @@ final class AppModel: ObservableObject {
     private func openBook(_ entry: ShelfEntry) {
         guard !restoringLibrary else { return }
         openTask?.cancel()
-        if let cached = cache[entry.id] {
+        if let cached = cachedBook(entry.id) {
             recordActivity(.reading, for: entry.id)
             selectedBook = cached
             return
@@ -231,7 +231,7 @@ final class AppModel: ObservableObject {
     /// 在后台读取并解码：多图 EPUB 的书籍文件可达上百 MB，放在主线程会让翻开时整屏卡住。
     func loadBook(_ id: String) async throws -> Book {
         try requireWritableLibrary()
-        if let value = cache[id] { return value }
+        if let value = cachedBook(id) { return value }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         let generation = libraryGeneration
         let value = try await Task.detached(priority: .userInitiated) { try disk.read(id) }.value
@@ -241,14 +241,25 @@ final class AppModel: ObservableObject {
     }
     func book(_ id: String) throws -> Book {
         try requireWritableLibrary()
-        if let value = cache[id] { return value }
+        if let value = cachedBook(id) { return value }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         let value = try disk.read(id); remember(value); return value
+    }
+    private func cachedBook(_ id: String) -> Book? {
+        guard let value = cache[id] else { return nil }
+        cacheOrder.removeAll { $0 == id }; cacheOrder.append(id)
+        return value
     }
     private func remember(_ value: Book) {
         cache[value.id] = value
         cacheOrder.removeAll { $0 == value.id }; cacheOrder.append(value.id)
-        while cacheOrder.count > 4 { let old = cacheOrder.removeFirst(); if old != player.book?.id && old != selectedBook?.id { cache[old] = nil } }
+        // Keep protected books in the queue: when reading/playback moves on they
+        // must become eligible again, rather than leaking out of eviction tracking.
+        while cacheOrder.count > 4 {
+            guard let index = cacheOrder.firstIndex(where: { $0 != player.book?.id && $0 != selectedBook?.id }) else { break }
+            let old = cacheOrder.remove(at: index)
+            cache[old] = nil
+        }
     }
     /// 只丢弃封面缩略图与分类索引并在后台重建；不重载书架，正在听的书不受影响。
     func clearIndexCache() {

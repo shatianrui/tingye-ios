@@ -2674,3 +2674,66 @@ final class ReaderOnlyListeningTests: XCTestCase {
         XCTAssertNil(model.listeningReaderID)
     }
 }
+
+/// Memory and obsolete-layout regressions when switching books or reader settings.
+final class ReadingPerformanceTests: XCTestCase {
+    @MainActor func testPreviouslyProtectedBookCanBeEvictedAfterReaderMovesOn() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let disk = try LibraryDisk(owner: "cache-regression", base: base)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), account: { false }))
+        let books = (0..<10).map { Book(id: "cache-\($0)", title: "Book \($0)", format: "TXT", chapters: [Chapter(title: "一", text: "正文。")]) }
+        for book in books { try disk.write(book) }
+        model.selectedBook = try model.book(books[0].id)
+        for book in books[1...4] { _ = try model.book(book.id) }
+        // Book zero was protected at the first eviction. It must not become
+        // permanently retained after it is no longer the selected book.
+        model.selectedBook = try model.book(books[4].id)
+        for book in books[5...9] { _ = try model.book(book.id) }
+        var updated = books[0]; updated.fields["title"] = .string("Updated on disk")
+        try disk.write(updated)
+        XCTAssertEqual(try model.book(updated.id).title, updated.title,
+                       "An unprotected old book must be evicted, then reloaded from disk")
+    }
+
+    @MainActor func testCacheHitRefreshesRecencyAndKeepsSelectedBook() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let disk = try LibraryDisk(owner: "cache-recency", base: base)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), account: { false }))
+        let books = (0..<5).map { Book(id: "recent-\($0)", title: "Book \($0)", format: "TXT", chapters: [Chapter(title: "一", text: "正文。")]) }
+        for book in books { try disk.write(book) }
+        for book in books[0...3] { _ = try model.book(book.id) }
+        model.selectedBook = books[2]
+        _ = try model.book(books[0].id)
+        _ = try model.book(books[4].id)
+        for book in books[0...2] {
+            var updated = book; updated.fields["title"] = .string("Updated on disk")
+            try disk.write(updated)
+        }
+        XCTAssertEqual(try model.book(books[0].id).title, books[0].title,
+                       "A recent cache hit must stay in memory")
+        XCTAssertEqual(try model.book(books[2].id).title, books[2].title,
+                       "The visible reader's book must stay protected")
+        XCTAssertEqual(try model.book(books[1].id).title, "Updated on disk",
+                       "The least recently used unprotected book must be reloaded")
+    }
+
+    @MainActor func testPaginationDiscardsPartialResultsWhenCancelledBetweenPages() {
+        let chapter = Chapter(title: "长章", text: String(repeating: "长篇正文📖，切换字号时不应继续旧分页。\n", count: 200))
+        let text = NativeTypesetter.attributed(chapter, preferences: .init())
+        var checkpoints = 0
+        let pages = NativeTypesetter.pages(text, size: CGSize(width: 180, height: 150), isCancelled: {
+            checkpoints += 1
+            return checkpoints == 3
+        })
+        XCTAssertEqual(checkpoints, 3, "Cancellation must be checked between CoreText frames")
+        XCTAssertTrue(pages.isEmpty, "A cancelled layout must never expose a partial page list")
+    }
+
+    func testPaginationHonorsCancellationBeforeFallbackLayout() {
+        let text = NSAttributedString(string: "正文")
+        XCTAssertTrue(NativeTypesetter.pages(text, size: .zero, isCancelled: { true }).isEmpty)
+        XCTAssertEqual(NativeTypesetter.pages(text, size: .zero), [NSRange(location: 0, length: text.length)])
+    }
+}

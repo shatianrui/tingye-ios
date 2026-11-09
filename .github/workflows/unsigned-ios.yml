@@ -29,6 +29,9 @@ jobs:
             -derivedDataPath build/UnsignedTests -resultBundlePath build/UnsignedTests.xcresult \
             -only-testing:TingyeTests/NativeCoreTests/testUnsignedBuildNeverOpensCloudStorageOrChecksAppleAccount \
             -only-testing:TingyeTests/BookLoadingTests \
+            -only-testing:TingyeTests/ReadingPerformanceTests \
+            -only-testing:TingyeTests/NativeCoreTests/testPaginationCoversEveryCharacterWithoutGaps \
+            -only-testing:TingyeTests/NativeCoreTests/testEveryPageRendersAllOfItsCharacters \
             -only-testing:TingyeTests/ReaderVoiceTests \
             -only-testing:TingyeTests/ReaderOnlyListeningTests \
             -only-testing:TingyeUITests/DesignFlowTests/testReaderCanSkipSentencesAndKeepPausedWithoutPlayerPage \
