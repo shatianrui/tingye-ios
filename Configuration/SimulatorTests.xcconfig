@@ -1,0 +1,6 @@
+#include "Unsigned.xcconfig"
+// Keep the portable capability flag, but sign simulator apps with a local ad-hoc identity.
+// No developer account or provisioning profile is required; the device IPA stays unsigned.
+CODE_SIGNING_ALLOWED = YES
+CODE_SIGNING_REQUIRED = YES
+CODE_SIGN_IDENTITY = -

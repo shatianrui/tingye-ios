@@ -1106,7 +1106,7 @@ struct LocalBookPicker: UIViewControllerRepresentable {
     let completion: ([URL]) -> Void
 
     static func controller(allowsMultipleSelection: Bool, delegate: UIDocumentPickerDelegate) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: true)
         picker.allowsMultipleSelection = allowsMultipleSelection
         picker.shouldShowFileExtensions = true
         picker.delegate = delegate
@@ -1134,7 +1134,12 @@ struct LocalBookPicker: UIViewControllerRepresentable {
             completed = true
             completion(urls)
         }
-        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { finish(urls) }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            #if DEBUG
+            NSLog("LocalBookPicker delivered %ld documents", urls.count)
+            #endif
+            finish(urls)
+        }
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish([]) }
     }
 }
