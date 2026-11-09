@@ -52,7 +52,6 @@ enum UIReview {
     static var showcase: Bool { isolated && ProcessInfo.processInfo.arguments.contains("-ui-showcase") }
     static var localImportDirectory: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("LocalImportFixture", isDirectory: true)
     }
     /// UI 回归只写临时书库，不修改用户书籍，也不连接云语音 / iCloud。
     @MainActor static func makeFixture() throws -> AppModel? {

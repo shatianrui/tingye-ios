@@ -841,13 +841,12 @@ extension DesignFlowTests {
         let choose = app.buttons["sources.importFile"]
         XCTAssertTrue(choose.waitForExistence(timeout: 15))
         choose.tap()
-        // Files can resolve directoryURL to the app's Documents root; enter the real folder if shown.
-        let folder = app.cells.containing(.staticText, identifier: "LocalImportFixture").firstMatch
-        if folder.waitForExistence(timeout: 5) { folder.tap() }
         let file = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "点击导入")).firstMatch
         XCTAssertTrue(file.waitForExistence(timeout: 20), app.debugDescription)
         screenshot(app, "系统选择器-选择本地书籍")
-        file.tap()
+        let fileCell = app.cells.containing(.staticText, identifier: file.label).firstMatch
+        XCTAssertTrue(fileCell.exists)
+        fileCell.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
         let results = app.buttons.matching(identifier: "import.results").firstMatch
         XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import: " + app.debugDescription)
         results.tap()
