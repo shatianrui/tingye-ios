@@ -1143,17 +1143,14 @@ private struct BookImportModifier: ViewModifier {
     @EnvironmentObject var model: AppModel
     @Binding var isPresented: Bool
     var allowsMultipleSelection = false
-    @State private var pickedURLs: [URL] = []
     func body(content: Content) -> some View {
-        content.sheet(isPresented: $isPresented, onDismiss: {
-            let urls = pickedURLs
-            pickedURLs = []
-            // Begin only after the picker is gone, so results can be presented immediately.
-            if !urls.isEmpty { model.beginImport(urls) }
-        }) {
+        content.sheet(isPresented: $isPresented) {
             LocalBookPicker(allowsMultipleSelection: allowsMultipleSelection) { urls in
-                pickedURLs = urls
                 isPresented = false
+                // Deliver the selected copies directly. A sheet's onDismiss may read a stale
+                // value-type selection, or be bypassed when the system picker dismisses itself.
+                // Import feedback is non-modal and remains visible after the picker closes.
+                if !urls.isEmpty { model.beginImport(urls) }
             }
             .ignoresSafeArea()
         }

@@ -849,7 +849,7 @@ extension DesignFlowTests {
         screenshot(app, "系统选择器-选择本地书籍")
         file.tap()
         let results = app.buttons.matching(identifier: "import.results").firstMatch
-        XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import")
+        XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import: " + app.debugDescription)
         results.tap()
         XCTAssertTrue(app.staticTexts["1 本书导入成功"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["点击导入.txt"].exists)
