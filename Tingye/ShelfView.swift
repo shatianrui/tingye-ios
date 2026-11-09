@@ -919,10 +919,10 @@ struct ShelfView: View {
         }
         if !entry.isComic {
             Button {
-                if model.player.book?.id == entry.id { model.showingPlayer = true }
+                if model.player.book?.id == entry.id { model.showListeningReader() }
                 else { model.listen(entry.id) }
             } label: {
-                Label(model.player.book?.id == entry.id ? "打开播放器" : "听书", systemImage: Icon.listen)
+                Label(model.player.book?.id == entry.id ? "回到朗读正文" : "听书", systemImage: Icon.listen)
             }
         }
         Divider()

@@ -249,14 +249,10 @@ struct RootView: View {
         .fullScreenCover(item: $model.selectedBook) { book in
             NavigationStack {
                 if book.fields["comic"]?.bool == true { ComicReaderView(book: book) }
-                else { ReaderView(book: book, player: model.player) }
+                else { ReaderView(book: book, player: model.player).id(book.id) }
             }
                 .environmentObject(model)
                 .tint(Theme.accent)
-        }
-        .sheet(isPresented: $model.showingPlayer) {
-            PlayerView(player: model.player)
-                .environmentObject(model)
         }
         .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
             Button("关闭", role: .cancel) { model.message = nil }
@@ -280,7 +276,7 @@ struct RootView: View {
             model.tab = 1
             if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
                 model.run("正在准备辅助听书") { [model] in
-                    model.startListening(try model.book(entry.id), showPlayer: false)
+                    model.startListening(try model.book(entry.id), openReader: false)
                     model.player.pause()
                 }
             }
@@ -307,22 +303,21 @@ struct RootView: View {
             let target = model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
             if let chapter = UIReview.chapter { model.saveProgress(target.id, chapter: chapter, position: 0) }
             model.open(target)
-        } else if screen == "reader-original-listen" || screen == "reader-listen" {
-            let target = screen == "reader-listen" ? entry : model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
+        } else if screen == "reader-original-listen" || screen == "reader-listen" || screen == "reader-only-listen" {
+            let target = screen != "reader-original-listen" ? entry : model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
             model.run("正在打开") { [model] in
                 let book = try model.book(target.id)
-                model.selectedBook = book
-                model.startListening(book, showPlayer: false)
+                model.startListening(book, openReader: true)
+                if screen == "reader-only-listen" { model.player.pause() }
             }
         } else if screen.hasPrefix("reader") {
             model.open(entry)
         } else if screen == "miniplayer" {
-            model.run("正在打开") { [model] in model.startListening(try model.book(entry.id), showPlayer: false) }
-        } else if screen.hasPrefix("player") {
             model.run("正在打开") { [model] in
-                model.startListening(try model.book(entry.id))
+                model.startListening(try model.book(entry.id), openReader: false)
                 if UIReview.isolated { model.player.pause() }
             }
+
         }
     }
     #endif
@@ -419,7 +414,7 @@ struct MiniPlayer: View {
         if let book = player.book {
             VStack(spacing: 0) {
                 layout {
-                    Button { model.showingPlayer = true } label: {
+                    Button { model.showListeningReader() } label: {
                         HStack(spacing: 12) {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
                             VStack(alignment: .leading, spacing: 1) {
@@ -440,7 +435,7 @@ struct MiniPlayer: View {
                         .frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("展开听书页：\(book.title)，\(subtitle)")
+                    .accessibilityLabel("回到朗读正文：\(book.title)，\(subtitle)")
                     .accessibilityIdentifier("miniPlayer.open")
 
                     Button { Haptics.light(); player.toggle() } label: {

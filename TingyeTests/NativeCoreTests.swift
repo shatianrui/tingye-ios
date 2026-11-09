@@ -326,7 +326,7 @@ final class NativeCoreTests: XCTestCase {
                 let reopened = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
                 defer { reopened.player.stop(); reopened.flushPendingSaves() }
                 let loaded = try await reopened.loadBook(book.id)
-                reopened.startListening(loaded, showPlayer: false)
+                reopened.startListening(loaded, openReader: false)
                 reopened.player.pause()
                 XCTAssertEqual(reopened.player.chapter, 0)
                 XCTAssertEqual(reopened.player.position, 1, "重新启动听书应恢复独立的听书位置")
@@ -336,7 +336,7 @@ final class NativeCoreTests: XCTestCase {
                                "重新打开正文必须仍能恢复第2章的阅读位置")
                 XCTAssertEqual(reopened.player.chapter, 0, "打开正文不能拖动声音位置")
                 XCTAssertEqual(reopened.player.position, 1)
-                XCTAssertFalse(reopened.showingPlayer)
+                XCTAssertNil(reopened.listeningReaderID)
             }
         }
     }
@@ -347,7 +347,7 @@ final class NativeCoreTests: XCTestCase {
                 let book = self.readingFirstBook("legacy-listening")
                 try await model.add(book, progress: .init(chapter: 1, position: 1, updatedAt: 100))
                 XCTAssertNil(model.entries.first?.listeningProgress)
-                model.startListening(book, showPlayer: false)
+                model.startListening(book, openReader: false)
                 model.player.pause()
                 XCTAssertEqual(model.player.chapter, 1)
                 XCTAssertEqual(model.player.position, 1, "旧书库没有听书字段时从原有阅读位置开始")
@@ -355,7 +355,7 @@ final class NativeCoreTests: XCTestCase {
                 model.saveProgress(book.id, chapter: 0, position: 2)
                 let reading = try XCTUnwrap(model.entries.first).progress
                 model.player.stop()
-                model.startListening(book, showPlayer: false)
+                model.startListening(book, openReader: false)
                 model.player.pause()
                 XCTAssertEqual(model.player.chapter, 1)
                 XCTAssertEqual(model.player.position, 1, "有独立听书进度后，阅读推进不能改变续听位置")
@@ -369,10 +369,10 @@ final class NativeCoreTests: XCTestCase {
             try await self.withDesignModel { model, _, _ in
                 let book = self.readingFirstBook("explicit-listening")
                 try await model.add(book, progress: .init(chapter: 1, position: 2, updatedAt: 100))
-                model.startListening(book, showPlayer: false)
+                model.startListening(book, openReader: false)
                 model.player.pause()
                 let reading = try XCTUnwrap(model.entries.first).progress
-                model.listen(book.id, chapter: 0, position: 1, showPlayer: false)
+                model.listen(book.id, chapter: 0, position: 1, openReader: false)
                 model.player.pause()
                 XCTAssertEqual(model.player.chapter, 0)
                 XCTAssertEqual(model.player.position, 1)
@@ -380,7 +380,7 @@ final class NativeCoreTests: XCTestCase {
                                "听此章/从这句听只能定位声音，不能改写阅读断点")
                 XCTAssertEqual(model.entries.first?.listeningProgress?.chapter, 0)
                 XCTAssertEqual(model.entries.first?.listeningProgress?.position, 1)
-                XCTAssertFalse(model.showingPlayer, "辅助听书不应自动打开全屏播放器")
+                XCTAssertNil(model.listeningReaderID, "行内启动不应请求新的页面")
             }
         }
     }
@@ -432,7 +432,7 @@ final class NativeCoreTests: XCTestCase {
             try await self.withDesignModel(syncStore: store) { model, _, _ in
                 let book = self.readingFirstBook("audio-survives-reading-sync")
                 try await model.add(book, progress: .init(chapter: 1, position: 2, updatedAt: 100))
-                model.startListening(book, showPlayer: false, from: .init(chapter: 0, position: 1))
+                model.startListening(book, openReader: false, from: .init(chapter: 0, position: 1))
                 model.player.pause()
                 let row = try XCTUnwrap(model.entries.first)
                 let savedListening = row.listeningProgress
@@ -465,7 +465,7 @@ final class NativeCoreTests: XCTestCase {
                 let readingBook = self.readingFirstBook("usage-reading-b")
                 try await model.add(audioBook)
                 try await model.add(readingBook)
-                model.startListening(audioBook, showPlayer: false)
+                model.startListening(audioBook, openReader: false)
                 XCTAssertTrue(model.player.playing)
                 XCTAssertFalse(model.player.buffering)
                 model.setReadingSurface(readingBook.id, visible: true)
@@ -2603,5 +2603,68 @@ final class ReaderVoiceTests: XCTestCase {
         XCTAssertNotNil(result.attribute(.backgroundColor, at: 0, effectiveRange: nil))
         XCTAssertNil(result.attribute(.underlineStyle, at: 0, effectiveRange: nil))
         XCTAssertNil(source.attribute(.backgroundColor, at: 0, effectiveRange: nil))
+    }
+}
+
+@MainActor
+final class ReaderOnlyListeningTests: XCTestCase {
+    private func withModel(_ action: (AppModel, Book) async throws -> Void) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let disk = try LibraryDisk(owner: "reader-only", base: root)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(account: { false }))
+        let book = Book(id: "reader-audio", title: "正文听书", format: "TXT", chapters: [
+            Chapter(title: "第一章", text: "第一句。第二句。第三句。"), Chapter(title: "第二章", text: "另一章第一句。另一章第二句。")
+        ])
+        try await model.add(book)
+        defer { model.player.stop() }
+        try await action(model, book)
+    }
+    func testStartListeningOpensMatchingReaderAtAudioPosition() async throws {
+        try await withModel { model, book in
+            model.startListening(book, from: .init(chapter: 1, position: 1))
+            model.player.pause()
+            XCTAssertEqual(model.selectedBook?.id, book.id)
+            XCTAssertEqual(model.listeningReaderID, book.id)
+            XCTAssertEqual(model.readerJump?.chapter, 1)
+            XCTAssertEqual(model.readerJump?.position, 1)
+        }
+    }
+    func testInlineStartDoesNotPresentAnotherPageAndRevealPreservesPause() async throws {
+        try await withModel { model, book in
+            model.startListening(book, openReader: false, from: .init(chapter: 0, position: 1))
+            model.player.pause()
+            XCTAssertNil(model.selectedBook)
+            XCTAssertNil(model.listeningReaderID)
+            model.showListeningReader()
+            XCTAssertEqual(model.selectedBook?.id, book.id)
+            XCTAssertFalse(model.player.playing)
+            XCTAssertEqual(model.player.position, 1)
+            XCTAssertEqual(model.readerJump?.position, 1)
+        }
+    }
+    func testChapterListeningTargetsReaderAndOrdinaryOpenClearsFollowRequest() async throws {
+        try await withModel { model, book in
+            model.startListening(book, openReader: false)
+            model.player.pause()
+            model.listen(book.id, chapter: 1, position: 1)
+            model.player.pause()
+            XCTAssertEqual(model.selectedBook?.id, book.id)
+            XCTAssertEqual(model.readerJump?.chapter, 1)
+            XCTAssertEqual(model.listeningReaderID, book.id)
+            let reading = try XCTUnwrap(model.entries.first).progress
+            model.open(try XCTUnwrap(model.entries.first))
+            XCTAssertNil(model.listeningReaderID)
+            XCTAssertNil(model.readerJump)
+            XCTAssertEqual(model.entries.first?.progress, reading)
+        }
+    }
+    func testRevealWithNoAudioDoesNotOpenAnyPage() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(disk: try LibraryDisk(owner: "no-audio", base: root), progressSync: ProgressSync(account: { false }))
+        model.showListeningReader()
+        XCTAssertNil(model.selectedBook)
+        XCTAssertNil(model.listeningReaderID)
     }
 }

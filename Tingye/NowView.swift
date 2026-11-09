@@ -149,16 +149,16 @@ struct NowView: View {
             Haptics.light()
             if current {
                 if !player.playing { player.resume() }
-                model.showingPlayer = true
+                model.showListeningReader()
             } else { model.listen(entry.id) }
         } label: {
-            Label(current && player.playing ? "打开听书" : "听这本书", systemImage: Icon.listen)
+            Label(current && player.playing ? "回到朗读正文" : "听这本书", systemImage: Icon.listen)
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("now.listen")
-        .accessibilityLabel("\(current && player.playing ? "打开听书" : "听这本书")《\(entry.title)》")
+        .accessibilityLabel("\(current && player.playing ? "回到朗读正文" : "听这本书")《\(entry.title)》")
         .accessibilityHint("辅助朗读，保留当前阅读位置")
     }
 

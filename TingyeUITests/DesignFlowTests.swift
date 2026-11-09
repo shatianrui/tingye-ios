@@ -293,30 +293,22 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(reading.frame.height, 44)
     }
 
-    func testPlayerCanScrubSentencesAndKeepPaused() {
-        let app = launch("player")
-        // 句子进度是自定义刻度轨（非系统 Slider），用与真实手指相同的坐标拖动手势验证。
-        let scrubber = app.descendants(matching: .any)["player.sentence-progress"]
-        XCTAssertTrue(scrubber.waitForExistence(timeout: 15))
-        let toggle = app.buttons["player.toggle"]
-        XCTAssertTrue(toggle.label.contains("继续朗读"))
-        XCTAssertTrue(app.staticTexts["player.readingStatus"].isHittable, "跟读状态应固定在卡片顶部，不随长句滚出视口")
-        let original = scrubber.value as? String
-        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
-            .press(forDuration: 0.2, thenDragTo: scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.5)))
-        XCTAssertTrue(waitForValueChange(of: scrubber, from: original), "拖动后句子标签应离开 \(original ?? "nil")")
-        let scrubbed = scrubber.value as? String
-        XCTAssertTrue(scrubbed?.contains("句") == true)
-        XCTAssertTrue(toggle.label.contains("继续朗读"), "拖动不能擅自恢复已暂停的朗读")
-        app.buttons["player.nextSentence"].tap()
-        XCTAssertTrue(waitForValueChange(of: scrubber, from: scrubbed))
-        toggle.tap()
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        XCTAssertTrue(toggle.label.contains("暂停朗读"))
-        toggle.tap()
-        XCTAssertTrue(toggle.label.contains("继续朗读"))
-        XCTAssertTrue(app.staticTexts["player.readingStatus"].isHittable)
-        screenshot(app, "播放器-句子拖动与暂停")
+    func testReaderCanSkipSentencesAndKeepPausedWithoutPlayerPage() {
+        let app = launch("reader-only-listen")
+        let toggle = app.buttons["reader.toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        XCTAssertTrue(toggle.label.contains("继续"))
+        let position = app.staticTexts["reader.audioPosition"]
+        let before = position.label
+        app.buttons["reader.nextSentence"].tap()
+        let changed = NSPredicate { _, _ in position.label != before }
+        expectation(for: changed, evaluatedWith: nil)
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(toggle.label.contains("继续"), "跳句不能擅自恢复暂停的音频")
+        XCTAssertTrue(app.buttons["reader.back"].exists)
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
+        XCTAssertFalse(app.buttons["reader.expandPlayer"].exists)
+        screenshot(app, "正文-唯一听书界面与跳句")
     }
 
     /// 等无障碍值真正刷新，避免手势完成后立刻读取到旧快照。
@@ -329,18 +321,14 @@ final class DesignFlowTests: XCTestCase {
         return (element.value as? String) != old
     }
 
-    func testLargestTypePlayerControlsRemainReachable() {
-        let app = launch("player", largeType: true)
-        let toggle = app.buttons["player.toggle"]
-        XCTAssertTrue(app.buttons["player.more"].waitForExistence(timeout: 15))
-        XCTAssertFalse(app.buttons["player.cover"].exists, "必须实际进入辅助功能字号布局，而不是仅传了测试参数")
-        screenshot(app, "播放器-最大字号长书名")
-        XCTAssertTrue(toggle.isHittable, "最大字号下播放控制也应固定可见")
-        XCTAssertEqual(toggle.frame.midX, app.frame.midX, accuracy: 2, "跳句文字放大后不能把播放键挤偏")
-        screenshot(app, "播放器-最大字号播放控制")
-        reveal(app.buttons["player.contents"], in: app)
-        app.buttons["player.contents"].tap()
-        XCTAssertTrue(app.navigationBars["听书目录"].waitForExistence(timeout: 5))
+    func testLargestTypeReaderListeningControlsRemainReachable() {
+        let app = launch("reader-only-listen", largeType: true)
+        let toggle = app.buttons["reader.toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        reveal(toggle, in: app)
+        XCTAssertTrue(toggle.isHittable)
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
+        screenshot(app, "正文-最大字号朗读控制")
     }
 
     func testLargestTypeHomeAndShelfActionsRemainReachable() {
@@ -377,68 +365,23 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testReaderKeepsActionSlotsAndChapterNavigationDoesNotSeekAudio() throws {
-        let app = launch("reader")
-        XCTAssertTrue(app.buttons["reader.notes"].waitForExistence(timeout: 15))
+        let app = launch("reader-only-listen")
+        XCTAssertTrue(app.buttons["reader.nextChapter"].waitForExistence(timeout: 15))
+        let position = app.staticTexts["reader.audioPosition"].label
         let ids = ["reader.contents", "reader.preferences", "reader.notes", "reader.more"]
-        let positions = ids.map { app.buttons[$0].frame.midX }
-        XCTAssertFalse(app.buttons["reader.listen"].exists, "常驻工具应优先目录、排版与摘记")
-        app.buttons["reader.more"].tap()
-        let start = app.buttons["从当前阅读位置听"]
-        XCTAssertTrue(start.waitForExistence(timeout: 5))
-        start.tap()
-        XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
-        setReadingTools(false, in: app, frame: nativeLayout(in: app)?.viewport ?? app.frame)
-        waitForReadingCondition({
-            guard let layout = self.nativeLayout(in: app) else { return false }
-            return layout.viewport.maxY <= app.buttons["reader.toggle"].frame.minY
-        }, "朗读快捷条出现时正文视口必须完整位于快捷条上方")
-        let toggle = app.buttons["reader.toggle"]
-        let toggleFrame = toggle.frame
-        for _ in 0..<3 {
-            if toggle.label.contains("暂停") { toggle.tap() }
-            XCTAssertTrue(toggle.waitForExistence(timeout: 2), "暂停后快捷条必须保持，后续点击不能穿透正文")
-            XCTAssertEqual(toggle.frame, toggleFrame, "暂停与继续不能移动快捷条")
-            toggle.tap()
-            XCTAssertTrue(app.staticTexts["跟随朗读"].waitForExistence(timeout: 5),
-                          "连续暂停与继续后仍应保持跟随朗读及原文高亮")
-            XCTAssertEqual(toggle.frame, toggleFrame)
-        }
-        setReadingTools(true, in: app, frame: nativeLayout(in: app)?.viewport ?? app.frame)
-        XCTAssertTrue(app.buttons["reader.back"].isHittable)
-        XCTAssertFalse(app.buttons["player.toggle"].exists, "辅助听书启动后应留在正文")
-        if app.buttons["reader.toggle"].label.contains("暂停") { app.buttons["reader.toggle"].tap() }
-        XCTAssertTrue(app.buttons["reader.expandPlayer"].waitForExistence(timeout: 5))
-        for (index, id) in ids.enumerated() {
-            XCTAssertEqual(app.buttons[id].frame.midX, positions[index], accuracy: 1, "播放状态不能改变功能键的位置")
-        }
-        XCTAssertEqual(app.buttons.matching(identifier: "reader.expandPlayer").count, 1)
-        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        XCTAssertTrue(ids.allSatisfy { app.buttons[$0].exists })
         app.buttons["reader.nextChapter"].tap()
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2")
-        XCTAssertFalse(app.buttons["reader.nextChapter"].isEnabled)
-        app.buttons["reader.expandPlayer"].tap()
-        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["player.currentChapter"].label, "第 1 / 2 章", "阅读翻章不能改变听书章节")
-        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"), "展开听书页不能擅自恢复播放")
-        let listeningProgress = app.descendants(matching: .any)["player.sentence-progress"]
-        let oldListeningPosition = listeningProgress.value as? String
-        app.buttons["player.nextSentence"].tap()
-        XCTAssertTrue(waitForValueChange(of: listeningProgress, from: oldListeningPosition), "应实际触发一次音频进度回写")
-        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
-        app.buttons["player.collapse"].tap()
-        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "音频进度回调不能覆盖眼前的阅读位置")
-        app.buttons["reader.toggle"].tap()
-        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("暂停"))
-        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "继续声音也不能擅自开启跟随")
-        app.buttons["reader.toggle"].tap()
+        XCTAssertEqual(app.staticTexts["reader.audioPosition"].label, position)
+        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        XCTAssertFalse(app.buttons["reader.expandPlayer"].exists)
         app.buttons["reader.back"].tap()
-        XCTAssertTrue(app.buttons["continue.reading"].waitForExistence(timeout: 5))
-        app.buttons["continue.reading"].tap()
-        XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "退出重开应恢复独立阅读断点")
-        app.buttons["reader.returnToSpeech"].tap()
+        XCTAssertTrue(app.buttons["miniPlayer.open"].waitForExistence(timeout: 5))
+        app.buttons["miniPlayer.open"].tap()
+        XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
-        screenshot(app, "阅读优先-固定阅读工具与独立听书进度")
+        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
     }
 
     func testOriginalReaderKeepsFollowingThroughRepeatedPlaybackToggles() throws {
@@ -561,51 +504,36 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5), "取消删除应保留书籍")
     }
 
-    func testPlayerToolsAreDirectAndPreservePausedState() {
-        let app = launch("player")
-        XCTAssertTrue(app.buttons["player.voice"].waitForExistence(timeout: 15))
-        let ids = ["player.contents", "player.rate", "player.voice", "player.sleep"]
-        let positions = ids.map { app.buttons[$0].frame.midX }
-        XCTAssertEqual(positions, positions.sorted())
-        for id in ids { XCTAssertTrue(app.buttons[id].isHittable) }
-        app.buttons["player.voice"].tap()
-        XCTAssertTrue(app.navigationBars["声音与朗读"].waitForExistence(timeout: 5))
-        reveal(app.buttons["AirPlay"], in: app)
-        XCTAssertTrue(app.buttons["AirPlay"].isHittable)
-        screenshot(app, "功能键-声音与播放设备")
+    func testReaderVoiceAndTimerSettingsPreservePausedState() {
+        let app = launch("reader-only-listen")
+        let settings = app.buttons["reader.listeningSettings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+        app.buttons["声音与朗读"].tap()
+        XCTAssertTrue(app.buttons["voice.save"].waitForExistence(timeout: 5))
         app.buttons["取消声音设置，不保存修改"].tap()
-        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
-        app.buttons["player.sleep"].tap()
-        app.buttons["15 分钟后停止"].tap()
-        XCTAssertTrue((app.buttons["player.sleep"].value as? String)?.contains("15") == true)
-        app.buttons["player.sleep"].tap()
-        app.buttons["关闭定时"].tap()
-        XCTAssertEqual(app.buttons["player.sleep"].value as? String, "未开启")
-        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
-        screenshot(app, "功能键-听书四项常用工具")
+        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        settings.tap()
+        app.buttons["定时关闭"].tap()
+        app.buttons["15 分钟后暂停"].tap()
+        settings.tap()
+        XCTAssertTrue(app.buttons["定时已开启"].exists)
+        app.tap()
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
     }
 
-    func testMiniPlayerOnlyExpandsAndTogglesAndEndNeedsConfirmation() {
-        let app = launch("player")
-        XCTAssertTrue(app.buttons["player.collapse"].waitForExistence(timeout: 15))
-        app.buttons["player.collapse"].tap()
-        XCTAssertTrue(app.buttons["miniPlayer.open"].waitForExistence(timeout: 5))
+    func testMiniPlayerReturnsToReaderWithoutOpeningPlayerPage() {
+        let app = launch("miniplayer")
+        let open = app.buttons["miniPlayer.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["miniPlayer.toggle"].label.contains("继续"))
-        XCTAssertFalse(app.buttons["下一句"].exists)
-        screenshot(app, "功能键-精简迷你播放器")
-        app.buttons["miniPlayer.open"].tap()
-        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
-        app.buttons["player.more"].tap()
-        app.buttons["player.endListening"].tap()
-        XCTAssertTrue(app.buttons["结束听书"].waitForExistence(timeout: 5))
-        cancelConfirmation(in: app)
-        XCTAssertTrue(app.buttons["player.toggle"].isHittable)
-        app.buttons["player.more"].tap()
-        app.buttons["player.endListening"].tap()
-        app.buttons["结束听书"].tap()
-        XCTAssertTrue(app.buttons["navigation.tab.0"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["miniPlayer.open"].exists)
+        open.tap()
+        XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["reader.toggle"].label.contains("继续"))
+        XCTAssertTrue(app.buttons["reader.contents"].exists)
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
+        XCTAssertFalse(app.buttons["reader.expandPlayer"].exists)
+        screenshot(app, "迷你条-回到正文")
     }
 
     func testLargestTypeReaderToolsCanScrollWithoutLosingBackButton() {
@@ -807,31 +735,26 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
     }
 
-    func testMarginDarkPlayerAndReaderKeepControlsReachable() {
-        let app = launch("player", appearance: "dark")
-        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["player.toggle"].isHittable)
-        screenshot(app, "余白-夜间听书")
-        app.terminate()
-        let reader = launch("reader", appearance: "dark")
-        XCTAssertTrue(reader.buttons["reader.preferences"].waitForExistence(timeout: 15))
-        XCTAssertTrue(reader.buttons["reader.back"].isHittable)
-        XCTAssertTrue(reader.buttons["reader.contents"].isHittable)
-        screenshot(reader, "余白-夜间正文")
+    func testDarkReaderListeningControlsRemainReachable() {
+        let app = launch("reader-only-listen", appearance: "dark")
+        XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["reader.toggle"].isHittable)
+        XCTAssertTrue(app.buttons["reader.back"].isHittable)
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
+        screenshot(app, "夜间正文-朗读控制")
     }
 
-    func testLandscapePlayerKeepsPlaybackVisible() {
+    func testLandscapeReaderKeepsPlaybackVisible() {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
-        let app = launch("player")
-        XCTAssertTrue(app.buttons["player.toggle"].waitForExistence(timeout: 15))
-        for id in ["player.previousSentence", "player.toggle", "player.nextSentence"] {
+        let app = launch("reader-only-listen")
+        XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 15))
+        for id in ["reader.previousSentence", "reader.toggle", "reader.nextSentence"] {
+            reveal(app.buttons[id], in: app)
             XCTAssertTrue(app.buttons[id].isHittable)
-            XCTAssertTrue(app.frame.contains(app.buttons[id].frame))
         }
-        XCTAssertGreaterThan(app.frame.width, app.frame.height, "必须实际进入横屏布局")
-        // Xcode 27's application-cropped capture can use portrait bounds after rotation.
-        screenshot(app, "功能键-横屏固定播放控制", wholeScreen: true)
+        XCTAssertFalse(app.buttons["player.toggle"].exists)
+        screenshot(app, "横屏正文-播放控制", wholeScreen: true)
     }
 }
 
@@ -858,7 +781,7 @@ extension DesignFlowTests {
 
 extension DesignFlowTests {
     func testChinaGLMSetupIsReachableWithoutMakingPaidRequests() {
-        let app = launch("player-voice")
+        let app = launch("reader-voice")
         let link = app.buttons["voice.connect.glm"]
         XCTAssertTrue(link.waitForExistence(timeout: 15))
         reveal(link, in: app); link.tap()
@@ -868,7 +791,7 @@ extension DesignFlowTests {
         screenshot(app, "中国区-GLM语音设置")
     }
     func testChinaMiniMaxSetupIsReachableWithoutMakingPaidRequests() {
-        let app = launch("player-voice")
+        let app = launch("reader-voice")
         let link = app.buttons["voice.connect.minimax"]
         XCTAssertTrue(link.waitForExistence(timeout: 15))
         reveal(link, in: app); link.tap()

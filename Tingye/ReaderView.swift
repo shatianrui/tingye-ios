@@ -284,7 +284,16 @@ struct ReaderView: View {
                 following = false
                 chapter = jump.chapter; sentencePosition = max(0, jump.position)
             }
+            if model.listeningReaderID == book.id, active {
+                model.listeningReaderID = nil
+                following = true
+            }
             persist()
+        }
+        .onChange(of: model.listeningReaderID) { _, id in
+            guard id == book.id, active else { return }
+            model.listeningReaderID = nil; model.readerJump = nil
+            following = true; followSpeech()
         }
         .onChange(of: player.position) { _, _ in followSpeech() }
         .onChange(of: player.chapter) { _, _ in followSpeech() }
@@ -294,7 +303,6 @@ struct ReaderView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { followSpeech() } else { persist() }
         }
-        .onChange(of: sheet) { _, value in model.setReadingSurface(book.id, visible: value != .focus) }
         #if DEBUG
         .task {
             switch UIReview.screen {
@@ -311,7 +319,6 @@ struct ReaderView: View {
                 switch value {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-                case .focus: PlayerView(player: player, fromReader: true)
                 case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)
@@ -525,7 +532,7 @@ struct ReaderView: View {
                     moreMenu
                 }
                 if active {
-                    listeningControls(showsPlayerLink: true)
+                    listeningControls
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measuredStripHeight = $0 }
                 }
             }
@@ -564,8 +571,10 @@ struct ReaderView: View {
                     .accessibilityIdentifier("reader.startListening")
                 if active {
                     Button { following = true; followSpeech() } label: { Label("跟随朗读位置", systemImage: Icon.listening) }
-                    Button { sheet = .focus } label: { Label("听书设置与控制", systemImage: Icon.listen) }
-                        .accessibilityIdentifier("reader.openPlayer")
+                    Button { sheet = .voice } label: { Label("声音与朗读", systemImage: Icon.voice) }
+                        .accessibilityIdentifier("reader.voiceSettings")
+                    listeningRateMenu
+                    listeningTimerMenu
                     Button { player.stop(); following = false } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
                 }
             }
@@ -594,27 +603,26 @@ struct ReaderView: View {
             .buttonStyle(.plain)
     }
 
-    /// 阅读中的听条只承担播放状态与切换；精细控制统一在听书页。
+    /// Listening remains in the reader: status, transport and compact settings.
     private var listeningStrip: some View {
-        listeningControls(showsPlayerLink: true)
+        listeningControls
             .readerPaperPanel(paper: readerPanelPaper, ink: prefs.foreground)
             .contentShape(Rectangle())
             .onTapGesture { }
     }
 
     /// 听条内容：单独作为听条显示，或在工具层打开时并入章节栏。
-    private func listeningControls(showsPlayerLink: Bool) -> some View {
-        HStack(spacing: 12) {
-            if showsPlayerLink {
-                Button { sheet = .focus } label: {
-                    HStack(spacing: 8) {
-                        listeningStatus
-                        ThemeIcon(symbol: Icon.expandUp, size: 18)
-                    }.contentShape(Rectangle())
+    private var listeningControls: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
+            listeningStatus
+            HStack(spacing: 0) {
+                Button { player.skip(-1) } label: {
+                    Image(systemName: Icon.previousSentence).frame(width: 44, height: 46)
                 }
-                .buttonStyle(.plain).accessibilityLabel("展开听书页")
-                .accessibilityIdentifier("reader.expandPlayer")
-            } else { listeningStatus }
+                .accessibilityLabel("上一句").accessibilityIdentifier("reader.previousSentence")
             Button { togglePlayback() } label: {
                 ZStack {
                     Circle().fill(prefs.foreground.opacity(0.07))
@@ -626,21 +634,49 @@ struct ReaderView: View {
             .buttonStyle(PressButtonStyle(scale: 0.94))
             .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
             .accessibilityIdentifier("reader.toggle")
+                Button { player.skip(1) } label: {
+                    Image(systemName: Icon.nextSentence).frame(width: 44, height: 46)
+                }
+                .accessibilityLabel("下一句").accessibilityIdentifier("reader.nextSentence")
+                Menu {
+                    Button { sheet = .voice } label: { Label("声音与朗读", systemImage: Icon.voice) }
+                    listeningRateMenu
+                    listeningTimerMenu
+                    Button("结束朗读", role: .destructive) { player.stop(); following = false }
+                } label: {
+                    Image(systemName: Icon.more).frame(width: 44, height: 46)
+                }
+                .accessibilityLabel("朗读设置").accessibilityIdentifier("reader.listeningSettings")
+            }
+            .buttonStyle(.plain)
         }
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 8).padding(.vertical, 4).frame(minHeight: 52)
-        .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
-            if value.translation.height < -24 { sheet = .focus }
-        })
+    }
+    private var listeningRateMenu: some View {
+        Menu("语速 · \(player.rate.rateText)×") {
+            ForEach([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], id: \.self) { rate in
+                Button("\(rate.rateText)×") { player.changeRate(rate) }
+            }
+        }
+    }
+    private var listeningTimerMenu: some View {
+        Menu(player.sleepUntil == nil ? "定时关闭" : "定时已开启") {
+            Button("关闭定时") { player.setSleep(minutes: 0) }
+            ForEach([5, 10, 15, 30, 45, 60], id: \.self) { minutes in
+                Button("\(minutes) 分钟后暂停") { player.setSleep(minutes: minutes) }
+            }
+        }
     }
 
     private var listeningStatus: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(player.buffering ? "正在准备声音…" : (player.playing ? (following ? "跟随朗读" : "辅助听书中") : "朗读已暂停"))
                 .font(.caption.weight(.medium))
-            Text(player.error ?? "第 \(player.chapter + 1) 章 · \(player.rate.rateText)× · \(player.timingLabel)")
+            Text(player.error ?? "第 \(player.chapter + 1) 章 · 第 \(player.position + 1)/\(player.allSentences.count) 句 · \(player.rate.rateText)×")
                 .font(.caption).foregroundStyle(player.error == nil ? prefs.secondary : Theme.danger)
                 .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                .accessibilityIdentifier("reader.audioPosition")
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
@@ -657,7 +693,7 @@ struct ReaderView: View {
 
     private func startReadingAloud() {
         persist()
-        model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: sentencePosition))
+        model.startListening(book, openReader: false, from: .init(chapter: chapter, position: sentencePosition))
         following = true
     }
 
@@ -706,7 +742,7 @@ struct ReaderView: View {
         sentencePosition = Sentence.index(at: offset, in: sentences)
         model.saveProgress(book.id, chapter: chapter, position: sentencePosition)
         if active { player.seek(chapter: chapter, position: sentencePosition); if !player.playing { player.resume() } }
-        else { model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: sentencePosition)) }
+        else { model.startListening(book, openReader: false, from: .init(chapter: chapter, position: sentencePosition)) }
         following = true
     }
     // MARK: 划线与笔记
@@ -822,7 +858,7 @@ struct ReaderView: View {
     }
 }
 private struct RebuildKey: Equatable { let chapter: Int; let size: CGSize; let prefs: ReaderPreferences; let automaticDouble: Bool }
-enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice, focus; var id: String { rawValue } }
+enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice; var id: String { rawValue } }
 
 final class CoreTextPageView: UIView {
     var onSelect: ((Int) -> Void)?

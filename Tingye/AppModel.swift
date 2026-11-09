@@ -33,7 +33,8 @@ final class AppModel: ObservableObject {
     /// 书架排序方式:recent 最近阅读 / title 书名 / author 作者 / added 添加时间
     @Published var sortOrder = "recent"
     @Published var selectedBook: Book?
-    @Published var showingPlayer = false
+    /// One-shot request to reveal the audio position in the existing reader.
+    @Published var listeningReaderID: String?
     /// 当前真正显示正文的书；展开全屏听书页时暂时清空。
     @Published private(set) var visibleReadingBookID: String?
     /// 一次性跳转目标：阅读页打开时消费（今日一句「从这句读」），不改动书架上的进度，直到读者在那里翻页或关闭。
@@ -195,7 +196,7 @@ final class AppModel: ObservableObject {
         Task { defer { busy = false; activity = "" }; do { try await operation() } catch is CancellationError {} catch { message = error.localizedDescription } }
     }
     func open(_ entry: ShelfEntry) {
-        readerJump = nil
+        readerJump = nil; listeningReaderID = nil
         openBook(entry)
     }
     /// 打开到指定的章与句。
@@ -467,40 +468,47 @@ final class AppModel: ObservableObject {
         }
         if !failures.isEmpty { throw ReaderError.message(failures.joined(separator: "\n")) }
     }
-    func startListening(_ book: Book, showPlayer: Bool = true, from position: ReadingProgress? = nil) {
+    func startListening(_ book: Book, openReader: Bool = true, from position: ReadingProgress? = nil) {
         guard !restoringLibrary else { return }
         guard book.fields["comic"]?.bool != true else { message = "漫画没有可以朗读的文字。"; return }
         let entry = entries.first(where: { $0.id == book.id })
         let progress = position ?? entry?.listeningProgress ?? entry?.progress ?? .init()
         recordActivity(.listening, for: book.id)
         player.start(book: book, chapter: progress.chapter, position: progress.position)
-        showingPlayer = showPlayer
+        if openReader { showListeningReader() }
     }
     /// 明确从某章或某句开始听，只定位声音，不改变阅读位置。
-    func listen(_ id: String, chapter: Int, position: Int = 0, showPlayer: Bool = true) {
+    func listen(_ id: String, chapter: Int, position: Int = 0, openReader: Bool = true) {
         guard !restoringLibrary else { return }
         if player.book?.id == id {
             recordActivity(.listening, for: id)
             player.seek(chapter: chapter, position: position)
             if !player.playing { player.resume() }
-            showingPlayer = showPlayer
+            if openReader { showListeningReader() }
         } else {
             run("正在准备朗读") { [self] in
-                startListening(try await loadBook(id), showPlayer: showPlayer, from: .init(chapter: chapter, position: position))
+                startListening(try await loadBook(id), openReader: openReader, from: .init(chapter: chapter, position: position))
             }
         }
     }
-    /// 所有「听书」入口共用：正在听这本书时只继续并打开听读页，不从头重建朗读。
-    func listen(_ id: String, showPlayer: Bool = true) {
+    /// All listening entries resume audio and reveal the matching sentence in the reader.
+    func listen(_ id: String, openReader: Bool = true) {
         guard !restoringLibrary else { return }
         if player.book?.id == id {
             if !player.playing { player.resume() }
-            showingPlayer = showPlayer
+            if openReader { showListeningReader() }
             return
         }
         run("正在打开") { [self] in
-            startListening(try await loadBook(id), showPlayer: showPlayer)
+            startListening(try await loadBook(id), openReader: openReader)
         }
+    }
+    /// Reveal existing audio without restarting it or changing paused state.
+    func showListeningReader() {
+        guard !restoringLibrary, let book = player.book else { return }
+        readerJump = (book.id, player.chapter, player.position)
+        listeningReaderID = book.id
+        if selectedBook?.id != book.id { selectedBook = book }
     }
     func category(_ row: ShelfEntry) -> String { categories[row.id] ?? "其他" }
     func markChapters(_ id: String, chapters: Set<Int>, read: Bool) async throws {

@@ -30,6 +30,10 @@ jobs:
             -only-testing:TingyeTests/NativeCoreTests/testUnsignedBuildNeverOpensCloudStorageOrChecksAppleAccount \
             -only-testing:TingyeTests/BookLoadingTests \
             -only-testing:TingyeTests/ReaderVoiceTests \
+            -only-testing:TingyeTests/ReaderOnlyListeningTests \
+            -only-testing:TingyeUITests/DesignFlowTests/testReaderCanSkipSentencesAndKeepPausedWithoutPlayerPage \
+            -only-testing:TingyeUITests/DesignFlowTests/testMiniPlayerReturnsToReaderWithoutOpeningPlayerPage \
+            -only-testing:TingyeUITests/DesignFlowTests/testLargestTypeReaderListeningControlsRemainReachable \
             -only-testing:TingyeUITests/DesignFlowTests/testChinaGLMSetupIsReachableWithoutMakingPaidRequests \
             -only-testing:TingyeUITests/DesignFlowTests/testChinaMiniMaxSetupIsReachableWithoutMakingPaidRequests \
             -only-testing:TingyeTests/LocalFileImportTests \
