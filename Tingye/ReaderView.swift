@@ -103,6 +103,8 @@ struct ReaderView: View {
     @State private var pages: [NSRange] = []
     @State private var attributed = NSAttributedString(string: "")
     @State private var sheet: ReaderSheet?
+    @State private var nextSheet: ReaderSheet?
+    @State private var shareAfterDismiss = false
     @State private var ready = false
     @State private var following = false
     @State private var chrome = false
@@ -181,7 +183,7 @@ struct ReaderView: View {
         ZStack(alignment: .bottom) {
             (document.isPDF ? Theme.bg : prefs.background).ignoresSafeArea()
             GeometryReader { geometry in
-                // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
+                // 工具展开时为其预留空间，避免遮住正文；重新分页时保留阅读位置。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
                 ZStack(alignment: .bottom) {
@@ -194,7 +196,7 @@ struct ReaderView: View {
                             textContent
                         }
                     }
-                    .padding(.bottom, active ? max(66, measuredStripHeight + 12) : 0)
+                    .padding(.bottom, chrome && selection == nil ? toolsHeight + 22 : (active ? max(66, measuredStripHeight + 12) : 0))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
 
@@ -314,9 +316,13 @@ struct ReaderView: View {
             }
         }
         #endif
-        .sheet(item: $sheet) { value in
+        .sheet(item: $sheet, onDismiss: {
+            if let next = nextSheet { nextSheet = nil; sheet = next }
+            else if shareAfterDismiss { shareAfterDismiss = false; shareBook() }
+        }) { value in
             Group {
                 switch value {
+                case .more: NavigationStack { moreActions }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
@@ -543,13 +549,25 @@ struct ReaderView: View {
     }
 
     private var moreMenu: some View {
-        Menu {
+        Button { sheet = .more } label: { readerActionLabel(Icon.more, "更多") }
+            .buttonStyle(.plain)
+            .accessibilityLabel("更多阅读操作")
+            .accessibilityIdentifier("reader.more")
+    }
+
+    private func openFromMore(_ destination: ReaderSheet) {
+        nextSheet = destination
+        sheet = nil
+    }
+
+    private var moreActions: some View {
+        List {
             Section("查找与整理") {
-                Button { sheet = .search } label: { Label("书内搜索", systemImage: Icon.search) }
+                Button { openFromMore(.search) } label: { Label("书内搜索", systemImage: Icon.search) }
                     .accessibilityIdentifier("reader.search")
             }
             Section("阅读外观") {
-                Button { toggleNightMode() } label: {
+                Button { toggleNightMode(); sheet = nil } label: {
                     Label(isDarkPaper ? "切换日间纸色" : "切换夜间纸色", systemImage: Icon.dayNight(isDark: isDarkPaper))
                 }.accessibilityIdentifier("reader.dayNight")
             }
@@ -567,24 +585,24 @@ struct ReaderView: View {
                 }
             }
             Section("辅助听书") {
-                Button { startReadingAloud() } label: { Label("从当前阅读位置听", systemImage: Icon.listen) }
+                Button { startReadingAloud(); sheet = nil } label: { Label("从当前阅读位置听", systemImage: Icon.listen) }
                     .accessibilityIdentifier("reader.startListening")
                 if active {
-                    Button { following = true; followSpeech() } label: { Label("跟随朗读位置", systemImage: Icon.listening) }
-                    Button { sheet = .voice } label: { Label("声音与朗读", systemImage: Icon.voice) }
+                    Button { following = true; followSpeech(); sheet = nil } label: { Label("跟随朗读位置", systemImage: Icon.listening) }
+                    Button { openFromMore(.voice) } label: { Label("声音与朗读", systemImage: Icon.voice) }
                         .accessibilityIdentifier("reader.voiceSettings")
                     listeningRateMenu
                     listeningTimerMenu
-                    Button { player.stop(); following = false } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
+                    Button { player.stop(); following = false; sheet = nil } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
                 }
             }
             Section("书籍") {
-                Button { shareBook() } label: { Label("导出备份", systemImage: Icon.share) }
+                Button { shareAfterDismiss = true; sheet = nil } label: { Label("导出备份", systemImage: Icon.share) }
             }
-        } label: { readerActionLabel(Icon.more, "更多") }
-        .buttonStyle(.plain)
-        .accessibilityLabel("更多阅读操作")
-        .accessibilityIdentifier("reader.more")
+        }
+        .navigationTitle("更多阅读操作")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }
     }
 
     private func readerActionLabel(_ icon: String, _ title: String, selected: Bool = false) -> some View {
@@ -858,7 +876,7 @@ struct ReaderView: View {
     }
 }
 private struct RebuildKey: Equatable { let chapter: Int; let size: CGSize; let prefs: ReaderPreferences; let automaticDouble: Bool }
-enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice; var id: String { rawValue } }
+enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice, more; var id: String { rawValue } }
 
 final class CoreTextPageView: UIView {
     var onSelect: ((Int) -> Void)?
