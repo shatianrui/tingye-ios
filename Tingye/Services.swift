@@ -111,7 +111,8 @@ enum CloudSpeech {
         case "azure": return try await azure(text, voice: voice, key: key, region: groupID)
         case "elevenlabs": return try await elevenLabs(text, model: model.isEmpty ? "eleven_multilingual_v2" : model, voice: voice, key: key)
         case "custom": return try await openAICompatible(text, model: model.isEmpty ? "tts-1" : model, voice: voice, key: key, base: groupID)
-        default: return try await minimax(text, model: model.isEmpty ? "speech-2.8-hd" : model, voice: voice, key: key, groupID: groupID)
+        case "minimax": return try await minimax(text, model: model.isEmpty ? "speech-2.8-hd" : model, voice: voice, key: key, groupID: groupID)
+        default: throw ReaderError.message("不支持的语音提供方，请重新选择声音服务。")
         }
     }
 
@@ -242,13 +243,20 @@ enum CloudSpeech {
         return voices
     }
 
-    private static func glm(_ text: String, model: String, voice: String, key: String) async throws -> Result {
+    static func glmURLRequest(_ text: String, model: String, voice: String, key: String) throws -> URLRequest {
+        guard !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ReaderError.message("请填写智谱中国区 API Key。") }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ReaderError.message("没有可合成的文字。") }
+        let chosen = VoiceOptions.sanitized(provider: "glm", model: model, voice: voice)
         // watermark_enabled=false 仅在账户允许时生效，否则 GLM 会在每句加入水印音。
-        let body: [String: JSONValue] = ["model": .string(model), "voice": .string(voice), "input": .string(text), "response_format": .string("wav"), "speed": .number(1), "volume": .number(1), "watermark_enabled": .bool(false)]
+        let body: [String: JSONValue] = ["model": .string(chosen.model), "voice": .string(chosen.voice), "input": .string(text), "response_format": .string("wav"), "speed": .number(1), "volume": .number(1), "watermark_enabled": .bool(false)]
         var request = URLRequest(url: glmEndpoint); request.httpMethod = "POST"
-        request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer " + key.trimmingCharacters(in: .whitespacesAndNewlines), forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Integrity.encoder().encode(body)
+        return request
+    }
+    private static func glm(_ text: String, model: String, voice: String, key: String) async throws -> Result {
+        let request = try glmURLRequest(text, model: model, voice: voice, key: key)
         let (data, http) = try await send(request)
         let type = http.value(forHTTPHeaderField: "Content-Type") ?? ""
         guard (200..<300).contains(http.statusCode) else { throw glmFailure(http.statusCode, data: data) }
@@ -259,13 +267,18 @@ enum CloudSpeech {
         return Result(audio: try normalizedWav(data), words: [])
     }
 
-    private static func minimax(_ text: String, model: String, voice: String, key: String, groupID: String) async throws -> Result {
-        let body: [String: JSONValue] = [
-            "model": .string(model), "text": .string(text), "stream": .bool(false), "output_format": .string("hex"),
+    static func minimaxSpeechBody(_ text: String, model: String, voice: String) throws -> [String: JSONValue] {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ReaderError.message("没有可合成的文字。") }
+        let chosen = VoiceOptions.sanitized(provider: "minimax", model: model, voice: voice)
+        return [
+            "model": .string(chosen.model), "text": .string(text), "stream": .bool(false), "output_format": .string("hex"),
             "subtitle_enable": .bool(true), "subtitle_type": .string("word"), "language_boost": .string("auto"),
-            "voice_setting": .object(["voice_id": .string(voice), "speed": .number(1), "vol": .number(1), "pitch": .number(0)]),
+            "voice_setting": .object(["voice_id": .string(chosen.voice), "speed": .number(1), "vol": .number(1), "pitch": .number(0)]),
             "audio_setting": .object(["format": .string("mp3"), "sample_rate": .number(32000), "bitrate": .number(128000), "channel": .number(1)]),
         ]
+    }
+    private static func minimax(_ text: String, model: String, voice: String, key: String, groupID: String) async throws -> Result {
+        let body = try minimaxSpeechBody(text, model: model, voice: voice)
         let result = try await minimaxRequest("/v1/t2a_v2", body: body, key: key, groupID: groupID)
         let payload = result["data"]?.object
         guard let hex = payload?["audio"]?.string, !hex.isEmpty, hex.utf8.count <= maxAudio * 2, hex.utf8.count % 2 == 0,
@@ -278,6 +291,8 @@ enum CloudSpeech {
 
     /// 十六进制音频解码：按字节查表，避免每个字节创建一个 String（长句音频有数十万个字符，原实现解码就要数百毫秒）。
     static func decodeHex(_ hex: String) -> Data? {
+        guard hex.utf8.count % 2 == 0 else { return nil }
+        if hex.isEmpty { return Data() }
         func nibble(_ c: UInt8) -> UInt8? {
             switch c {
             case 48...57: return c - 48
@@ -333,13 +348,20 @@ enum CloudSpeech {
         throw lastError ?? ReaderError.message("无法连接 MiniMax 语音服务，请检查网络。")
     }
 
-    private static func minimaxRequest(origin: URL, path: String, body: [String: JSONValue], key: String, groupID: String) async throws -> [String: JSONValue] {
+    static func minimaxURLRequest(origin: URL = minimaxOrigins[0], path: String = "/v1/t2a_v2", body: [String: JSONValue], key: String, groupID: String) throws -> URLRequest {
+        let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { throw ReaderError.message("请填写 MiniMax 中国区 API Key。") }
+        let groupID = groupID.trimmingCharacters(in: .whitespacesAndNewlines)
         var components = URLComponents(url: origin.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
-        if !groupID.isEmpty { components.queryItems = [URLQueryItem(name: "GroupId", value: groupID)] }
+        if !groupID.isEmpty && !key.hasPrefix("sk-cp-") { components.queryItems = [URLQueryItem(name: "GroupId", value: groupID)] }
         var request = URLRequest(url: components.url!); request.httpMethod = "POST"
         request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Integrity.encoder().encode(body)
+        return request
+    }
+    private static func minimaxRequest(origin: URL, path: String, body: [String: JSONValue], key: String, groupID: String) async throws -> [String: JSONValue] {
+        let request = try minimaxURLRequest(origin: origin, path: path, body: body, key: key, groupID: groupID)
         let (data, http) = try await send(request)
         if http.statusCode == 401 { throw MiniMaxAuthFailure(message: detail(data).map { "（\($0)）" } ?? "") }
         guard (200..<300).contains(http.statusCode) else { throw failure(http.statusCode, detail: detail(data)) }

@@ -2545,3 +2545,63 @@ final class LocalFileImportTests: XCTestCase {
         XCTAssertTrue(model.notice?.importResults == true)
     }
 }
+
+final class ReaderVoiceTests: XCTestCase {
+    func testGLMChinaRequestUsesItsOwnEndpointAndAudioParameters() throws {
+        let request = try CloudSpeech.glmURLRequest("你好，中国。", model: "glm-tts", voice: "tongtong", key: " cn-test-key \n")
+        XCTAssertEqual(request.url?.absoluteString, "https://open.bigmodel.cn/api/paas/v4/audio/speech")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer cn-test-key")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        let body = try JSONDecoder().decode([String: JSONValue].self, from: XCTUnwrap(request.httpBody))
+        XCTAssertEqual(body["model"]?.string, "glm-tts")
+        XCTAssertEqual(body["voice"]?.string, "tongtong")
+        XCTAssertEqual(body["input"]?.string, "你好，中国。")
+        XCTAssertEqual(body["response_format"]?.string, "wav")
+    }
+    func testMiniMaxChinaRequestAndTokenPlanGroupHandling() throws {
+        let body = try CloudSpeech.minimaxSpeechBody("中文阅读。", model: "speech-2.8-hd", voice: "male-qn-qingse")
+        let request = try CloudSpeech.minimaxURLRequest(body: body, key: "china-test-key", groupID: "group 123")
+        XCTAssertEqual(request.url?.host, "api.minimax.cn")
+        XCTAssertEqual(request.url?.path, "/v1/t2a_v2")
+        XCTAssertEqual(URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?.queryItems?.first?.value, "group 123")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer china-test-key")
+        XCTAssertEqual(body["model"]?.string, "speech-2.8-hd")
+        XCTAssertEqual(body["text"]?.string, "中文阅读。")
+        XCTAssertEqual(body["voice_setting"]?.object?["voice_id"]?.string, "male-qn-qingse")
+        XCTAssertEqual(body["audio_setting"]?.object?["format"]?.string, "mp3")
+        XCTAssertEqual(body["stream"]?.bool, false)
+        let tokenPlan = try CloudSpeech.minimaxURLRequest(body: body, key: "sk-cp-test", groupID: "ignored-group")
+        XCTAssertNil(URLComponents(url: try XCTUnwrap(tokenPlan.url), resolvingAgainstBaseURL: false)?.queryItems)
+    }
+    func testVoiceProvidersCannotSendEachOthersModelAndVoice() throws {
+        let glm = try CloudSpeech.glmURLRequest("文字", model: "speech-2.8-hd", voice: "male-qn-qingse", key: "fake")
+        let body = try JSONDecoder().decode([String: JSONValue].self, from: XCTUnwrap(glm.httpBody))
+        XCTAssertEqual(body["model"]?.string, "glm-tts")
+        XCTAssertEqual(body["voice"]?.string, "tongtong")
+        let minimax = try CloudSpeech.minimaxSpeechBody("文字", model: "glm-tts", voice: "tongtong")
+        XCTAssertEqual(minimax["model"]?.string, "speech-2.8-hd")
+        XCTAssertEqual(minimax["voice_setting"]?.object?["voice_id"]?.string, "male-qn-qingse")
+        XCTAssertNotEqual(VoiceOptions.secretKey("glm"), VoiceOptions.secretKey("minimax"))
+    }
+    func testChinaRequestsRejectMissingCredentialsAndEmptySpeech() throws {
+        XCTAssertThrowsError(try CloudSpeech.glmURLRequest("文字", model: "glm-tts", voice: "tongtong", key: " "))
+        XCTAssertThrowsError(try CloudSpeech.glmURLRequest(" \n", model: "glm-tts", voice: "tongtong", key: "fake"))
+        XCTAssertThrowsError(try CloudSpeech.minimaxSpeechBody(" \n", model: "speech-2.8-hd", voice: "male-qn-qingse"))
+        XCTAssertThrowsError(try CloudSpeech.minimaxURLRequest(body: [:], key: " ", groupID: ""))
+        XCTAssertNil(CloudSpeech.decodeHex("ABC"))
+    }
+    @MainActor func testLegacyMarksRenderAsBackgroundWithoutRewritingSavedNotes() throws {
+        let mark = ReaderMark(range: NSRange(location: 0, length: 2), color: "blue", kind: "wavy")
+        XCTAssertEqual(mark.style.kind, "background")
+        XCTAssertEqual(mark.kind, "wavy", "Saved content is preserved; only rendering is normalized")
+        for kind in ["background", "underline", "wavy"] {
+            XCTAssertEqual(ReaderMark.displayKind(kind), "background")
+        }
+        let source = NSAttributedString(string: "正文高亮", attributes: [.font: UIFont.systemFont(ofSize: 19)])
+        let result = SpeechHighlight.apply(to: source, sentence: NSRange(location: 0, length: 2))
+        XCTAssertNotNil(result.attribute(.backgroundColor, at: 0, effectiveRange: nil))
+        XCTAssertNil(result.attribute(.underlineStyle, at: 0, effectiveRange: nil))
+        XCTAssertNil(source.attribute(.backgroundColor, at: 0, effectiveRange: nil))
+    }
+}

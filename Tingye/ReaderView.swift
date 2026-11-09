@@ -761,7 +761,7 @@ struct ReaderView: View {
                 let defaults = UserDefaults.standard
                 noteTarget = existing ?? Highlight(chapter: value.chapter, start: value.start, end: value.end, text: text,
                                                    color: ReaderMark.newColor(defaults.string(forKey: "highlight.lastColor")),
-                                                   style: defaults.string(forKey: "highlight.lastStyle") ?? "background")
+                                                   style: "background")
                 selection = nil
             },
             onListen: {
@@ -851,12 +851,13 @@ final class CoreTextPageView: UIView {
                 var ascent: CGFloat = 0, descent: CGFloat = 0
                 let width = CTRunGetTypographicBounds(run, CFRange(location: 0, length: 0), &ascent, &descent, nil)
                 let x = CTLineGetOffsetForStringIndex(line, range.location, nil)
-                // 划线：浅底 / 直线 / 波浪线
+                // Saved annotations and speech both use a background, with speech on top.
                 if let mark { ReaderMark.draw(mark, in: context, box: CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: ascent + descent + 2)) }
-                guard let color = speech else { continue }
-                // 跟读浅底由 CTFrameDraw 按背景色属性铺满行高，行底补一道与纸色适配的跟读线。
-                context.setFillColor(color.cgColor.alpha > 0.45 ? UIColor(hex: 0x111111).cgColor : color.withAlphaComponent(0.9).cgColor)
-                context.fill(CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: 2))
+                if let speech {
+                    context.setFillColor(speech.cgColor)
+                    context.fill(CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: ascent + descent + 2))
+                }
+
             }
         }
         CTFrameDraw(frame, context)
@@ -916,11 +917,7 @@ struct ScrollingText: UIViewRepresentable {
             for mark in marks {
                 let r = NSIntersectionRange(mark.range, full); guard r.length > 0 else { continue }
                 let style = mark.style
-                switch mark.kind {
-                case "underline": storage.addAttributes([.underlineStyle: NSUnderlineStyle.thick.rawValue, .underlineColor: style.color], range: r)
-                case "wavy": storage.addAttributes([.underlineStyle: NSUnderlineStyle([.single, .patternDot]).rawValue | NSUnderlineStyle.thick.rawValue, .underlineColor: style.color], range: r)
-                default: storage.addAttribute(.backgroundColor, value: style.color.withAlphaComponent(mark.kind == "selection" ? 0.22 : 0.32), range: r)
-                }
+                storage.addAttribute(.backgroundColor, value: style.color.withAlphaComponent(style.kind == "selection" ? 0.22 : 0.28), range: r)
             }
             if let new = highlight, NSMaxRange(new) <= storage.length { storage.addAttribute(.backgroundColor, value: color, range: new) }
             storage.endEditing(); coordinator.highlight = highlight; coordinator.marks = marks

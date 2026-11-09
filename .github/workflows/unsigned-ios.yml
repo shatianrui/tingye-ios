@@ -29,6 +29,9 @@ jobs:
             -derivedDataPath build/UnsignedTests -resultBundlePath build/UnsignedTests.xcresult \
             -only-testing:TingyeTests/NativeCoreTests/testUnsignedBuildNeverOpensCloudStorageOrChecksAppleAccount \
             -only-testing:TingyeTests/BookLoadingTests \
+            -only-testing:TingyeTests/ReaderVoiceTests \
+            -only-testing:TingyeUITests/DesignFlowTests/testChinaGLMSetupIsReachableWithoutMakingPaidRequests \
+            -only-testing:TingyeUITests/DesignFlowTests/testChinaMiniMaxSetupIsReachableWithoutMakingPaidRequests \
             -only-testing:TingyeTests/LocalFileImportTests \
             -only-testing:TingyeTests/NativeCoreTests/testPartialImportsHavePerFileResultsAndDoNotShowSuccessAlerts \
             -only-testing:TingyeUITests/DesignFlowTests/testSingleTapLocalFileImportsThroughSystemPicker \

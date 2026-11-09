@@ -33,7 +33,8 @@ struct ReaderMark: Equatable {
     }
     static func color(_ key: String) -> Color { Color(uiColor: uiColor(key)) }
 
-    var style: Style { Style(color: kind == "selection" ? UIColor(Theme.accent) : Self.uiColor(color), kind: kind) }
+    static func displayKind(_ saved: String) -> String { saved == "selection" ? "selection" : "background" }
+    var style: Style { Style(color: kind == "selection" ? UIColor(Theme.accent) : Self.uiColor(color), kind: Self.displayKind(kind)) }
 
     /// 把划线的句区间换成本章字符范围
     static func range(start: Int, end: Int, in sentences: [Sentence]) -> NSRange? {
@@ -54,35 +55,13 @@ struct ReaderMark: Equatable {
         return result
     }
 
-    /// CoreText 绘制：在一个 run 的字形框下画浅底 / 直线 / 波浪线
+    /// All native highlights use a plain translucent background; legacy stored styles stay readable.
     static func draw(_ style: Style, in context: CGContext, box: CGRect) {
-        switch style.kind {
-        case "background", "selection":
-            context.setFillColor(style.color.withAlphaComponent(style.kind == "selection" ? 0.22 : 0.28).cgColor)
-            context.addPath(CGPath(roundedRect: box, cornerWidth: 3, cornerHeight: 3, transform: nil)); context.fillPath()
-            if style.kind == "selection" {
-                context.setFillColor(style.color.cgColor)
-                context.fill(CGRect(x: box.minX, y: box.minY, width: box.width, height: 1.5))
-            }
-        case "underline":
-            context.setFillColor(style.color.cgColor)
-            context.fill(CGRect(x: box.minX, y: box.minY - 1, width: box.width, height: 2))
-        case "wavy":
-            context.setStrokeColor(style.color.cgColor)
-            context.setLineWidth(1.4)
-            let y = box.minY - 1, amplitude: CGFloat = 1.8, wave: CGFloat = 6
-            context.move(to: CGPoint(x: box.minX, y: y))
-            var x = box.minX
-            while x < box.maxX {
-                let mid = min(x + wave / 2, box.maxX)
-                let next = min(x + wave, box.maxX)
-                context.addQuadCurve(to: CGPoint(x: next, y: y), control: CGPoint(x: mid, y: y + (Int((x - box.minX) / wave) % 2 == 0 ? amplitude * 2 : -amplitude * 2)))
-                x = next
-            }
-            context.strokePath()
-        default: break
-        }
+        context.setFillColor(style.color.withAlphaComponent(style.kind == "selection" ? 0.22 : 0.28).cgColor)
+        context.addPath(CGPath(roundedRect: box, cornerWidth: 3, cornerHeight: 3, transform: nil))
+        context.fillPath()
     }
+
 }
 
 /// 当前选择：本章第 start…end 句
@@ -111,11 +90,9 @@ struct SelectionPanel: View {
     let onExtend: (_ delta: Int) -> Void
     let onClose: () -> Void
     @AppStorage("highlight.lastColor") private var lastColor = "clay"
-    @AppStorage("highlight.lastStyle") private var lastStyle = "background"
 
     @State private var tool: Tool = SelectionTool.visible().first ?? .mark
     @State private var chosenColor = "clay"
-    @State private var chosenStyle = "background"
     @State private var removing = false
     private typealias Tool = SelectionTool
     private let tools = SelectionTool.visible()
@@ -129,13 +106,11 @@ struct SelectionPanel: View {
         }
         .onAppear {
             chosenColor = existing?.color ?? ReaderMark.newColor(lastColor)
-            chosenStyle = existing?.style ?? lastStyle
         }
         .onChange(of: existing?.id) { _, nextID in
             // 同一面板可直接切到另一条标注；扩选变为新选区时保留当前草稿。
             guard nextID != nil, let existing else { return }
             chosenColor = existing.color
-            chosenStyle = existing.style
         }
         .confirmationDialog("删除这条标注？", isPresented: $removing, titleVisibility: .visible) {
             Button("删除标注与附带笔记", role: .destructive, action: onRemove)
@@ -241,22 +216,7 @@ struct SelectionPanel: View {
                     .accessibilityAddTraits(chosenColor == item.key ? .isSelected : [])
                 }
             }
-            HStack(spacing: 6) {
-                ForEach([("background", "浅底", Icon.highlight), ("underline", "直线", Icon.underlineStyle), ("wavy", "波浪线", Icon.wavyStyle)], id: \.0) { style, title, icon in
-                    Button {
-                        chosenStyle = style
-                        lastStyle = style
-                    } label: {
-                        Label(title, systemImage: icon).font(.caption.weight(.medium))
-                            .foregroundStyle(chosenStyle == style ? accent : tint)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
-                }
-            }
-            action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, chosenStyle) }, prominent: true)
+            action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, "background") }, prominent: true)
             if existing != nil {
                 Button("删除这条标注…") { removing = true }
                     .font(.caption).foregroundStyle(Theme.danger)

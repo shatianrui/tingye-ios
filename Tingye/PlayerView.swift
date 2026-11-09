@@ -732,6 +732,11 @@ struct VoiceSettingsView: View {
                 } label: { voiceSettingLabel("分角色配音", value: roles ? "Beta · 已开启" : "Beta · 关闭") }
             }
             .listRowBackground(Theme.surface)
+            Section("中国区语音 API") {
+                chinaVoiceLink("glm", title: "智谱 GLM · 中国区", subtitle: "glm-tts · 中文音色")
+                chinaVoiceLink("minimax", title: "MiniMax · 中国区", subtitle: "Speech 2.8 · 支持账号音色")
+            }
+            .listRowBackground(Theme.surface)
             Section {
                 NavigationLink { cloudConfiguration } label: {
                     VStack(alignment: .leading, spacing: 4) {
@@ -814,6 +819,18 @@ struct VoiceSettingsView: View {
             .navigationTitle(title).navigationBarTitleDisplayMode(.large)
     }
 
+    private func chinaVoiceLink(_ target: String, title: String, subtitle: String) -> some View {
+        NavigationLink {
+            cloudConfiguration.onAppear { provider = target }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                Text(subtitle).font(.caption).foregroundStyle(Theme.ink2)
+            }.padding(.vertical, 6)
+        }
+        .accessibilityIdentifier("voice.connect." + target)
+    }
+
     private var cloudConfiguration: some View {
         Form {
             providerSection.listRowBackground(Theme.surface)
@@ -852,8 +869,8 @@ struct VoiceSettingsView: View {
         Section {
             Picker("提供方", selection: $provider) {
                 Text("系统声音 · 离线").tag("system")
-                Text("智谱 GLM").tag("glm")
-                Text("MiniMax").tag("minimax")
+                Text("智谱 GLM · 中国区").tag("glm")
+                Text("MiniMax · 中国区").tag("minimax")
                 Text("Microsoft Azure").tag("azure")
                 Text("ElevenLabs").tag("elevenlabs")
                 Text("自定义 TTS（OpenAI 兼容）").tag("custom")
@@ -872,6 +889,13 @@ struct VoiceSettingsView: View {
     @ViewBuilder private var connectionSection: some View {
         if provider != "system" {
             Section {
+                if provider == "glm" || provider == "minimax" {
+                    LabeledContent("接入地区", value: "中国区")
+                    Text(provider == "glm" ? "open.bigmodel.cn" : "api.minimax.cn")
+                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .accessibilityIdentifier("voice.chinaEndpoint")
+                    Link("打开中国区控制台", destination: URL(string: provider == "glm" ? "https://open.bigmodel.cn/" : "https://platform.minimax.cn/")!)
+                }
                 if provider == "custom" {
                     TextField("服务地址，如 https://example.com/v1", text: $customURL)
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -879,6 +903,7 @@ struct VoiceSettingsView: View {
                 }
                 SecureField(provider == "azure" ? "Speech Key（必填）" : provider == "custom" ? "API Key（自建服务可留空）" : "API Key（必填）", text: $apiKey)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityIdentifier("voice.apiKey")
                 if provider == "azure" {
                     TextField("区域，例如 eastasia", text: $azureRegion).textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
@@ -1022,6 +1047,7 @@ struct VoiceSettingsView: View {
     private var cloudNote: String {
         let privacy = "密钥只保存在本机钥匙串；朗读时会将当前句及后续少量句子发送给服务商预合成，试听也会联网，费用按服务商规则计算。"
         switch provider {
+        case "glm": return "连接智谱中国区开放平台，使用 glm-tts 和中国区 API Key；聊天或编程套餐的密钥与额度是否包含语音，以控制台开通情况为准。" + privacy
         case "minimax": return "支持 MiniMax 国内版按量付费与 Token Plan（sk-cp- 开头）密钥，自动连接 api.minimax.cn。追求低延迟可选 speech-2.8-turbo。" + privacy
         case "azure": return "区域必须与 Azure 语音资源所在区域一致（在 Azure 门户的「密钥和终结点」中查看）。" + privacy
         case "elevenlabs": return "Flash 与 Turbo 模型延迟更低，Multilingual 适合长篇听书。" + privacy

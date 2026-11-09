@@ -855,3 +855,26 @@ extension DesignFlowTests {
         screenshot(app, "本地文件-单击导入成功")
     }
 }
+
+extension DesignFlowTests {
+    func testChinaGLMSetupIsReachableWithoutMakingPaidRequests() {
+        let app = launch("player-voice")
+        let link = app.buttons["voice.connect.glm"]
+        XCTAssertTrue(link.waitForExistence(timeout: 15))
+        reveal(link, in: app); link.tap()
+        XCTAssertTrue(app.staticTexts["open.bigmodel.cn"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.secureTextFields["voice.apiKey"].exists)
+        XCTAssertTrue(app.buttons["voice.preview"].exists)
+        screenshot(app, "中国区-GLM语音设置")
+    }
+    func testChinaMiniMaxSetupIsReachableWithoutMakingPaidRequests() {
+        let app = launch("player-voice")
+        let link = app.buttons["voice.connect.minimax"]
+        XCTAssertTrue(link.waitForExistence(timeout: 15))
+        reveal(link, in: app); link.tap()
+        XCTAssertTrue(app.staticTexts["api.minimax.cn"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.secureTextFields["voice.apiKey"].exists)
+        XCTAssertTrue(app.buttons["voice.save"].exists)
+        screenshot(app, "中国区-MiniMax语音设置")
+    }
+}
