@@ -5,6 +5,23 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
+    #if TINGYE_UNSIGNED
+    @MainActor func testUnsignedBuildNeverOpensCloudStorageOrChecksAppleAccount() {
+        let sync = ProgressSync(account: {
+            XCTFail("Unsigned builds must not request the Apple account")
+            return true
+        })
+        XCTAssertFalse(sync.enabled)
+        XCTAssertFalse(sync.accountAvailable)
+        sync.start { XCTFail("Unsigned builds must not install cloud observers") }
+        XCTAssertTrue(sync.synchronize()) // disabled sync is a successful no-op
+        XCTAssertFalse(sync.accountAvailable)
+        XCTAssertThrowsError(try ICloudBackupStore.connected()) { error in
+            XCTAssertEqual(error.localizedDescription, BuildCapabilities.cloudUnavailable)
+        }
+    }
+    #endif
+
     @MainActor func testFocusTextContrastInBothAppearances() {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let traits = UITraitCollection(userInterfaceStyle: style)
@@ -2390,5 +2407,91 @@ extension NativeCoreTests {
             XCTAssertEqual(result["tables"] as? Int, 1)
             withExtendedLifetime(delegate) {}
         }
+    }
+}
+
+/// Publication import/display regression cases, also runnable with the unsigned configuration.
+final class BookLoadingTests: XCTestCase {
+    private func fixture(_ name: String) throws -> Book {
+        let base = try XCTUnwrap(Bundle(for: Self.self).resourceURL?.appendingPathComponent("Fixtures"))
+        return try BookImporter.read(base.appendingPathComponent(name)).book
+    }
+    func testEPUB3NavigationPreservesLabelsDepthAndSpineOrder() throws {
+        let book = try fixture("loading-nav.epub")
+        XCTAssertEqual(book.chapters.map(\.title), ["第二章", "第一卷 春风 续"])
+        XCTAssertEqual(book.chapters.map { $0.fields["tocDepth"]?.int }, [1, 0])
+        XCTAssertTrue(book.chapters[0].text.contains("第二章的正文"))
+        XCTAssertTrue(book.chapters[1].text.contains("第一段粗体尾声"))
+    }
+    func testEPUB2NCXFallbackUsesPublicationLabels() throws {
+        let book = try fixture("loading-ncx.epub")
+        XCTAssertEqual(book.chapters.map(\.title), ["旧目录第二章", "旧目录第一卷"])
+        XCTAssertEqual(book.chapters[0].fields["tocDepth"]?.int, 1)
+    }
+    func testEPUBResourcesAndInlineStylesSurviveImportAndBackup() throws {
+        let book = try fixture("loading-nav.epub")
+        let chapter = book.chapters[1]
+        let refs = try XCTUnwrap(chapter.fields["nativeImages"]?.array?.compactMap(\.string))
+        XCTAssertEqual(refs.count, 3, "Includes ordinary images and SVG image hrefs")
+        XCTAssertNotNil(book.resourceData(refs[0]))
+        let vector = try XCTUnwrap(book.resourceData(refs[1]))
+        XCTAssertTrue(String(decoding: vector, as: UTF8.self).contains("<svg"))
+        let document = try XCTUnwrap(chapter.fields["document"]?.object)
+        let css = try XCTUnwrap(document["css"]?.string)
+        XCTAssertTrue(css.contains("@font-face"))
+        XCTAssertTrue(css.contains(".inline"))
+        XCTAssertTrue(css.contains("tingye-resource:"))
+        XCTAssertFalse(css.contains("../Images/"))
+        XCTAssertFalse(css.contains("../Fonts/"))
+        XCTAssertTrue(document["html"]?.string?.contains("正文示例 url(../Images/cover%20one.png)") == true)
+        XCTAssertNotNil(book.coverData)
+        let decoded = try JSONDecoder().decode(Book.self, from: Integrity.encoder().encode(book))
+        XCTAssertEqual(decoded, book)
+    }
+    func testSVGReferencesAndStyleURLsDoNotRewriteProseOrOtherAttributes() {
+        let source = #"<p>url(a.png)</p><img data-src="wrong.png" src="a.png"><svg><image xlink:href="a.png"/></svg>"#
+        XCTAssertEqual(HTMLText.imageSources(source), ["a.png", "a.png"])
+        let rewritten = HTMLText.replacingImageSources(in: source) { $0 == "a.png" ? "tingye-resource:r0" : nil }
+        XCTAssertTrue(rewritten.contains("data-src=\"wrong.png\""))
+        XCTAssertTrue(rewritten.contains("<p>url(a.png)</p>"))
+        let styled = #"<p style="background:url('a.png')">url(a.png)</p>"#
+        let result = HTMLText.replacingStyleURLs(in: styled) { _ in "tingye-resource:r0" }
+        XCTAssertTrue(result.contains("background:url('tingye-resource:r0')"))
+        XCTAssertTrue(result.contains(">url(a.png)</p>"))
+    }
+    func testEncodedPathsRemainLocalAndFragmentResolvesCurrentDocument() throws {
+        XCTAssertEqual(try BookImporter.resolve(base: "OPS/Text/a.xhtml", href: "#section"), "OPS/Text/a.xhtml")
+        XCTAssertEqual(try BookImporter.resolve(base: "OPS/Text/a.xhtml", href: "../Images/a%20b.png"), "OPS/Images/a b.png")
+        for href in ["%2Fprivate/image.png", "%5Cimage.png", "https%3A//example.com/a", "../../../outside"] {
+            XCTAssertThrowsError(try BookImporter.resolve(base: "OPS/Text/a.xhtml", href: href))
+        }
+    }
+    func testHTMLMarksUseUTF16OffsetsWithEmoji() throws {
+        let chapter = HTMLText.chapter("<p>前😀<strong>粗体</strong>后。</p>", title: "测试")
+        let mark = try XCTUnwrap(chapter.fields["marks"]?.array?.first?.object)
+        let start = try XCTUnwrap(mark["start"]?.int), end = try XCTUnwrap(mark["end"]?.int)
+        XCTAssertEqual((chapter.text as NSString).substring(with: NSRange(location: start, length: end - start)), "粗体")
+        XCTAssertEqual(start, 3)
+    }
+    func testLongTXTDoesNotSplitComposedCharactersOrLoseParagraphs() {
+        let unit = "家👩‍👩‍👧‍👦e\u{301}"
+        let text = String(repeating: unit, count: 900)
+        let split = BookImporter.limitLength([Chapter(title: "长章", text: text)], maxLength: 1000)
+        XCTAssertEqual(split.map(\.text).joined(), text)
+        XCTAssertTrue(split.allSatisfy { $0.text.count <= 1000 })
+        let paragraphs = (0..<1200).map { "第\($0)段，正文。" }
+        let chapters = BookImporter.limitLength([Chapter(title: "多段", text: paragraphs.joined(separator: "\n"))], maxLength: 1000)
+        XCTAssertEqual(chapters.flatMap { $0.text.components(separatedBy: "\n") }, paragraphs)
+        XCTAssertTrue(chapters.allSatisfy { $0.text.count <= 1000 })
+    }
+    @MainActor func testImagePreviewIsDownsampledAndInvalidImageIsRejected() throws {
+        let source = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800)).image { context in
+            UIColor.green.setFill(); context.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+        }
+        let data = try XCTUnwrap(source.pngData())
+        let thumb = try XCTUnwrap(BookImage.thumbnail(data, maxPixelSize: 120))
+        XCTAssertLessThanOrEqual(max(thumb.size.width, thumb.size.height), 120)
+        XCTAssertNil(BookImage.thumbnail(Data("not an image".utf8), maxPixelSize: 120))
+        XCTAssertNil(BookImage.thumbnail(data, maxPixelSize: 0))
     }
 }

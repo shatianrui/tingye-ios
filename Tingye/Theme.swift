@@ -1,24 +1,40 @@
 import SwiftUI
 import UIKit
 import CoreImage
+import ImageIO
 import Pow
 
-/// 听页 · 静蓝。与 Figma 共用语义色；阅读纸色独立于界面表面。
+/// Decode only enough pixels for a cover/illustration preview, respecting EXIF orientation.
+enum BookImage {
+    static func thumbnail(_ data: Data, maxPixelSize: Int) -> UIImage? {
+        guard maxPixelSize > 0,
+              let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { return nil }
+        return UIImage(cgImage: cgImage)
+    }
+}
+
+/// 听页 · 纸页与松绿。纸色承载内容，松绿标记行动；阅读纸色独立保存。
 enum Theme {
-    static let bg = dynamic(0xFAF9F6, 0x101725)
-    static let surface = dynamic(0xFFFFFF, 0x192236)
-    static let surface2 = dynamic(0xF0F2F7, 0x242E43)
-    static let ink = dynamic(0x17233A, 0xF3F5FA)
+    static let bg = dynamic(0xF6F3EB, 0x141C19)
+    static let surface = dynamic(0xFFFDF7, 0x1D2924)
+    static let surface2 = dynamic(0xECEDE4, 0x29382F)
+    static let ink = dynamic(0x243A30, 0xF1F3EA)
     // 比设计色略深，保证暖纸、浅蓝卡片和次级表面上的小字达到 4.5:1。
-    static let ink2 = dynamic(0x616D81, 0xB1BACB)
+    static let ink2 = dynamic(0x59675D, 0xB4C1B6)
     static let ink3 = ink2
-    static let line = dynamic(0xE3E7EF, 0x344159)
+    static let line = dynamic(0xDADFD3, 0x3D5044)
     static let rulePaint = line
-    static let onInk = dynamic(0xFFFFFF, 0x101725)
+    static let onInk = dynamic(0xFFFFFF, 0x14291F)
     static let cardEdge = line
-    static let accent = dynamic(0x315BEE, 0x8DA7FF)
-    static let accentSoft = dynamic(0xEAF0FF, 0x243660)
-    static let onAccent = dynamic(0xFFFFFF, 0x101725)
+    static let accent = dynamic(0x285C45, 0xA7D6B6)
+    static let accentSoft = dynamic(0xE3EBDD, 0x2A4033)
+    static let onAccent = dynamic(0xFFFFFF, 0x14291F)
     static let clay = accent
     static let onClay = onAccent
     static let link = accent
@@ -31,8 +47,8 @@ enum Theme {
     static let onForest = onAccent
     static let wash = clay.opacity(0.08)
     static let danger = dynamic(0xAE3D4E, 0xFF9FAD)
-    static let warm = dynamic(0xF9E4AC, 0x4A3C25)
-    static let onWarm = dynamic(0x644B1E, 0xF9E4AC)
+    static let warm = dynamic(0xEEE4CF, 0x3B3425)
+    static let onWarm = dynamic(0x66502D, 0xE8D5AD)
     static let gold = onWarm
     static let goldSoft = warm
     static let jade = dynamic(0x237864, 0x78CDB2)
@@ -50,10 +66,10 @@ enum Theme {
 
     static let inset: CGFloat = 24
     static let pageWidth: CGFloat = 720
-    static let radius: CGFloat = 16
+    static let radius: CGFloat = 20
     static let heroRadius: CGFloat = 24
     static let radiusSmall: CGFloat = 8
-    static let buttonRadius: CGFloat = 16
+    static let buttonRadius: CGFloat = 14
     static let buttonHeight: CGFloat = 50
     static let iconButtonSize: CGFloat = 44
     static let ruleHeavy: CGFloat = 3

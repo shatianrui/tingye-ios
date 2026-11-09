@@ -106,7 +106,7 @@ struct StatsView: View {
     private var profileContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Text("我的").scaledFont(28, weight: .bold, relativeTo: .title)
+                Text("我的").font(Theme.serifBold(34, relativeTo: .largeTitle))
                 Spacer()
                 Button { showingSettings = true } label: {
                     ThemeIcon(symbol: Icon.settings, size: 22).frame(width: 44, height: 44)

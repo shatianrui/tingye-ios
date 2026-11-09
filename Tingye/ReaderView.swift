@@ -376,7 +376,17 @@ struct ReaderView: View {
                             // WebKit 视口宽取整，滚动分页按实际宽度；宽度取整后二者一致，翻页不累积亚像素错位。
                             .frame(width: geometry.size.width.rounded(.down), height: geometry.size.height)
                     } else if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
-                    else if current.text.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("在「更多」中打开原书图文，或在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
+                    else if current.text.isEmpty {
+                        ContentUnavailableView {
+                            Label("本章为插图", systemImage: Icon.illustration)
+                        } description: {
+                            Text("可打开原书图文，或在目录的「插图」中查看。")
+                        } actions: {
+                            if current.fields["document"]?.object?["html"]?.string != nil {
+                                Button("打开原书图文") { original = true }.buttonStyle(.borderedProminent)
+                            }
+                        }
+                    }
                     else if scrolling {
                         ScrollingText(attributed: attributed, highlight: highlightRange, color: prefs.highlight, marks: chapterMarks, initialOffset: currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? highlightRange?.location : nil, onSelect: { select(offset: $0) }) { offset in
                             following = false; let position = Sentence.index(at: offset, in: sentences)
@@ -1109,8 +1119,8 @@ struct ContentsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 12, trailing: 0))
                 if mode == 0 {
                     if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        ForEach(Array(chapters.enumerated()), id: \.offset) { index, chapter in
-                            chapterRow(index: index, chapter: chapter, snippet: nil, matchOffset: nil)
+                        ForEach(chapters.indices, id: \.self) { index in
+                            chapterRow(index: index, chapter: chapters[index], snippet: nil, matchOffset: nil)
                         }
                     } else if let hits {
                         if !hits.isEmpty {
@@ -1220,6 +1230,7 @@ struct ContentsView: View {
                         .background(Theme.accent.opacity(0.09), in: Capsule())
                 }
             }
+            .padding(.leading, CGFloat(min(4, max(0, chapter.fields["tocDepth"]?.int ?? 0))) * 12)
             .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
             .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: 12))
             .contentShape(Rectangle())
@@ -1308,17 +1319,24 @@ private struct IllustrationRow: View {
     let book: Book
     let ref: String
     @State private var image: UIImage?
+    @State private var failed = false
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFit().clipShape(Rectangle()) }
-            else { Rectangle().fill(Theme.surface2).aspectRatio(16 / 10, contentMode: .fit) }
+            else if failed {
+                Label("无法显示缩略图，请在原书图文中查看", systemImage: "photo")
+                    .font(.callout).foregroundStyle(Theme.ink2).padding(.vertical, 20)
+            } else { ProgressView("载入插图…").frame(maxWidth: .infinity, minHeight: 100) }
         }
         .accessibilityLabel("本章插图")
         .task(id: ref) {
             let book = book, ref = ref
-            image = await Task.detached(priority: .userInitiated) {
-                book.resourceData(ref).flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 900, height: 1400))
+            image = nil; failed = false
+            let loaded = await Task.detached(priority: .userInitiated) {
+                book.resourceData(ref).flatMap { BookImage.thumbnail($0, maxPixelSize: 1400) }
             }.value
+            guard !Task.isCancelled else { return }
+            image = loaded; failed = loaded == nil
         }
     }
 }

@@ -1,0 +1,70 @@
+name: Unsigned iOS
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'unsigned-*'
+permissions:
+  contents: read
+concurrency:
+  group: unsigned-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select latest installed stable Xcode
+        run: |
+          XCODE_APP=$(python3 -c 'import glob,re; paths=[p for p in glob.glob("/Applications/Xcode_*.app") if re.fullmatch(r"Xcode_[0-9.]+.app",p.rsplit("/",1)[-1])]; print(max(paths,key=lambda p:tuple(map(int,re.search(r"Xcode_([0-9.]+).app",p).group(1).split(".")))) if paths else "/Applications/Xcode.app")')
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          xcodebuild -version
+      - name: Check unsigned isolation and book loading on iPhone Simulator
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; print(next(d["udid"] for group in json.load(sys.stdin)["devices"].values() for d in group if d["name"].startswith("iPhone")))')
+          xcodebuild -project Tingye.xcodeproj -scheme Tingye -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -xcconfig Configuration/Unsigned.xcconfig \
+            -derivedDataPath build/UnsignedTests -resultBundlePath build/UnsignedTests.xcresult \
+            -only-testing:TingyeTests/NativeCoreTests/testUnsignedBuildNeverOpensCloudStorageOrChecksAppleAccount \
+            -only-testing:TingyeTests/BookLoadingTests \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_ENTITLEMENTS= DEVELOPMENT_TEAM= test
+      - name: Build unsigned IPA
+        run: bash scripts/build-unsigned.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tingye-unsigned
+          path: |
+            build/Tingye-unsigned.ipa
+            build/Tingye-unsigned.ipa.sha256
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator-test-results
+          path: build/UnsignedTests.xcresult
+          if-no-files-found: ignore
+  release:
+    if: startsWith(github.ref, 'refs/tags/unsigned-')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Tingye-unsigned
+          path: release-assets
+      - name: Verify and publish IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd release-assets
+          sha256sum -c Tingye-unsigned.ipa.sha256
+          gh release create "$RELEASE_TAG" Tingye-unsigned.ipa Tingye-unsigned.ipa.sha256 \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --latest=false \
+            --title "听页 · 纸页与松绿 · 无签名版" --notes-file ../docs/RELEASE-UNSIGNED.md

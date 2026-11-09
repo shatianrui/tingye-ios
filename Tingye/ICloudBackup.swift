@@ -2,6 +2,15 @@ import Foundation
 import SwiftUI
 import CryptoKit
 
+enum BuildCapabilities {
+    #if TINGYE_UNSIGNED
+    static let iCloudEnabled = false
+    #else
+    static let iCloudEnabled = true
+    #endif
+    static let cloudUnavailable = "此版本不包含 iCloud 权限。书籍与阅读位置保存在本机，可在书籍详情中导出备份。"
+}
+
 /// 跨线程报告"已处理 / 总数"。
 typealias ICloudProgress = @Sendable (_ completed: Int, _ total: Int) -> Void
 
@@ -68,6 +77,7 @@ struct ICloudBackupStore: Sendable {
     init(root: URL) { self.root = root }
     /// Called off the main thread: resolving a ubiquity container can block.
     static func connected() throws -> Self {
+        guard BuildCapabilities.iCloudEnabled else { throw ReaderError.message(BuildCapabilities.cloudUnavailable) }
         guard let url = FileManager.default.url(forUbiquityContainerIdentifier: containerID) else {
             throw ReaderError.message("iCloud Drive 不可用。请在系统设置中登录 Apple 账号并开启 iCloud Drive；开发安装还需启用 iCloud 签名权限。")
         }
@@ -531,6 +541,15 @@ protocol ProgressKeyValueStore: AnyObject {
 }
 extension NSUbiquitousKeyValueStore: ProgressKeyValueStore {}
 
+/// No cloud APIs or duplicate persistent data in the portable build.
+private final class DisabledProgressStore: ProgressKeyValueStore {
+    func dictionary(forKey key: String) -> [String: Any]? { nil }
+    func set(_ value: Any?, forKey key: String) {}
+    func removeObject(forKey key: String) {}
+    var dictionaryRepresentation: [String: Any] { [:] }
+    func synchronize() -> Bool { false }
+}
+
 /// 通过 iCloud 键值存储在多台设备间同步每本书的阅读位置（只含章节与句序号，不含书籍内容）。
 /// 书籍 ID 在各设备导入时随机生成，因此用规范化的书名、作者与格式作为跨设备指纹（不含章数，删并章节后仍能匹配）；
 /// 应用远端进度前校验章节不越界。同时读写旧版（含章数）的键，兼容已安装的旧版本。
@@ -563,12 +582,20 @@ final class ProgressSync: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     /// 收到推送后，下一次合并的结果归属于这次推送。
     private var awaitingMerge = false
-    var enabled: Bool { defaults.object(forKey: Self.enabledKey) as? Bool ?? true }
+    var enabled: Bool { BuildCapabilities.iCloudEnabled && (defaults.object(forKey: Self.enabledKey) as? Bool ?? true) }
 
-    init(store: ProgressKeyValueStore = NSUbiquitousKeyValueStore.default, defaults: UserDefaults = .standard,
+    nonisolated static func defaultStore() -> ProgressKeyValueStore {
+        #if TINGYE_UNSIGNED
+        return DisabledProgressStore()
+        #else
+        return NSUbiquitousKeyValueStore.default
+        #endif
+    }
+
+    init(store: ProgressKeyValueStore = ProgressSync.defaultStore(), defaults: UserDefaults = .standard,
          account: @escaping () -> Bool = { FileManager.default.ubiquityIdentityToken != nil }) {
-        self.store = store; self.defaults = defaults; self.account = account
-        accountAvailable = account()
+        self.store = store; self.defaults = defaults; self.account = { BuildCapabilities.iCloudEnabled && account() }
+        accountAvailable = BuildCapabilities.iCloudEnabled && account()
     }
 
     static func key(_ entry: ShelfEntry) -> String {
@@ -600,6 +627,7 @@ final class ProgressSync: ObservableObject {
         return value
     }
     func start(onChange: @escaping @MainActor @Sendable () -> Void) {
+        guard BuildCapabilities.iCloudEnabled else { return }
         let center = NotificationCenter.default
         observers.append(center.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: store, queue: .main) { note in
             let reason = (note.userInfo?[NSUbiquitousKeyValueStoreChangeReasonKey] as? NSNumber)?.intValue
@@ -785,17 +813,23 @@ struct ICloudBackupView: View {
                     .padding(16).background(Theme.surface, in: Rectangle())
                 }
 
+                if !BuildCapabilities.iCloudEnabled {
+                    Text(BuildCapabilities.cloudUnavailable)
+                        .font(.callout).foregroundStyle(Theme.ink2)
+                        .padding(16).background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radius))
+                }
                 sectionTitle("恢复书库")
                 Button("查找并查看最新备份") { model.readLatestICloudBackup() }
                     .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
                     .accessibilityIdentifier("icloud.restore")
+                    .disabled(!BuildCapabilities.iCloudEnabled)
                 Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。")
                     .font(.caption).foregroundStyle(Theme.ink2)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.accentSoft.opacity(0.55), in: Rectangle())
 
                 sectionTitle("自动同步")
-                Toggle(isOn: $syncProgress) {
+                Toggle(isOn: Binding(get: { BuildCapabilities.iCloudEnabled && syncProgress }, set: { syncProgress = $0 })) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("自动同步阅读进度").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
                         Text("只同步章节与句子位置，不上传书籍")
@@ -804,8 +838,9 @@ struct ICloudBackupView: View {
                 }
                 .tint(Theme.accent).padding(16)
                 .background(Theme.surface, in: Rectangle())
-                ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
-                if syncProgress {
+                .disabled(!BuildCapabilities.iCloudEnabled)
+                ProgressSyncStatusRows(sync: model.sync, enabled: BuildCapabilities.iCloudEnabled && syncProgress)
+                if syncProgress && BuildCapabilities.iCloudEnabled {
                     Button("立即检查进度同步") { model.refreshProgressSync() }
                         .buttonStyle(SecondaryButtonStyle())
                         .accessibilityIdentifier("icloud.sync.check")
@@ -826,7 +861,7 @@ struct ICloudBackupView: View {
         .safeAreaInset(edge: .bottom) {
             Button("立即备份到 iCloud") { model.backupToICloud() }
                 .buttonStyle(PrimaryButtonStyle())
-                .disabled(model.busy || localBookCount == 0)
+                .disabled(!BuildCapabilities.iCloudEnabled || model.busy || localBookCount == 0)
                 .accessibilityIdentifier("icloud.backup")
                 .padding(.horizontal, Theme.inset).padding(.vertical, 12)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)

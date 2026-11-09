@@ -248,7 +248,11 @@ struct ShelfView: View {
     private var shelfHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(title).font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("私人藏书 · 随时翻阅").font(.caption).foregroundStyle(Theme.ink2)
+                    Text(title).font(Theme.serifBold(34, relativeTo: .largeTitle))
+                        .foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                }
                 Spacer()
                 CircleIconButton(systemName: Icon.search, label: "搜索书库", action: startSearch)
             }
@@ -267,7 +271,7 @@ struct ShelfView: View {
             Label("添加", systemImage: Icon.add)
                 .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onClay)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.clay, in: Rectangle())
+                .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                 .contentShape(Rectangle())
         }
         .accessibilityIdentifier("import.book")

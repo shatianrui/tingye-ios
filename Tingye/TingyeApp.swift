@@ -353,7 +353,8 @@ private struct LibraryNavigationBar: View {
                         }
                         .foregroundStyle(selected ? Theme.accent : Theme.ink3)
                         .frame(maxWidth: .infinity, minHeight: 50)
-                        .padding(.top, 4)
+                        .padding(.vertical, 4)
+                        .background(selected ? Theme.accentSoft : Color.clear, in: RoundedRectangle(cornerRadius: 16))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.96))
@@ -363,6 +364,7 @@ private struct LibraryNavigationBar: View {
                 }
             }
             .frame(maxWidth: 560)
+            .padding(.vertical, 8)
             .padding(.horizontal, Theme.inset)
             .frame(maxWidth: .infinity)
             .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 0.5) }

@@ -559,6 +559,19 @@ final class ResourceSchemeHandler: NSObject, WKURLSchemeHandler {
     static let scheme = "tingye-resource"
     private let lock = NSLock()
     private var bookID = ""
+    private var generation = UUID().uuidString
+    private final class Decoded: NSObject {
+        let data: Data
+        let mime: String
+        init(_ data: Data, _ mime: String) { self.data = data; self.mime = mime }
+    }
+    private let decoded = NSCache<NSString, Decoded>()
+    private let decodeQueue = DispatchQueue(label: "tingye.publication-resources", qos: .userInitiated)
+    override init() {
+        super.init()
+        decoded.totalCostLimit = 24 * 1024 * 1024
+        decoded.countLimit = 64
+    }
     private var resources: [String: JSONValue] = [:]
     /// 已停止的请求不能再回应，否则 WebKit 会抛异常。
     private var active = Set<ObjectIdentifier>()
@@ -566,18 +579,28 @@ final class ResourceSchemeHandler: NSObject, WKURLSchemeHandler {
         lock.lock(); defer { lock.unlock() }
         guard book.id != bookID || resources.isEmpty else { return }
         bookID = book.id; resources = book.fields["resources"]?.object ?? [:]
+        generation = UUID().uuidString
+        decoded.removeAllObjects()
     }
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
         let id = ObjectIdentifier(task); active.insert(id)
         let key = (task.request.url?.absoluteString ?? "").replacingOccurrences(of: Self.scheme + ":", with: "").trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        lock.lock(); let raw = resources[key]?.string; lock.unlock()
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let decoded = raw.flatMap(Self.decode)
-            DispatchQueue.main.async {
+        lock.lock(); let raw = resources[key]?.string; let cacheKey = generation + ":" + key; lock.unlock()
+        decodeQueue.async { [weak self] in
+            guard let self else { return }
+            let value: Decoded?
+            if let cached = self.decoded.object(forKey: cacheKey as NSString) { value = cached }
+            else if let raw, let (data, mime) = Self.decode(raw) {
+                let entry = Decoded(data, mime)
+                value = entry
+                // An individual oversized illustration is delivered but not retained in the cache.
+                if data.count <= 24 * 1024 * 1024 { self.decoded.setObject(entry, forKey: cacheKey as NSString, cost: data.count) }
+            } else { value = nil }
+            DispatchQueue.main.async { [weak self] in
                 guard let self, self.active.remove(id) != nil else { return }
-                guard let (data, mime) = decoded, let url = task.request.url else { task.didFailWithError(URLError(.fileDoesNotExist)); return }
-                task.didReceive(URLResponse(url: url, mimeType: mime, expectedContentLength: data.count, textEncodingName: nil))
-                task.didReceive(data)
+                guard let value, let url = task.request.url else { task.didFailWithError(URLError(.fileDoesNotExist)); return }
+                task.didReceive(URLResponse(url: url, mimeType: value.mime, expectedContentLength: value.data.count, textEncodingName: nil))
+                task.didReceive(value.data)
                 task.didFinish()
             }
         }

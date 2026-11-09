@@ -41,7 +41,7 @@ struct NowView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 28) {
                 masthead
                 if let focus { continueSection(focus) } else { welcome }
                 todaySummary
@@ -64,7 +64,11 @@ struct NowView: View {
     private var masthead: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("此刻").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("听页 · 留一点时间给自己").font(.caption).foregroundStyle(Theme.ink2)
+                    Text("此刻").font(Theme.serifBold(34, relativeTo: .largeTitle))
+                        .foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                }
                 Spacer()
                 CircleIconButton(systemName: Icon.search, label: "搜索书库") {
                     model.tab = 0
@@ -78,9 +82,14 @@ struct NowView: View {
 
     private func continueSection(_ entry: ShelfEntry) -> some View {
         let current = player.book?.id == entry.id
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 8) {
+                Image(systemName: "bookmark.fill").accessibilityHidden(true)
+                Text("把故事，接着读下去").font(.caption.weight(.medium))
+                Spacer(minLength: 0)
+            }.foregroundStyle(Theme.accent)
             actionLayout {
-                BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
+                BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 100)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(entry.started ? "继续读这本书" : "翻开一本书")
@@ -116,8 +125,9 @@ struct NowView: View {
             .buttonStyle(.plain)
             .frame(minHeight: 44)
         }
-        .padding(20)
-        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(24)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius).strokeBorder(Theme.line, lineWidth: 1) }
         .contextMenu {
             Button { model.open(entry) } label: { Label("阅读", systemImage: Icon.read) }
             Button { detail = entry.id } label: { Label("书籍详情", systemImage: Icon.info) }
@@ -155,17 +165,25 @@ struct NowView: View {
     private var todaySummary: some View {
         Button { Haptics.selection(); model.tab = 2 } label: {
             actionLayout {
+                ZStack {
+                    Circle().stroke(Theme.line, lineWidth: 5)
+                    Circle().trim(from: 0, to: min(1, CGFloat(todayMinutes) / CGFloat(max(1, goalMinutes))))
+                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Image(systemName: "leaf").font(.title3).foregroundStyle(Theme.accent)
+                }
+                .frame(width: 48, height: 48).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("\(todayMinutes) 分钟").font(Theme.sans(20, weight: .bold)).monospacedDigit()
-                    Text("今日阅读 · 目标 \(goalMinutes) 分钟").font(.caption2).foregroundStyle(Theme.onWarm)
+                    Text("今日阅读 · 目标 \(goalMinutes) 分钟").font(.caption2).foregroundStyle(Theme.ink2)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("连续 \(streak) 天").font(Theme.sans(20, weight: .bold)).monospacedDigit()
-                    Text("慢慢读，也是一种抵达。").font(.caption2).foregroundStyle(Theme.onWarm)
+                    Text("慢慢读，也是一种抵达。").font(.caption2).foregroundStyle(Theme.ink2)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             .foregroundStyle(Theme.ink).padding(.horizontal, 16).padding(.vertical, 12)
-            .background(Theme.goldSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -175,7 +193,7 @@ struct NowView: View {
     private func bookRows(_ title: String, _ rows: [ShelfEntry]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(L(title)).font(Theme.sans(20, weight: .bold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                Text(L(title)).font(Theme.serifBold(22, relativeTo: .title2)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Button { model.tab = 0 } label: {
                     Text("全部书籍").font(.caption).foregroundStyle(Theme.accent)

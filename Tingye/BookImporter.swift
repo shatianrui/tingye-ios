@@ -44,6 +44,7 @@ enum BookImporter {
     }
     static func normalize(_ text: String) -> String { text.replacingOccurrences(of: "\u{FEFF}", with: "").replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n") }
     private static let headingRegex = try! NSRegularExpression(pattern: #"(?m)^(?:第[零〇一二三四五六七八九十百千万两\d]+[章回卷部篇节].{0,65}|Chapter\s+\d+.{0,65}|#{1,3}\s+.{1,65})$"#, options: [.caseInsensitive])
+    private static let styleRegex = try! NSRegularExpression(pattern: #"(?is)<style\b[^>]*>(.*?)</style\s*>"#)
     private static let linkRegex = try! NSRegularExpression(pattern: #"(?i)<link\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>"#)
     /// 按标题行分章；`rule` 为用户自定义正则（nil 用内置规则）。超过 `maxLength` 字的章节在段落处继续切分。
     static func splitText(_ source: String, title: String, rule: NSRegularExpression? = nil, maxLength: Int = TxtChapterRules.defaultMaxLength) -> [Chapter] {
@@ -57,15 +58,22 @@ enum BookImporter {
         guard maxLength >= 1000 else { return chapters }
         return chapters.flatMap { chapter -> [Chapter] in
             guard chapter.text.count > maxLength else { return [chapter] }
-            var parts: [String] = [], current = ""
+            var parts: [String] = [], current = "", currentCount = 0
             for paragraph in chapter.text.components(separatedBy: "\n") {
-                if !current.isEmpty && current.count + paragraph.count + 1 > maxLength { parts.append(current); current = "" }
-                if paragraph.count > maxLength {
+                let count = paragraph.count
+                if !current.isEmpty && currentCount + count + 1 > maxLength {
+                    parts.append(current); current = ""; currentCount = 0
+                }
+                if count > maxLength {
                     var rest = Substring(paragraph)
-                    while rest.count > maxLength { parts.append((current.isEmpty ? "" : current + "\n") + rest.prefix(maxLength)); current = ""; rest = rest.dropFirst(maxLength) }
-                    current = String(rest)
+                    while let end = rest.index(rest.startIndex, offsetBy: maxLength, limitedBy: rest.endIndex), end < rest.endIndex {
+                        parts.append(String(rest[..<end])); rest = rest[end...]
+                    }
+                    current = String(rest); currentCount = rest.count
                 } else {
-                    current += (current.isEmpty ? "" : "\n") + paragraph
+                    let separator = current.isEmpty ? "" : "\n"
+                    current += separator + paragraph
+                    currentCount += separator.count + count
                 }
             }
             if !current.isEmpty { parts.append(current) }
@@ -108,7 +116,9 @@ enum BookImporter {
         return chapter
     }
     static func resolve(base: String, href: String) throws -> String {
-        guard !href.hasPrefix("/"), !href.contains(":"), !href.contains("\\"), let decoded = href.components(separatedBy: CharacterSet(charactersIn: "?#")).first?.removingPercentEncoding else { throw ReaderError.message("EPUB 资源路径无效。") }
+        guard let decoded = HTMLText.entities(href).components(separatedBy: CharacterSet(charactersIn: "?#")).first?.removingPercentEncoding,
+              !decoded.hasPrefix("/"), !decoded.contains(":"), !decoded.contains("\\"), !decoded.contains("\0") else { throw ReaderError.message("EPUB 资源路径无效。") }
+        if decoded.isEmpty { return base }
         var parts = base.split(separator: "/").dropLast().map(String.init)
         for part in decoded.split(separator: "/") {
             if part == ".." { guard !parts.isEmpty else { throw ReaderError.message("EPUB 资源路径越界。") }; parts.removeLast() }
@@ -126,33 +136,51 @@ enum BookImporter {
         let items = opf.descendants("item")
         var manifest: [String: XMLNode] = [:]
         for item in items { if let id = item.attributes["id"] { manifest[id] = item } }
+        let navigation = EPUBNavigation.entries(opf: opf, packagePath: path, zip: zip)
         var resources: [String: JSONValue] = [:], imagePaths: [String: String] = [:]
         var cover: String?
         let coverID = opf.descendants("meta").first(where: { $0.attributes["name"] == "cover" })?.attributes["content"]
         for item in items {
-            guard let type = item.attributes["media-type"], ["image/png", "image/jpeg", "image/gif", "image/webp"].contains(type), let href = item.attributes["href"] else { continue }
+            guard let type = item.attributes["media-type"], (type.hasPrefix("image/") || type.hasPrefix("font/") || ["application/font-woff", "application/vnd.ms-opentype", "application/x-font-ttf", "application/x-font-opentype"].contains(type)), let href = item.attributes["href"] else { continue }
             let resourcePath = try resolve(base: path, href: href)
             let bytes = try zip.data(resourcePath)
             let key = "r\(resources.count)"
             resources[key] = .string("data:\(type);base64," + bytes.base64EncodedString()); imagePaths[resourcePath] = key
-            if item.attributes["properties"]?.contains("cover-image") == true || item.attributes["id"] == coverID { cover = "tingye-resource:" + key }
+            if type.hasPrefix("image/"), item.attributes["properties"]?.split(separator: " ").contains("cover-image") == true || item.attributes["id"] == coverID { cover = "tingye-resource:" + key }
         }
         var cssFiles: [String: String] = [:]
         for item in items where item.attributes["media-type"] == "text/css" {
             if let href = item.attributes["href"] { let cssPath = try resolve(base: path, href: href); cssFiles[cssPath] = try decode(zip.data(cssPath)) }
         }
+        // CSS images and fonts resolve relative to their stylesheet, not the chapter.
+        for (cssPath, css) in cssFiles {
+            cssFiles[cssPath] = HTMLText.replacingCSSURLs(in: css) { source in
+                guard let target = try? resolve(base: cssPath, href: source), let key = imagePaths[target] else { return nil }
+                return "tingye-resource:" + key
+            }
+        }
         var chapters: [Chapter] = []
         for ref in opf.descendants("itemref") where ref.attributes["linear"] != "no" {
             guard let id = ref.attributes["idref"], let item = manifest[id], let href = item.attributes["href"] else { continue }
+            guard item.attributes["media-type"] == "application/xhtml+xml" || item.attributes["media-type"] == "text/html" || item.attributes["media-type"] == "image/svg+xml" else { continue }
             let chapterPath = try resolve(base: path, href: href)
             let html = try decode(zip.data(chapterPath))
             var chapter = HTMLText.chapter(html, title: "第 \(chapters.count + 1) 章")
+            if let item = navigation[chapterPath] {
+                chapter.fields["title"] = .string(item.title)
+                chapter.fields["tocDepth"] = .number(Double(item.depth))
+            }
             let images = HTMLText.imageSources(html).compactMap { href -> JSONValue? in
+                if href.hasPrefix("data:image/") { return .string(href) }
                 guard let path = try? resolve(base: chapterPath, href: href), let key = imagePaths[path] else { return nil }
                 return .string("tingye-resource:" + key)
             }
             chapter.fields["nativeImages"] = .array(images)
-            let original = HTMLText.replacingImageSources(in: html) { source in
+            let withImages = HTMLText.replacingImageSources(in: html) { source in
+                guard let resourcePath = try? resolve(base: chapterPath, href: source), let key = imagePaths[resourcePath] else { return nil }
+                return "tingye-resource:" + key
+            }
+            let original = HTMLText.replacingStyleURLs(in: withImages) { source in
                 guard let resourcePath = try? resolve(base: chapterPath, href: source), let key = imagePaths[resourcePath] else { return nil }
                 return "tingye-resource:" + key
             }
@@ -161,8 +189,16 @@ enum BookImporter {
                 let href = (html as NSString).substring(with: match.range(at: 1))
                 if let target = try? resolve(base: chapterPath, href: href), let css = cssFiles[target] { styles += css + "\n" }
             }
+            // Head <style> blocks would otherwise be lost when sanitizing the publication head.
+            for match in styleRegex.matches(in: html, range: NSRange(location: 0, length: html.utf16.count)) {
+                let inline = (html as NSString).substring(with: match.range(at: 1))
+                styles += HTMLText.replacingCSSURLs(in: inline) { source in
+                    guard let target = try? resolve(base: chapterPath, href: source), let key = imagePaths[target] else { return nil }
+                    return "tingye-resource:" + key
+                } + "\n"
+            }
             chapter.fields["document"] = .object(["html": .string(OriginalDocument.sanitized(original)), "css": .string(styles), "path": .string(chapterPath)])
-            if !chapter.text.isEmpty || !images.isEmpty { chapters.append(chapter) }
+            if !chapter.text.isEmpty || !images.isEmpty || item.attributes["media-type"] == "image/svg+xml" { chapters.append(chapter) }
         }
         guard !chapters.isEmpty else { throw ReaderError.message("EPUB 未找到可阅读章节；不支持 DRM 加密书籍。") }
         var extras: [String: JSONValue] = ["resources": .object(resources), "description": .string(opf.descendants("description").first?.allText ?? ""), "category": .string(opf.descendants("subject").first?.allText ?? "其他")]
@@ -199,7 +235,7 @@ private final class XMLNode: NSObject, XMLParserDelegate {
     var children: [XMLNode] = []
     var text = ""
     private var stack: [XMLNode] = []
-    var allText: String { text + children.map(\.allText).joined() }
+    var allText: String { text }
     func descendants(_ name: String) -> [XMLNode] { children.flatMap { ($0.name == name ? [$0] : []) + $0.descendants(name) } }
     static func parse(_ data: Data) throws -> XMLNode {
         let root = XMLNode(), parser = XMLParser(data: data)
@@ -211,13 +247,54 @@ private final class XMLNode: NSObject, XMLParserDelegate {
         let node = XMLNode(); node.name = elementName.components(separatedBy: ":").last ?? elementName; node.attributes = attributeDict
         stack.last?.children.append(node); stack.append(node)
     }
-    func parser(_ parser: XMLParser, foundCharacters string: String) { stack.last?.text += string }
+    func parser(_ parser: XMLParser, foundCharacters string: String) { for node in stack { node.text += string } }
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) { if stack.count > 1 { stack.removeLast() } }
+}
+
+private enum EPUBNavigation {
+    struct Entry { let title: String; let depth: Int }
+    static func entries(opf: XMLNode, packagePath: String, zip: SafeArchive) -> [String: Entry] {
+        let items = opf.descendants("item")
+        var result: [String: Entry] = [:]
+        func add(_ href: String?, _ label: String, depth: Int, base: String) {
+            guard let href, let path = try? BookImporter.resolve(base: base, href: href) else { return }
+            let title = label.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+            guard !title.isEmpty, result[path] == nil else { return }
+            result[path] = Entry(title: String(title.prefix(200)), depth: depth)
+        }
+        if let nav = items.first(where: { $0.attributes["properties"]?.split(separator: " ").contains("nav") == true }),
+           let href = nav.attributes["href"], let path = try? BookImporter.resolve(base: packagePath, href: href),
+           let data = try? zip.data(path), let root = try? XMLNode.parse(data),
+           let toc = root.descendants("nav").first(where: {
+               ($0.attributes["epub:type"] ?? $0.attributes["type"] ?? "").split(separator: " ").contains("toc")
+           }) {
+            func visit(_ node: XMLNode, depth: Int) {
+                if node.name == "a" { add(node.attributes["href"], node.allText, depth: max(0, depth - 1), base: path) }
+                for child in node.children { visit(child, depth: depth + (child.name == "ol" ? 1 : 0)) }
+            }
+            visit(toc, depth: 0)
+        }
+        // NCX fills missing nav entries; the EPUB3 nav remains authoritative.
+        let tocID = opf.descendants("spine").first?.attributes["toc"]
+        if let ncx = items.first(where: { $0.attributes["id"] == tocID && tocID != nil }) ?? items.first(where: { $0.attributes["media-type"] == "application/x-dtbncx+xml" }),
+           let href = ncx.attributes["href"], let path = try? BookImporter.resolve(base: packagePath, href: href),
+           let data = try? zip.data(path), let root = try? XMLNode.parse(data) {
+            func visit(_ node: XMLNode, depth: Int) {
+                if node.name == "navPoint" {
+                    add(node.children.first(where: { $0.name == "content" })?.attributes["src"],
+                        node.children.first(where: { $0.name == "navLabel" })?.allText ?? "", depth: depth, base: path)
+                }
+                for child in node.children { visit(child, depth: depth + (node.name == "navPoint" ? 1 : 0)) }
+            }
+            visit(root, depth: 0)
+        }
+        return result
+    }
 }
 
 enum HTMLText {
     private static let tokenRegex = try! NSRegularExpression(pattern: #"<[^>]*>|[^<]+"#)
-    private static let imgSrcRegex = try! NSRegularExpression(pattern: #"(?i)<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']"#)
+    private static let imgSrcRegex = try! NSRegularExpression(pattern: #"(?i)<(?:img|image)\b[^>]*?\s(?:src|href|xlink:href)\s*=\s*["']([^"']+)["']"#)
     private static let entityRegex = try! NSRegularExpression(pattern: #"&#(x[0-9a-fA-F]+|[0-9]+);"#)
     static func chapter(_ source: String, title fallback: String) -> Chapter {
         // 机器还原的译文 EPUB 常插入大量「原文链接」回链，属转换残留，导入时剔除。
@@ -225,31 +302,33 @@ enum HTMLText {
             .replacingOccurrences(of: #"(?is)<(script|style|head|nav|noscript)\b[^>]*>.*?</\1\s*>|<!--.*?-->"#, with: "", options: .regularExpression)
         let ns = cleaned as NSString
         var text = "", title = fallback, marks: [JSONValue] = [], stack: [(String, Int)] = []
+        var utf16Length = 0
+        func append(_ value: String) { text += value; utf16Length += value.utf16.count }
         var headingStart: Int?
         for match in tokenRegex.matches(in: cleaned, range: NSRange(location: 0, length: ns.length)) {
             let token = ns.substring(with: match.range)
             if token.hasPrefix("<") {
                 let tag = token.lowercased().replacingOccurrences(of: #"^</?\s*|[\s/>].*$"#, with: "", options: .regularExpression)
                 let close = token.hasPrefix("</")
-                if ["p", "div", "section", "article", "blockquote", "li", "h1", "h2", "h3", "h4", "br", "tr"].contains(tag), !text.isEmpty, !text.hasSuffix("\n") { text += "\n" }
+                if ["p", "div", "section", "article", "blockquote", "li", "h1", "h2", "h3", "h4", "br", "tr"].contains(tag), !text.isEmpty, !text.hasSuffix("\n") { append("\n") }
                 if ["h1", "h2", "h3"].contains(tag) {
                     if close, let start = headingStart, title == fallback { title = (text as NSString).substring(from: start).trimmingCharacters(in: .whitespacesAndNewlines); headingStart = nil }
-                    else if !close { headingStart = text.utf16.count }
+                    else if !close { headingStart = utf16Length }
                 }
                 if ["b", "strong", "i", "em"].contains(tag) {
                     if close, let index = stack.lastIndex(where: { $0.0 == tag }) {
                         let start = stack.remove(at: index).1
-                        if text.utf16.count > start { marks.append(.object(["start": .number(Double(start)), "end": .number(Double(text.utf16.count)), "bold": .bool(tag == "b" || tag == "strong"), "italic": .bool(tag == "i" || tag == "em")])) }
-                    } else if !close { stack.append((tag, text.utf16.count)) }
+                        if utf16Length > start { marks.append(.object(["start": .number(Double(start)), "end": .number(Double(utf16Length)), "bold": .bool(tag == "b" || tag == "strong"), "italic": .bool(tag == "i" || tag == "em")])) }
+                    } else if !close { stack.append((tag, utf16Length)) }
                 }
-            } else { text += entities(token.replacingOccurrences(of: #"[\t\r\n ]+"#, with: " ", options: .regularExpression)) }
+            } else { append(entities(token.replacingOccurrences(of: #"[\t\r\n ]+"#, with: " ", options: .regularExpression))) }
         }
         return Chapter(title: String(title.prefix(200)), text: text, extras: ["marks": .array(marks), "document": .object(["html": .string(OriginalDocument.sanitized(source)), "css": .string("")])])
     }
     static func imageSources(_ html: String) -> [String] {
         imgSrcRegex.matches(in: html, range: NSRange(location: 0, length: html.utf16.count)).map { (html as NSString).substring(with: $0.range(at: 1)) }
     }
-    /// 仅替换 `<img>` 标签内的 `src` 属性值，避免短文件名（如 `1.jpg`）误替换正文或其他属性。
+    /// 仅替换 `<img src>` 与 SVG `<image href/xlink:href>` 属性值，避免短文件名（如 `1.jpg`）误替换正文或其他属性。
     static func replacingImageSources(in html: String, transform: (String) -> String?) -> String {
         var output = html
         for match in imgSrcRegex.matches(in: html, range: NSRange(location: 0, length: html.utf16.count)).reversed() {
@@ -260,6 +339,32 @@ enum HTMLText {
             }
         }
         return output
+    }
+    /// Rewrite style content only: a printed "url(image.png)" in prose is not a resource.
+    static func replacingStyleURLs(in html: String, transform: (String) -> String?) -> String {
+        let regex = try! NSRegularExpression(pattern: #"(?is)<style\b[^>]*>(.*?)</style\s*>|<[a-z][^>]*?\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')[^>]*>"#)
+        var result = html
+        let ns = html as NSString
+        for match in regex.matches(in: html, range: NSRange(location: 0, length: ns.length)).reversed() {
+            let capture = (1...3).map { match.range(at: $0) }.first { $0.location != NSNotFound }!
+            if let range = Range(capture, in: result) {
+                result.replaceSubrange(range, with: replacingCSSURLs(in: ns.substring(with: capture), transform: transform))
+            }
+        }
+        return result
+    }
+    /// Preserve quote style and surrounding CSS; only rewrite resolved local url() values.
+    static func replacingCSSURLs(in css: String, transform: (String) -> String?) -> String {
+        let regex = try! NSRegularExpression(pattern: #"(?i)url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s)'\"]+))\s*\)"#)
+        var result = css
+        let ns = css as NSString
+        for match in regex.matches(in: css, range: NSRange(location: 0, length: ns.length)).reversed() {
+            let capture = (1...3).map { match.range(at: $0) }.first { $0.location != NSNotFound }!
+            if let replacement = transform(ns.substring(with: capture)), let range = Range(capture, in: result) {
+                result.replaceSubrange(range, with: replacement)
+            }
+        }
+        return result
     }
     static func entities(_ source: String) -> String {
         var text = source

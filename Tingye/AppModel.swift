@@ -233,6 +233,7 @@ final class AppModel: ObservableObject {
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         let generation = libraryGeneration
         let value = try await Task.detached(priority: .userInitiated) { try disk.read(id) }.value
+        try Task.checkCancellation()
         guard !restoringLibrary, generation == libraryGeneration else { throw CancellationError() }
         remember(value); return value
     }
@@ -290,7 +291,11 @@ final class AppModel: ObservableObject {
         indexed.formUnion(ids)
         let captured = owner, generation = libraryGeneration, taskID = UUID()
         // 句数索引已在书架目录里、且有缩略图缓存的书，直接读缓存，不必解码整本书。
-        let counted = Set(entries.filter { $0.sentenceCounts != nil }.map(\.id))
+        let knownCounts = Dictionary(uniqueKeysWithValues: entries.compactMap { entry in
+            entry.sentenceCounts.map { (entry.id, $0) }
+        })
+        let counted = Set(knownCounts.keys)
+        let cachedBooks = cache
         indexTasks[taskID] = Task.detached(priority: .utility) { [weak self] in
             for id in ids {
                 guard !Task.isCancelled else { break }
@@ -304,14 +309,14 @@ final class AppModel: ObservableObject {
                     }
                     continue
                 }
-                guard let book = try? disk.read(id) else { continue }
+                guard let book = cachedBooks[id] ?? (try? disk.read(id)) else { continue }
                 guard !Task.isCancelled else { break }
-                let counts = book.chapters.map { Sentence.split($0.text).count }
+                let counts = knownCounts[id] ?? book.chapters.map { Sentence.split($0.text).count }
                 let category = book.fields["category"]?.string
                 let intro = [book.fields["description"]?.string, book.fields["intro"]?.string]
                     .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                     .first { !$0.isEmpty }
-                let cover = book.coverData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 240, height: 343))
+                let cover = book.coverData.flatMap { BookImage.thumbnail($0, maxPixelSize: 343) }
                 let coverData = cover?.jpegData(compressionQuality: 0.85)
                 guard !Task.isCancelled else { break }
                 await MainActor.run { [weak self] in

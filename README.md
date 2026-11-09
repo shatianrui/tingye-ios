@@ -1,3 +1,8 @@
+> 书籍加载优化：EPUB 目录/图文资源解析、缩略图与索引优化，详见 [实现范围与验证记录](docs/BOOK-LOADING.md)。
+
+> **本地改版：纸页与松绿 / 无签名构建**
+> 已新增独立无签名构建脚本和手动 GitHub Actions 工作流，见 [构建说明](docs/UNSIGNED.md)。以下 TestFlight 与测试数字是原仓库历史记录，不代表本次改版的验证结果。
+
 # 听页 · 原生 iOS / Mac Catalyst
 
 纯 Swift / SwiftUI 本地阅读应用，听书作为辅助能力，最低 iOS 17。
