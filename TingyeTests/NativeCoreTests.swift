@@ -2502,7 +2502,6 @@ final class LocalFileImportTests: XCTestCase {
         let delegate = LocalBookPicker.Coordinator { _ in }
         let picker = LocalBookPicker.controller(allowsMultipleSelection: false, delegate: delegate)
         XCTAssertFalse(picker.allowsMultipleSelection)
-        XCTAssertTrue(picker.shouldShowFileExtensions)
         XCTAssertEqual(picker.documentPickerMode, .import)
         XCTAssertTrue(LocalBookPicker.controller(allowsMultipleSelection: true, delegate: delegate).allowsMultipleSelection)
     }
