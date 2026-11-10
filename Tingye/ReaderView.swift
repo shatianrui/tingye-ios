@@ -187,7 +187,7 @@ struct ReaderView: View {
         ZStack(alignment: .bottom) {
             (document.isPDF ? Theme.bg : prefs.background).ignoresSafeArea()
             GeometryReader { geometry in
-                // 工具展开时为其预留空间，避免遮住正文；重新分页时保留阅读位置。
+                // 工具覆盖正文，显隐时保持阅读视口和分页不变。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
                 ZStack(alignment: .bottom) {
@@ -200,7 +200,7 @@ struct ReaderView: View {
                             textContent
                         }
                     }
-                    .padding(.bottom, chrome && selection == nil ? toolsHeight + 22 : (active ? max(66, measuredStripHeight + 12) : 0))
+                    .padding(.bottom, active ? max(66, measuredStripHeight + 12) : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
 

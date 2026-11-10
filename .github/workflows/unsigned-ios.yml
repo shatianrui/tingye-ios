@@ -37,6 +37,9 @@ jobs:
             -only-testing:TingyeUITests/DesignFlowTests/testReaderCanSkipSentencesAndKeepPausedWithoutPlayerPage \
             -only-testing:TingyeUITests/DesignFlowTests/testMiniPlayerReturnsToReaderWithoutOpeningPlayerPage \
             -only-testing:TingyeUITests/DesignFlowTests/testLargestTypeReaderListeningControlsRemainReachable \
+            -only-testing:TingyeUITests/DesignFlowTests/testPagedReaderChromeDoesNotReflowOrMoveReadingPosition \
+            -only-testing:TingyeUITests/DesignFlowTests/testOriginalReaderChromeDoesNotResizeOrMoveItsColumn \
+            -only-testing:TingyeUITests/DesignFlowTests/testPDFReaderChromeDoesNotResizeScaleOrMoveItsPage \
             -only-testing:TingyeUITests/DesignFlowTests/testChinaGLMSetupIsReachableWithoutMakingPaidRequests \
             -only-testing:TingyeUITests/DesignFlowTests/testChinaMiniMaxSetupIsReachableWithoutMakingPaidRequests \
             -only-testing:TingyeTests/LocalFileImportTests \
