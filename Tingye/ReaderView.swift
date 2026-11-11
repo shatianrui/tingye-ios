@@ -109,6 +109,12 @@ struct ReaderView: View {
     @State private var doublePage = false
     @State private var dayPaper: String?
     @State private var shareItem: ExportedBook?
+    /// v29 阶段二：专注会话与读完收尾页（会话本体在 FocusSessionStore，不另计统计）。
+    @AppStorage(FocusSessionStore.enabledKey) private var focusEnabled = true
+    @ObservedObject private var focusStore = FocusSessionStore.shared
+    @State private var focusPresented = false
+    @State private var finishPresented = false
+    @State private var didAutoPresentFinish = false
     /// 长按选中的句区间（划线 / 笔记 / 从这句听）
     @State private var selection: ReaderSelection?
     @State private var noteTarget: Highlight?
@@ -317,6 +323,22 @@ struct ReaderView: View {
             }.environmentObject(model).tint(Theme.accent)
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+        .sheet(isPresented: $focusPresented) {
+            FocusStartView(entry: entry, bookID: book.id, bookTitle: book.title, chapter: chapter, chapterTitle: current.title) {
+                focusPresented = false; dismiss()
+            }
+            .environmentObject(model).tint(Theme.accent)
+        }
+        .sheet(isPresented: $finishPresented) {
+            if let entry {
+                BookFinishView(entry: entry, onOpenNext: { next in
+                    finishPresented = false
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { model.open(next) }
+                }, onCloseBook: { finishPresented = false; dismiss() })
+                .environmentObject(model).tint(Theme.accent)
+            }
+        }
     }
 
     // MARK: 正文
@@ -345,6 +367,9 @@ struct ReaderView: View {
                     .foregroundStyle(readerAccent)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("正在朗读")
+                }
+                if focusEnabled, focusStore.bookID == book.id, focusStore.phase != .idle {
+                    focusStatusButton
                 }
             }
             .font(.system(size: 12))
@@ -559,6 +584,16 @@ struct ReaderView: View {
                     Button { player.stop(); following = false } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
                 }
             }
+            Section("书房") {
+                if focusEnabled {
+                    Button { focusPresented = true } label: {
+                        Label(focusStore.phase == .running && focusStore.bookID == book.id ? "查看专注会话" : "开始专注", systemImage: Icon.sleepTimer)
+                    }
+                    .accessibilityIdentifier("reader.focusSession")
+                }
+                Button { presentFinish() } label: { Label("读完收尾", systemImage: Icon.checkmark) }
+                    .accessibilityIdentifier("reader.finish")
+            }
             Section("书籍") {
                 Button { shareBook() } label: { Label("导出备份", systemImage: Icon.share) }
             }
@@ -582,6 +617,44 @@ struct ReaderView: View {
     private func readerAction(_ icon: String, _ title: String, selected: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) { readerActionLabel(icon, title, selected: selected) }
             .buttonStyle(.plain)
+    }
+
+    /// 专注状态小字（正文页眉右侧，工具层收起时可见）：进行中显示剩余时间，
+    /// 到时完成后显示完成提示；点开是专注面板。剩余时间只驱动显示，会话到时由 completeIfDue 翻状态。
+    @ViewBuilder
+    private var focusStatusButton: some View {
+        if focusStore.phase == .finished {
+            Button { focusPresented = true } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: Icon.checkmark)
+                    Text(focusStore.sessionSeconds < 60 ? "专注完成 · 不足 1 分钟" : "专注完成 · 共读 \(Int(focusStore.sessionSeconds / 60)) 分钟")
+                }
+                .font(.caption2.weight(.medium))
+            }
+            .buttonStyle(.plain).foregroundStyle(readerAccent)
+            .accessibilityLabel("专注完成，查看小结")
+            .accessibilityIdentifier("reader.focusFinished")
+        } else {
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                Button { focusPresented = true } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: Icon.sleepTimer)
+                        Text(focusRemainingLabel(at: context.date))
+                    }
+                    .font(.caption2.weight(.medium))
+                }
+                .buttonStyle(.plain).foregroundStyle(prefs.secondary)
+                .accessibilityLabel("正在专注，查看专注会话")
+                .accessibilityIdentifier("reader.focusRunning")
+                .onChange(of: context.date) { _, _ in focusStore.completeIfDue(currentChapter: chapter) }
+            }
+        }
+    }
+
+    private func focusRemainingLabel(at date: Date) -> String {
+        let seconds = focusStore.remaining(at: date)
+        if seconds <= 60 { return "专注 · 还剩不足 1 分钟" }
+        return "专注 · 还剩 \(Int(ceil(seconds / 60))) 分钟"
     }
 
     /// 阅读中的听条只承担播放状态与切换；精细控制统一在听书页。
@@ -686,6 +759,20 @@ struct ReaderView: View {
     }
     /// 阅读只保存眼前的正文位置；听书回调保存另一份位置。
     private func persist() { model.saveProgress(book.id, chapter: chapter, position: sentencePosition) }
+
+    /// 手动打开读完收尾页（「更多」菜单）。
+    private func presentFinish() {
+        guard entry != nil else { return }
+        finishPresented = true
+    }
+
+    /// 读完自动触发：只由 turn() 在读者明确做出「翻过全书最后一页」的动作时调用，
+    /// 且每次打开本书只自动弹一次；单纯停在最后一页、最后一章中途退出都不触发。
+    private func requestFinish() {
+        guard !didAutoPresentFinish, entry != nil else { return }
+        didAutoPresentFinish = true
+        finishPresented = true
+    }
     private func toggleChrome() { withAnimation(.snappy(duration: 0.24)) { chrome.toggle() } }
     private func togglePlayback() {
         if active {
@@ -782,7 +869,12 @@ struct ReaderView: View {
     private func turn(_ delta: Int) {
         following = false
         turnDelta = delta
-        if document.isPDF || scrolling || originalHTML != nil { jump(chapter: chapter + delta, position: 0); return }
+        if document.isPDF || scrolling || originalHTML != nil {
+            // 最后一章（PDF 为最后一页）再向前翻 = 翻过全书末尾，触发读完收尾；
+            // 滚动与原书图文还要求已经读到本章最后一句，避免章中误触。
+            if delta > 0, chapter == chapters.count - 1, document.isPDF || sentencePosition >= max(0, sentences.count - 1) { requestFinish() }
+            jump(chapter: chapter + delta, position: 0); return
+        }
         let next = pageIndex + delta * (doublePage ? 2 : 1)
         if next < 0, chapter > 0 { jump(chapter: chapter - 1, position: max(0, document.sentences(chapter - 1).count - 1)) }
         else if next >= pages.count, chapter + 1 < chapters.count { jump(chapter: chapter + 1, position: 0) }
@@ -793,6 +885,8 @@ struct ReaderView: View {
             // 手动阅读始终由读者决定位置；只有显式“回到朗读处”才恢复跟随。
             persist()
         }
+        // 已在最后一章最后一页还向前翻：翻过全书末尾，触发读完收尾。
+        else if next >= pages.count { requestFinish() }
     }
     private func toggleNightMode() {
         if isDarkPaper {
