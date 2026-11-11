@@ -420,6 +420,27 @@ extension AppModel {
         }
     }
 
+    /// 本地导出整库：与 iCloud 备份共用同一份归档构建（逐本组装 ICloudArchive.Item）与编码，
+    /// 只写本机临时文件，不触碰 iCloud 容器；文件经系统分享面板保存或发送。
+    func makeLibraryExportFile() async throws -> URL {
+        guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
+        let rows = entries.filter { $0.local }
+        guard !rows.isEmpty else { throw ReaderError.message("没有可导出的本机书籍。") }
+        var items: [ICloudArchive.Item] = []
+        for row in rows {
+            let book: Book
+            do { book = try await Task.detached(priority: .utility) { try disk.read(row.id) }.value }
+            catch { throw ReaderError.message("读取《\(row.title)》失败，未生成导出：\(error.localizedDescription)") }
+            items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt))
+        }
+        let data = try Integrity.encoder().encode(ICloudArchive(owner: owner, books: items))
+        let stamp = DateFormatter()
+        stamp.dateFormat = "yyyyMMdd"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("TingyeLibrary-\(stamp.string(from: Date())).json")
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
     func refreshUploadStatus() { if let url = backupUpload?.url { watchUpload(url) } }
     private func watchUpload(_ url: URL) {
         uploadTask?.cancel()
@@ -751,6 +772,7 @@ extension AppModel {
 struct ICloudBackupView: View {
     @EnvironmentObject var model: AppModel
     @AppStorage(ProgressSync.enabledKey) private var syncProgress = true
+    @State private var export: ExportedBook?
     private var localBookCount: Int { model.entries.filter(\.local).count }
 
     var body: some View {
@@ -774,6 +796,17 @@ struct ICloudBackupView: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 52)
                 .background(Theme.surface, in: Rectangle())
+                Button("导出整库到文件") {
+                    Task {
+                        do { export = ExportedBook(url: try await model.makeLibraryExportFile()) }
+                        catch { model.message = error.localizedDescription }
+                    }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(model.busy || localBookCount == 0)
+                .accessibilityIdentifier("icloud.exportLibrary")
+                Text("把整库导成一个文件（与 iCloud 备份相同的归档格式），可存到「文件」或发到其他设备留存。")
+                    .font(.caption).foregroundStyle(Theme.ink2)
                 if let upload = model.backupUpload {
                     VStack(alignment: .leading, spacing: 8) {
                         ICloudUploadRow(status: upload)
@@ -831,6 +864,7 @@ struct ICloudBackupView: View {
                 .padding(.horizontal, Theme.inset).padding(.vertical, 12)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
         }
+        .sheet(item: $export) { ShareSheet(items: [$0.url]) }
         .onAppear { model.sync.refreshAccount() }
         .onChange(of: syncProgress) { _, on in if on { model.refreshProgressSync() } }
         .confirmationDialog("还原备份并替换对应书籍？", isPresented: Binding(get: { model.pendingRestore != nil }, set: { if !$0 { model.cancelPendingRestore() } }), titleVisibility: .visible) {
