@@ -1,6 +1,13 @@
 import SwiftUI
 import AVKit
 
+/// v29「书房」阶段一：根导航编译期开关。
+/// true = StudyRootView（单一导航栈、启动直达在读书、书库为根页面）；
+/// false = 现有三页签 RootView（老结构完整保留，回退只需改这一处常量）。
+enum StudyNavigation {
+    static let enabled = true
+}
+
 @main
 struct TingyeApp: App {
     @StateObject private var model: AppModel = {
@@ -29,7 +36,13 @@ struct TingyeApp: App {
     @AppStorage("app.appearance") private var appearanceMode = "system"
     var body: some Scene {
         WindowGroup {
-            RootView()
+            Group {
+                if StudyNavigation.enabled {
+                    StudyRootView()
+                } else {
+                    RootView()
+                }
+            }
                 #if DEBUG
                 .modifier(UIReviewAppearance())
                 #endif
@@ -320,6 +333,107 @@ struct RootView: View {
     #endif
 }
 
+/// v29「书房」阶段一根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
+/// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
+/// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
+struct StudyRootView: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var navigationHidden = false
+    @State private var didAutoOpenOnLaunch = false
+
+    /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径，根页面需停在书库。
+    private var autoOpenAllowed: Bool {
+        #if DEBUG
+        return UIReview.screen == nil
+        #else
+        return true
+        #endif
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            NavigationStack {
+                ShelfView()
+                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
+                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        HStack {
+                            Spacer()
+                            NavigationLink {
+                                StatsView(ji: true)
+                            } label: {
+                                ThemeIcon(symbol: Icon.stats, size: 20, weight: .medium)
+                                    .foregroundStyle(Theme.ink)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(PressButtonStyle(scale: 0.92))
+                            .accessibilityLabel("我的")
+                            .accessibilityIdentifier("study.openProfile")
+                        }
+                        .padding(.horizontal, Theme.inset)
+                        .background(Theme.bg)
+                    }
+            }
+            // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
+            // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
+            if !navigationHidden {
+                MiniPlayer(player: model.player)
+            }
+        }
+        .disabled(model.restoringLibrary)
+        .paperBackground()
+        .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
+        .onChange(of: model.entries.count, initial: true) { _, count in
+            // 书架首次载入后只自动打开一次；之后回前台、切页都不再自动打开。
+            guard !didAutoOpenOnLaunch, count > 0 else { return }
+            didAutoOpenOnLaunch = true
+            guard autoOpenAllowed, model.selectedBook == nil else { return }
+            // 焦点书与 NowView.focus 相同：最近阅读过的书优先，其次第一本本地非漫画书；
+            // 漫画按现行规则不自动打开。无书时停在书库根页面（书房空态沿用 ShelfView 现有空态）。
+            let focus = model.lastReadingBook
+                ?? model.visibleEntries.first { $0.local && !$0.isComic }
+                ?? model.visibleEntries.first { $0.local }
+            if let focus, !focus.isComic { model.open(focus) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                model.refreshProgressSync()
+                ReadingReminder.refresh(model: model)
+            } else {
+                model.flushPendingSaves()
+                if phase == .background { ReadingReminder.refresh(model: model) }
+                if phase == .background { model.hiddenUnlocked = false; model.notice = nil }
+            }
+        }
+        .task(id: scenePhase) {
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(5)) } catch { return }
+                model.recordUsageTick(seconds: 5, appActive: scenePhase == .active)
+            }
+        }
+        .fullScreenCover(item: $model.selectedBook) { book in
+            NavigationStack {
+                if book.fields["comic"]?.bool == true { ComicReaderView(book: book) }
+                else { ReaderView(book: book, player: model.player) }
+            }
+                .environmentObject(model)
+                .tint(Theme.accent)
+        }
+        .sheet(isPresented: $model.showingPlayer) {
+            PlayerView(player: model.player)
+                .environmentObject(model)
+        }
+        .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
+            Button("关闭", role: .cancel) { model.message = nil }
+        } message: { Text(L(model.message ?? "")) }
+        .feedbackOverlay()
+        .modifier(AppLockGate())
+        .respectReducedMotion()
+    }
+}
+
 #if DEBUG
 private struct UIReviewAppearance: ViewModifier {
     func body(content: Content) -> some View {
@@ -432,6 +546,21 @@ struct MiniPlayer: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("展开听书页：\(book.title)，\(subtitle)")
                     .accessibilityIdentifier("miniPlayer.open")
+
+                    if let entry = model.entries.first(where: { $0.id == book.id }) {
+                        Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
+                            ThemeIcon(symbol: Icon.listening, size: 16)
+                                .foregroundStyle(Theme.ink2)
+                                .frame(width: 32, height: 32)
+                                .background(Theme.surface, in: Circle())
+                                .contentShape(Rectangle())
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressButtonStyle(scale: 0.88))
+                        .accessibilityLabel("回到朗读处：第 \(player.chapter + 1) 章")
+                        .accessibilityIdentifier("miniPlayer.returnToSpeech")
+                    }
 
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {

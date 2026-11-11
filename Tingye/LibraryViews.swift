@@ -490,7 +490,7 @@ func settingsDestinationView(_ route: SettingsDestination) -> some View {
     case .voice: VoiceSettingsView()
     case .appearance: AppearanceView()
     case .backup: ICloudBackupView()
-    case .notes: AllNotesView()
+    case .notes: NotesUnifiedView()
     case .privacy: PrivacyPolicyView()
     case .licenses: FontLicenseView()
     case .profile: ProfileView()
