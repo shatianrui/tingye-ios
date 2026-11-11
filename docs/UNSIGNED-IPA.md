@@ -5,7 +5,34 @@
 `ExportOptions.plist`、`Tingye.entitlements` 都没有改动，无签名的覆盖只在
 构建命令里传参。
 
-## 怎么打
+## 用 GitHub Actions 打并放到 Release
+
+工作流：`.github/workflows/build-unsigned-ipa.yml`，跑在 GitHub 的
+macOS runner 上，不需要你自己的 Mac，也不需要证书。
+
+触发方式（二选一）：
+
+1. 手动：GitHub 网页打开仓库 → Actions → Build unsigned IPA →
+   Run workflow，选择分支。可以选 `unsigned-ipa-slim` 分支直接跑，
+   也可以先把这个分支合并到 main 再跑。输入里可以选是否瘦身字体、
+   是否用 `-Osize`、以及自定义 Release tag（留空自动生成）。
+2. 打 tag：`git tag unsigned-1.24.0-20261112.1 && git push origin <tag>`，
+   tag 必须以 `unsigned-` 开头，工作流会用该 tag 名直接发 Release。
+
+自动生成的 tag 格式沿用仓库已有的习惯：
+`unsigned-<版本>-<日期>.<序号>`，例如 `unsigned-1.24.0-20261112.1`，
+版本号从 pbxproj 读。Release 附件是 `Tingye-unsigned.ipa` 和
+`Tingye-unsigned.ipa.sha256`（`shasum -a 256` 校验），同时还会留一份
+Actions artifact（保留 30 天），即使 Release 步骤失败也能下载。
+
+之前已有同类 Release，例如
+`unsigned-1.24.0-20261110.1`（附件约 37 MB，由 github-actions[bot]
+上传），本工作流沿用同一 tag / 附件命名。
+
+注意：私有仓库的 macOS runner 按 GitHub 计费规则消耗分钟数；
+工作流不需要任何 secret，只用默认 `GITHUB_TOKEN` 发 Release。
+
+## 怎么打（本地 Mac）
 
 ```sh
 chmod +x scripts/build-unsigned-ipa.sh   # 第一次，或直接用 bash scripts/build-unsigned-ipa.sh
