@@ -1,0 +1,145 @@
+name: Build unsigned IPA
+
+# 用 GitHub 的 macOS runner 打无签名、瘦身版 IPA，并发到 GitHub Release。
+#
+# 触发方式（二选一）：
+#   1. 手动：GitHub 网页 Actions -> Build unsigned IPA -> Run workflow，
+#      选择分支（需要先把这个工作流合并到 main，或直接选
+#      unsigned-ipa-slim 分支跑）。
+#   2. 打 tag：git tag unsigned-1.24.0-20261112.1 && git push origin <tag>
+#      tag 必须以 unsigned- 开头。工作流会用该 tag 名直接发 Release。
+#
+# 产物：
+#   - Release 附件：Tingye-unsigned.ipa、Tingye-unsigned.ipa.sha256
+#   - Actions artifact：Tingye-unsigned-ipa（即使 Release 步骤失败也能下载）
+#
+# 注意：
+#   - 这是无签名 IPA，普通 iPhone 安装前仍需自行重签。
+#   - 之前已有同类 Release（tag 如 unsigned-1.24.0-20261110.1，
+#     附件 Tingye-unsigned.ipa 约 37 MB，由 github-actions[bot] 上传），
+#     本工作流沿用同一 tag / 附件命名。
+#   - 私有仓库的 macOS runner 按 GitHub 计费规则消耗分钟数。
+#   - 不需要任何证书、密钥或 secret，只用默认 GITHUB_TOKEN 发 Release。
+
+on:
+  workflow_dispatch:
+    inputs:
+      slim_fonts:
+        description: "瘦身字体（移除 LXGW 文楷 / 新晰黑，默认开启）"
+        type: boolean
+        default: true
+      osize:
+        description: "用 -Osize 代替 -O（更小二进制，可能稍慢）"
+        type: boolean
+        default: false
+      tag_name:
+        description: "Release tag；留空则自动生成 unsigned-<版本>-<日期>.<序号>"
+        type: string
+        default: ""
+  push:
+    tags:
+      - "unsigned-*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode / Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+          uname -a
+
+      - name: Read version from project.pbxproj
+        id: version
+        run: |
+          MARKETING_VERSION="$(grep -m1 'MARKETING_VERSION =' Tingye.xcodeproj/project.pbxproj | sed -E 's/.*= *([^;]+);.*/\1/' | tr -d ' ')"
+          BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION =' Tingye.xcodeproj/project.pbxproj | sed -E 's/.*= *([^;]+);.*/\1/' | tr -d ' ')"
+          echo "marketing_version=${MARKETING_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${MARKETING_VERSION} (${BUILD_NUMBER})"
+
+      - name: Build unsigned IPA
+        run: |
+          chmod +x scripts/build-unsigned-ipa.sh
+          ARGS=""
+          if [ "${{ inputs.slim_fonts }}" = "false" ]; then ARGS="$ARGS --full-fonts"; fi
+          if [ "${{ inputs.osize }}" = "true" ]; then ARGS="$ARGS --osize"; fi
+          # tag 触发时没有 workflow_dispatch 输入，inputs.* 为空，上面两个
+          # 判断都不成立，默认就是瘦身 + -O，和脚本默认值一致。
+          # shellcheck disable=SC2086
+          ./scripts/build-unsigned-ipa.sh $ARGS
+          ls -lh build/Tingye-unsigned.ipa
+
+      - name: Generate SHA-256
+        run: |
+          cd build
+          shasum -a 256 Tingye-unsigned.ipa > Tingye-unsigned.ipa.sha256
+          cat Tingye-unsigned.ipa.sha256
+          ls -lh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tingye-unsigned-ipa
+          path: |
+            build/Tingye-unsigned.ipa
+            build/Tingye-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Resolve release tag and name
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
+          elif [ -n "${{ inputs.tag_name }}" ]; then
+            TAG="${{ inputs.tag_name }}"
+          else
+            DATE="$(date -u +%Y%m%d)"
+            TAG="unsigned-${{ steps.version.outputs.marketing_version }}-${DATE}.${{ github.run_number }}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "name=听页 ${{ steps.version.outputs.marketing_version }} (${{ steps.version.outputs.build_number }}) 无签名版" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${TAG}"
+
+      - name: Write release notes
+        run: |
+          cat > release-notes.md <<EOF
+          听页 ${{ steps.version.outputs.marketing_version }} (${{ steps.version.outputs.build_number }}) 无签名版。
+
+          - 由 GitHub Actions 在 macOS runner 上构建：\`scripts/build-unsigned-ipa.sh\`（Release、仅 arm64、strip、不带 .dSYM）。
+          - 瘦身：默认移除 LXGW 文楷 / 新晰黑两个可选阅读字体（未压缩约 20.3 MB），思源宋体 / 黑体保留；选了这两个字体的用户会在此版看到回退字体。
+          - 无签名：普通 iPhone 安装前仍需自行签名（AltStore / Sideloadly 等）或用 TrollStore / 越狱设备安装。
+          - 不可用：iCloud Drive 备份与还原、iCloud 键值同步跨设备续读、旧签名版钥匙串里的密钥（需重输）。本机书库、阅读、听书、本地导入、WiFi 传书可用。
+          - 校验：\`shasum -a 256 Tingye-unsigned.ipa\` 应与同名 .sha256 文件一致。
+          - 详见 \`docs/UNSIGNED-IPA.md\`。
+          EOF
+          cat release-notes.md
+
+      - name: Publish to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+          NAME: ${{ steps.release.outputs.name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, uploading assets (clobber)…"
+            gh release upload "$TAG" build/Tingye-unsigned.ipa build/Tingye-unsigned.ipa.sha256 --clobber
+          else
+            gh release create "$TAG" build/Tingye-unsigned.ipa build/Tingye-unsigned.ipa.sha256 \
+              --title "$NAME" \
+              --notes-file release-notes.md
+          fi
+          echo "Release: https://github.com/${{ github.repository }}/releases/tag/${TAG}"
