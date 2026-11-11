@@ -45,6 +45,7 @@
 		1FFE62ACD7268291B5FA3C21 /* SMBBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779AA8586C04D85834E606AC /* SMBBrowser.swift */; };
 		25C0C31BB95C2A727346EAB0 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0CBD7DBAF3C6230AE5178D /* FocusSession.swift */; };
 		99C02AE4A7D5F2FECC4EB469 /* BookFinishView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8DE15CD1DEF9061ED01855 /* BookFinishView.swift */; };
+		465C24D1D9BD02383C68FC8D /* NotesUnifiedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */; };
 		BED77CC9D34013668A3A6B39 /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */; };
 		A1B2C3D4E5F6071829304A5B /* NowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6071829304A5B6C /* NowView.swift */; };
 		C55BE1C7BCD4A86B59B1F27D /* samples.json in Resources */ = {isa = PBXBuildFile; fileRef = 371FB21F4691205F1F79CA34 /* samples.json */; };
@@ -119,6 +120,7 @@
 		779AA8586C04D85834E606AC /* SMBBrowser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SMBBrowser.swift; sourceTree = "<group>"; };
 		BA0CBD7DBAF3C6230AE5178D /* FocusSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
 		8F8DE15CD1DEF9061ED01855 /* BookFinishView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BookFinishView.swift; sourceTree = "<group>"; };
+		591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotesUnifiedView.swift; sourceTree = "<group>"; };
 		DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6071829304A5B6C /* NowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
 		F4305A23D2945C6E717F6482 /* MobiReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobiReader.swift; sourceTree = "<group>"; };
@@ -201,6 +203,7 @@
 				83D6639CBAAFE961F7F6D147 /* Library.swift */,
 				DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */,
 				8F8DE15CD1DEF9061ED01855 /* BookFinishView.swift */,
+				591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */,
 				BA0CBD7DBAF3C6230AE5178D /* FocusSession.swift */,
 				779AA8586C04D85834E606AC /* SMBBrowser.swift */,
 				003EF4A62C49A538468D3907 /* MenuSettingsView.swift */,
@@ -411,6 +414,7 @@
 				28F78F0A9FC4C2BE75B014E7 /* Library.swift in Sources */,
 				BED77CC9D34013668A3A6B39 /* DailyQuoteCard.swift in Sources */,
 				99C02AE4A7D5F2FECC4EB469 /* BookFinishView.swift in Sources */,
+				465C24D1D9BD02383C68FC8D /* NotesUnifiedView.swift in Sources */,
 				25C0C31BB95C2A727346EAB0 /* FocusSession.swift in Sources */,
 				1FFE62ACD7268291B5FA3C21 /* SMBBrowser.swift in Sources */,
 				693010A666BA4C7060B0C0E5 /* MenuSettingsView.swift in Sources */,
@@ -476,7 +480,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 130;
+				CURRENT_PROJECT_VERSION = 131;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -561,7 +565,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 130;
+				CURRENT_PROJECT_VERSION = 131;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -589,7 +593,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 130;
+				CURRENT_PROJECT_VERSION = 131;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -668,7 +672,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 130;
+				CURRENT_PROJECT_VERSION = 131;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

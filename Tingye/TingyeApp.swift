@@ -547,6 +547,21 @@ struct MiniPlayer: View {
                     .accessibilityLabel("展开听书页：\(book.title)，\(subtitle)")
                     .accessibilityIdentifier("miniPlayer.open")
 
+                    if let entry = model.entries.first(where: { $0.id == book.id }) {
+                        Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
+                            ThemeIcon(symbol: Icon.listening, size: 16)
+                                .foregroundStyle(Theme.ink2)
+                                .frame(width: 32, height: 32)
+                                .background(Theme.surface, in: Circle())
+                                .contentShape(Rectangle())
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressButtonStyle(scale: 0.88))
+                        .accessibilityLabel("回到朗读处：第 \(player.chapter + 1) 章")
+                        .accessibilityIdentifier("miniPlayer.returnToSpeech")
+                    }
+
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {

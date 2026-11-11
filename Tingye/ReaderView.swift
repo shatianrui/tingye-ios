@@ -105,6 +105,8 @@ struct ReaderView: View {
     @State private var sheet: ReaderSheet?
     @State private var ready = false
     @State private var following = false
+    /// v29 阶段三（p3a）：结束听书与听书页统一走确认流程，不再立即停止。
+    @State private var endingListening = false
     @State private var chrome = false
     @State private var doublePage = false
     @State private var dayPaper: String?
@@ -323,6 +325,10 @@ struct ReaderView: View {
             }.environmentObject(model).tint(Theme.accent)
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
+        .confirmationDialog("结束这次听书？", isPresented: $endingListening, titleVisibility: .visible) {
+            Button("结束听书", role: .destructive) { player.stop(); following = false }
+            Button("取消", role: .cancel) {}
+        } message: { Text("阅读进度会保留，随时可以继续。") }
         .sheet(isPresented: $focusPresented) {
             FocusStartView(entry: entry, bookID: book.id, bookTitle: book.title, chapter: chapter, chapterTitle: current.title) {
                 focusPresented = false; dismiss()
@@ -581,7 +587,7 @@ struct ReaderView: View {
                     Button { following = true; followSpeech() } label: { Label("跟随朗读位置", systemImage: Icon.listening) }
                     Button { sheet = .focus } label: { Label("听书设置与控制", systemImage: Icon.listen) }
                         .accessibilityIdentifier("reader.openPlayer")
-                    Button { player.stop(); following = false } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
+                    Button { endingListening = true } label: { Label("结束辅助听书", systemImage: Icon.stopListening) }
                 }
             }
             Section("书房") {

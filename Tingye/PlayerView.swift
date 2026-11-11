@@ -186,6 +186,8 @@ struct PlayerView: View {
                     Button { chaptersSheet = true } label: { Label("听书目录", systemImage: Icon.contents) }
                         .accessibilityIdentifier("player.chapters")
                     Toggle("显示前后文", isOn: $showingContext)
+                    Button { toggleListeningBookmark(book) } label: { Label(listeningBookmarked(book) ? "移除听到处书签" : "为听到处加书签", systemImage: Icon.bookmark(listeningBookmarked(book))) }
+                        .accessibilityIdentifier("player.bookmarkListening")
                     Divider()
                     Button(role: .destructive) { endingListening = true } label: { Label("结束听书", systemImage: Icon.stopListening) }
                         .accessibilityIdentifier("player.endListening")
@@ -341,6 +343,16 @@ struct PlayerView: View {
                 .accessibilityLabel("看原文")
                 .accessibilityIdentifier("player.backToReader")
         }
+    }
+
+    /// v29 阶段三（p3b）：为当前朗读位置加书签，复用阅读页同款的切换式书签 API（同位置再点即移除）。
+    private func listeningBookmarked(_ book: Book) -> Bool {
+        model.entries.first { $0.id == book.id }?.bookmarks.contains { $0.chapter == player.chapter && $0.position == player.position } ?? false
+    }
+
+    private func toggleListeningBookmark(_ book: Book) {
+        Haptics.selection()
+        model.bookmark(book.id, chapter: player.chapter, position: player.position, excerpt: player.currentText)
     }
 
     private var transportRow: some View {
