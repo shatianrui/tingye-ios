@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import CryptoKit
+import UniformTypeIdentifiers
 
 /// 跨线程报告"已处理 / 总数"。
 typealias ICloudProgress = @Sendable (_ completed: Int, _ total: Int) -> Void
@@ -514,6 +515,36 @@ extension AppModel {
             return nil
         }
     }
+    /// 本地文件恢复：与 iCloud 恢复共用「解码 → 逐本校验 → pendingRestore → 确认弹窗 → restoreICloud」
+    /// 的后半程，只有归档数据的来源不同（文件选择器而非 iCloud 容器）。
+    /// 归档按其自身 owner 做自洽校验（格式 / 版本 / 书目标识唯一 / 非空），与 restoreICloud
+    /// 还原时对存档的校验口径一致：本地导出的归档可能来自另一台设备或旧账号目录，
+    /// 还原后统一归入当前书架。选完文件不会直接覆盖，必须走既有确认弹窗。
+    func prepareRestoreFromFile(_ url: URL) {
+        runICloud(.restore, .reading, detail: "正在解析所选备份文件…") { [self] id in
+            pendingRestore = nil
+            let archive = try await Task.detached(priority: .utility) {
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                let data = try Data(contentsOf: url)
+                let decoded: ICloudArchive
+                do { decoded = try JSONDecoder().decode(ICloudArchive.self, from: data) }
+                catch is DecodingError { throw ReaderError.message("所选文件无法解析，可能不是听页的备份文件或已损坏，本机书架未更改。") }
+                return try decoded.validatedHeader(owner: decoded.owner)
+            }.value
+            try Task.checkCancellation()
+            let total = archive.books.count
+            step(id, .validating, completed: 0, total: total, detail: "逐本校验章节、资源与书签。")
+            for (index, item) in archive.books.enumerated() {
+                _ = try await Task.detached(priority: .utility) { try item.validated() }.value
+                try Task.checkCancellation()
+                step(id, .validating, completed: index + 1, total: total)
+            }
+            pendingRestore = archive
+            step(id, .confirming, detail: "备份有效：\(archive.createdAt.formatted()) · \(total) 本书。确认后才会改动本机书架。")
+            return nil
+        }
+    }
     func cancelPendingRestore() {
         guard pendingRestore != nil else { return }
         pendingRestore = nil
@@ -778,6 +809,7 @@ struct ICloudBackupView: View {
     @EnvironmentObject var model: AppModel
     @AppStorage(ProgressSync.enabledKey) private var syncProgress = true
     @State private var export: ExportedBook?
+    @State private var importingRestore = false
     private var localBookCount: Int { model.entries.filter(\.local).count }
 
     var body: some View {
@@ -827,7 +859,10 @@ struct ICloudBackupView: View {
                 Button("查找并查看最新备份") { model.readLatestICloudBackup() }
                     .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
                     .accessibilityIdentifier("icloud.restore")
-                Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。")
+                Button("从文件恢复") { importingRestore = true }
+                    .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
+                    .accessibilityIdentifier("icloud.restoreFromFile")
+                Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。从文件恢复可选择此前「导出整库到文件」保存的归档文件，同样先确认再还原。")
                     .font(.caption).foregroundStyle(Theme.ink2)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.accentSoft.opacity(0.55), in: Rectangle())
@@ -870,6 +905,12 @@ struct ICloudBackupView: View {
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
         }
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
+        .fileImporter(isPresented: $importingRestore, allowedContentTypes: [UTType.json, .data], allowsMultipleSelection: false) { result in
+            switch result {
+            case .success(let urls): if let url = urls.first { model.prepareRestoreFromFile(url) }
+            case .failure(let error): model.message = error.localizedDescription
+            }
+        }
         .onAppear { model.sync.refreshAccount() }
         .onChange(of: syncProgress) { _, on in if on { model.refreshProgressSync() } }
         .confirmationDialog("还原备份并替换对应书籍？", isPresented: Binding(get: { model.pendingRestore != nil }, set: { if !$0 { model.cancelPendingRestore() } }), titleVisibility: .visible) {

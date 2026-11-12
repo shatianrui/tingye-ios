@@ -176,6 +176,15 @@ struct ReaderView: View {
         return "\(shown) / \(max(1, pages.count))"
     }
 
+    /// 阅读状态小字的底边距（只在 selection == nil 时调用）：工具面板展开时位于面板上方，
+    /// 听书条浮现时位于听书条上方，自动翻页浮排在时位于其上方，其余时候贴近底边。
+    private func statusLineBottomPadding(toolsHeight: CGFloat) -> CGFloat {
+        if chrome { return toolsHeight + 6 }
+        if active { return measuredStripHeight + 24 }
+        if autoTurn > 0 { return 64 }
+        return 4
+    }
+
     /// 翻页动画：slide 按翻页方向平移，fade/blur 对称过渡，none 直切；开启减弱动态效果时全部直切。
     private var pageTurnTransition: AnyTransition {
         guard !reduceMotion else { return .identity }
@@ -245,6 +254,16 @@ struct ReaderView: View {
                         .scrollBounceBehavior(.basedOnSize)
                         .accessibilityIdentifier("reader.tools")
                         .frame(height: toolsHeight)
+                    }
+
+                    // 阅读状态小字（时间 · 电量）：常驻底部，沉浸时也在；选区面板浮现时让位隐藏，
+                    // 其余浮层（工具面板 / 听书条 / 自动翻页）出现时上移到其上方，不重叠、不拦截手势。
+                    if selection == nil {
+                        ReaderStatusLine(foreground: prefs.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.bottom, statusLineBottomPadding(toolsHeight: toolsHeight))
+                            .allowsHitTesting(false)
+                            .accessibilityIdentifier("reader.statusLine")
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -418,13 +437,18 @@ struct ReaderView: View {
                             guard chapter == displayedChapter, jumpRevision == requestedRevision else { return }
                             sentencePosition = position
                             model.saveProgress(book.id, chapter: chapter, position: position)
-                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onEdgeTurn: { delta in following = false; jump(chapter: chapter + delta, position: 0) })
+                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onEdgeTurn: { delta in
+                            following = false
+                            // 向前翻章落到下一章开头；向后翻章落到上一章末尾，与分页模式 turn(-1) 的落点一致。
+                            if delta < 0, chapter > 0 { jump(chapter: chapter - 1, position: max(0, document.sentences(chapter - 1).count - 1)) }
+                            else { jump(chapter: chapter + delta, position: 0) }
+                        })
                             // WebKit 视口宽取整，滚动分页按实际宽度；宽度取整后二者一致，翻页不累积亚像素错位。
                             .frame(width: geometry.size.width.rounded(.down), height: geometry.size.height)
                     } else if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else if current.text.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("在「更多」中打开原书图文，或在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
                     else if scrolling {
-                        ScrollingText(attributed: attributed, highlight: highlightRange, color: prefs.highlight, marks: chapterMarks, initialOffset: currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? highlightRange?.location : nil, onSelect: { select(offset: $0) }) { offset in
+                        ScrollingText(attributed: attributed, highlight: highlightRange, color: prefs.highlight, marks: chapterMarks, initialOffset: currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? highlightRange?.location : nil, onSelect: { select(offset: $0) }, onOverscroll: { delta in turn(delta) }) { offset in
                             following = false; let position = Sentence.index(at: offset, in: sentences)
                             if position != sentencePosition { sentencePosition = position }
                         }.simultaneousGesture(TapGesture().onEnded { toggleChrome() })
@@ -1120,6 +1144,8 @@ struct ScrollingText: UIViewRepresentable {
     let chapterID: String
     var followOffset: Int? = nil
     var onSelect: ((Int) -> Void)? = nil
+    /// 滚到章末（或章首）再继续拉、松手时触发：顺势翻章（+1 下一章 / -1 上一章）。
+    var onOverscroll: ((Int) -> Void)? = nil
     let onPosition: (Int) -> Void
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> ReaderScrollTextView {
@@ -1180,6 +1206,15 @@ struct ScrollingText: UIViewRepresentable {
                   let position = view.closestPosition(to: CGPoint(x: 0, y: view.contentOffset.y + 4)) else { return }
             parent.onPosition(view.offset(from: view.beginningOfDocument, to: position))
         }
+        /// 拖拽松手时若已越出内容边界一段（回弹区），视为「继续读」的明确意图，顺势翻章；
+        /// 普通滑行落定不触发（松手时偏移还在界内），避免读到章末附近就被抢走。
+        func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+            guard parent.onOverscroll != nil else { return }
+            let top = -scrollView.adjustedContentInset.top
+            let bottom = max(top, scrollView.contentSize.height + scrollView.adjustedContentInset.bottom - scrollView.bounds.height)
+            if scrollView.contentOffset.y > bottom + 60 { parent.onOverscroll?(1) }
+            else if scrollView.contentOffset.y < top - 60 { parent.onOverscroll?(-1) }
+        }
     }
 }
 
@@ -1208,6 +1243,60 @@ final class ReaderScrollTextView: UITextView {
         contentSize = CGSize(width: bounds.width, height: height)
         let y = max(-adjustedContentInset.top, min(rect.minY + textContainerInset.top - 8, height - bounds.height + adjustedContentInset.bottom))
         setContentOffset(CGPoint(x: 0, y: y), animated: false)
+    }
+}
+
+/// 阅读状态小字：沉浸阅读时系统状态栏隐藏，这里在页面底部常驻当前时间与电量。
+/// 时间由 TimelineView 每 30 秒刷新一帧（不逐秒重绘）；电量走系统变更通知（以 5% 步进），
+/// 另在每次时间刷新时顺带重读一次，双保险且都不是轮询热路径。
+private struct ReaderStatusLine: View {
+    let foreground: Color
+    @State private var batteryLevel: Float = UIDevice.current.batteryLevel
+    @State private var batteryState: UIDevice.BatteryState = UIDevice.current.batteryState
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            HStack(spacing: 5) {
+                Text(Self.timeText(context.date))
+                if batteryLevel >= 0 {
+                    Text("·").accessibilityHidden(true)
+                    Image(systemName: Self.batterySymbol(level: batteryLevel)).accessibilityHidden(true)
+                    Text("\(Int((batteryLevel * 100).rounded()))%")
+                    if batteryState == .charging || batteryState == .full { Text("充电中") }
+                }
+            }
+            .font(.caption2)
+            .monospacedDigit()
+            .foregroundStyle(foreground)
+            .accessibilityElement(children: .combine)
+        }
+        .onAppear {
+            UIDevice.current.isBatteryMonitoringEnabled = true
+            batteryLevel = UIDevice.current.batteryLevel
+            batteryState = UIDevice.current.batteryState
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.batteryLevelDidChangeNotification)) { _ in
+            batteryLevel = UIDevice.current.batteryLevel
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)) { _ in
+            batteryState = UIDevice.current.batteryState
+            batteryLevel = UIDevice.current.batteryLevel
+        }
+    }
+
+    private static func timeText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+    private static func batterySymbol(level: Float) -> String {
+        switch level {
+        case 0.95...: return "battery.100"
+        case 0.65...: return "battery.75"
+        case 0.40...: return "battery.50"
+        case 0.15...: return "battery.25"
+        default: return "battery.0"
+        }
     }
 }
 
