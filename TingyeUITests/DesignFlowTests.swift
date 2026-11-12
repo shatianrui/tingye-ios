@@ -368,8 +368,16 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(toggle.isHittable, "最大字号下播放控制也应固定可见")
         XCTAssertEqual(toggle.frame.midX, app.frame.midX, accuracy: 2, "跳句文字放大后不能把播放键挤偏")
         screenshot(app, "播放器-最大字号播放控制")
-        reveal(app.buttons["player.contents"], in: app)
-        app.buttons["player.contents"].tap()
+        // Scroll within the content area: swiping the sheet itself can dismiss the player.
+        let tools = app.scrollViews["player.tools"]
+        XCTAssertTrue(tools.exists)
+        let contents = app.buttons["player.contents"]
+        for _ in 0..<10 {
+            if contents.isHittable { break }
+            tools.swipeUp()
+        }
+        XCTAssertTrue(contents.isHittable, "最大字号下目录必须能从播放器内容区滚动到达")
+        contents.tap()
         XCTAssertTrue(app.navigationBars["听书目录"].waitForExistence(timeout: 5))
     }
 
