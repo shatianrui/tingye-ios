@@ -826,14 +826,15 @@ struct ReaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("更多阅读操作")
             .accessibilityIdentifier("reader.more")
-            .popover(isPresented: $morePresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom, onDismiss: {
-                let action = pendingMoreAction
-                pendingMoreAction = nil
-                action?()
-            }) {
+            .popover(isPresented: $morePresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                 morePanel
                     .presentationCompactAdaptation(.popover)
-                    .onDisappear { moreShowsAutoTurn = false }
+                    .onDisappear {
+                        moreShowsAutoTurn = false
+                        let action = pendingMoreAction
+                        pendingMoreAction = nil
+                        action?()
+                    }
             }
     }
 
