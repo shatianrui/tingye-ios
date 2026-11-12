@@ -1,12 +1,8 @@
 import SwiftUI
 import AVKit
 
-/// v29「书房」阶段一：根导航编译期开关。
-/// true = StudyRootView（单一导航栈、启动直达在读书、书库为根页面）；
-/// false = 现有三页签 RootView（老结构完整保留，回退只需改这一处常量）。
-enum StudyNavigation {
-    static let enabled = true
-}
+/// v29「书房」根结构：单一导航（StudyRootView），打开 App 直达在读的书，书库为根页面。
+/// 旧三页签 RootView 与编译期回退开关已于构建 133 清理；历史与回退说明见 Design/v29-study/DESIGN.md。
 
 @main
 struct TingyeApp: App {
@@ -27,22 +23,11 @@ struct TingyeApp: App {
         navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
         UINavigationBar.appearance().standardAppearance = navigation
         UINavigationBar.appearance().scrollEdgeAppearance = navigation
-        let tabs = UITabBarAppearance()
-        tabs.configureWithOpaqueBackground()
-        tabs.backgroundColor = UIColor(Theme.bg).withAlphaComponent(0.96)
-        UITabBar.appearance().standardAppearance = tabs
-        UITabBar.appearance().scrollEdgeAppearance = tabs
     }
     @AppStorage("app.appearance") private var appearanceMode = "system"
     var body: some Scene {
         WindowGroup {
-            Group {
-                if StudyNavigation.enabled {
-                    StudyRootView()
-                } else {
-                    RootView()
-                }
-            }
+            StudyRootView()
                 #if DEBUG
                 .modifier(UIReviewAppearance())
                 #endif
@@ -193,147 +178,11 @@ enum UIReview {
 }
 #endif
 
-/// 三个独立导航栈；轻量页签栏与可选的迷你播放器。
-struct RootView: View {
-    @EnvironmentObject var model: AppModel
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var navigationHidden = false
-    @State private var resumedOnLaunch = false
-    @AppStorage(GeneralSettings.resumeOnLaunchKey) private var resumeOnLaunch = false
-    var body: some View {
-        VStack(spacing: 0) {
-        TabView(selection: $model.tab) {
-            tabRoot { NowView(player: model.player) }
-                .tabItem { Label("此刻", systemImage: Icon.read) }
-                .tag(1)
-            tabRoot { ShelfView() }
-                .tabItem { Label("书库", systemImage: Icon.shelf) }
-                .tag(0)
-            tabRoot { StatsView(ji: true) }
-                .tabItem { Label("我的", systemImage: Icon.profile) }
-                .tag(2)
-        }
-        .toolbar(.hidden, for: .tabBar)
-        if !navigationHidden { LibraryNavigationBar(player: model.player) }
-        }
-        .disabled(model.restoringLibrary)
-        .paperBackground()
-        .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
-        .onChange(of: model.tab) { _, _ in Haptics.selection() }
-        .onChange(of: model.entries.count, initial: true) { _, count in
-            // 书架首次载入后只续读一次；之后切页、回前台都不再自动打开。
-            guard !resumedOnLaunch, count > 0 else { return }
-            resumedOnLaunch = true
-            if resumeOnLaunch, model.selectedBook == nil, let last = model.lastReadingBook, !last.isComic { model.open(last) }
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                model.refreshProgressSync()
-                ReadingReminder.refresh(model: model)
-            } else {
-                model.flushPendingSaves()
-                if phase == .background { ReadingReminder.refresh(model: model) }
-                if phase == .background { model.hiddenUnlocked = false; model.notice = nil }
-            }
-        }
-        .task(id: scenePhase) {
-            while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(5)) } catch { return }
-                model.recordUsageTick(seconds: 5, appActive: scenePhase == .active)
-            }
-        }
-        #if DEBUG
-        .task {
-            if UIReview.screen != nil {
-                // Wait for TabView to finish installing its native selection binding.
-                try? await Task.sleep(for: .milliseconds(350))
-                driveUIReview()
-            }
-        }
-        #endif
-        .fullScreenCover(item: $model.selectedBook) { book in
-            NavigationStack {
-                if book.fields["comic"]?.bool == true { ComicReaderView(book: book) }
-                else { ReaderView(book: book, player: model.player) }
-            }
-                .environmentObject(model)
-                .tint(Theme.accent)
-        }
-        .sheet(isPresented: $model.showingPlayer) {
-            PlayerView(player: model.player)
-                .environmentObject(model)
-        }
-        .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
-            Button("关闭", role: .cancel) { model.message = nil }
-        } message: { Text(L(model.message ?? "")) }
-        .feedbackOverlay()
-        .modifier(AppLockGate())
-        .respectReducedMotion()
-    }
+/// StudyRootView 的编程式导航目标。目前只有「我的」一层；
+/// 统计、书摘与设置目录都在 StatsView(ji: true) 内，子页面由 StatsView 自行路由。
+enum StudyRoute: Hashable { case me }
 
-    /// 每个页签一个导航栈，切换页签时各自的栈状态保留。
-    private func tabRoot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        NavigationStack { content().toolbar(.hidden, for: .tabBar) }
-            .toolbar(.hidden, for: .tabBar)
-    }
-
-    #if DEBUG
-    private func driveUIReview() {
-        guard let screen = UIReview.screen else { return }
-        if screen == "now" { model.tab = 1; return }
-        if screen == "now-listening", UIReview.isolated {
-            model.tab = 1
-            if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
-                model.run("正在准备辅助听书") { [model] in
-                    model.startListening(try model.book(entry.id), showPlayer: false)
-                    model.player.pause()
-                }
-            }
-            return
-        }
-        if screen == "import-results", UIReview.isolated {
-            model.tab = 0
-            model.run("正在导入书籍") {
-                let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                defer { try? FileManager.default.removeItem(at: folder) }
-                let good = folder.appendingPathComponent("成功示例.txt"), bad = folder.appendingPathComponent("失败示例.json")
-                try Data("导入成功的文字。".utf8).write(to: good)
-                try Data("broken".utf8).write(to: bad)
-                try await model.importWithFeedback([good, bad])
-            }
-            return
-        }
-        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { model.tab = 0; return }
-        if screen.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(screen) { model.tab = 2; return }
-        if screen == "comic", let comic = model.entries.first(where: \.isComic) { model.open(comic); return }
-        guard let entry = model.lastBook ?? model.entries.first(where: \.local) else { return }
-        if screen == "reader-original" {
-            let target = model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
-            if let chapter = UIReview.chapter { model.saveProgress(target.id, chapter: chapter, position: 0) }
-            model.open(target)
-        } else if screen == "reader-original-listen" || screen == "reader-listen" {
-            let target = screen == "reader-listen" ? entry : model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
-            model.run("正在打开") { [model] in
-                let book = try model.book(target.id)
-                model.selectedBook = book
-                model.startListening(book, showPlayer: false)
-            }
-        } else if screen.hasPrefix("reader") {
-            model.open(entry)
-        } else if screen == "miniplayer" {
-            model.run("正在打开") { [model] in model.startListening(try model.book(entry.id), showPlayer: false) }
-        } else if screen.hasPrefix("player") {
-            model.run("正在打开") { [model] in
-                model.startListening(try model.book(entry.id))
-                if UIReview.isolated { model.player.pause() }
-            }
-        }
-    }
-    #endif
-}
-
-/// v29「书房」阶段一根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
+/// v29「书房」根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
 /// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
 /// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
 struct StudyRootView: View {
@@ -341,6 +190,7 @@ struct StudyRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var navigationHidden = false
     @State private var didAutoOpenOnLaunch = false
+    @State private var path: [StudyRoute] = []
 
     /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径，根页面需停在书库。
     private var autoOpenAllowed: Bool {
@@ -353,16 +203,17 @@ struct StudyRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            NavigationStack {
+            NavigationStack(path: $path) {
                 ShelfView()
+                    .navigationDestination(for: StudyRoute.self) { _ in
+                        StatsView(ji: true)
+                    }
                     // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
                     // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
                     .safeAreaInset(edge: .top, spacing: 0) {
                         HStack {
                             Spacer()
-                            NavigationLink {
-                                StatsView(ji: true)
-                            } label: {
+                            NavigationLink(value: StudyRoute.me) {
                                 ThemeIcon(symbol: Icon.stats, size: 20, weight: .medium)
                                     .foregroundStyle(Theme.ink)
                                     .frame(width: 44, height: 44)
@@ -390,7 +241,7 @@ struct StudyRootView: View {
             guard !didAutoOpenOnLaunch, count > 0 else { return }
             didAutoOpenOnLaunch = true
             guard autoOpenAllowed, model.selectedBook == nil else { return }
-            // 焦点书与 NowView.focus 相同：最近阅读过的书优先，其次第一本本地非漫画书；
+            // 焦点书：最近阅读过的书优先，其次第一本本地非漫画书；
             // 漫画按现行规则不自动打开。无书时停在书库根页面（书房空态沿用 ShelfView 现有空态）。
             let focus = model.lastReadingBook
                 ?? model.visibleEntries.first { $0.local && !$0.isComic }
@@ -413,6 +264,15 @@ struct StudyRootView: View {
                 model.recordUsageTick(seconds: 5, appActive: scenePhase == .active)
             }
         }
+        #if DEBUG
+        .task {
+            if UIReview.screen != nil {
+                // 等导航栈就绪后再编程式到达走查场景（旧页签根同样等待 350ms）。
+                try? await Task.sleep(for: .milliseconds(350))
+                driveUIReview()
+            }
+        }
+        #endif
         .fullScreenCover(item: $model.selectedBook) { book in
             NavigationStack {
                 if book.fields["comic"]?.bool == true { ComicReaderView(book: book) }
@@ -432,6 +292,72 @@ struct StudyRootView: View {
         .modifier(AppLockGate())
         .respectReducedMotion()
     }
+
+    #if DEBUG
+    /// UI 走查到达路径（替代旧页签根的同名驱动）：原先靠切页签的场景改走新结构——
+    /// now = 根页面打开专注书；stats / profile / settings / privacy / appearance / backup = 编程式推「我的」页
+    /// （子场景由 StatsView 自身的走查路由继续处理）；shelf 系场景根页面即书库，ShelfView 自行处理。
+    private func driveUIReview() {
+        guard let screen = UIReview.screen else { return }
+        if screen == "now" {
+            // 与启动自动打开同一选书口径（自动打开在走查时被抑制，故此处显式打开）。
+            let focus = model.lastReadingBook
+                ?? model.visibleEntries.first { $0.local && !$0.isComic }
+                ?? model.visibleEntries.first { $0.local }
+            if let focus, !focus.isComic { model.open(focus) }
+            return
+        }
+        if screen == "now-listening", UIReview.isolated {
+            if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
+                model.run("正在准备辅助听书") { [model] in
+                    model.startListening(try model.book(entry.id), showPlayer: false)
+                    model.player.pause()
+                }
+            }
+            return
+        }
+        if screen == "import-results", UIReview.isolated {
+            model.run("正在导入书籍") {
+                let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: folder) }
+                let good = folder.appendingPathComponent("成功示例.txt"), bad = folder.appendingPathComponent("失败示例.json")
+                try Data("导入成功的文字。".utf8).write(to: good)
+                try Data("broken".utf8).write(to: bad)
+                try await model.importWithFeedback([good, bad])
+            }
+            return
+        }
+        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { return }
+        if screen.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(screen) {
+            path = [.me]
+            return
+        }
+        if screen == "comic", let comic = model.entries.first(where: \.isComic) { model.open(comic); return }
+        guard let entry = model.lastBook ?? model.entries.first(where: \.local) else { return }
+        if screen == "reader-original" {
+            let target = model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
+            if let chapter = UIReview.chapter { model.saveProgress(target.id, chapter: chapter, position: 0) }
+            model.open(target)
+        } else if screen == "reader-original-listen" || screen == "reader-listen" {
+            let target = screen == "reader-listen" ? entry : model.entries.first { $0.format.uppercased() == "EPUB" } ?? entry
+            model.run("正在打开") { [model] in
+                let book = try model.book(target.id)
+                model.selectedBook = book
+                model.startListening(book, showPlayer: false)
+            }
+        } else if screen.hasPrefix("reader") {
+            model.open(entry)
+        } else if screen == "miniplayer" {
+            model.run("正在打开") { [model] in model.startListening(try model.book(entry.id), showPlayer: false) }
+        } else if screen.hasPrefix("player") {
+            model.run("正在打开") { [model] in
+                model.startListening(try model.book(entry.id))
+                if UIReview.isolated { model.player.pause() }
+            }
+        }
+    }
+    #endif
 }
 
 #if DEBUG
@@ -444,47 +370,6 @@ private struct UIReviewAppearance: ViewModifier {
     }
 }
 #endif
-
-/// 阅读、书库与个人记录各有入口；迷你播放器作为正在进行的辅助操作。
-private struct LibraryNavigationBar: View {
-    @EnvironmentObject private var model: AppModel
-    @ObservedObject var player: SpeechPlayer
-    private let items = [(title: "此刻", icon: Icon.read, tag: 1), (title: "书库", icon: Icon.shelf, tag: 0), (title: "我的", icon: Icon.profile, tag: 2)]
-    var body: some View {
-        VStack(spacing: 0) {
-            if player.book != nil {
-                MiniPlayer(player: player)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            HStack(spacing: 6) {
-                ForEach(items.indices, id: \.self) { index in
-                    let selected = model.tab == items[index].tag
-                    Button { model.tab = items[index].tag } label: {
-                        VStack(spacing: 2) {
-                            ThemeIcon(symbol: items[index].icon, size: 23, weight: selected ? .semibold : .regular)
-                            Text(L(items[index].title))
-                                .font(.custom("NotoSansCJKsc-Regular", size: 10, relativeTo: .caption2).weight(.medium))
-                        }
-                        .foregroundStyle(selected ? Theme.accent : Theme.ink3)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .padding(.top, 4)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PressButtonStyle(scale: 0.96))
-                    .accessibilityAddTraits(selected ? .isSelected : [])
-                    .accessibilityLabel(L(items[index].title))
-                    .accessibilityIdentifier("navigation.tab.\(items[index].tag)")
-                }
-            }
-            .frame(maxWidth: 560)
-            .padding(.horizontal, Theme.inset)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 0.5) }
-            .background(Theme.surface.ignoresSafeArea(edges: .bottom))
-        }
-        .animation(Theme.smoothSpring, value: player.book?.id)
-    }
-}
 
 /// 直接设定窗口外观。SwiftUI 的 preferredColorScheme 从 .dark 改回 nil 后不会恢复系统外观，深色纸切回浅色纸会停在深色。
 struct WindowAppearance: UIViewRepresentable {

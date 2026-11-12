@@ -433,12 +433,17 @@ extension AppModel {
             catch { throw ReaderError.message("读取《\(row.title)》失败，未生成导出：\(error.localizedDescription)") }
             items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt))
         }
-        let data = try Integrity.encoder().encode(ICloudArchive(owner: owner, books: items))
-        let stamp = DateFormatter()
-        stamp.dateFormat = "yyyyMMdd"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("TingyeLibrary-\(stamp.string(from: Date())).json")
-        try data.write(to: url, options: .atomic)
-        return url
+        // 全库 JSON 编码与写盘是最重的一步，移出主线程（与 backupToICloud 的 detached 模式一致）；
+        // 归档构建、格式与内容不变。owner 先在主线程取值，避免在 detached 中读模型状态。
+        let capturedOwner = owner
+        return try await Task.detached(priority: .utility) {
+            let data = try Integrity.encoder().encode(ICloudArchive(owner: capturedOwner, books: items))
+            let stamp = DateFormatter()
+            stamp.dateFormat = "yyyyMMdd"
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("TingyeLibrary-\(stamp.string(from: Date())).json")
+            try data.write(to: url, options: .atomic)
+            return url
+        }.value
     }
 
     func refreshUploadStatus() { if let url = backupUpload?.url { watchUpload(url) } }
