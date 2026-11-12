@@ -148,10 +148,10 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
-    /// 控件以当前纸色决定明暗；固定浅色纸在深色 App 中仍使用标准钴蓝。
-    /// 构建 136 起 chrome（底部面板、滑杆、上下章）已改用 Theme 陶土令牌，此色仅余正文侧
-    /// 用途（原书图文链接/选区、选区面板传参、顶栏书签与正文页眉状态字），不要再往 chrome 里加。
-    private var readerAccent: Color { isDarkPaper ? Color(hex: 0x8DA7FF) : Color(hex: 0x315BEE) }
+    /// 控件以当前纸色决定明暗；构建 139 起此色与 Theme.accent 同值（陶土），
+    /// 用于正文侧强调（原书图文链接/选区、选区面板传参、顶栏书签与正文页眉状态字），
+    /// 全 App 不再有钴蓝残留；chrome（底部面板、滑杆、上下章）仍用 Theme 陶土令牌。
+    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xF0AD88) : Color(hex: 0xA84A28) }
     private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x17233A) : .white }
     /// chrome 浮层实体面：浅纸用白、深纸用炭黑（Theme.surface 深色值），不再用旧海军蓝。
     private var readerPanelPaper: Color { isDarkPaper ? Color(hex: 0x1F1E1D) : .white }
@@ -176,10 +176,9 @@ struct ReaderView: View {
         return "\(shown) / \(max(1, pages.count))"
     }
 
-    /// 阅读状态小字的底边距（只在 selection == nil 时调用）：工具面板展开时位于面板上方，
+    /// 阅读状态小字的底边距（只在沉浸阅读、即 selection == nil 且工具面板未显示时调用）：
     /// 听书条浮现时位于听书条上方，自动翻页浮排在时位于其上方，其余时候贴近底边。
-    private func statusLineBottomPadding(toolsHeight: CGFloat) -> CGFloat {
-        if chrome { return toolsHeight + 6 }
+    private func statusLineBottomPadding() -> CGFloat {
         if active { return measuredStripHeight + 24 }
         if autoTurn > 0 { return 64 }
         return 4
@@ -256,12 +255,13 @@ struct ReaderView: View {
                         .frame(height: toolsHeight)
                     }
 
-                    // 阅读状态小字（时间 · 电量）：常驻底部，沉浸时也在；选区面板浮现时让位隐藏，
-                    // 其余浮层（工具面板 / 听书条 / 自动翻页）出现时上移到其上方，不重叠、不拦截手势。
-                    if selection == nil {
+                    // 阅读状态小字（时间 · 电量）：只在沉浸阅读时常驻底部；选区面板浮现或底部
+                    // 工具面板打开时整行隐藏（构建 139：面板打开时它压在面板上沿的正文上看不清），
+                    // 听书条 / 自动翻页浮排出现时上移到其上方，不重叠、不拦截手势。
+                    if selection == nil && !chrome {
                         ReaderStatusLine(foreground: prefs.secondary)
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.bottom, statusLineBottomPadding(toolsHeight: toolsHeight))
+                            .padding(.bottom, statusLineBottomPadding())
                             .allowsHitTesting(false)
                             .accessibilityIdentifier("reader.statusLine")
                     }
