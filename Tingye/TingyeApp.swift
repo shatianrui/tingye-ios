@@ -206,7 +206,9 @@ struct StudyRootView: View {
             NavigationStack(path: $path) {
                 ShelfView()
                     .navigationDestination(for: StudyRoute.self) { _ in
-                        StatsView(ji: true)
+                        // ji 版自带隐藏导航栏、无系统返回箭头，故传入返回动作：
+                        // 页眉返回按钮清空编程式导航路径，回到书库根页面。
+                        StatsView(ji: true, onBack: { path = [] })
                     }
                     // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
                     // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
