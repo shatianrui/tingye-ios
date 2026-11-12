@@ -47,7 +47,6 @@
 		99C02AE4A7D5F2FECC4EB469 /* BookFinishView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8DE15CD1DEF9061ED01855 /* BookFinishView.swift */; };
 		465C24D1D9BD02383C68FC8D /* NotesUnifiedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */; };
 		BED77CC9D34013668A3A6B39 /* DailyQuoteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */; };
-		A1B2C3D4E5F6071829304A5B /* NowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6071829304A5B6C /* NowView.swift */; };
 		C55BE1C7BCD4A86B59B1F27D /* samples.json in Resources */ = {isa = PBXBuildFile; fileRef = 371FB21F4691205F1F79CA34 /* samples.json */; };
 		C6445530EE283916136190B5 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 31276E7AB39C1785F675F44F /* ZIPFoundation */; };
 		5A1C0B2E8F4D6A7B9C3E1D22 /* SMBClient in Frameworks */ = {isa = PBXBuildFile; productRef = 5A1C0B2E8F4D6A7B9C3E1D21 /* SMBClient */; };
@@ -122,7 +121,6 @@
 		8F8DE15CD1DEF9061ED01855 /* BookFinishView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BookFinishView.swift; sourceTree = "<group>"; };
 		591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotesUnifiedView.swift; sourceTree = "<group>"; };
 		DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
-		B2C3D4E5F6071829304A5B6C /* NowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
 		F4305A23D2945C6E717F6482 /* MobiReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobiReader.swift; sourceTree = "<group>"; };
 		FA30DD38307FD4F000C4C5F7 /* Lucide-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Lucide-LICENSE.txt"; sourceTree = "<group>"; };
 		FB162FC79480EE85CABD24A7 /* Typography.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
@@ -211,7 +209,6 @@
 				5BE2C01E67FCC9B7463FE3F1 /* GeneralSettingsView.swift */,
 				6BD6E154F7D2825F0316ABFC /* ReadingCalendarView.swift */,
 				030A12D2702195593AF21B10 /* TxtRulesView.swift */,
-				B2C3D4E5F6071829304A5B6C /* NowView.swift */,
 				162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */,
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
 				6AF95B5E4D9E43527996555A /* TingyeApp.swift */,
@@ -422,7 +419,6 @@
 				5C1C07FF4DEA72D348F0BA55 /* GeneralSettingsView.swift in Sources */,
 				864340936656DC6654CCB4EF /* ReadingCalendarView.swift in Sources */,
 				F84D5CD0E488C13BD4487558 /* TxtRulesView.swift in Sources */,
-				A1B2C3D4E5F6071829304A5B /* NowView.swift in Sources */,
 				3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */,
 				D92714EFB66508E9A82461EA /* Theme.swift in Sources */,
 				15CAE64644780454A9F20606 /* TingyeApp.swift in Sources */,
@@ -480,7 +476,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 131;
+				CURRENT_PROJECT_VERSION = 133;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -565,7 +561,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 131;
+				CURRENT_PROJECT_VERSION = 133;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -593,7 +589,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 131;
+				CURRENT_PROJECT_VERSION = 133;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -672,7 +668,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 131;
+				CURRENT_PROJECT_VERSION = 133;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

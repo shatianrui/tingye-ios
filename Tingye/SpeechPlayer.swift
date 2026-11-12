@@ -810,3 +810,30 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         ]
     }
 }
+
+/// 系统音色缓存：`AVSpeechSynthesisVoice.speechVoices()` 首次枚举可达数百毫秒，
+/// 声音设置页若在每次重绘时同步枚举会明显卡顿。全局只枚举一次并缓存，
+/// 设置页经后台任务取用；筛选（中 / 英）与排序口径与设置页原逻辑一致。
+enum SpeechVoiceCache {
+    private static let lock = NSLock()
+    private static var storage: [AVSpeechSynthesisVoice]?
+
+    /// 已缓存的音色列表；尚未枚举过时为 nil。
+    static var cached: [AVSpeechSynthesisVoice]? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    /// 命中缓存直接返回，否则枚举一次并写缓存。可在任意线程调用（枚举本身耗时，勿在主线程首调）。
+    static func load() -> [AVSpeechSynthesisVoice] {
+        if let cached { return cached }
+        let list = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix("zh") || $0.language.hasPrefix("en") }
+            .sorted { $0.language + $0.name < $1.language + $1.name }
+        lock.lock()
+        storage = list
+        lock.unlock()
+        return list
+    }
+}

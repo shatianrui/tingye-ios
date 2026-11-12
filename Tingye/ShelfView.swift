@@ -116,7 +116,7 @@ struct ShelfView: View {
                 }
                 if searching { recentSearches.padding(.top, 20) }
                 if !editing && !searching {
-                    Button { showingSources = true } label: { Label("添加书籍", systemImage: Icon.add) }
+                    Button { showingSources = true } label: { Label("添书", systemImage: Icon.add) }
                         .buttonStyle(SecondaryButtonStyle(height: 50)).padding(.top, 20)
                         .accessibilityIdentifier("import.book")
                 }
@@ -256,22 +256,18 @@ struct ShelfView: View {
         }
     }
 
+    /// v29 导入收敛：唯一的「添书」入口，直接打开 ImportHub（含文件导入、传书方式与最近导入结果）。
     private var addBooksMenu: some View {
-        Menu {
-            Button { importing = true } label: { Label("从文件导入", systemImage: Icon.importFile) }
-            Button { searching = false; showingSources = true } label: { Label("更多导入方式", systemImage: Icon.discover) }
-            if model.importReport != nil {
-                Button { showingImportResults = true } label: { Label("最近导入结果", systemImage: Icon.list) }
-            }
-        } label: {
-            Label("添加", systemImage: Icon.add)
+        Button { searching = false; showingSources = true } label: {
+            Label("添书", systemImage: Icon.add)
                 .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onClay)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
                 .background(Theme.clay, in: Rectangle())
                 .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier("import.book")
-        .accessibilityLabel("添加书籍")
+        .accessibilityLabel("添书")
     }
 
     private var searchEntry: some View {
@@ -485,14 +481,11 @@ struct ShelfView: View {
             }
         } else if !isRoot {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Button { importing = true } label: { Label("从文件导入", systemImage: Icon.importFile) }
-                    Button { searching = false; showingSources = true } label: { Label("更多导入方式", systemImage: Icon.discover) }
-                } label: {
-                    Text("添加").font(.subheadline.weight(.medium)).frame(minWidth: 44, minHeight: 44)
+                Button { searching = false; showingSources = true } label: {
+                    Text("添书").font(.subheadline.weight(.medium)).frame(minWidth: 44, minHeight: 44)
                 }
                 .accessibilityIdentifier("import.book")
-                .accessibilityLabel("添加书籍")
+                .accessibilityLabel("添书")
                 // 搜索框已常驻在正文顶部，导航栏只保留添加与整理
                 Button(action: beginEditing) {
                     Text("整理").font(.subheadline.weight(.medium)).frame(minWidth: 44, minHeight: 44)
@@ -613,16 +606,16 @@ struct ShelfView: View {
             } description: {
                 Text("导入 CBZ 或图片 ZIP 压缩包，会在这里以漫画模式阅读。")
             } actions: {
-                Button("导入漫画") { importing = true }.buttonStyle(PrimaryButtonStyle(height: 44)).frame(width: 160)
+                Button("导入漫画") { showingSources = true }.buttonStyle(PrimaryButtonStyle(height: 44)).frame(width: 160)
             }
             .padding(.vertical, 40)
         } else if model.entries.isEmpty {
             ContentUnavailableView {
                 Label("从第一本书开始", systemImage: Icon.shelf)
             } description: {
-                Text("支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份。在「添加」中也可使用 WiFi 传书、WebDAV 或 OPDS。")
+                Text("支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份，也可使用 WiFi 传书、WebDAV 或 OPDS。")
             } actions: {
-                Button("导入书籍") { importing = true }
+                Button("导入书籍") { showingSources = true }
                     .buttonStyle(PrimaryButtonStyle(height: 44))
                     .frame(width: 160)
             }

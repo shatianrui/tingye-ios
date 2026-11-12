@@ -603,28 +603,34 @@ private struct SettingsDirectoryView: View {
                 settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
                     .accessibilityIdentifier("profile.reading")
                 settingsEntry(icon: Icon.fonts, title: "字体管理", subtitle: "查看与导入自己的字体") { settingsRoute = .fonts }
-                settingsEntry(icon: Icon.voice, title: "声音与朗读", value: model.player.voiceLabel) { settingsRoute = .voice }
-                settingsEntry(icon: Icon.appearance, title: "外观", value: appearanceName) { settingsRoute = .appearance }
-                    .accessibilityIdentifier("profile.appearance")
-            } header: { Text("阅读与聆听") }
-            .listRowBackground(Theme.surface)
-            Section {
-                settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
-                    .accessibilityIdentifier("profile.general")
                 settingsEntry(icon: Icon.list, title: "菜单", subtitle: "选中文字后的操作顺序与显示") { settingsRoute = .menu }
                     .accessibilityIdentifier("profile.menu")
                 settingsEntry(icon: Icon.contents, title: "TXT 分章规则", subtitle: "自定义规则与章节最大字数") { settingsRoute = .txtRules }
                     .accessibilityIdentifier("profile.txtRules")
-            } header: { Text("通用与高级") }
+            } header: { Text("阅读") }
+            .listRowBackground(Theme.surface)
+            Section {
+                settingsEntry(icon: Icon.voice, title: "声音与朗读", value: model.player.voiceLabel) { settingsRoute = .voice }
+            } header: { Text("听书与声音") }
             .listRowBackground(Theme.surface)
             Section {
                 settingsEntry(icon: Icon.discover, title: "传书与导入", subtitle: "WiFi 传书、WebDAV 与 OPDS") { showingImportHub = true }
+            } header: { Text("书库与导入") }
+            .listRowBackground(Theme.surface)
+            Section {
                 settingsEntry(icon: Icon.cloud, title: "备份与同步", subtitle: "书库备份与阅读进度同步") { settingsRoute = .backup }
                     .accessibilityIdentifier("profile.backup")
                 settingsEntry(icon: Icon.server, title: "空间整理", subtitle: "查看占用、清理缓存与修复索引") { settingsRoute = .storage }
                     .accessibilityIdentifier("profile.storage")
+            } header: { Text("数据与备份") }
+            .listRowBackground(Theme.surface)
+            Section {
+                settingsEntry(icon: Icon.appearance, title: "外观", value: appearanceName) { settingsRoute = .appearance }
+                    .accessibilityIdentifier("profile.appearance")
+                settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
+                    .accessibilityIdentifier("profile.general")
                 settingsEntry(icon: Icon.settings, title: "隐私与关于", subtitle: "应用锁、隐藏书籍、隐私与版本") { settingsRoute = .profile }
-            } header: { Text("数据与隐私") } footer: { Text("听页 · 书籍保存在本机") }
+            } header: { Text("通用") } footer: { Text("听页 · 书籍保存在本机") }
             .listRowBackground(Theme.surface)
         }
         .listStyle(.insetGrouped).scrollContentBackground(.hidden)

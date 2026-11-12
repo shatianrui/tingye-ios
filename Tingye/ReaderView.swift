@@ -1435,6 +1435,7 @@ struct ReadingPreferencesView: View {
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
     @AppStorage("reader.font") private var font = "system"
     @AppStorage("reader.paper") private var paper = "paper"
+    @AppStorage("study.paperAlwaysLight") private var paperAlwaysLight = false
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.pageTurn") private var pageTurn = "slide"
     private let mainPapers: [ReaderPaper] = [.paper, .white, .mist, .ancient, .night]
@@ -1529,6 +1530,16 @@ struct ReadingPreferencesView: View {
                         }
                     }
                 }
+
+                Toggle(isOn: $paperAlwaysLight) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("浅纸常亮").font(Theme.sans(15, weight: .medium))
+                        Text("深色外观下，纸色也保持日间值")
+                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
 
                 Picker("翻页方式", selection: $scrolling) {
                     Text("左右翻页").tag(false)

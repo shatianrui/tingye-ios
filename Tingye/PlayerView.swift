@@ -690,6 +690,9 @@ struct ChapterListView: View {
 struct VoiceSettingsView: View {
     @EnvironmentObject var app: AppModel
     @State private var fetchedVoices: [CloudVoice] = []
+    /// 系统音色异步加载（SpeechVoiceCache 全局只枚举一次），页面打开不再同步枚举卡顿。
+    @State private var systemVoices: [AVSpeechSynthesisVoice] = SpeechVoiceCache.cached ?? []
+    @State private var voicesLoaded = SpeechVoiceCache.cached != nil
     @State private var notice = ""
     typealias CloudVoice = CloudSpeech.Voice
     @Environment(\.dismiss) var dismiss
@@ -715,9 +718,8 @@ struct VoiceSettingsView: View {
     @State private var drafts: [String: Draft] = [:]
     @State private var loadedProvider = ""
     private struct Draft { var voice: String; var model: String; var key: String; var male: String; var female: String }
-    private var voices: [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("zh") || $0.language.hasPrefix("en") }.sorted { $0.language + $0.name < $1.language + $1.name }
-    }
+    /// 只读已异步加载的系统音色（见 body 的 .task 与 SpeechVoiceCache）；不再同步枚举。
+    private var voices: [AVSpeechSynthesisVoice] { systemVoices }
 
     var body: some View {
         Form {
@@ -786,6 +788,7 @@ struct VoiceSettingsView: View {
         .feedbackOverlay()
         .respectReducedMotion()
         .onAppear { if loadedProvider.isEmpty { load(provider) } }
+        .task { await loadSystemVoices() }
         .onDisappear { stopPreview() }
     }
 
@@ -967,6 +970,12 @@ struct VoiceSettingsView: View {
     @ViewBuilder
     private var voicePicker: some View {
         if provider == "system" {
+            if !voicesLoaded {
+                HStack(spacing: 10) {
+                    ProgressView().controlSize(.small)
+                    Text("正在加载音色…").font(.subheadline).foregroundStyle(Theme.ink2)
+                }
+            }
             Picker("系统声音", selection: $voice) {
                 Text("默认中文声音").tag("")
                 ForEach(voices, id: \.identifier) { v in
@@ -1155,6 +1164,18 @@ struct VoiceSettingsView: View {
                 if previewRevision == revision { self.error = error.localizedDescription }
             }
         }
+    }
+
+    /// 系统音色只在首次进入时于后台枚举一次；再次进入直接命中 SpeechVoiceCache。
+    private func loadSystemVoices() async {
+        if let cached = SpeechVoiceCache.cached {
+            systemVoices = cached
+            voicesLoaded = true
+            return
+        }
+        let list = await Task.detached(priority: .userInitiated) { SpeechVoiceCache.load() }.value
+        systemVoices = list
+        voicesLoaded = true
     }
 
     /// 读取某个服务商自己的模型、音色与密钥（与播放器同一套键），有未保存的草稿时优先用草稿。

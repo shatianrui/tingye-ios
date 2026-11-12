@@ -3,24 +3,27 @@ import UIKit
 import CoreImage
 import Pow
 
-/// 听页 · 静蓝。与 Figma 共用语义色；阅读纸色独立于界面表面。
+/// 听页 · 书房。与 Figma 共用语义色；阅读纸色独立于界面表面。
 enum Theme {
-    static let bg = dynamic(0xFAF9F6, 0x101725)
-    static let surface = dynamic(0xFFFFFF, 0x192236)
-    static let surface2 = dynamic(0xF0F2F7, 0x242E43)
-    static let ink = dynamic(0x17233A, 0xF3F5FA)
-    // 比设计色略深，保证暖纸、浅蓝卡片和次级表面上的小字达到 4.5:1。
-    static let ink2 = dynamic(0x616D81, 0xB1BACB)
-    static let ink3 = ink2
-    static let line = dynamic(0xE3E7EF, 0x344159)
+    static let bg = dynamic(0xFAF9F5, 0x141413)
+    static let surface = dynamic(0xFFFFFF, 0x1F1E1D)
+    static let surface2 = dynamic(0xF0EEE6, 0x2A2926)
+    static let ink = dynamic(0x1C1B18, 0xEFEDE6)
+    // 次级文字：对纸对比度日间 5.3:1、深色 7.4:1，保证小字可读。
+    static let ink2 = dynamic(0x6B6759, 0xA5A296)
+    // 三级文字（v29 起独立取值，不再与 ink2 坍缩）：仅页脚、时间戳等非关键元信息。
+    static let ink3 = dynamic(0x86816F, 0x8E8B7E)
+    static let line = dynamic(0xE6E0D0, 0x2C2C33)
     static let rulePaint = line
     static let onInk = dynamic(0xFFFFFF, 0x101725)
     static let cardEdge = line
-    static let accent = dynamic(0x315BEE, 0x8DA7FF)
-    static let accentSoft = dynamic(0xEAF0FF, 0x243660)
+    // 陶土小字（clayText）：链接式强调、当前章标记、眉题编号，对纸 ≥4.5:1。
+    static let accent = dynamic(0xA84A28, 0xF0AD88)
+    static let accentSoft = dynamic(0xF5E6DE, 0x3A2620)
     static let onAccent = dynamic(0xFFFFFF, 0x101725)
-    static let clay = accent
-    static let onClay = onAccent
+    // 陶土块面：主按钮面、选中下划线、进度已读段；只标记「正在发生」，不承载小字。
+    static let clay = dynamic(0xD97757, 0xD97757)
+    static let onClay = dynamic(0x141413, 0x141413)
     static let link = accent
     static let marker = clay
     static let onMarker = onClay
@@ -35,7 +38,8 @@ enum Theme {
     static let onWarm = dynamic(0x644B1E, 0xF9E4AC)
     static let gold = onWarm
     static let goldSoft = warm
-    static let jade = dynamic(0x237864, 0x78CDB2)
+    // 玉绿已退役（v29 全局只留陶土一个彩色强调）：jade 坍缩为 accent，兼容既有调用点。
+    static let jade = accent
     static let jadeSoft = dynamic(0xEAF6EF, 0x1E3327)
     static let indigo = accent
     static let indigoSoft = accentSoft
@@ -50,10 +54,10 @@ enum Theme {
 
     static let inset: CGFloat = 24
     static let pageWidth: CGFloat = 720
-    static let radius: CGFloat = 16
-    static let heroRadius: CGFloat = 24
-    static let radiusSmall: CGFloat = 8
-    static let buttonRadius: CGFloat = 16
+    static let radius: CGFloat = 8
+    static let heroRadius: CGFloat = 8
+    static let radiusSmall: CGFloat = 4
+    static let buttonRadius: CGFloat = 2
     static let buttonHeight: CGFloat = 50
     static let iconButtonSize: CGFloat = 44
     static let ruleHeavy: CGFloat = 3
@@ -71,24 +75,27 @@ enum Theme {
     static func serif(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         .custom(serifName, size: size, relativeTo: style)
     }
+    /// v29：宋体只有 Regular，取消合成字重；保留签名兼容调用点，与 serif 相同。
     static func serifSemibold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom(serifName, size: size, relativeTo: style).weight(.medium)
+        serif(size, relativeTo: style)
     }
+    /// v29：同 serifSemibold，不再合成粗体；层级靠字号、留白与发丝线建立。
     static func serifBold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom(serifName, size: size, relativeTo: style).weight(.semibold)
+        serif(size, relativeTo: style)
     }
+    /// 界面字体：系统字体（真实字重、与 SF Symbols 基线对齐）。固定字号，不再随 relativeTo 缩放。
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .custom("NotoSansCJKsc-Regular", size: size, relativeTo: .body).weight(weight)
+        .system(size: size, weight: weight)
     }
-    /// 栏目标签：黑体粗、宽字距（报纸的版面眉题），如「继续阅读」「最近在读」。
-    static let masthead = Font.custom("NotoSansCJKsc-Regular", size: 12, relativeTo: .caption).weight(.medium)
-    /// 统计大数字：无衬线粗体 + 等宽数字，不用宋体；调用方负责字号缩放。
+    /// 栏目标签：系统字体中粗、宽字距（报纸的版面眉题），如「继续阅读」「最近在读」。
+    static let masthead = Font.system(size: 12, weight: .medium)
+    /// 统计大数字：系统字体半粗 + 等宽数字，不用宋体；调用方负责字号缩放。
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle) -> Font {
-        .custom("NotoSansCJKsc-Regular", size: size, relativeTo: style).weight(.semibold)
+        .system(size: size, weight: .semibold)
     }
     /// 栏目标签（同 masthead）。
     static let kicker = masthead
-    /// 报刊标题：宋体粗，书名、页面标题、报头都用它。
+    /// 报刊标题：宋体 Regular，书名、页面标题、报头都用它。
     static func headline(_ size: CGFloat) -> Font { serifBold(size, relativeTo: .title) }
 
     // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
@@ -160,8 +167,8 @@ extension View {
         glassSurface(in: AnyShape(shape), interactive: interactive)
     }
 
-    /// 内置思源宋体只有常规字重：标题用两层亚像素位移叠印加粗，得到报纸标题的粗宋分量。
-    func serifEmbolden(_ size: CGFloat) -> some View { modifier(SerifEmbolden(amount: max(0.3, size * 0.026))) }
+    /// v29 书房：已删除两层亚像素叠印的假粗体（糊字、读屏重复朗读）。保留为空操作，兼容既有调用点。
+    func serifEmbolden(_ size: CGFloat) -> some View { self }
     /// 系统字体已有真实字重，特粗档不再叠印加粗，保持大标题干净。
     func serifHeavy(_ size: CGFloat) -> some View { self }
 
@@ -169,7 +176,7 @@ extension View {
         self.background { Theme.bg.ignoresSafeArea() }
     }
 
-    /// 跟读：淡靛蓝底与靛蓝竖条共同标记当前句，不只依赖颜色。
+    /// 跟读：淡陶土底与陶土竖条共同标记当前句，不只依赖颜色。
     func markerHighlight() -> some View {
         self
             .foregroundStyle(Theme.ink)
@@ -193,14 +200,6 @@ private struct ScaledSystemFont: ViewModifier {
         self.weight = weight; self.width = width
     }
     func body(content: Content) -> some View { content.font(.system(size: size, weight: weight).width(width)) }
-}
-private struct SerifEmbolden: ViewModifier {
-    let amount: CGFloat
-    func body(content: Content) -> some View {
-        content
-            .overlay { content.offset(x: amount).accessibilityHidden(true).allowsHitTesting(false) }
-            .overlay { content.offset(x: amount / 2, y: amount / 2).accessibilityHidden(true).allowsHitTesting(false) }
-    }
 }
 private struct ReducedMotionPolicy: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -431,7 +430,7 @@ struct SealBadge: View {
 
 // MARK: - 按钮（温润圆角，主次明确）
 
-/// 靛蓝圆角主操作、2pt 墨框次操作。
+/// 陶土近直角主操作、浅陶土底次操作。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -490,8 +489,8 @@ struct ChipPillStyle: ButtonStyle {
             .foregroundStyle(selected ? Theme.onAccent : Theme.ink2)
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            .background(selected ? Theme.accent : Theme.surface2, in: Capsule())
-            .contentShape(Capsule())
+            .background(selected ? Theme.accent : Theme.surface2, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
@@ -565,7 +564,7 @@ struct Card<Content: View>: View {
     }
 }
 
-/// 设置项图标：墨色线性图标，靛蓝留给编号与眉题。
+/// 设置项图标：墨色线性图标，陶土留给编号与眉题。
 struct SettingsIcon: View {
     let systemName: String
     let color: Color
@@ -616,7 +615,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, 0.5)).accessibilityHidden(true) }
 }
 
-/// 纸质栏目标题：黑体粗宽字距眉题（可带编号），靛蓝。
+/// 纸质栏目标题：宽字距眉题（可带编号），陶土。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -835,17 +834,24 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
     }
     var swatch: Color {
         switch self {
-        case .paper:   Color(hex: 0xF6F0E4)
-        case .mist:    Color(hex: 0xE6EBF1)
-        case .ancient: Color(hex: 0xF3E7D6)
-        case .eink:    Color(hex: 0xF0F0F0)
-        case .white:   Color(hex: 0xFFFFFF)
-        case .blue:    Color(hex: 0x1A2C3A)
-        case .night:   Color(hex: 0x101012)
+        case .paper:   Self.paperColor(0xFAF9F5, 0x141413)
+        case .mist:    Self.paperColor(0xE6EBF1, 0x1D2733)
+        case .ancient: Self.paperColor(0xF3E7D6, 0x2A2118)
+        case .eink:    Self.paperColor(0xF0F0F0, 0x1E1E1E)
+        case .white:   Self.paperColor(0xFFFFFF, 0x000000)
+        case .blue:    Self.paperColor(0x1A2C3A, 0x1A2C3A)
+        case .night:   Self.paperColor(0x101012, 0x101012)
         }
     }
     var dark: Bool { self == .blue || self == .night }
-    static let xuan = Color.dynamicLight(0xF6F0E4, 0x1B2330)
+    /// 纸族动态色：随外观取日/夜成对值；「浅纸常亮」（study.paperAlwaysLight）开启时锁定日间值。
+    static func paperColor(_ light: UInt32, _ dark: UInt32) -> Color {
+        Color(UIColor { traits in
+            if UserDefaults.standard.bool(forKey: "study.paperAlwaysLight") { return UIColor(hex: light) }
+            return UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+    static let xuan = Self.paperColor(0xFAF9F5, 0x141413)
     static let xuanSecondary = Theme.ink3
 }
 
@@ -868,10 +874,10 @@ struct ReaderPreferences: Equatable {
     var background: Color { paper == "paper" ? ReaderPaper.xuan : kind.swatch }
     var foreground: Color {
         switch kind {
-        case .mist:    return Color(hex: 0x14181F)
-        case .ancient: return Color(hex: 0x2C2418)
-        case .eink:    return Color(hex: 0x242424)
-        case .white:   return Color(hex: 0x14181F)
+        case .mist:    return ReaderPaper.paperColor(0x14181F, 0xD8E2EC)
+        case .ancient: return ReaderPaper.paperColor(0x2C2418, 0xEAD9BE)
+        case .eink:    return ReaderPaper.paperColor(0x242424, 0xE8E8E8)
+        case .white:   return ReaderPaper.paperColor(0x14181F, 0xEFEFEA)
         case .blue:    return Color(hex: 0xD5E4F0)
         case .night:   return Color(hex: 0xEFEDE6)
         case .paper:   return Theme.ink
@@ -879,25 +885,18 @@ struct ReaderPreferences: Equatable {
     }
     var secondary: Color {
         switch kind {
-        case .mist:    return Color(hex: 0x666666)
-        case .ancient: return Color(hex: 0x6E5F4B)
-        case .eink:    return Color(hex: 0x666666)
-        case .white:   return Color(hex: 0x666666)
+        case .mist:    return ReaderPaper.paperColor(0x666666, 0x93A3B5)
+        case .ancient: return ReaderPaper.paperColor(0x6E5F4B, 0xB39B78)
+        case .eink:    return ReaderPaper.paperColor(0x666666, 0xA8A8A8)
+        case .white:   return ReaderPaper.paperColor(0x666666, 0xA9A9A2)
         case .blue:    return Color(hex: 0x8AA0B4)
         case .night:   return Color(hex: 0xA5A296)
         case .paper:   return ReaderPaper.xuanSecondary
         }
     }
-    /// 原生分页与原书图文共用靛蓝跟读标记（铺底时取低透明度成淡靛蓝），纸色设置不变；深色纸用提亮的靛蓝。
-    var highlightBand: UIColor {
-        let followsAppearance = kind == .paper
-        let darkPaper = kind.dark
-        return UIColor { traits in
-            (darkPaper || (followsAppearance && traits.userInterfaceStyle == .dark))
-                ? UIColor(hex: 0x8DA7FF) : UIColor(hex: 0x315BEE)
-        }
-    }
-    /// 连续滚动模式整句铺底：半透明靛蓝
+    /// 原生分页与原书图文共用跟读标记（v29 起统一陶土，日/夜同值），纸色设置不变；透明度规则见 highlight。
+    var highlightBand: UIColor { UIColor(hex: 0xD97757) }
+    /// 连续滚动模式整句铺底：半透明陶土
     var highlight: UIColor {
         let band = highlightBand, darkPaper = kind.dark, followsAppearance = kind == .paper
         return UIColor { band.resolvedColor(with: $0).withAlphaComponent(darkPaper || (followsAppearance && $0.userInterfaceStyle == .dark) ? 0.26 : 0.14) }
