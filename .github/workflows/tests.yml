@@ -26,7 +26,7 @@ name: Tests
 #   - 工程最低 iOS 17.0；模拟器不写死机型（runner 镜像升级后机型会变），
 #     运行时用 simctl 挑第一台可用的 iPhone 模拟器。
 #   - 单元测试固定 macos-15，避免 macos-latest 队列长时间等待；
-#     UI 测试沿用 macos-latest，Xcode 使用各镜像默认版本。
+#     单元测试使用 Xcode 26.3，UI 测试沿用 macos-latest 默认 Xcode。
 
 on:
   workflow_dispatch:
@@ -43,6 +43,8 @@ jobs:
   unit-tests:
     name: Unit tests (TingyeTests)
     runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -60,7 +62,8 @@ jobs:
           UDID="$(python3 -c '
           import json, subprocess
           data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
-          cands = [d for rt, devs in data["devices"].items() if "iOS" in rt for d in devs if d.get("isAvailable") and d["name"].startswith("iPhone")]
+          runtimes = sorted((rt for rt in data["devices"] if "iOS-" in rt), key=lambda rt: tuple(map(int, rt.split("iOS-")[-1].split("-"))), reverse=True)
+          cands = [d for rt in runtimes for d in data["devices"][rt] if d.get("isAvailable") and d["name"].startswith("iPhone")]
           print(cands[0]["udid"] if cands else "")
           ')"
           if [ -z "$UDID" ]; then
