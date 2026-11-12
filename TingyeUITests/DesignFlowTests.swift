@@ -213,14 +213,7 @@ final class DesignFlowTests: XCTestCase {
         // 原 continue.reading / now.listen 标识已随 Now 页删除。
         let app = launch("shelf")
         let read = app.buttons["study.heroContinue"]
-        // 诊断（临时）：第二轮该按钮等待超时。失败时把无障碍层级打进日志，
-        // 以坐实/推翻「卡片容器标识 study.heroCard 级联覆盖按钮标识」的判断；断言本身不变，
-        // App 侧修复落地后删除本段。
-        let heroAppeared = read.waitForExistence(timeout: 15)
-        if !heroAppeared {
-            print("【诊断】study.heroContinue 未出现，无障碍层级如下：\n\(app.debugDescription)")
-        }
-        XCTAssertTrue(heroAppeared)
+        XCTAssertTrue(read.waitForExistence(timeout: 15))
         XCTAssertTrue(read.isHittable)
         XCTAssertTrue(read.label.contains("继续阅读"))
         XCTAssertGreaterThanOrEqual(read.frame.height, 44)
