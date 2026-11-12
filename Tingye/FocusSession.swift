@@ -316,7 +316,7 @@ struct FocusSummaryView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
             .foregroundStyle(Theme.onWarm)
             Button { store.dismissSummary(); onContinue() } label: { Text("继续读") }
                 .buttonStyle(PrimaryButtonStyle(height: 50))

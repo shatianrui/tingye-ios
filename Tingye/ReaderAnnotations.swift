@@ -167,7 +167,7 @@ struct SelectionPanel: View {
             Text(text)
                 .font(Theme.serif(18, relativeTo: .body)).lineLimit(3).lineSpacing(7)
                 .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radius))
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(tools, id: \.self) { item in
@@ -202,7 +202,7 @@ struct SelectionPanel: View {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                             }
                             .buttonStyle(.plain)
                         }
@@ -216,7 +216,8 @@ struct SelectionPanel: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(maxWidth: 520)
-        .background(paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(paper, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .softCardShadow()
     }
 
     private var markTools: some View {
@@ -234,7 +235,7 @@ struct SelectionPanel: View {
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
+                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
@@ -275,7 +276,7 @@ struct SelectionPanel: View {
                 .font(Theme.sans(15, weight: .medium))
                 .foregroundStyle(prominent ? paper : tint)
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? accent : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+                .background(prominent ? accent : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -300,14 +301,14 @@ struct NoteEditor: View {
                         .foregroundStyle(Theme.ink).lineSpacing(8)
                         .lineLimit(6).padding(20)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16))
+                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
                     Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
                     TextEditor(text: $text)
                         .font(.body).foregroundStyle(Theme.ink)
                         .focused($focused)
                         .scrollContentBackground(.hidden)
                         .padding(10).frame(minHeight: 180)
-                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
                         .overlay(alignment: .topLeading) {
                             if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
                         }
@@ -442,7 +443,7 @@ struct NoteRow: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     .padding(.top, 2)
             }
         }

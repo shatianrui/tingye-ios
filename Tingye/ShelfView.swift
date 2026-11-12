@@ -354,6 +354,7 @@ struct ShelfView: View {
         .padding(16)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line, lineWidth: 1) }
+        .softCardShadow()
         .accessibilityIdentifier("study.heroCard")
     }
 
@@ -389,10 +390,10 @@ struct ShelfView: View {
     private var addBooksMenu: some View {
         Button { searching = false; showingSources = true } label: {
             Label("添书", systemImage: Icon.add)
-                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onClay)
+                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onInk)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.clay, in: Rectangle())
-                .contentShape(Rectangle())
+                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("import.book")
@@ -412,7 +413,7 @@ struct ShelfView: View {
             }
             .padding(.horizontal, 16)
             .frame(minHeight: 48)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -657,7 +658,7 @@ struct ShelfView: View {
                 .padding(.leading, 14)
                 .padding(.trailing, query.isEmpty ? 14 : 0)
                 .frame(minHeight: 48)
-                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 Button("取消", action: cancelSearch)
                     .font(.subheadline)
                     .frame(minWidth: 44, minHeight: 44)
@@ -712,7 +713,7 @@ struct ShelfView: View {
             }
             Text("搜索覆盖所有分组。隐藏书籍需验证后查看。")
                 .font(.caption).foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
         }
     }
 
@@ -1139,7 +1140,7 @@ struct ShelfView: View {
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .background(destructive ? Theme.danger.opacity(0.09) : Theme.surface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(destructive ? Theme.danger.opacity(0.09) : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1303,7 +1304,7 @@ struct ImportResultsView: View {
                         if !report.finished { ProgressView(value: Double(report.completed), total: Double(max(1, report.items.count))).tint(Theme.accent) }
                     }
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
                     LazyVStack(spacing: 10) {
                         ForEach(report.items) { item in
                             HStack(alignment: .top, spacing: 12) {
@@ -1314,7 +1315,7 @@ struct ImportResultsView: View {
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .padding(16).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                             .accessibilityElement(children: .combine)
                         }
                     }
@@ -1324,7 +1325,7 @@ struct ImportResultsView: View {
                         Button("前往书库") { model.tab = 0; dismiss() }.buttonStyle(PrimaryButtonStyle(height: 50))
                         Text(report.failures > 0 ? "成功与失败逐项显示；已成功的文件会保留。请检查原因后重新选择失败文件。" : "文件已保存到本机书库，可以开始阅读了。")
                             .font(.caption).foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                     }
                 } else {
                     ContentUnavailableView("暂无导入记录", systemImage: Icon.importFile, description: Text("导入书籍后，可以在这里查看每个文件的状态。"))

@@ -110,7 +110,7 @@ struct BookFinishView: View {
             }
         }
         .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
         .foregroundStyle(Theme.onWarm)
     }
 

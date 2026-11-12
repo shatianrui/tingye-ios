@@ -157,7 +157,7 @@ struct NotesUnifiedView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12))
+                            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                             .padding(.top, 2)
                     }
                 }
