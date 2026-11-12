@@ -555,7 +555,7 @@ final class AppModel: ObservableObject {
             try disk?.saveCatalog(next); entries = next
         }
         if player.book?.id == id { player.stop() }
-        notify("原书图文与封面已修复，书籍标识、书签和阅读进度已保留。")
+        notify("书籍内容与封面已修复，书籍标识、书签和阅读进度已保留。")
     }
     /// 用当前「TXT 分章规则」重新分章：把现有章节拼回原文再切分，阅读进度按字数映射到新章节开头。
     func resplit(_ id: String) async throws {
