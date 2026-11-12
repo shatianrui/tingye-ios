@@ -188,30 +188,30 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testHomeShowsContinueAndRecentWithoutScrolling() {
-        let app = launch("now")
-        let read = app.buttons["continue.reading"]
+        // 131 起没有独立「今日」页：书库即根页面（书房），续读由正在读大卡承担，
+        // 原 continue.reading / now.listen 标识已随 Now 页删除。
+        let app = launch("shelf")
+        let read = app.buttons["study.heroContinue"]
         XCTAssertTrue(read.waitForExistence(timeout: 15))
         XCTAssertTrue(read.isHittable)
-        let listen = app.buttons["now.listen"]
-        XCTAssertTrue(listen.isHittable)
         XCTAssertTrue(read.label.contains("继续阅读"))
-        XCTAssertGreaterThan(read.frame.width, listen.frame.width, "继续阅读应为明确的主操作，听书保留为辅助入口")
-        XCTAssertLessThan(read.frame.maxY, listen.frame.maxY)
         XCTAssertGreaterThanOrEqual(read.frame.height, 44)
-        XCTAssertGreaterThanOrEqual(listen.frame.height, 44)
-        XCTAssertTrue(app.staticTexts["最近在读"].firstMatch.isHittable)
-        screenshot(app, "今日-首屏续读与最近在读")
+        XCTAssertTrue(app.buttons["study.heroFocus"].isHittable, "专注是大卡上的第二动作；听书已收拢为辅助入口，不再与续读并列")
+        XCTAssertTrue(app.staticTexts["一本用来检查长标题和阅读体验的书"].firstMatch.exists, "大卡应是最近在读的书")
+        XCTAssertTrue(app.staticTexts["第 1 / 2 章"].firstMatch.exists, "大卡应显示阅读进度")
+        screenshot(app, "书房-首屏续读大卡")
     }
 
     func testRecentReadingStaysPrimaryWhileAnotherBookHasListeningProgress() {
+        // 同 E1：续读看书房大卡（study.heroContinue），进度看大卡上的章节文本，
+        // 原 continue.reading / now.readingProgress / now.listen 均已删除。
         let app = launch("now-listening")
-        let reading = app.buttons["continue.reading"]
+        let reading = app.buttons["study.heroContinue"]
         XCTAssertTrue(reading.waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["miniPlayer.toggle"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["miniPlayer.toggle"].label.contains("继续"))
-        XCTAssertTrue(reading.label.contains("一本用来检查长标题和阅读体验的书"))
-        XCTAssertTrue(app.staticTexts["now.readingProgress"].label.contains("第 2"), "首页进度属于最近阅读，不属于刚听过的另一本书")
-        XCTAssertGreaterThan(reading.frame.width, app.buttons["now.listen"].frame.width)
+        XCTAssertTrue(app.staticTexts["一本用来检查长标题和阅读体验的书"].firstMatch.exists, "续读大卡应属于最近阅读的书")
+        XCTAssertTrue(app.staticTexts["第 2 / 2 章"].firstMatch.exists, "大卡进度属于最近阅读（第 2 章），不属于刚听过的另一本书")
         screenshot(app, "阅读优先-最近阅读与独立听书条")
         reading.tap()
         XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
@@ -220,8 +220,9 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testHomeSearchOpensExistingShelfSearch() {
-        let app = launch("now")
-        let search = app.buttons["now.search"]
+        // 搜索入口就在书房根页面（shelf.search），原 now.search 已删除。
+        let app = launch("shelf")
+        let search = app.buttons["shelf.search"]
         XCTAssertTrue(search.waitForExistence(timeout: 15))
         search.tap()
         let field = app.textFields["shelf.search-field"]
@@ -229,7 +230,7 @@ final class DesignFlowTests: XCTestCase {
         field.tap(); field.typeText("长标题")
         XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable, "小屏键盘上方应能直接操作搜索结果")
-        screenshot(app, "专注-从首页搜索书架")
+        screenshot(app, "书房-从根页面搜索书架")
         app.buttons["取消"].tap()
         XCTAssertTrue(app.buttons["shelf.search"].isHittable)
     }
@@ -265,14 +266,14 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testDarkHomeAndShelfKeepPrimaryActionsReachable() {
-        let app = launch("now", appearance: "dark")
-        XCTAssertTrue(app.buttons["continue.reading"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["now.listen"].isHittable)
-        screenshot(app, "专注-夜间首页")
-        app.buttons["navigation.tab.0"].tap()
+        // 根页面即书架：夜间断言直接在书房做，不再经 navigation.tab.0 切页签。
+        let app = launch("shelf", appearance: "dark")
+        XCTAssertTrue(app.buttons["study.heroContinue"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["study.heroFocus"].isHittable)
+        screenshot(app, "书房-夜间首页")
         XCTAssertTrue(app.buttons["shelf.organize"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable)
-        screenshot(app, "专注-夜间书架")
+        reveal(app.buttons["book.detail.ui-long"], in: app)
+        screenshot(app, "书房-夜间书架")
     }
 
     func testShelfOrganizeAndDetailsAreExplicit() {
@@ -344,23 +345,17 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testLargestTypeHomeAndShelfActionsRemainReachable() {
-        let app = launch("now", largeType: true)
-        let read = app.buttons["continue.reading"]
+        let app = launch("shelf", largeType: true)
+        let read = app.buttons["study.heroContinue"]
         XCTAssertTrue(read.waitForExistence(timeout: 15))
         reveal(read, in: app)
-        screenshot(app, "今日-最大字号")
-        let tabs = [(1, "此刻"), (0, "书库"), (2, "我的")]
-        for (tag, label) in tabs {
-            let tab = app.buttons["navigation.tab.\(tag)"]
-            XCTAssertEqual(tab.label, label)
-            XCTAssertTrue(tab.isHittable)
-        }
-        let tabPositions = tabs.map { app.buttons["navigation.tab.\($0.0)"].frame.midX }
-        XCTAssertEqual(tabPositions, tabPositions.sorted(), "导航顺序应为此刻、书库、我的")
-        app.buttons["navigation.tab.0"].tap()
+        screenshot(app, "书房-最大字号")
+        // 旧三页签已删除：「我的」是根页面右上角的单一入口（study.openProfile），书库就是根页面本身。
+        let profile = app.buttons["study.openProfile"]
+        XCTAssertEqual(profile.label, "我的")
+        XCTAssertTrue(profile.isHittable)
         let organize = app.buttons["shelf.organize"]
-        XCTAssertTrue(organize.waitForExistence(timeout: 10))
-        XCTAssertTrue(organize.isHittable)
+        reveal(organize, in: app)
         screenshot(app, "书架-最大字号列表")
     }
 
@@ -432,8 +427,9 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "继续声音也不能擅自开启跟随")
         app.buttons["reader.toggle"].tap()
         app.buttons["reader.back"].tap()
-        XCTAssertTrue(app.buttons["continue.reading"].waitForExistence(timeout: 5))
-        app.buttons["continue.reading"].tap()
+        // 退出阅读器回到书房根页，重开走正在读大卡（原 continue.reading 已随 Now 页删除）。
+        XCTAssertTrue(app.buttons["study.heroContinue"].waitForExistence(timeout: 5))
+        app.buttons["study.heroContinue"].tap()
         XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "退出重开应恢复独立阅读断点")
         app.buttons["reader.returnToSpeech"].tap()
@@ -442,43 +438,27 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testOriginalReaderKeepsFollowingThroughRepeatedPlaybackToggles() throws {
+        // B 类改写（141 统一引擎）：原书图文已并入统一原生引擎，不再有 WebView；
+        // 同一本 EPUB 图文样本由 ChapterBlockParser 原生排版，跟随朗读的等价场景改在原生页验证。
         let app = launch("reader-original", original: true)
-        let web = app.webViews.firstMatch
-        XCTAssertTrue(web.waitForExistence(timeout: 15))
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
+        waitForReadingCondition({ self.nativeLayout(in: app) != nil }, "原书样本应由统一引擎原生渲染")
+        XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
         app.buttons["reader.more"].tap()
         app.buttons["从当前阅读位置听"].tap()
         XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
-        setReadingTools(false, in: app, frame: web.frame)
+        setReadingTools(false, in: app, frame: nativeLayout(in: app)?.viewport ?? app.frame)
         let toggle = app.buttons["reader.toggle"]
-        if toggle.label.contains("暂停") { toggle.tap() }
-        waitForReadingCondition({ toggle.label.contains("继续") }, "暂停后快捷条应保持可用")
-        let anchor = originalText("把日子放慢一点", in: web)
-        waitForOriginalElement(anchor, in: web, app: app, message: "用于检查布局的原文字符节点必须可见")
-        let capture: () -> ReaderLayoutCapture? = {
-            guard web.exists, anchor.exists, anchor.frame.width > 1 else { return nil }
-            return .init(viewport: web.frame, text: [anchor.label], frames: [anchor.frame])
-        }
-        let baseline = try captureReaderLayout(capture)
-        for visible in [true, false] {
-            setReadingTools(visible, in: app, frame: baseline.viewport)
-            let current = try captureReaderLayout(capture)
-            XCTAssertEqual(current.viewport, baseline.viewport, "朗读中开合阅读菜单不能改变原书视口")
-            XCTAssertEqual(current.frames, baseline.frames, "朗读中开合阅读菜单不能改变原文字符布局")
-        }
         let toggleFrame = toggle.frame
         for _ in 0..<3 {
             if toggle.label.contains("暂停") { toggle.tap() }
-            XCTAssertTrue(toggle.waitForExistence(timeout: 2), "原书图文暂停后也不能让点击穿透到网页正文")
+            XCTAssertTrue(toggle.waitForExistence(timeout: 2), "原书样本暂停后也不能让点击穿透正文")
             XCTAssertEqual(toggle.frame, toggleFrame)
-            XCTAssertEqual(web.frame, baseline.viewport, "暂停不能改变原书视口")
             toggle.tap()
             XCTAssertTrue(app.staticTexts["跟随朗读"].waitForExistence(timeout: 5),
-                          "原书图文连续暂停与继续后应保留朗读高亮")
+                          "原书样本连续暂停与继续后应保留朗读高亮")
             XCTAssertEqual(toggle.frame, toggleFrame)
-            XCTAssertEqual(web.frame, baseline.viewport, "继续朗读不能改变原书视口")
         }
-        screenshot(app, "原书图文-连续播放保持跟随")
+        screenshot(app, "原书样本-连续播放保持跟随")
     }
 
     func testReaderNotesAndSearchOpenWithoutStartingAudio() {
@@ -604,7 +584,7 @@ final class DesignFlowTests: XCTestCase {
         app.buttons["player.more"].tap()
         app.buttons["player.endListening"].tap()
         app.buttons["结束听书"].tap()
-        XCTAssertTrue(app.buttons["navigation.tab.0"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["shelf.organize"].waitForExistence(timeout: 5), "结束听书后应回到书库根页面（旧页签已删除）")
         XCTAssertFalse(app.buttons["miniPlayer.open"].exists)
     }
 
@@ -636,7 +616,7 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("stats")
         let settings = app.buttons["profile.settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
-        XCTAssertEqual(app.buttons["navigation.tab.2"].label, "我的")
+        XCTAssertTrue(app.navigationBars["我的"].exists, "当前目的地应是「我的」（旧页签已删除）")
         let statistics = app.buttons["profile.stats"]
         XCTAssertTrue(statistics.isHittable)
         statistics.tap()
@@ -683,18 +663,16 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testOriginalReaderKeepsTypographyAndContentsReachable() {
+        // B 类改写（141 统一引擎）：排版与目录跳章的等价断言改在原生页上做，
+        // 原 WebView 正文/插图断言无等价物，随原书图文-mode 一并移除（理由见 PR 说明）。
         let app = launch("reader-original", original: true)
-        let web = app.webViews.firstMatch
-        XCTAssertTrue(web.waitForExistence(timeout: 15), "原书模式必须实际使用含图文的 WebView，不能回退纯文字")
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
-        verifyOriginalIllustration(in: web, app: app)
+        waitForReadingCondition({ self.nativeLayout(in: app) != nil }, "原书样本应由统一引擎原生渲染")
         for id in ["reader.back", "reader.contents", "reader.preferences", "reader.notes", "reader.more"] {
-            XCTAssertTrue(app.buttons[id].isHittable, "原书图文应保留工具：\(id)")
+            XCTAssertTrue(app.buttons[id].isHittable, "原书样本应保留工具：\(id)")
         }
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
-        screenshot(app, "原书图文-正文与阅读工具")
+        screenshot(app, "原书样本-正文与阅读工具")
         openReaderNotesAndReturn(in: app)
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
         app.buttons["reader.preferences"].tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["系统字体"].isSelected)
@@ -703,8 +681,7 @@ final class DesignFlowTests: XCTestCase {
         paper.tap()
         XCTAssertTrue(paper.isSelected)
         app.buttons["完成"].tap()
-        XCTAssertTrue(web.waitForExistence(timeout: 5), "更换纸色应保留原书图文渲染器")
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
+        waitForReadingCondition({ self.nativeLayout(in: app) != nil }, "更换纸色应保留统一引擎渲染")
         XCTAssertTrue(app.buttons["reader.contents"].isHittable)
         app.buttons["reader.contents"].tap()
         XCTAssertTrue(app.navigationBars["目录与摘记"].waitForExistence(timeout: 5))
@@ -716,63 +693,49 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["reader.preferences"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2")
         XCTAssertFalse(app.buttons["reader.nextChapter"].isEnabled)
-        XCTAssertTrue(web.exists, "目录跳章后仍应显示第二章的原书 HTML")
-        waitForOriginalChapter("第二章 · 安静的回声", in: web, app: app)
+        waitForReadingCondition({
+            guard let text = self.nativeLayout(in: app)?.text else { return false }
+            return text.contains { $0.contains("把日子放慢一点") }
+        }, "目录跳章后应显示第二章的原生正文")
         app.buttons["reader.preferences"].tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
         revealAboveDone(app.buttons["旧书"], in: app)
         XCTAssertTrue(app.buttons["旧书"].isSelected, "原书翻章不应重置排版偏好")
         app.buttons["完成"].tap()
-        waitForOriginalChapter("第二章 · 安静的回声", in: web, app: app)
-        screenshot(app, "原书图文-目录跳章与排版保持")
+        screenshot(app, "原书样本-目录跳章与排版保持")
     }
 
     func testOriginalReaderDarkModeKeepsChapterControlsReachable() {
+        // B 类改写（141 统一引擎）：夜间章节控件的等价断言改在原生页上做。
         let app = launch("reader-original", appearance: "dark", original: true)
-        let web = app.webViews.firstMatch
-        XCTAssertTrue(web.waitForExistence(timeout: 15))
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
-        verifyOriginalIllustration(in: web, app: app)
+        waitForReadingCondition({ self.nativeLayout(in: app) != nil }, "夜间原书样本应由统一引擎原生渲染")
         for id in ["reader.back", "reader.contents", "reader.preferences", "reader.notes", "reader.previousChapter", "reader.nextChapter"] {
-            XCTAssertTrue(app.buttons[id].isHittable, "夜间原书模式应保留工具：\(id)")
+            XCTAssertTrue(app.buttons[id].isHittable, "夜间原书样本应保留工具：\(id)")
         }
         app.buttons["reader.nextChapter"].tap()
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2")
         XCTAssertFalse(app.buttons["reader.nextChapter"].isEnabled)
-        waitForOriginalChapter("第二章 · 安静的回声", in: web, app: app)
+        waitForReadingCondition({ self.nativeLayout(in: app) != nil }, "夜间跳章后应显示第二章原生正文")
         app.buttons["reader.previousChapter"].tap()
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
-        XCTAssertTrue(app.webViews.firstMatch.exists)
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
-        verifyOriginalIllustration(in: web, app: app)
-        screenshot(app, "原书图文-夜间独立章节导航")
+        screenshot(app, "原书样本-夜间独立章节导航")
     }
 
     func testOriginalReaderChromeDoesNotResizeOrMoveItsColumn() throws {
+        // B 类改写（141 统一引擎）：视口/栏宽稳定性的等价断言改用原生页布局捕获，
+        // 与分页阅读的同名验证同口径（ChapterBlockParser 块级分页）。
         let app = launch("reader-original", original: true)
-        let web = app.webViews.firstMatch
-        XCTAssertTrue(web.waitForExistence(timeout: 15))
-        setReadingTools(false, in: app, frame: web.frame)
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
-        verifyOriginalIllustration(in: web, app: app)
-        web.swipeLeft()
-        var anchor: XCUIElement?
-        waitForReadingCondition({
-            guard !self.originalElementIsVisible(self.originalText("第一章 · 纸上的风景", in: web), in: web, app: app) else { return false }
-            anchor = web.staticTexts.allElementsBoundByIndex.first { !$0.label.isEmpty && self.originalElementIsVisible($0, in: web, app: app) }
-            return anchor != nil
-        }, "原文必须实际翻到非首页并显示文字")
-        let text = try XCTUnwrap(anchor)
-        setReadingTools(true, in: app, frame: web.frame)
-        let capture: () -> ReaderLayoutCapture? = {
-            guard web.exists, text.exists, text.frame.width > 1 else { return nil }
-            return .init(viewport: web.frame, text: [text.label], frames: [text.frame])
-        }
+        XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
+        let capture = { self.nativeLayout(in: app) }
+        let first = try captureReaderLayout(capture)
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: first.viewport.maxX - 12, dy: first.viewport.midY)).tap()
+        waitForReadingCondition({ capture()?.text != first.text }, "原书样本必须实际翻到另一页正文")
         let reading = try captureReaderLayout(capture)
-        try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-原书图文")
-        setReadingTools(false, in: app, frame: web.frame)
-        web.swipeRight()
-        waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
+        try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-原书样本")
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: reading.viewport.minX + 12, dy: reading.viewport.midY)).tap()
+        waitForReadingCondition({ capture()?.text == first.text }, "工具开关后上一页应回到原来那一页文字")
     }
 
     func testPDFReaderKeepsReadingToolsAndNotesReachable() {

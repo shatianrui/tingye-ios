@@ -2349,9 +2349,12 @@ extension NativeCoreTests {
             for paper in ReaderPaper.allCases {
                 let preferences = ReaderPreferences(paper: paper.rawValue)
                 let followsDarkAppearance = paper.dark || (paper == .paper && style == .dark)
-                let expected = UIColor(hex: followsDarkAppearance ? 0x8DA7FF : 0x315BEE)
+                // v29 起跟读带统一陶土：Theme.swift 的 highlightBand 对所有纸面与外观
+                // 恒为 #D97757（日/夜同值），不再按纸色明暗解析为旧钴蓝 #315BEE/#8DA7FF；
+                // 按明暗区分的只剩 highlight 的透明度（见下方断言，规则未变）。
+                let expected = UIColor(hex: 0xD97757)
                 XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), expected,
-                               "\(paper.rawValue) 的跟读色必须按纸色明暗解析")
+                               "\(paper.rawValue) 的跟读带应为统一陶土色")
                 let highlight = preferences.highlight.resolvedColor(with: traits)
                 XCTAssertEqual(highlight.cgColor.alpha, followsDarkAppearance ? 0.26 : 0.14, accuracy: 0.001)
             }
