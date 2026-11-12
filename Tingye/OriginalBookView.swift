@@ -584,7 +584,7 @@ final class ResourceSchemeHandler: NSObject, WKURLSchemeHandler {
     func update(_ book: Book) {
         lock.lock(); defer { lock.unlock() }
         guard book.id != bookID || resources.isEmpty else { return }
-        bookID = book.id; resources = book.fields["resources"]?.object ?? [:]
+        bookID = book.id; resources = book.resourceMap
     }
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
         let id = ObjectIdentifier(task); active.insert(id)

@@ -88,6 +88,8 @@ final class AppModel: ObservableObject {
     private var playbackObserver: AnyCancellable?
     private(set) var disk: LibraryDisk?
     private var cache: [String: Book] = [:]
+    /// 锚点生成用的单章分句缓存（构建 142）：进度保存频率高（听书逐句），只留最近一章。
+    private var anchorSentenceCache: (key: String, sentences: [Sentence])?
     /// 书库目录名。旧版登录过的用户沿用原账号目录，避免书籍、进度与 iCloud 存档"消失"。
     let owner: String
     var lastBook: ShelfEntry? { entries.filter(\.local).max { $0.progress.updatedAt < $1.progress.updatedAt } }
@@ -337,10 +339,25 @@ final class AppModel: ObservableObject {
         try requireWritableLibrary()
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
-        let entry = try await Task.detached(priority: .userInitiated) {
+        var entry = try await Task.detached(priority: .userInitiated) {
             try disk.write(book)
             return ShelfEntry(book: book, progress: progress)
         }.value
+        // 同 ID 书被替换（构建 142）：此前新条目会把旧书的书签、划线与听书位置一并清掉。
+        // 现在带锚点的标注按新书内容重定位后保留；导入自带进度（备份 JSON，updatedAt > 0）
+        // 优先，否则沿用旧阅读进度（同样重定位）；无锚点旧标注原样保留，不钳制写入。
+        if let replaced = entries.first(where: { $0.id == book.id }) {
+            entry.bookmarks = Locator.relocated(replaced.bookmarks, in: book)
+            if let highlights = replaced.highlights { entry.highlights = Locator.relocated(highlights, in: book) }
+            if let listening = replaced.listeningProgress { entry.listeningProgress = Locator.resolve(listening, in: book) }
+            if progress.updatedAt <= 0, replaced.progress.updatedAt > 0 {
+                entry.progress = Locator.resolve(replaced.progress, in: book)
+            } else {
+                entry.progress = Locator.resolve(entry.progress, in: book)
+            }
+        } else if entry.progress.updatedAt > 0 {
+            entry.progress = Locator.resolve(entry.progress, in: book)
+        }
         var updated = entries.filter { $0.id != book.id }
         updated.insert(entry, at: 0)
         catalogSaveTask?.cancel(); catalogDirty = false
@@ -371,10 +388,24 @@ final class AppModel: ObservableObject {
         flushCatalogSave()
         flushSessionsSave()
     }
+    /// 为「章 + 句」生成文本锚点（构建 142）：只用内存里已缓存的书，未缓存时不为锚点读盘，
+    /// 返回 nil 表示这次只存坐标（旧行为），后续保存自然补上。阅读与听书的落点共用。
+    func locatorAnchor(bookID: String, chapter: Int, position: Int) -> TextAnchor? {
+        guard let book = cache[bookID], book.chapters.indices.contains(chapter) else { return nil }
+        let key = bookID + "#" + String(chapter)
+        let sentences: [Sentence]
+        if anchorSentenceCache?.key == key, let cached = anchorSentenceCache?.sentences { sentences = cached }
+        else {
+            sentences = Sentence.split(book.chapters[chapter].text)
+            anchorSentenceCache = (key, sentences)
+        }
+        return Locator.anchor(in: sentences, at: position)
+    }
     func saveProgress(_ id: String, chapter: Int, position: Int) {
         guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].local,
-              let progress = sync.update(entries[i], chapter: chapter, position: position) else { return }
+              var progress = sync.update(entries[i], chapter: chapter, position: position) else { return }
+        progress.anchor = locatorAnchor(bookID: id, chapter: chapter, position: position)
         entries[i].progress = progress
         if sync.push(entries[i]) { sync.recordCommit(1) }
         scheduleCatalogSave()
@@ -387,7 +418,8 @@ final class AppModel: ObservableObject {
         let position = count.map { min(max(0, position), max(0, $0 - 1)) } ?? max(0, position)
         let previous = entries[index].listeningProgress
         guard previous?.chapter != chapter || previous?.position != position else { return }
-        entries[index].listeningProgress = .init(chapter: chapter, position: position, updatedAt: ReadingProgress.now)
+        entries[index].listeningProgress = .init(chapter: chapter, position: position, updatedAt: ReadingProgress.now,
+                                                  anchor: locatorAnchor(bookID: id, chapter: chapter, position: position))
         entries[index].hasListened = true
         scheduleCatalogSave()
     }
@@ -396,7 +428,8 @@ final class AppModel: ObservableObject {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
         var next = entries
         if let index = next[i].bookmarks.firstIndex(where: { $0.chapter == chapter && $0.position == position }) { next[i].bookmarks.remove(at: index) }
-        else { next[i].bookmarks.append(Bookmark(chapter: chapter, position: position, excerpt: String(excerpt.prefix(80)))) }
+        else { next[i].bookmarks.append(Bookmark(chapter: chapter, position: position, excerpt: String(excerpt.prefix(80)),
+                                                  anchor: locatorAnchor(bookID: id, chapter: chapter, position: position))) }
         catalogSaveTask?.cancel(); catalogDirty = false
         do { try disk?.saveCatalog(next); entries = next } catch { message = error.localizedDescription }
     }
@@ -477,7 +510,10 @@ final class AppModel: ObservableObject {
         guard !restoringLibrary else { return }
         guard book.fields["comic"]?.bool != true else { message = "漫画没有可以朗读的文字。"; return }
         let entry = entries.first(where: { $0.id == book.id })
-        let progress = position ?? entry?.listeningProgress ?? entry?.progress ?? .init()
+        let stored = position ?? entry?.listeningProgress ?? entry?.progress ?? .init()
+        // 构建 142：从存储位置开播前先按锚点校验/重定位（无锚点时只钳制，与旧行为一致），
+        // 显式指定位置（position 参数）是用户当下意图，同样只做范围钳制。
+        let progress = Locator.resolve(stored, in: book)
         recordActivity(.listening, for: book.id)
         player.start(book: book, chapter: progress.chapter, position: progress.position)
         showingPlayer = showPlayer
@@ -550,6 +586,18 @@ final class AppModel: ObservableObject {
                 listening.chapter = min(max(0, listening.chapter), max(0, counts.count - 1))
                 listening.position = min(max(0, listening.position), max(0, counts[listening.chapter] - 1))
                 next[index].listeningProgress = listening
+            }
+            // 构建 142：修书是锚点的主战场——旧坐标在新内容上逐条校验/重定位后回写。
+            // 进度与听书位置走 resolve（章钳制是旧行为，句号无锚点时同样只钳制）；
+            // 书签与划线只重定位带锚点的条目，无锚点旧条目原样保留（同旧行为）。
+            // 分句只发生在进度所在章与带锚点标注所在章，量级与标注数成正比。
+            next[index].progress = Locator.resolve(next[index].progress, in: value)
+            if let listening = next[index].listeningProgress {
+                next[index].listeningProgress = Locator.resolve(listening, in: value)
+            }
+            next[index].bookmarks = Locator.relocated(next[index].bookmarks, in: value)
+            if let highlights = next[index].highlights {
+                next[index].highlights = Locator.relocated(highlights, in: value)
             }
             catalogSaveTask?.cancel(); catalogDirty = false
             try disk?.saveCatalog(next); entries = next

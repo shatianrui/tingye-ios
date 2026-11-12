@@ -95,6 +95,11 @@ extension AppModel {
     // MARK: 划线与笔记
 
     func addHighlight(_ bookID: String, _ highlight: Highlight) {
+        var highlight = highlight
+        // 构建 142：创建处（阅读页选区）已带锚点时直接用；没带（如读完页摘句）时按当前缓存的书补写。
+        if highlight.anchor == nil {
+            highlight.anchor = locatorAnchor(bookID: bookID, chapter: highlight.chapter, position: highlight.start)
+        }
         updateEntries([bookID]) { entry in
             var list = entry.highlights ?? []
             // 同一章里与新划线重叠的旧划线合并为新的一条
