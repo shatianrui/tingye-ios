@@ -25,8 +25,8 @@ name: Tests
 #     -only-testing:<target> 分开跑两个 job。
 #   - 工程最低 iOS 17.0；模拟器不写死机型（runner 镜像升级后机型会变），
 #     运行时用 simctl 挑第一台可用的 iPhone 模拟器。
-#   - runner 与 build-unsigned-ipa.yml 保持一致：macos-latest，
-#     不额外选 Xcode 版本（沿用镜像默认）。
+#   - 单元测试固定 macos-15，避免 macos-latest 队列长时间等待；
+#     UI 测试沿用 macos-latest，Xcode 使用各镜像默认版本。
 
 on:
   workflow_dispatch:
@@ -42,7 +42,7 @@ concurrency:
 jobs:
   unit-tests:
     name: Unit tests (TingyeTests)
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - name: Checkout
