@@ -748,12 +748,12 @@ struct AppearanceView: View {
         let foreground = dark ? Color(hex: 0xF3F5FA) : Color(hex: 0x17233A)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0x8DA7FF : 0x315BEE)).frame(width: 4, height: 4)
+                Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 4, height: 4)
                 Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
             Rectangle().fill(Color(hex: dark ? 0x192236 : 0xFFFFFF)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0x8DA7FF : 0x315BEE)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
