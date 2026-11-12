@@ -102,6 +102,11 @@ struct ShelfView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // 搜索时让出页首与类型栏，键盘上方直接呈现结果；取消后恢复完整浏览入口。
                 if isRoot && !searching && !editing { shelfHeader }
+                // 「书房」首页（仅根目录、非搜索、非整理）：正在读大卡 + 今日一句，位于搜索入口之上。
+                if isRoot && !searching && !editing, let heroEntry {
+                    heroCard(heroEntry).padding(.top, 16)
+                    if let latestHighlight { todayQuote(latestHighlight).padding(.top, 14) }
+                }
                 if !editing {
                     if searching { shelfSearchBar }
                     else { searchEntry.padding(.top, isRoot ? 18 : 0) }
@@ -246,13 +251,137 @@ struct ShelfView: View {
     }
 
     private var shelfHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title).font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                Text("书房").font(Theme.serif(28)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                 Spacer()
                 CircleIconButton(systemName: Icon.search, label: "搜索书库", action: startSearch)
             }
-            Text(shelfSubtitle).font(.caption).foregroundStyle(Theme.ink2)
+            Text(studySubtitle).font(.caption).foregroundStyle(Theme.ink2)
+        }
+    }
+
+    /// 「书房」页眉副行：日期 · 星期 + 今日已读时长。
+    private var studySubtitle: String { "\(todayDateText) · \(todayReadingText)" }
+
+    private static let studyDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "M月d日"
+        return formatter
+    }()
+
+    private var todayDateText: String {
+        let now = Date()
+        let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        let weekday = weekdays[max(0, min(6, Calendar.current.component(.weekday, from: now) - 1))]
+        return "\(Self.studyDateFormatter.string(from: now)) · \(weekday)"
+    }
+
+    /// 今日已读口径与统计同源：visibleSessions 中 start 落在今日的 seconds 汇总。
+    private var todayReadingText: String {
+        let calendar = Calendar.current
+        let seconds = model.visibleSessions.filter { calendar.isDateInToday($0.start) }.reduce(0) { $0 + $1.seconds }
+        let minutes = Int(seconds / 60)
+        guard minutes > 0 else { return "今日还没开始读" }
+        return minutes >= 60 ? "今日已读 \(minutes / 60) 小时 \(minutes % 60) 分钟" : "今日已读 \(minutes) 分钟"
+    }
+
+    /// 正在读大卡选书，与 StudyRootView 启动自动打开同一口径：最近在读优先，
+    /// 其次第一本本地非漫画，再其次第一本本地书；lastReadingBook 本身不排除漫画（用户正在读的优先）。
+    private var heroEntry: ShelfEntry? {
+        model.lastReadingBook
+            ?? model.visibleEntries.first { $0.local && !$0.isComic }
+            ?? model.visibleEntries.first { $0.local }
+    }
+
+    /// 今日一句数据源：全部可见书目的划线按 date 取最新一条（划线存于各书 entry.highlights，时间字段为 date）。
+    private var latestHighlight: Highlight? {
+        model.visibleEntries.flatMap { $0.highlights ?? [] }.max { $0.date < $1.date }
+    }
+
+    /// 进度发丝线：高 2，底 Theme.line、填充 Theme.clay。
+    private func progressHairline(_ fraction: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Rectangle().fill(Theme.line)
+                Rectangle().fill(Theme.clay)
+                    .frame(width: geo.size.width * CGFloat(min(max(fraction, 0), 1)))
+            }
+        }
+        .frame(height: 2)
+    }
+
+    private func heroCard(_ entry: ShelfEntry) -> some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
+                BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(entry.title)
+                        .font(Theme.serif(20))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(2)
+                    Text(entry.author.isEmpty ? entry.format : entry.author)
+                        .font(.caption)
+                        .foregroundStyle(Theme.ink2)
+                        .lineLimit(1)
+                    heroProgress(entry)
+                    if entry.started, entry.chapterCount > 0 {
+                        Text("第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.ink3)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            HStack(spacing: 10) {
+                Button {
+                    Haptics.light()
+                    model.open(entry)
+                } label: { Text(entry.started ? "继续阅读" : "开始阅读") }
+                    .buttonStyle(PrimaryButtonStyle(height: 44))
+                    .accessibilityIdentifier("study.heroContinue")
+                Button {
+                    // 漫画没有专注会话（漫画阅读器无专注面板），只打开书本身、不写直达键。
+                    if !entry.isComic { UserDefaults.standard.set(entry.id, forKey: "study.openFocus.bookID") }
+                    Haptics.light()
+                    model.open(entry)
+                } label: { Text("开始专注") }
+                    .buttonStyle(SecondaryButtonStyle(height: 44))
+                    .accessibilityIdentifier("study.heroFocus")
+            }
+        }
+        .padding(16)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line, lineWidth: 1) }
+        .accessibilityIdentifier("study.heroCard")
+    }
+
+    @ViewBuilder
+    private func heroProgress(_ entry: ShelfEntry) -> some View {
+        if !entry.started {
+            Text("还没开始读").font(.caption).foregroundStyle(Theme.ink3)
+        } else if entry.readFraction >= 0.995 {
+            Text("已读完").font(.caption).foregroundStyle(Theme.accent)
+        } else {
+            HStack(spacing: 8) {
+                progressHairline(entry.readFraction)
+                Text(entry.percentText)
+                    .font(.caption2).foregroundStyle(Theme.ink2).monospacedDigit()
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    /// 今日一句：左陶土竖线 + 宋体摘句，取全部划线中 date 最新一条。
+    private func todayQuote(_ highlight: Highlight) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Rectangle().fill(Theme.clay).frame(width: 2)
+            Text(highlight.text)
+                .font(Theme.serif(14)).italic()
+                .foregroundStyle(Theme.ink2)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -633,7 +762,7 @@ struct ShelfView: View {
     // MARK: 网格（书阁陈列）
 
     private var bookGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], alignment: .leading, spacing: 12) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], alignment: .leading, spacing: 12) {
             ForEach(folders, id: \.self) { path in
                 VStack(alignment: .leading, spacing: 0) {
                     NavigationLink { ShelfView(group: path) } label: { folderTile(path) }
@@ -791,10 +920,12 @@ struct ShelfView: View {
                     }
                 }
             Text(entry.title)
-                .font(.subheadline.weight(.medium))
+                .font(Theme.serif(15))
                 .foregroundStyle(Theme.ink)
-                .lineLimit(1)
+                .lineLimit(2)
                 .padding(.top, 8)
+            gridProgress(entry)
+                .padding(.top, 5)
             if let lastRead = lastReadLabel(entry) {
                 Text(lastRead)
                     .font(.caption2).foregroundStyle(Theme.ink2)
@@ -803,6 +934,45 @@ struct ShelfView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    /// 列表行副行：作者 · 总章数（漫画按页计）。
+    private func listSubtitle(_ entry: ShelfEntry) -> String {
+        var parts = [entry.author.isEmpty ? "佚名" : entry.author]
+        if entry.chapterCount > 0 { parts.append("\(entry.chapterCount) \(entry.isComic ? "页" : "章")") }
+        return parts.joined(separator: " · ")
+    }
+
+    /// 列表行进度呈现：未读不出线、只给「未读」小字；读完给陶土小字标记；在读为发丝线 + 百分比。
+    @ViewBuilder
+    private func listProgress(_ entry: ShelfEntry) -> some View {
+        if !entry.local {
+            Text("iCloud 藏书").font(.caption).foregroundStyle(Theme.ink3)
+        } else if !entry.started {
+            Text("未读").font(.caption).foregroundStyle(Theme.ink3)
+        } else if entry.readFraction >= 0.995 {
+            Text("读完").font(.caption).foregroundStyle(Theme.accent)
+        } else {
+            HStack(spacing: 8) {
+                progressHairline(entry.readFraction)
+                Text(entry.percentText)
+                    .font(.caption2).foregroundStyle(Theme.ink2).monospacedDigit()
+            }
+        }
+    }
+
+    /// 网格单元格进度呈现：与列表行同一套标记，在读只一条发丝线。
+    @ViewBuilder
+    private func gridProgress(_ entry: ShelfEntry) -> some View {
+        if !entry.local {
+            Text("iCloud").font(.caption2).foregroundStyle(Theme.ink3)
+        } else if !entry.started {
+            Text("未读").font(.caption2).foregroundStyle(Theme.ink3)
+        } else if entry.readFraction >= 0.995 {
+            Text("读完").font(.caption2).foregroundStyle(Theme.accent)
+        } else {
+            progressHairline(entry.readFraction)
+        }
     }
 
     /// 阅读位置与最近时间来自阅读记录；播放、暂停和跳句不会改变这里的展示。
@@ -861,19 +1031,23 @@ struct ShelfView: View {
             ForEach(Array(sorted.enumerated()), id: \.element.id) { index, row in
                 bookCell(row) {
                     HStack(spacing: 14) {
-                        BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 56)
-                        VStack(alignment: .leading, spacing: 4) {
+                        BookCoverView(title: row.title, color: row.color, author: row.author, image: model.covers[row.id], width: 60)
+                        VStack(alignment: .leading, spacing: 5) {
                             Text(row.title)
-                                .font(.subheadline.weight(.medium))
+                                .font(Theme.serif(17))
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                            Text((row.author.isEmpty ? "佚名" : row.author) + " · " + row.format)
+                            Text(listSubtitle(row))
                                 .font(.caption)
                                 .foregroundStyle(Theme.ink3)
                                 .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                            Text(editing ? (selection.contains(row.id) ? "已选择" : "未选择") : readingSummary(row))
-                                .font(.caption).foregroundStyle(Theme.accent)
-                                .fixedSize(horizontal: false, vertical: true)
+                            if editing {
+                                Text(selection.contains(row.id) ? "已选择" : "未选择")
+                                    .font(.caption).foregroundStyle(Theme.accent)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            } else {
+                                listProgress(row)
+                            }
                             if !editing, let lastRead = lastReadLabel(row) {
                                 Text(lastRead)
                                     .font(.caption2).foregroundStyle(Theme.ink2)
@@ -884,7 +1058,7 @@ struct ShelfView: View {
                     }
                     .padding(.trailing, 0)
                     .padding(.vertical, 12)
-                    .frame(minHeight: 96)
+                    .frame(minHeight: 104)
                     .contentShape(Rectangle())
                 }
             }

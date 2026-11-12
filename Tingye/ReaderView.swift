@@ -293,6 +293,11 @@ struct ReaderView: View {
                 chapter = jump.chapter; sentencePosition = max(0, jump.position)
             }
             persist()
+            // 书房大卡「开始专注」直达：暂存键与本书 id 相符时消费一次并打开专注面板。
+            if UserDefaults.standard.string(forKey: "study.openFocus.bookID") == book.id {
+                UserDefaults.standard.removeObject(forKey: "study.openFocus.bookID")
+                if focusEnabled { focusPresented = true }
+            }
         }
         .onChange(of: player.position) { _, _ in followSpeech() }
         .onChange(of: player.chapter) { _, _ in followSpeech() }
@@ -471,17 +476,19 @@ struct ReaderView: View {
             Button { dismiss() } label: { barIcon(Icon.back) }
                 .accessibilityLabel("返回书架")
                 .accessibilityIdentifier("reader.back")
-            VStack(spacing: 4) {
-                Text(book.title).font(.caption).foregroundStyle(prefs.secondary)
-                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
-                if document.isPDF || originalHTML != nil {
-                    Text(document.isPDF ? "原书 PDF · \(chapter + 1) / \(chapters.count) 页" : "原书图文 · \(current.title)")
-                        .font(.caption2).foregroundStyle(prefs.secondary).lineLimit(1)
-                } else {
-                    Text(current.title).font(Theme.serifBold(18, relativeTo: .headline)).lineLimit(1)
-                }
+            VStack(spacing: 2) {
+                Text(chapterHeading)
+                    .font(Theme.serif(15))
+                    .foregroundStyle(prefs.foreground)
+                    .lineLimit(1)
+                Text(chapterSubheading)
+                    .font(.caption2)
+                    .foregroundStyle(prefs.secondary)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
+            // 专注入口上台面：与「更多」菜单里的开始专注共用同一面板（focusPresented）。
+            if focusEnabled { focusQuickButton }
             // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
             Button {
                 Haptics.selection()
@@ -512,8 +519,19 @@ struct ReaderView: View {
             .frame(width: 44, height: 44).contentShape(Rectangle())
     }
 
+    /// 顶栏居中两行：第一行章节标题；第二行「第 X 章 · 全书 %」，
+    /// 全书百分比沿用 ShelfEntry.percentText 的既有口径，未开卷时只报章节序号。
+    private var chapterHeading: String { current.title.isEmpty ? book.title : current.title }
+    private var chapterSubheading: String {
+        if document.isPDF { return "第 \(chapter + 1) / \(chapters.count) 页" }
+        if let entry, entry.started { return "第 \(chapter + 1) 章 · 全书 \(entry.percentText)" }
+        return "第 \(chapter + 1) / \(chapters.count) 章"
+    }
+
     private var chapterBar: some View {
         VStack(spacing: 12) {
+            // 底部工具层顶缘的发丝线，把工具层与正文纸面分开。
+            Rectangle().fill(Theme.line).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: 2) {
                 HStack {
                     Text(document.isPDF ? "页码进度" : "章节进度")
@@ -612,17 +630,58 @@ struct ReaderView: View {
     private func readerActionLabel(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 5) {
             ThemeIcon(symbol: icon, size: 21)
-            Text(L(title)).font(.caption.weight(selected ? .bold : .regular)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.system(size: 10, weight: selected ? .semibold : .regular)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? readerAccent : prefs.foreground)
+        .foregroundStyle(selected ? Theme.accent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? readerAccent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
+        .background(selected ? Theme.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
         .contentShape(Rectangle())
     }
 
     private func readerAction(_ icon: String, _ title: String, selected: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) { readerActionLabel(icon, title, selected: selected) }
             .buttonStyle(.plain)
+    }
+
+    /// 顶栏专注快捷按钮（书签旁）：未开始显示「专注」；本书专注进行中显示剩余时间；
+    /// 已完成显示「专注完成」。点按一律打开既有专注面板，剩余时间数据源与正文页眉的
+    /// 专注状态小字相同（focusStore.remaining(at:)），不在此另造计时。
+    @ViewBuilder
+    private var focusQuickButton: some View {
+        if focusStore.bookID == book.id, focusStore.phase == .running {
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                Button { focusPresented = true } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: Icon.sleepTimer)
+                        Text(focusQuickLabel(at: context.date))
+                    }
+                    .font(.caption2.weight(.medium))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).foregroundStyle(Theme.accent)
+                .accessibilityLabel("正在专注，查看专注会话")
+                .accessibilityIdentifier("reader.focusQuick")
+                .onChange(of: context.date) { _, _ in focusStore.completeIfDue(currentChapter: chapter) }
+            }
+        } else {
+            let finished = focusStore.bookID == book.id && focusStore.phase == .finished
+            Button { focusPresented = true } label: {
+                Text(finished ? "专注完成" : "专注")
+                    .font(.caption.weight(.medium))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).foregroundStyle(Theme.accent)
+            .accessibilityLabel(finished ? "专注完成，查看小结" : "开始专注")
+            .accessibilityIdentifier("reader.focusQuick")
+        }
+    }
+
+    private func focusQuickLabel(at date: Date) -> String {
+        let seconds = focusStore.remaining(at: date)
+        if seconds <= 60 { return "还剩不足 1 分钟" }
+        return "还剩 \(Int(ceil(seconds / 60))) 分钟"
     }
 
     /// 专注状态小字（正文页眉右侧，工具层收起时可见）：进行中显示剩余时间，

@@ -55,6 +55,11 @@ struct StatsView: View {
     }
     private var totalSeconds: Double { dayTotals.reduce(0) { $0 + $1.seconds } }
     private var periodSessions: [ReadingSession] { model.visibleSessions.filter { interval.contains($0.start) } }
+    /// 「我的」页眉摘要口径：累计阅读为 readingSeconds 全量汇总（与书库既有总时长同一来源）。
+    private var totalReadingText: String {
+        let minutes = Int(model.readingSeconds.values.reduce(0, +) / 60)
+        return minutes >= 60 ? "\(minutes / 60) 小时" : "\(minutes) 分钟"
+    }
 
     var body: some View {
         ScrollView {
@@ -115,6 +120,8 @@ struct StatsView: View {
                 .accessibilityIdentifier("profile.settings")
             }
             Text("在每一天，留下阅读的痕迹。")
+                .font(.caption).foregroundStyle(Theme.ink2)
+            Text("藏书 \(model.visibleEntries.count) 本 · 累计阅读 \(totalReadingText)")
                 .font(.caption).foregroundStyle(Theme.ink2)
             monthlyFootprint
             profileEntry("阅读足迹", value: "查看统计") { showingStats = true }
