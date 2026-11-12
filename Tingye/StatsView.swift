@@ -8,6 +8,10 @@ struct StatsView: View {
     @EnvironmentObject var model: AppModel
     /// 我的概览与独立阅读统计共用数据；设置保留单独的导航层级。
     var ji = false
+    /// 被推入外层导航栈（书房根的「我的」）时的返回动作。ji 版本页隐藏系统导航栏，
+    /// 没有系统返回箭头，故由页眉自带返回按钮调用此闭包弹出导航栈；
+    /// 为 nil 时不渲染返回按钮（独立统计页等既有用法行为不变）。
+    var onBack: (() -> Void)? = nil
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @AppStorage(ReadingReminder.enabledKey) private var reminderEnabled = false
     @AppStorage(ReadingReminder.minutesKey) private var reminderMinutes = ReadingReminder.defaultMinutes
@@ -111,6 +115,17 @@ struct StatsView: View {
     private var profileContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
+                if let onBack {
+                    Button { onBack() } label: {
+                        ThemeIcon(symbol: Icon.back, size: 20, weight: .medium)
+                            .foregroundStyle(Theme.ink)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressButtonStyle(scale: 0.92))
+                    .accessibilityLabel("返回")
+                    .accessibilityIdentifier("study.profileBack")
+                }
                 Text("我的").scaledFont(28, weight: .bold, relativeTo: .title)
                 Spacer()
                 Button { showingSettings = true } label: {
