@@ -123,7 +123,7 @@ struct PlayerView: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
             if let error = player.error { errorNotice(error).id("player.error") }
         }
         .padding(.horizontal, Theme.inset).padding(.vertical, 8)
@@ -161,7 +161,7 @@ struct PlayerView: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
         .padding(.horizontal, Theme.inset).padding(.vertical, 8)
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
@@ -411,7 +411,7 @@ struct PlayerView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
     }
 
     /// 播放工具：线性图标在上、小字在下，无边框；开启状态转刊红加粗并加下划线。

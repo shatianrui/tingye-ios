@@ -111,7 +111,7 @@ struct BookDetailView: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
     }
 
     private func chapterUnit(_ entry: ShelfEntry) -> String {
@@ -224,7 +224,7 @@ struct BookDetailView: View {
                             .accessibilityLabel("\(entry.started && index == entry.progress.chapter ? "继续阅读" : "阅读")，\(chapterTitles[index])")
                         }
                     }
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 } else if loadingPreview {
                     Text("正在载入目录预览…").font(.caption).foregroundStyle(Theme.ink2)
                 }
@@ -301,7 +301,7 @@ struct BookDetailView: View {
             ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink2)
         }
         .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 56)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .contentShape(Rectangle())
     }
 

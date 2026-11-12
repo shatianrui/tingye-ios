@@ -474,7 +474,7 @@ struct MiniPlayer: View {
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 16))
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
                     .padding(.horizontal, 16)

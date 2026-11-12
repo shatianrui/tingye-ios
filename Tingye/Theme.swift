@@ -54,10 +54,11 @@ enum Theme {
 
     static let inset: CGFloat = 24
     static let pageWidth: CGFloat = 720
-    static let radius: CGFloat = 8
-    static let heroRadius: CGFloat = 8
-    static let radiusSmall: CGFloat = 4
-    static let buttonRadius: CGFloat = 2
+    static let radius: CGFloat = 14
+    static let heroRadius: CGFloat = 16
+    static let radiusSmall: CGFloat = 8
+    static let buttonRadius: CGFloat = 10
+    static let buttonRadiusSmall: CGFloat = 8
     static let buttonHeight: CGFloat = 50
     static let iconButtonSize: CGFloat = 44
     static let ruleHeavy: CGFloat = 3
@@ -146,6 +147,10 @@ extension View {
         self.overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true) }
             .padding(.top, 0)
     }
+
+    /// 构建 138（Anthropic 化）：卡面极淡柔影——黑 6%、半径 12、y 2；深色模式减半，避免在炭黑纸面上发灰。
+    /// 只给已有卡面用（书房大卡、统计总览卡、选区面板等），扁平面与列表行不用，保持克制。
+    func softCardShadow() -> some View { modifier(SoftCardShadow()) }
 
     func floatingPanel(cornerRadius: CGFloat = Theme.radius) -> some View {
         self
@@ -411,6 +416,14 @@ enum Icon {
     static let privacy        = "hand.raised"
 }
 
+/// softCardShadow 的实现：按系统外观取阴影浓度（深色减半）。
+struct SoftCardShadow: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    func body(content: Content) -> some View {
+        content.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.03 : 0.06), radius: 12, x: 0, y: 2)
+    }
+}
+
 // MARK: - 状态标签组件
 
 struct SealBadge: View {
@@ -430,13 +443,15 @@ struct SealBadge: View {
 
 // MARK: - 按钮（温润圆角，主次明确）
 
-/// 陶土近直角主操作、浅陶土底次操作。
+/// 构建 138（Anthropic 化）：主操作改深色墨底 + 纸面字（Theme.ink 本身日/夜成对：
+/// 浅色模式深墨底、深色模式浅纸底，foreground 用 onInk 恒成对）；陶土退为点缀，不再做大面积按钮底。
+/// 次操作维持浅陶土底 + 陶土字（SecondaryButtonStyle）。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var height: CGFloat = Theme.buttonHeight
-    var fill: Color = Theme.clay
-    var foreground: Color = Theme.onClay
+    var fill: Color = Theme.ink
+    var foreground: Color = Theme.onInk
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.bold))
@@ -480,7 +495,7 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 直角筛选块：选中实心墨底，未选中 1px 描边。
+/// 胶囊筛选块（构建 138 恢复胶囊形）：选中陶土实心，未选中纸面沉底；配色口径不变。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     func makeBody(configuration: Configuration) -> some View {
@@ -489,8 +504,8 @@ struct ChipPillStyle: ButtonStyle {
             .foregroundStyle(selected ? Theme.onAccent : Theme.ink2)
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            .background(selected ? Theme.accent : Theme.surface2, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+            .background(selected ? Theme.accent : Theme.surface2, in: Capsule())
+            .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }

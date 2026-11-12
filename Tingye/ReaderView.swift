@@ -542,7 +542,7 @@ struct ReaderView: View {
         .foregroundStyle(prefs.foreground)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(document.isPDF ? Theme.bg : prefs.background, in: RoundedRectangle(cornerRadius: 16))
+        .background(document.isPDF ? Theme.bg : prefs.background, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
         .padding(.horizontal, 12)
         .frame(maxWidth: 760)
         .padding(.top, 4)
@@ -737,7 +737,7 @@ struct ReaderView: View {
         }
         .foregroundStyle(selected ? Theme.accent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? Theme.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 12))
+        .background(selected ? Theme.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
         .contentShape(Rectangle())
     }
 
@@ -1548,7 +1548,7 @@ struct ContentsView: View {
                 }
             }
             .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1725,7 +1725,7 @@ struct ReadingPreferencesView: View {
                         .foregroundStyle(ReaderPreferences(paper: paper).foreground)
                         .padding(20)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: 16))
+                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
                         .accessibilityLabel("排版预览")
                 }
 
@@ -1741,7 +1741,7 @@ struct ReadingPreferencesView: View {
                         .accessibilityLabel("字号").accessibilityValue("\(Int(size))")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -1812,7 +1812,7 @@ struct ReadingPreferencesView: View {
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
 
                 Picker("翻页方式", selection: $scrolling) {
                     Text("左右翻页").tag(false)
@@ -1845,7 +1845,7 @@ struct ReadingPreferencesView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(16)
                     .frame(minHeight: 64)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
                 }
                 .buttonStyle(.plain)
             }
@@ -1980,6 +1980,6 @@ private struct MoreTypographyView: View {
 private extension View {
     /// 阅读工具采用实体圆角表面，深浅取决于正文纸色，而非系统材质。
     func readerPaperPanel(paper: Color, ink: Color) -> some View {
-        self.background(paper, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        self.background(paper, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
     }
 }

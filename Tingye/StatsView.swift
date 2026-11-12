@@ -154,7 +154,8 @@ struct StatsView: View {
                 }
                 .foregroundStyle(Theme.onWarm)
                 .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .softCardShadow()
             }
             profileEntry("设置", value: "阅读 · 声音 · 数据") { showingSettings = true }
             Text("无需账号，你的书留在你的设备。")
@@ -184,7 +185,8 @@ struct StatsView: View {
             }
             .foregroundStyle(Theme.onAccent)
             .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .softCardShadow()
         }
         .buttonStyle(.plain)
         .accessibilityHint("查看完整阅读统计")
@@ -225,7 +227,8 @@ struct StatsView: View {
             }
             .onChange(of: period) { _, _ in offset = 0 }
             VStack(alignment: .leading, spacing: 14) { header; chart }
-                .padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .softCardShadow()
             goalCard
             sessionsCard
             Button("导出阅读记录") { exportStats() }
@@ -380,7 +383,7 @@ struct StatsView: View {
                     ProgressBar(value: fraction, track: Theme.line, tint: Theme.accent, height: 4)
                 }
                 .foregroundStyle(Theme.onWarm)
-                .padding(16).background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(16).background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("每日目标 \(goalMinutes) 分钟，已读 \(Int(today / 60)) 分钟")
