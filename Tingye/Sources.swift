@@ -92,10 +92,10 @@ enum ImportableFile {
 
 struct SourcesView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.dismiss) private var dismiss
     @State private var sources = SourceStore.load()
     @State private var editing: RemoteSource?
     @State private var removing: RemoteSource?
-    @State private var importing = false
     @State private var wifi = false
 
     var body: some View {
@@ -109,7 +109,10 @@ struct SourcesView: View {
                         .foregroundStyle(Theme.ink)
                     Text("本机、iCloud 云盘或已连接的网盘")
                         .font(.caption).foregroundStyle(Theme.ink2)
-                    Button("选择文件") { importing = true }
+                    // 文件选择器不在本 sheet 内呈现：同宿主还叠着编辑 sheet、移除确认框与
+                    // 反馈 sheet 时，fileImporter 在 sheet 内的回调会被吞（点「打开」无反应、
+                    // 选择器不关闭）。改为登记请求并关闭面板，由宿主页在 onDismiss 后从根层打开。
+                    Button("选择文件") { model.requestFileImport(); dismiss() }
                         .buttonStyle(PrimaryButtonStyle(height: 50))
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
@@ -180,7 +183,6 @@ struct SourcesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .paperBackground()
-        .bookImporter(isPresented: $importing)
         .navigationDestination(for: String.self) { route in
             if route == "wifi-transfer" { WiFiTransferView() }
         }

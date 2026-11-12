@@ -425,6 +425,17 @@ final class AppModel: ObservableObject {
     private func checkOwner(_ captured: String) throws {
         guard owner == captured else { throw ReaderError.message("书库已变化，请重新操作。") }
     }
+    /// 文件选择器的 deferred 呈现请求：ImportHub 位于 sheet 内，其同宿主还叠着编辑 sheet、
+    /// 移除确认框与反馈 sheet，在 sheet 内直接挂 fileImporter 会出现点「打开」不回调、
+    /// 选择器也不关闭的呈现冲突。入口只登记请求并关闭面板，宿主页（书库页 / 设置页）
+    /// 在 sheet 的 onDismiss 里消费请求，改从根层视图打开选择器，全程只有一个 presentation。
+    @Published private(set) var fileImportRequested = false
+    func requestFileImport() { fileImportRequested = true }
+    /// 宿主在 sheet 完全关闭后消费请求；返回 true 表示应立即打开文件选择器。
+    func consumeFileImportRequest() -> Bool {
+        defer { fileImportRequested = false }
+        return fileImportRequested
+    }
     func beginImport(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
         run("正在导入书籍") { [self] in try await importWithFeedback(urls) }
