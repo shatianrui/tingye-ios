@@ -62,6 +62,202 @@ enum SpeechHighlight {
     }
 }
 
+/// 一页（构建 141）：正文页是 chapter.text 的字符区间；媒体页是块在 displayBlocks 中的序号，整页只放一个图片/表格块。
+enum ReaderPage: Equatable {
+    case text(NSRange)
+    case media(Int)
+}
+
+/// 块级分页：正文块沿用 NativeTypesetter 的 CoreText 分页（坐标仍是 chapter.text 全局区间），
+/// 图片/表格块各自独占一页——分页器是纯文本管线（CTFramesetter 切 NSRange，CoreTextPageView 自绘，
+/// 不渲染 NSTextAttachment），整块成页保证图片与表格永不被拦腰切断。
+enum BlockPaginator {
+    static func pages(blocks: [ChapterBlock], string: NSAttributedString, size: CGSize) -> [ReaderPage] {
+        let full = NSRange(location: 0, length: string.length)
+        var result: [ReaderPage] = []
+        for (index, block) in blocks.enumerated() {
+            switch block.kind {
+            case .text:
+                let range = NSIntersectionRange(block.range, full)
+                guard range.length > 0 else { continue }
+                let sub = string.attributedSubstring(from: range)
+                // 块间纯空白（如标签留下的单个换行）不单独成页；其中的字符也不含任何句子，跳过不影响定位。
+                guard !sub.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+                for local in NativeTypesetter.pages(sub, size: size) {
+                    result.append(.text(NSRange(location: range.location + local.location, length: local.length)))
+                }
+            case .image, .table:
+                result.append(.media(index))
+            }
+        }
+        if result.isEmpty { result = [.text(full)] }
+        return result
+    }
+}
+
+/// 滚动模式的坐标换算表：附件增强串与 chapter.text 之间的偏移映射。
+/// 每个媒体块在增强串里恰好占 1 个字符（图片是零宽插入，表格是整段替换为 1 字）。
+struct ScrollBlockMap: Equatable {
+    struct Entry: Equatable { var textRange: NSRange; var augmentedLocation: Int }
+    var entries: [Entry] = []
+    /// 正文偏移 → 增强串偏移。落在表格内部的偏移折叠到表格附件本身。
+    func augmentedOffset(_ offset: Int) -> Int {
+        var result = offset
+        for entry in entries {
+            if offset >= NSMaxRange(entry.textRange) { result -= entry.textRange.length - 1 }
+            else if offset > entry.textRange.location { return entry.augmentedLocation }
+        }
+        return result
+    }
+    func augmentedRange(_ range: NSRange) -> NSRange {
+        let start = augmentedOffset(range.location)
+        var end = augmentedOffset(NSMaxRange(range))
+        if end < start { end = start }
+        if end == start, range.length > 0,
+           let entry = entries.first(where: { NSIntersectionRange($0.textRange, range).length > 0 }) {
+            // 整段落在一个块内（如表格内部的句子）：高亮落在块本身那一个字符上。
+            return NSRange(location: entry.augmentedLocation, length: 1)
+        }
+        return NSRange(location: start, length: end - start)
+    }
+    /// 增强串偏移 → 正文偏移。点中附件本身回到块的正文起点。
+    func textOffset(_ offset: Int) -> Int {
+        var result = offset
+        for entry in entries {
+            if offset > entry.augmentedLocation { result += entry.textRange.length - 1 }
+            else if offset == entry.augmentedLocation { return entry.textRange.location }
+        }
+        return result
+    }
+}
+
+/// 滚动模式的附件增强：把图片与表格按块位置织回正文串（UITextView/TextKit 原生渲染 NSTextAttachment）。
+/// attributed 主串始终保持纯正文，增强串只供滚动视图使用，两套坐标靠 ScrollBlockMap 换算。
+enum ScrollAugmenter {
+    static func build(base: NSAttributedString, blocks: [ChapterBlock], book: Book, width: CGFloat, preferences: ReaderPreferences) -> (string: NSAttributedString, map: ScrollBlockMap) {
+        let result = NSMutableAttributedString(attributedString: base)
+        var map = ScrollBlockMap()
+        var shift = 0
+        let maxWidth = max(80, width)
+        for block in blocks {
+            switch block.kind {
+            case .text: continue
+            case .image(let ref):
+                guard let data = book.resourceData(ref), let image = UIImage(data: data) else { continue }
+                let size = fitted(image.size, maxWidth: maxWidth, maxHeight: 1200)
+                let at = block.range.location + shift
+                guard at >= 0, at <= result.length else { continue }
+                result.insert(attachmentPiece(image: image, size: size, base: base, at: block.range.location), at: at)
+                map.entries.append(.init(textRange: block.range, augmentedLocation: at))
+                shift += 1
+            case .table(let rows, let header):
+                guard let image = TableImageRenderer.image(rows: rows, header: header, maxWidth: maxWidth, preferences: preferences) else { continue }
+                let at = block.range.location + shift
+                guard at >= 0, at + block.range.length <= result.length else { continue }
+                result.replaceCharacters(in: NSRange(location: at, length: block.range.length), with: attachmentPiece(image: image, size: image.size, base: base, at: block.range.location))
+                map.entries.append(.init(textRange: block.range, augmentedLocation: at))
+                shift += 1 - block.range.length
+            }
+        }
+        return (result, map)
+    }
+    private static func fitted(_ natural: CGSize, maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize {
+        guard natural.width > 0, natural.height > 0 else { return CGSize(width: maxWidth, height: 120) }
+        var w = min(natural.width, maxWidth), h = natural.height * w / natural.width
+        if h > maxHeight { h = maxHeight; w = natural.width * h / natural.height }
+        return CGSize(width: w.rounded(), height: h.rounded())
+    }
+    /// 附件占位符（U+FFFC）：沿用所在段落样式但去掉首行缩进，避免图片被当作段首文字缩进。
+    private static func attachmentPiece(image: UIImage, size: CGSize, base: NSAttributedString, at textOffset: Int) -> NSAttributedString {
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = CGRect(origin: .zero, size: size)
+        let piece = NSMutableAttributedString(string: "\u{FFFC}", attributes: [.attachment: attachment])
+        if base.length > 0 {
+            let probe = min(max(0, textOffset), base.length - 1)
+            if let style = base.attribute(.paragraphStyle, at: probe, effectiveRange: nil) as? NSParagraphStyle,
+               let mutable = style.mutableCopy() as? NSMutableParagraphStyle {
+                mutable.firstLineHeadIndent = mutable.headIndent
+                piece.addAttribute(.paragraphStyle, value: mutable, range: NSRange(location: 0, length: piece.length))
+            }
+            if let font = base.attribute(.font, at: probe, effectiveRange: nil) { piece.addAttribute(.font, value: font, range: NSRange(location: 0, length: piece.length)) }
+        }
+        return piece
+    }
+}
+
+/// 把表格块栅格化为一张图（滚动模式的附件）：按当前纸色/字体的前景与次色绘制网格，
+/// 列宽先按单行自然宽分配、超宽时等比压缩并换行；超高时整体缩放，避免无界大图。
+enum TableImageRenderer {
+    static func image(rows: [[String]], header: Bool, maxWidth: CGFloat, preferences: ReaderPreferences) -> UIImage? {
+        guard !rows.isEmpty else { return nil }
+        let columns = max(1, rows.map(\.count).max() ?? 1)
+        let fontSize = max(11, preferences.fontSize * 0.66)
+        let baseFont = UIFont(descriptor: preferences.uiFont.fontDescriptor, size: fontSize)
+        let boldFont = baseFont.fontDescriptor.withSymbolicTraits(.traitBold).map { UIFont(descriptor: $0, size: fontSize) } ?? baseFont
+        let foreground = UIColor(preferences.foreground)
+        let lineColor = UIColor(preferences.secondary).withAlphaComponent(0.4)
+        let wrap = NSMutableParagraphStyle(); wrap.lineBreakMode = .byWordWrapping
+        let pad: CGFloat = 7
+        func font(_ row: Int) -> UIFont { header && row == 0 ? boldFont : baseFont }
+        var widths = [CGFloat](repeating: 0, count: columns)
+        for row in rows {
+            for (column, cell) in row.enumerated() {
+                widths[column] = max(widths[column], (cell as NSString).size(withAttributes: [.font: baseFont]).width + pad * 2)
+            }
+        }
+        widths = widths.map { max(30, $0) }
+        if widths.reduce(0, +) > maxWidth {
+            let scale = maxWidth / widths.reduce(0, +)
+            widths = widths.map { $0 * scale }
+            if widths.reduce(0, +) > maxWidth { let again = maxWidth / widths.reduce(0, +); widths = widths.map { $0 * again } }
+        }
+        func cellHeight(_ cell: String, width: CGFloat, font: UIFont) -> CGFloat {
+            guard !cell.isEmpty else { return font.lineHeight }
+            let rect = (cell as NSString).boundingRect(with: CGSize(width: max(10, width - pad * 2), height: .greatestFiniteMagnitude),
+                                                       options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                       attributes: [.font: font, .paragraphStyle: wrap], context: nil)
+            return ceil(rect.height)
+        }
+        var rowHeights: [CGFloat] = []
+        for (rowIndex, row) in rows.enumerated() {
+            var height = font(rowIndex).lineHeight
+            for column in 0..<columns { height = max(height, cellHeight(column < row.count ? row[column] : "", width: widths[column], font: font(rowIndex))) }
+            rowHeights.append(height + pad * 1.4)
+        }
+        let width = widths.reduce(0, +), height = rowHeights.reduce(0, +)
+        guard width > 0, height > 0 else { return nil }
+        let shrink = height > 3000 ? 3000 / height : 1
+        let format = UIGraphicsImageRendererFormat(); format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: width * shrink, height: height * shrink), format: format)
+        return renderer.image { context in
+            let cg = context.cgContext
+            cg.scaleBy(x: shrink, y: shrink)
+            var y: CGFloat = 0
+            for (rowIndex, row) in rows.enumerated() {
+                let rowHeight = rowHeights[rowIndex]
+                if header && rowIndex == 0 { UIColor(preferences.secondary).withAlphaComponent(0.08).setFill(); cg.fill(CGRect(x: 0, y: y, width: width, height: rowHeight)) }
+                var x: CGFloat = 0
+                for column in 0..<columns {
+                    let cell = column < row.count ? row[column] : ""
+                    if !cell.isEmpty {
+                        (cell as NSString).draw(in: CGRect(x: x + pad, y: y + pad * 0.7, width: widths[column] - pad * 2, height: rowHeight - pad * 1.4),
+                                                withAttributes: [.font: font(rowIndex), .foregroundColor: foreground, .paragraphStyle: wrap])
+                    }
+                    x += widths[column]
+                }
+                y += rowHeight
+                lineColor.setFill(); cg.fill(CGRect(x: 0, y: y - 0.5, width: width, height: 0.5))
+            }
+            var boundary: CGFloat = 0
+            lineColor.setFill()
+            for column in 0..<columns { boundary += widths[column]; if boundary < width { cg.fill(CGRect(x: boundary - 0.25, y: 0, width: 0.5, height: height)) } }
+            cg.setStrokeColor(lineColor.cgColor); cg.setLineWidth(1)
+            cg.stroke(CGRect(x: 0.5, y: 0.5, width: width - 1, height: height - 1))
+        }
+    }
+}
+
 /// 一本书在阅读页中的只读缓存：章节数组、PDF 数据和逐章句子只解析一次。
 @MainActor
 final class ReaderDocument: ObservableObject {
@@ -70,11 +266,21 @@ final class ReaderDocument: ObservableObject {
     let isPDF: Bool
     private(set) lazy var pdf: Data? = isPDF ? book.pdf : nil
     private var sentenceCache: [Int: [Sentence]] = [:]
+    private var blockCache: [Int: [ChapterBlock]] = [:]
+    private var blockMisses: Set<Int> = []
     init(book: Book) { self.book = book; chapters = book.chapters; isPDF = book.fields["pdf"] != nil }
     func sentences(_ index: Int) -> [Sentence] {
         if let cached = sentenceCache[index] { return cached }
         let value = chapters.indices.contains(index) ? Sentence.split(chapters[index].text) : []
         sentenceCache[index] = value; return value
+    }
+    /// 章节块（构建 141）：从既有 document HTML 现算并缓存；nil = 本章无可用块（纯文本章或口径不一致回退）。
+    func blocks(_ index: Int) -> [ChapterBlock]? {
+        if let cached = blockCache[index] { return cached }
+        if blockMisses.contains(index) { return nil }
+        let value = chapters.indices.contains(index) ? ChapterBlockParser.blocks(for: chapters[index]) : nil
+        if let value { blockCache[index] = value } else { blockMisses.insert(index) }
+        return value
     }
 }
 
@@ -100,7 +306,12 @@ struct ReaderView: View {
     @State private var pageIndex = 0
     /// 最近一次翻页方向，决定滑动动画进出场边。
     @State private var turnDelta = 1
-    @State private var pages: [NSRange] = []
+    @State private var pages: [ReaderPage] = []
+    /// 当前章的块（构建 141）：含图片/表格块时分页走块级分页、滚动走附件增强串；空 = 纯文本章。
+    @State private var displayBlocks: [ChapterBlock] = []
+    /// 滚动模式的附件增强串与坐标换算表（仅滚动 + 有块时非 nil）；attributed 始终保持纯正文串。
+    @State private var scrollAttributed: NSAttributedString?
+    @State private var scrollMap: ScrollBlockMap?
     @State private var attributed = NSAttributedString(string: "")
     @State private var sheet: ReaderSheet?
     @State private var ready = false
@@ -134,7 +345,6 @@ struct ReaderView: View {
     @AppStorage("reader.indent") private var indent = true
     @AppStorage("reader.justified") private var justified = true
     @AppStorage("reader.doublePage") private var automaticDouble = true
-    @AppStorage("reader.original") private var original = false
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
     @AppStorage("app.appearance") private var appearance = "system"
@@ -149,7 +359,7 @@ struct ReaderView: View {
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
     /// 控件以当前纸色决定明暗；构建 139 起此色与 Theme.accent 同值（陶土），
-    /// 用于正文侧强调（原书图文链接/选区、选区面板传参、顶栏书签与正文页眉状态字），
+    /// 用于正文侧强调（选区面板传参、顶栏书签与正文页眉状态字），
     /// 全 App 不再有钴蓝残留；chrome（底部面板、滑杆、上下章）仍用 Theme 陶土令牌。
     private var readerAccent: Color { isDarkPaper ? Color(hex: 0xF0AD88) : Color(hex: 0xA84A28) }
     private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x17233A) : .white }
@@ -162,7 +372,6 @@ struct ReaderView: View {
     private var entry: ShelfEntry? { model.entries.first(where: { $0.id == book.id }) }
     private var marked: Bool { entry?.bookmarks.contains { $0.chapter == chapter && $0.position == sentencePosition } == true }
     private var highlightRange: NSRange? { active && following && player.chapter == chapter ? player.sentenceRange : nil }
-    private var originalHTML: String? { original ? current.fields["document"]?.object?["html"]?.string : nil }
     private var chapterProgress: Double {
         let total = sentences.count
         guard total > 0 else { return 0 }
@@ -171,7 +380,7 @@ struct ReaderView: View {
     private var chapterProgressLabel: String { "\(Int(chapterProgress * 100))%" }
     private var pageLabel: String {
         if document.isPDF { return "第 \(chapter + 1) / \(chapters.count) 页" }
-        if scrolling || originalHTML != nil { return "第 \(chapter + 1) / \(chapters.count) 章" }
+        if scrolling { return "第 \(chapter + 1) / \(chapters.count) 章" }
         let shown = doublePage ? min(pages.count, pageIndex + 2) : pageIndex + 1
         return "\(shown) / \(max(1, pages.count))"
     }
@@ -418,45 +627,29 @@ struct ReaderView: View {
             .opacity(chrome ? 0 : 1)
             .accessibilityHidden(chrome)
 
-            if originalHTML == nil {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("第 \(chapter + 1) 章").font(.caption).foregroundStyle(prefs.secondary)
-                    Text(current.title)
-                        .font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(prefs.foreground)
-                        .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 20).padding(.bottom, 8)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("第 \(chapter + 1) 章").font(.caption).foregroundStyle(prefs.secondary)
+                Text(current.title)
+                    .font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(prefs.foreground)
+                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 20).padding(.bottom, 8)
 
             GeometryReader { geometry in
                 Group {
-                    if let html = originalHTML {
-                        let displayedChapter = chapter, requestedRevision = jumpRevision
-                        OriginalBookView(html: html, css: current.fields["document"]?.object?["css"]?.string ?? "", book: book, chapter: chapter, foreground: prefs.foreground, paper: prefs.background, accent: readerAccent, preferences: prefs, highlight: highlightRange, spokenSource: player.followPublisher, follow: following, highlightColor: prefs.highlightBand, readingPosition: sentencePosition, positionRevision: jumpRevision, onPositionChange: { position in
-                            guard chapter == displayedChapter, jumpRevision == requestedRevision else { return }
-                            sentencePosition = position
-                            model.saveProgress(book.id, chapter: chapter, position: position)
-                        }, onToggleChrome: { toggleChrome() }, onManualPage: { following = false }, onEdgeTurn: { delta in
-                            following = false
-                            // 向前翻章落到下一章开头；向后翻章落到上一章末尾，与分页模式 turn(-1) 的落点一致。
-                            if delta < 0, chapter > 0 { jump(chapter: chapter - 1, position: max(0, document.sentences(chapter - 1).count - 1)) }
-                            else { jump(chapter: chapter + delta, position: 0) }
-                        })
-                            // WebKit 视口宽取整，滚动分页按实际宽度；宽度取整后二者一致，翻页不累积亚像素错位。
-                            .frame(width: geometry.size.width.rounded(.down), height: geometry.size.height)
-                    } else if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
-                    else if current.text.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("在「更多」中打开原书图文，或在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
+                    if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+                    else if current.text.isEmpty && displayBlocks.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("本章图片可在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
                     else if scrolling {
-                        ScrollingText(attributed: attributed, highlight: highlightRange, color: prefs.highlight, marks: chapterMarks, initialOffset: currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? highlightRange?.location : nil, onSelect: { select(offset: $0) }, onOverscroll: { delta in turn(delta) }) { offset in
-                            following = false; let position = Sentence.index(at: offset, in: sentences)
+                        ScrollingText(attributed: scrollAttributed ?? attributed, highlight: scrollConverted(highlightRange), color: prefs.highlight, marks: scrollConvertedMarks, initialOffset: scrollConvertedOffset(currentOffset) ?? currentOffset, chapterID: "\(book.id)-\(chapter)-\(jumpRevision)", followOffset: active && following ? scrollConvertedOffset(highlightRange?.location) : nil, onSelect: { select(offset: scrollRestoredOffset($0)) }, onOverscroll: { delta in turn(delta) }) { offset in
+                            following = false; let position = Sentence.index(at: scrollRestoredOffset(offset), in: sentences)
                             if position != sentencePosition { sentencePosition = position }
                         }.simultaneousGesture(TapGesture().onEnded { toggleChrome() })
                     } else {
                         HStack(spacing: 36) {
-                            NativeTextPage(attributed: pageText(pageIndex), onSelect: { offset in select(offset: pageStart(pageIndex) + offset) })
+                            readerPageView(pageIndex)
                             if doublePage {
-                                NativeTextPage(attributed: pageText(pageIndex + 1), onSelect: { offset in select(offset: pageStart(pageIndex + 1) + offset) })
+                                readerPageView(pageIndex + 1)
                             }
                         }
                         .overlay {
@@ -654,14 +847,9 @@ struct ReaderView: View {
         moreRow(Icon.search, "书内搜索", identifier: "reader.search") { sheet = .search }
         moreSectionHeader("阅读外观")
         moreRow(Icon.dayNight(isDark: isDarkPaper), isDarkPaper ? "切换日间纸色" : "切换夜间纸色", identifier: "reader.dayNight") { toggleNightMode() }
-        if !document.isPDF {
+        if !document.isPDF && !scrolling {
             moreSectionHeader("阅读方式")
-            if current.fields["document"]?.object?["html"]?.string != nil {
-                moreRow(Icon.original, "原书图文", checkmarked: original) { original.toggle() }
-            }
-            if !scrolling && originalHTML == nil {
-                moreRow(Icon.autoTurn, "自动翻页", trailing: autoTurn == 0 ? "关闭" : "每 \(autoTurn) 秒", closesPanel: false) { moreShowsAutoTurn = true }
-            }
+            moreRow(Icon.autoTurn, "自动翻页", trailing: autoTurn == 0 ? "关闭" : "每 \(autoTurn) 秒", closesPanel: false) { moreShowsAutoTurn = true }
         }
         moreSectionHeader("辅助听书")
         moreRow(Icon.listen, "从当前阅读位置听", identifier: "reader.startListening") { startReadingAloud() }
@@ -895,11 +1083,30 @@ struct ReaderView: View {
     // MARK: 行为
 
     private var currentOffset: Int { sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].range.location : 0 }
-    private func pageStart(_ index: Int) -> Int { pages.indices.contains(index) ? pages[index].location : 0 }
+    /// 分页模式下一个页槽的内容：正文页走原生文本页，媒体页整页放一个图片/表格块，越界槽位留空。
+    @ViewBuilder private func readerPageView(_ index: Int) -> some View {
+        if pages.indices.contains(index) {
+            switch pages[index] {
+            case .text:
+                NativeTextPage(attributed: pageText(index), onSelect: { offset in select(offset: pageStart(index) + offset) })
+            case .media(let blockIndex):
+                if displayBlocks.indices.contains(blockIndex) {
+                    ReaderMediaPage(block: displayBlocks[blockIndex], book: book, foreground: prefs.foreground, secondary: prefs.secondary)
+                } else { Color.clear }
+            }
+        } else { Color.clear }
+    }
+    /// 页首在本章正文中的字符位置（媒体页取其块的正文位置），坐标始终是 chapter.text 空间。
+    private func pageStart(_ index: Int) -> Int {
+        guard pages.indices.contains(index) else { return 0 }
+        switch pages[index] {
+        case .text(let range): return range.location
+        case .media(let blockIndex): return displayBlocks.indices.contains(blockIndex) ? displayBlocks[blockIndex].range.location : 0
+        }
+    }
     /// 只为当前页复制富文本并加高亮，避免每个朗读回调复制整章。
     private func pageText(_ index: Int) -> NSAttributedString {
-        guard pages.indices.contains(index), NSMaxRange(pages[index]) <= attributed.length else { return NSAttributedString(string: "") }
-        let range = pages[index]
+        guard pages.indices.contains(index), case .text(let range) = pages[index], NSMaxRange(range) <= attributed.length else { return NSAttributedString(string: "") }
         let page = ReaderMark.apply(chapterMarks, to: NativeTypesetter.page(attributed, range: range), pageRange: range)
         guard let sentence = highlightRange else { return page }
         let overlap = NSIntersectionRange(sentence, range)
@@ -907,17 +1114,60 @@ struct ReaderView: View {
         // 分页模式按行画「信号蓝浅底 + 下划线」（CoreTextPageView），滚动模式整句铺软底
         return SpeechHighlight.apply(to: page, sentence: NSRange(location: overlap.location - range.location, length: overlap.length), color: prefs.highlightBand.withAlphaComponent(isDarkPaper ? 0.18 : 0.16))
     }
+    // MARK: 滚动模式的块坐标换算（正文坐标 ↔ 附件增强串坐标；无块时恒等）
+    private func scrollConverted(_ range: NSRange?) -> NSRange? { range.map { scrollMap?.augmentedRange($0) ?? $0 } }
+    private func scrollConvertedOffset(_ offset: Int?) -> Int? { offset.map { scrollMap?.augmentedOffset($0) ?? $0 } }
+    private var scrollConvertedMarks: [ReaderMark] {
+        guard let map = scrollMap else { return chapterMarks }
+        return chapterMarks.map { ReaderMark(range: map.augmentedRange($0.range), color: $0.color, kind: $0.kind) }
+    }
+    private func scrollRestoredOffset(_ offset: Int) -> Int { scrollMap?.textOffset(offset) ?? offset }
     private func rebuild(size: CGSize) async {
         let double = automaticDouble && paper != "eink" && size.width > 650 && !scrolling
         let string = NativeTypesetter.attributed(current, preferences: prefs)
+        let blocks = document.blocks(chapter)
         let pageSize = CGSize(width: double ? (size.width - 36) / 2 : size.width, height: size.height)
+        if scrolling {
+            // 滚动模式：图片/表格以附件形式回到正文原位（UITextView 原生渲染附件），坐标经 scrollMap 换算。
+            if let blocks {
+                let built = ScrollAugmenter.build(base: string, blocks: blocks, book: book, width: size.width, preferences: prefs)
+                scrollAttributed = built.string; scrollMap = built.map
+            } else { scrollAttributed = nil; scrollMap = nil }
+            guard !Task.isCancelled else { return }
+            doublePage = double; attributed = string; displayBlocks = blocks ?? []
+            pages = [.text(NSRange(location: 0, length: string.length))]
+            locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset); ready = true
+            return
+        }
+        scrollAttributed = nil; scrollMap = nil
         let box = UncheckedBox(value: string)
-        let result = scrolling ? [NSRange(location: 0, length: string.length)] : await Task.detached(priority: .userInitiated) { NativeTypesetter.pages(box.value, size: pageSize) }.value
+        let result: [ReaderPage]
+        if let blocks {
+            // 块级分页：正文块沿用既有 CoreText 分页，图片/表格块各自独占一页，永不被拦腰切断。
+            result = await Task.detached(priority: .userInitiated) { BlockPaginator.pages(blocks: blocks, string: box.value, size: pageSize) }.value
+        } else {
+            let ranges = await Task.detached(priority: .userInitiated) { NativeTypesetter.pages(box.value, size: pageSize) }.value
+            result = ranges.map(ReaderPage.text)
+        }
         guard !Task.isCancelled else { return }
-        doublePage = double; attributed = string; pages = result
+        doublePage = double; attributed = string; displayBlocks = blocks ?? []; pages = result
         locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset); ready = true
     }
-    private func locate(_ offset: Int) { let index = pages.firstIndex(where: { NSLocationInRange(offset, $0) }) ?? (offset >= attributed.length ? max(0, pages.count - 1) : 0); pageIndex = doublePage ? index / 2 * 2 : index }
+    private func locate(_ offset: Int) {
+        var index = pages.firstIndex { page in if case .text(let range) = page { return NSLocationInRange(offset, range) }; return false }
+        if index == nil {
+            // 句落在表格块内部时正文页不覆盖该区间，落到表格所在页。
+            index = pages.firstIndex { page in
+                if case .media(let blockIndex) = page, displayBlocks.indices.contains(blockIndex) {
+                    let range = displayBlocks[blockIndex].range
+                    return range.length > 0 && offset >= range.location && offset < NSMaxRange(range)
+                }
+                return false
+            }
+        }
+        let found = index ?? (offset >= attributed.length ? max(0, pages.count - 1) : 0)
+        pageIndex = doublePage ? found / 2 * 2 : found
+    }
     private func followSpeech() {
         guard following, active, scenePhase == .active else { return }
         if chapter != player.chapter, chapters.indices.contains(player.chapter) { ready = false; chapter = player.chapter }
@@ -1037,9 +1287,9 @@ struct ReaderView: View {
     private func turn(_ delta: Int) {
         following = false
         turnDelta = delta
-        if document.isPDF || scrolling || originalHTML != nil {
+        if document.isPDF || scrolling {
             // 最后一章（PDF 为最后一页）再向前翻 = 翻过全书末尾，触发读完收尾；
-            // 滚动与原书图文还要求已经读到本章最后一句，避免章中误触。
+            // 滚动模式还要求已经读到本章最后一句，避免章中误触。
             if delta > 0, chapter == chapters.count - 1, document.isPDF || sentencePosition >= max(0, sentences.count - 1) { requestFinish() }
             jump(chapter: chapter + delta, position: 0); return
         }
@@ -1049,7 +1299,7 @@ struct ReaderView: View {
         else if pages.indices.contains(next) {
             if reduceMotion || pageTurn == "none" { pageIndex = next }
             else { withAnimation(.easeInOut(duration: 0.3)) { pageIndex = next } }
-            sentencePosition = Sentence.index(at: pages[next].location, in: sentences)
+            sentencePosition = Sentence.index(at: pageStart(next), in: sentences)
             // 手动阅读始终由读者决定位置；只有显式“回到朗读处”才恢复跟随。
             persist()
         }
@@ -1133,6 +1383,61 @@ struct NativeTextPage: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: CoreTextPageView, context: Context) { view.attributed = attributed; view.onSelect = onSelect }
+}
+/// 分页模式的媒体页（构建 141）：整页只放一个图片或表格块。图片后台解码、等比缩放居中；
+/// 表格用原生网格绘制（行数越多字号越小），发丝线与纸面次色同源。不自带手势，翻页走容器手势。
+private struct ReaderMediaPage: View {
+    let block: ChapterBlock
+    let book: Book
+    let foreground: Color
+    let secondary: Color
+    @State private var image: UIImage?
+    @State private var loadFailed = false
+    private var imageRef: String? { if case .image(let ref) = block.kind { return ref }; return nil }
+    var body: some View {
+        ZStack {
+            switch block.kind {
+            case .text: Color.clear
+            case .image:
+                if let image { Image(uiImage: image).resizable().scaledToFit().padding(8) }
+                else if loadFailed { Image(systemName: Icon.illustration).font(.largeTitle).foregroundStyle(secondary) }
+                else { ProgressView() }
+            case .table(let rows, let header):
+                tableGrid(rows: rows, header: header).padding(4)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task(id: imageRef) {
+            guard let ref = imageRef, image == nil else { return }
+            let target = book
+            let decoded = await Task.detached(priority: .userInitiated) { target.resourceData(ref).flatMap { UIImage(data: $0) } }.value
+            image = decoded
+            loadFailed = decoded == nil
+        }
+    }
+    private func tableGrid(rows: [[String]], header: Bool) -> some View {
+        let columns = max(1, rows.map(\.count).max() ?? 1)
+        let fontSize: CGFloat = rows.count > 24 ? 10.5 : rows.count > 12 ? 12 : 13
+        return VStack(spacing: 0) {
+            ForEach(rows.indices, id: \.self) { row in
+                HStack(spacing: 0) {
+                    ForEach(0..<columns, id: \.self) { column in
+                        Text(column < rows[row].count ? rows[row][column] : "")
+                            .font(.system(size: fontSize, weight: header && row == 0 ? .semibold : .regular))
+                            .foregroundStyle(foreground)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 6).padding(.vertical, 5)
+                            .overlay(alignment: .trailing) {
+                                if column < columns - 1 { Rectangle().fill(secondary.opacity(0.3)).frame(width: 0.5) }
+                            }
+                    }
+                }
+                .background(header && row == 0 ? secondary.opacity(0.08) : Color.clear)
+                .overlay(alignment: .bottom) { Rectangle().fill(secondary.opacity(0.3)).frame(height: 0.5) }
+            }
+        }
+        .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(secondary.opacity(0.3), lineWidth: 1) }
+    }
 }
 /// 连续滚动：只在朗读句变化时增删高亮属性，不重设整章文字。
 struct ScrollingText: UIViewRepresentable {
@@ -1716,7 +2021,7 @@ struct ReadingPreferencesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("设置只影响正文，原书图文也会同步应用。")
+                Text("设置即时应用到正文。")
                     .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
                 if showsPreview {
                     Text("清晨，湖面还没有醒来。\n让光缓缓移过纸面。")
@@ -1894,7 +2199,7 @@ struct ReadingPreferencesView: View {
     }
 }
 
-/// 不常用的排版项：行距、段距、边距、缩进、对齐、双页、原书图文、恢复默认。
+/// 不常用的排版项：行距、段距、边距、缩进、对齐、双页、恢复默认。
 private struct MoreTypographyView: View {
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
@@ -1906,7 +2211,6 @@ private struct MoreTypographyView: View {
     @AppStorage("reader.indent") private var indent = true
     @AppStorage("reader.justified") private var justified = true
     @AppStorage("reader.doublePage") private var doublePage = true
-    @AppStorage("reader.original") private var original = false
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
     var body: some View {
@@ -1944,18 +2248,10 @@ private struct MoreTypographyView: View {
                 }
                 .pickerStyle(.segmented)
             } header: { Text("简繁转换") } footer: { Text("只改变显示，不修改书籍文件；朗读仍按原文。") }
-            Section("内容") {
-                Toggle(isOn: $original) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("原书图文")
-                        Text("保留 EPUB / HTML 的图片、表格与样式").font(.caption).foregroundStyle(Theme.ink3)
-                    }
-                }
-            }
             Section {
                 Button("恢复护眼默认排版") {
                     size = 19; spacing = 11; paragraph = 15; margin = 24; indent = true; justified = true
-                    font = "system"; paper = "paper"; doublePage = true; scrolling = false; original = false
+                    font = "system"; paper = "paper"; doublePage = true; scrolling = false
                     letterSpacing = 0; convert = "none"
                 }
                 .frame(maxWidth: .infinity)

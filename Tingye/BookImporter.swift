@@ -28,7 +28,7 @@ enum BookImporter {
         let text = try decode(data)
         let chapters: [Chapter]
         if ["html", "htm", "xhtml"].contains(ext) { chapters = [HTMLText.chapter(text, title: title)] }
-        // Markdown 的原书图文由正文同源生成，保证开关原书图文时句级高亮与进度一致。
+        // Markdown 的原书文档由正文同源生成（构建 141 后仅作块解析来源），保证句级高亮与进度一致。
         else if ["md", "markdown"].contains(ext) { chapters = splitText(markdown(text), title: title).map(withOriginalDocument) }
         else if ["txt", "text", ""].contains(ext) { chapters = splitTextWithUserRules(text, title: title) }
         else { throw ReaderError.message("支持 EPUB、MOBI、AZW3、TXT、PDF、HTML、Markdown、DOCX、CBZ 和听页备份 JSON。") }
@@ -97,7 +97,8 @@ enum BookImporter {
         for (pattern, template) in [(#"!\[([^\]]*)\]\([^)]*\)"#, "$1"), (#"\[([^\]]+)\]\([^)]*\)"#, "$1"), (#"(?m)^\s*```[^\n]*\n?"#, ""), (#"\*\*(.*?)\*\*"#, "$1"), (#"`([^`]+)`"#, "$1"), (#"(?m)^>\s?"#, "")] { text = text.replacingOccurrences(of: pattern, with: template, options: .regularExpression) }
         return text
     }
-    /// 给章节补上与正文同源的原书图文（Markdown 等没有出版物 HTML 的格式）。
+    /// 给章节补上与正文同源的原书文档（Markdown 等没有出版物 HTML 的格式）；
+    /// 构建 141 起它只作 ChapterBlockParser 的块解析来源（图片/表格定位），不再单独渲染。
     private static func withOriginalDocument(_ chapter: Chapter) -> Chapter {
         var chapter = chapter
         var document = chapter.fields["document"]?.object ?? [:]
@@ -272,6 +273,113 @@ enum HTMLText {
     }
 }
 
+
+// MARK: - 章节块解析（构建 141：阅读引擎合并）
+
+/// 章节正文的一个块：渲染时由 ChapterBlockParser 从既有存储（document HTML）现算，
+/// 不落盘、不改导入与备份格式。range 是该块在 chapter.text 中的字符区间：
+/// 正文块即其文本区间；图片块为零宽（图片所在的字符位置）；
+/// 表格块为其文字在导入时被压平进正文所占的区间。
+struct ChapterBlock: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case text
+        case image(ref: String)
+        case table(rows: [[String]], header: Bool)
+    }
+    var kind: Kind
+    var range: NSRange
+    var isMedia: Bool { if case .text = kind { return false }; return true }
+}
+
+/// 把章节的原书 HTML 按与 HTMLText.chapter 完全相同的规则重放一遍抽取纯文本，
+/// 重放结果必须与 chapter.text 逐字一致，否则整章放弃块解析（返回 nil，调用方回退纯文本），
+/// 杜绝口径漂移。在重放出的文本坐标上标出图片与表格的位置，产出块序列：
+/// 句子切分永远只跑 chapter.text，图片是零宽插入、表格整段对应一个块，块本身不产生新句子。
+enum ChapterBlockParser {
+    // 以下正则与 HTMLText.chapter 内部使用的逐字相同，保证重放口径一致（HTMLText 的是 private，无法直接引用）。
+    private static let tokenRegex = try! NSRegularExpression(pattern: #"<[^>]*>|[^<]+"#)
+    private static let imgSrcRegex = try! NSRegularExpression(pattern: #"(?i)\bsrc\s*=\s*["']([^"']+)["']"#)
+
+    static func blocks(for chapter: Chapter) -> [ChapterBlock]? {
+        guard let html = chapter.fields["document"]?.object?["html"]?.string, !html.isEmpty else {
+            // 无原书 HTML 的图片章（MOBI 图片页等）：图片引用在 nativeImages 里，整章即图片块序列。
+            let refs = chapter.fields["nativeImages"]?.array?.compactMap(\.string) ?? []
+            guard chapter.text.isEmpty, !refs.isEmpty else { return nil }
+            return refs.map { ChapterBlock(kind: .image(ref: $0), range: NSRange(location: 0, length: 0)) }
+        }
+        // 与 HTMLText.chapter 相同的清洗（剔除回链与脚本/样式/头部块），保证重放出的文本可逐字比对。
+        let cleaned = html.replacingOccurrences(of: #"(?is)<a\b[^>]*class\s*=\s*["'][^"']*restored-source-link[^"']*"[^>]*>.*?</a\s*>"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"(?is)<(script|style|head|nav|noscript)\b[^>]*>.*?</\1\s*>|<!--.*?-->"#, with: "", options: .regularExpression)
+        let ns = cleaned as NSString
+        var text = ""
+        var events: [ChapterBlock] = []
+        // 表格捕获状态：只捕获最外层表格，嵌套表格按压平处理（其行并入外层）。
+        var tableStart: Int?
+        var rows: [[String]] = []
+        var headerFlags: [Bool] = []
+        var currentRow: [String]?
+        var rowIsHeader = false
+        var cellStart: Int?
+        var cellIsHeader = false
+        func finishCell() {
+            guard let start = cellStart else { return }
+            let raw = (text as NSString).substring(with: NSRange(location: start, length: text.utf16.count - start))
+            if currentRow == nil { currentRow = [] }
+            currentRow!.append(raw.trimmingCharacters(in: .whitespacesAndNewlines))
+            if cellIsHeader { rowIsHeader = true }
+            cellStart = nil
+        }
+        func finishRow() {
+            finishCell()
+            if let row = currentRow, row.contains(where: { !$0.isEmpty }) { rows.append(row); headerFlags.append(rowIsHeader) }
+            currentRow = nil; rowIsHeader = false
+        }
+        for match in tokenRegex.matches(in: cleaned, range: NSRange(location: 0, length: ns.length)) {
+            let token = ns.substring(with: match.range)
+            if token.hasPrefix("<") {
+                let tag = token.lowercased().replacingOccurrences(of: #"^</?\s*|[\s/>].*$"#, with: "", options: .regularExpression)
+                let close = token.hasPrefix("</")
+                // 块级换行规则与 HTMLText.chapter 逐字相同（开闭标签都触发）。
+                if ["p", "div", "section", "article", "blockquote", "li", "h1", "h2", "h3", "h4", "br", "tr"].contains(tag), !text.isEmpty, !text.hasSuffix("\n") { text += "\n" }
+                if tag == "img", !close, tableStart == nil,
+                   let found = imgSrcRegex.firstMatch(in: token, range: NSRange(location: 0, length: token.utf16.count)) {
+                    let src = (token as NSString).substring(with: found.range(at: 1))
+                    if !src.isEmpty { events.append(ChapterBlock(kind: .image(ref: src), range: NSRange(location: text.utf16.count, length: 0))) }
+                }
+                if tag == "table" {
+                    if !close, tableStart == nil {
+                        tableStart = text.utf16.count; rows = []; headerFlags = []; currentRow = nil; rowIsHeader = false; cellStart = nil
+                    } else if close, let start = tableStart {
+                        finishRow()
+                        if !rows.isEmpty {
+                            events.append(ChapterBlock(kind: .table(rows: rows, header: headerFlags.first == true),
+                                                         range: NSRange(location: start, length: text.utf16.count - start)))
+                        }
+                        tableStart = nil; rows = []; headerFlags = []
+                    }
+                }
+                if tableStart != nil {
+                    if tag == "tr", !close { finishRow(); currentRow = [] }
+                    if tag == "td" || tag == "th" {
+                        if !close { finishCell(); if currentRow == nil { currentRow = [] }; cellStart = text.utf16.count; cellIsHeader = tag == "th" }
+                        else { finishCell() }
+                    }
+                }
+            } else { text += HTMLText.entities(token.replacingOccurrences(of: #"[\t\r\n ]+"#, with: " ", options: .regularExpression)) }
+        }
+        // 重放口径与导入时不一致（文档被其他客户端改写等）：整章回退纯文本，不冒险错位。
+        guard text == chapter.text, events.contains(where: \.isMedia) else { return nil }
+        var blocks: [ChapterBlock] = []
+        var cursor = 0
+        for event in events {
+            if event.range.location > cursor { blocks.append(ChapterBlock(kind: .text, range: NSRange(location: cursor, length: event.range.location - cursor))) }
+            blocks.append(event)
+            cursor = max(cursor, NSMaxRange(event.range))
+        }
+        if cursor < text.utf16.count { blocks.append(ChapterBlock(kind: .text, range: NSRange(location: cursor, length: text.utf16.count - cursor))) }
+        return blocks
+    }
+}
 
 // MARK: - TXT 自定义分章规则
 

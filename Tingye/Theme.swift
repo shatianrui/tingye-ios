@@ -909,7 +909,7 @@ struct ReaderPreferences: Equatable {
         case .paper:   return ReaderPaper.xuanSecondary
         }
     }
-    /// 原生分页与原书图文共用跟读标记（v29 起统一陶土，日/夜同值），纸色设置不变；透明度规则见 highlight。
+    /// 原生阅读跟读标记（v29 起统一陶土，日/夜同值），纸色设置不变；透明度规则见 highlight。
     var highlightBand: UIColor { UIColor(hex: 0xD97757) }
     /// 连续滚动模式整句铺底：半透明陶土
     var highlight: UIColor {
