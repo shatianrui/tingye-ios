@@ -2270,8 +2270,11 @@ extension NativeCoreTests {
         let sentences = Sentence.split(firstText + nextText)
         XCTAssertEqual(sentences.map(\.text), [firstText, nextText])
         let firstRange = try XCTUnwrap(sentences.first?.range)
-        let wav = miniMaxTailTestWav(seconds: 2.4)
-        XCTAssertEqual(try AVAudioPlayer(data: wav).duration, 2.4, accuracy: 0.01)
+        // Leave enough real playback time for a loaded CI simulator to resume the main actor.
+        // The old 2.4 s fixture ended after only 1.2 s at double rate.
+        let clipDuration = 12.0
+        let wav = miniMaxTailTestWav(seconds: clipDuration)
+        XCTAssertEqual(try AVAudioPlayer(data: wav).duration, clipDuration, accuracy: 0.01)
 
         func cacheKey(_ text: String) throws -> String {
             let body: [String: JSONValue] = [
@@ -2308,14 +2311,14 @@ extension NativeCoreTests {
         XCTAssertTrue(started, "本地缓存音频未开始播放：\(player.error ?? "无错误信息")")
         guard started else { return }
 
-        // At either 1× or 2×, 0.45 seconds is past the old subtitle cutoff but before the 2.4 s clip ends.
+        // At either rate, observe after the old subtitle cutoff with ample margin before natural completion.
         try await Task.sleep(for: .milliseconds(450))
         XCTAssertEqual(player.position, 0, "字幕提前结束或末词未匹配时，仍须播放完整音频")
         let followed = try XCTUnwrap(player.followOffset)
         XCTAssertGreaterThanOrEqual(followed, firstRange.location)
         XCTAssertLessThan(followed, NSMaxRange(firstRange), "音频未结束前不得提前跟随到下一句")
 
-        let advanced = try await miniMaxTailWait(timeout: 4) { player.position == 1 }
+        let advanced = try await miniMaxTailWait(timeout: clipDuration / rate + 5) { player.position == 1 }
         XCTAssertTrue(advanced, "音频自然结束后应进入已缓存的下一句：\(player.error ?? "无错误信息")")
         XCTAssertEqual(player.position, 1)
     }
@@ -2349,9 +2352,12 @@ extension NativeCoreTests {
             for paper in ReaderPaper.allCases {
                 let preferences = ReaderPreferences(paper: paper.rawValue)
                 let followsDarkAppearance = paper.dark || (paper == .paper && style == .dark)
-                let expected = UIColor(hex: followsDarkAppearance ? 0x8DA7FF : 0x315BEE)
+                // v29 起跟读带统一陶土：Theme.swift 的 highlightBand 对所有纸面与外观
+                // 恒为 #D97757（日/夜同值），不再按纸色明暗解析为旧钴蓝 #315BEE/#8DA7FF；
+                // 按明暗区分的只剩 highlight 的透明度（见下方断言，规则未变）。
+                let expected = UIColor(hex: 0xD97757)
                 XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), expected,
-                               "\(paper.rawValue) 的跟读色必须按纸色明暗解析")
+                               "\(paper.rawValue) 的跟读带应为统一陶土色")
                 let highlight = preferences.highlight.resolvedColor(with: traits)
                 XCTAssertEqual(highlight.cgColor.alpha, followsDarkAppearance ? 0.26 : 0.14, accuracy: 0.001)
             }

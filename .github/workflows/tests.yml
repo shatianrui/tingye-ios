@@ -1,0 +1,148 @@
+name: Tests
+
+# 在 GitHub Actions 的 macOS runner 上跑听页的测试。
+#
+# 为什么需要这个 workflow：用户没有 Mac，听页的测试（xcodebuild test）
+# 在本地和在助手的 Linux 环境都跑不了，只能靠这里的 macOS runner。
+# 现有的 build-unsigned-ipa.yml 只构建 IPA、不跑测试，本 workflow 与它
+# 完全独立，互不影响。
+#
+# 两个 job：
+#   - unit-tests：TingyeTests（核心/单元测试，100+ 项）。主要 job，
+#     失败会让 PR 变红。
+#   - ui-tests：TingyeUITests（27 项）。单独 job 且非阻断
+#     （continue-on-error: true）。原因：已知有 8 个 UI 用例已过期，
+#     还在断言 131-133 导航重构时删除的标识符（continue.reading、
+#     now.listen、now.search、navigation.tab.0/1/2），跑起来必红；
+#     那是测试过期，不是 App 的 bug。在过期用例修好之前，UI 测试
+#     只跑出报告供参考，不拦 PR。修好后把 continue-on-error 去掉即可。
+#
+# 工程事实（2026-11-12 在 main@5fd54d1 核对）：
+#   - 共享 scheme 已存在：Tingye.xcodeproj/xcshareddata/xcschemes/
+#     Tingye.xcscheme，其 TestAction 包含 TingyeTests 与
+#     TingyeUITests 两个 testable（均未 skip）。
+#   - 测试 target 名称就是 TingyeTests / TingyeUITests，用
+#     -only-testing:<target> 分开跑两个 job。
+#   - 工程最低 iOS 17.0；模拟器不写死机型（runner 镜像升级后机型会变），
+#     运行时用 simctl 挑第一台可用的 iPhone 模拟器。
+#   - 单元测试固定 macos-15，避免 macos-latest 队列长时间等待；
+#     单元测试使用 Xcode 26.3，UI 测试沿用 macos-latest 默认 Xcode。
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests (TingyeTests)
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode / Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+          uname -a
+
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          UDID="$(python3 -c '
+          import json, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          runtimes = sorted((rt for rt in data["devices"] if "iOS-" in rt), key=lambda rt: tuple(map(int, rt.split("iOS-")[-1].split("-"))), reverse=True)
+          cands = [d for rt in runtimes for d in data["devices"][rt] if d.get("isAvailable") and d["name"].startswith("iPhone")]
+          print(cands[0]["udid"] if cands else "")
+          ')"
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator on this runner:" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "Using simulator UDID: $UDID"
+
+      - name: Run TingyeTests
+        run: |
+          set -o pipefail
+          mkdir -p TestResults
+          xcodebuild test \
+            -project Tingye.xcodeproj \
+            -scheme Tingye \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:TingyeTests \
+            -resultBundlePath TestResults/TingyeTests.xcresult \
+            2>&1 | tee TestResults/unit-tests.log
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+  ui-tests:
+    name: UI tests (TingyeUITests, non-blocking)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    # 非阻断：已知 8 个过期 UI 用例必红（见文件头注释），先只出报告。
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode / Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+          uname -a
+
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          UDID="$(python3 -c '
+          import json, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          cands = [d for rt, devs in data["devices"].items() if "iOS" in rt for d in devs if d.get("isAvailable") and d["name"].startswith("iPhone")]
+          print(cands[0]["udid"] if cands else "")
+          ')"
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator on this runner:" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "Using simulator UDID: $UDID"
+
+      - name: Run TingyeUITests
+        run: |
+          set -o pipefail
+          mkdir -p TestResults
+          xcodebuild test \
+            -project Tingye.xcodeproj \
+            -scheme Tingye \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:TingyeUITests \
+            -resultBundlePath TestResults/TingyeUITests.xcresult \
+            2>&1 | tee TestResults/ui-tests.log
+
+      - name: Upload UI test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: TestResults/
+          if-no-files-found: ignore

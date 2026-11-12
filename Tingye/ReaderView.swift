@@ -330,6 +330,9 @@ struct ReaderView: View {
     /// 「更多」工具面板（自制 popover，替代系统 Menu 以便跟随阅读纸面配色）；子页为自动翻页选项。
     @State private var morePresented = false
     @State private var moreShowsAutoTurn = false
+    /// 面板条目的待执行动作：先等 popover 完全收起再执行，避免在同一步里
+    /// 既收 popover 又 present sheet（书内搜索等），两个呈现抢同一时机导致 App 失去响应/断连。
+    @State private var pendingMoreAction: (() -> Void)?
     @State private var didAutoPresentFinish = false
     /// 长按选中的句区间（划线 / 笔记 / 从这句听）
     @State private var selection: ReaderSelection?
@@ -826,7 +829,12 @@ struct ReaderView: View {
             .popover(isPresented: $morePresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
                 morePanel
                     .presentationCompactAdaptation(.popover)
-                    .onDisappear { moreShowsAutoTurn = false }
+                    .onDisappear {
+                        moreShowsAutoTurn = false
+                        let action = pendingMoreAction
+                        pendingMoreAction = nil
+                        action?()
+                    }
             }
     }
 
@@ -900,8 +908,10 @@ struct ReaderView: View {
     @ViewBuilder
     private func moreRow(_ icon: String, _ title: String, identifier: String? = nil, checkmarked: Bool = false, trailing: String? = nil, closesPanel: Bool = true, action: @escaping () -> Void) -> some View {
         let row = Button {
-            if closesPanel { morePresented = false }
-            action()
+            if closesPanel {
+                pendingMoreAction = action
+                morePresented = false
+            } else { action() }
         } label: {
             HStack(spacing: 12) {
                 ThemeIcon(symbol: icon, size: 18).frame(width: 22)

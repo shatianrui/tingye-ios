@@ -359,7 +359,6 @@ struct ShelfView: View {
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line, lineWidth: 1) }
         .softCardShadow()
-        .accessibilityIdentifier("study.heroCard")
     }
 
     @ViewBuilder

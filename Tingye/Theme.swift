@@ -12,7 +12,9 @@ enum Theme {
     // 次级文字：对纸对比度日间 5.3:1、深色 7.4:1，保证小字可读。
     static let ink2 = dynamic(0x6B6759, 0xA5A296)
     // 三级文字（v29 起独立取值，不再与 ink2 坍缩）：仅页脚、时间戳等非关键元信息。
-    static let ink3 = dynamic(0x86816F, 0x8E8B7E)
+    // 对比度：浅色在宣纸/次级面上原为 3.70/3.36，深色在次级面上原为 4.26，均未达 4.5；
+    // 沿原暖灰色相成比例加深/提亮后，浅色三面 5.15/4.67/5.42、深色三面 6.22/4.91/5.61。
+    static let ink3 = dynamic(0x6E6A5A, 0x99968A)
     static let line = dynamic(0xE6E0D0, 0x2C2C33)
     static let rulePaint = line
     static let onInk = dynamic(0xFFFFFF, 0x101725)
