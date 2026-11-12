@@ -146,7 +146,11 @@ struct ShelfView: View {
         .preference(key: LibraryNavigationHiddenKey.self, value: editing || searching)
         .animation(Theme.smoothSpring, value: editing)
         .bookImporter(isPresented: $importing)
-        .sheet(isPresented: $showingSources) { ImportHubView().environmentObject(model).tint(Theme.accent) }
+        .sheet(isPresented: $showingSources, onDismiss: {
+            // ImportHub 内点「选择文件」只登记请求并关闭面板；面板完全关闭后才从本根层打开
+            // 文件选择器，避免选择器在 sheet 内部呈现时回调被吞（点「打开」无反应）。
+            if model.consumeFileImportRequest() { importing = true }
+        }) { ImportHubView().environmentObject(model).tint(Theme.accent) }
         .sheet(isPresented: $showingImportResults) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
     }
 
@@ -1269,7 +1273,9 @@ private struct BookImportModifier: ViewModifier {
         content.fileImporter(isPresented: $isPresented, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
             switch result {
             case .success(let urls):
-                model.beginImport(urls)
+                // 空结果不能静默吞掉：要么导入，要么明确报错。
+                if urls.isEmpty { model.message = "没有选中可导入的文件，请重新选择。" }
+                else { model.beginImport(urls) }
             case .failure(let error):
                 model.message = error.localizedDescription
             }
