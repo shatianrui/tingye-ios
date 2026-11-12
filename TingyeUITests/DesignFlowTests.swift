@@ -132,6 +132,27 @@ final class DesignFlowTests: XCTestCase {
         return try XCTUnwrap(last, file: file, line: line)
     }
 
+    /// 原书样本是块级分页：插图 / 表格整块独占一页，这类页面没有 reader.nativePage 正文，
+    /// 布局捕获恒为 nil。向前翻页时跳过这类无正文的块页，直到落在一个与基准页文字不同的
+    /// 正文页，并返回实际翻页次数，供返回时对称翻回。超时或超过上限返回 nil。
+    private func advanceToTextPage(in app: XCUIApplication, capture: () -> ReaderLayoutCapture?,
+                                   differentFrom baseline: ReaderLayoutCapture) -> Int? {
+        var turns = 0
+        let deadline = Date().addingTimeInterval(20)
+        while Date() < deadline {
+            if let next = capture(), next.text != baseline.text { return turns }
+            guard turns < 4 else { return nil }
+            let before = capture()
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: baseline.viewport.maxX - 12, dy: baseline.viewport.midY)).tap()
+            turns += 1
+            // 等这一翻落地（捕获变化或落到无正文的块页）后再继续判断，避免对着过渡帧连点。
+            let settle = Date().addingTimeInterval(3)
+            while Date() < settle, capture() == before { Thread.sleep(forTimeInterval: 0.2) }
+        }
+        return nil
+    }
+
     private func tapReadingCenter(in app: XCUIApplication, frame: CGRect) {
         // 双页时第一张纸页的中央属于上一页区；使用整个窗口的中央 x。
         app.coordinate(withNormalizedOffset: .zero)
@@ -192,7 +213,14 @@ final class DesignFlowTests: XCTestCase {
         // 原 continue.reading / now.listen 标识已随 Now 页删除。
         let app = launch("shelf")
         let read = app.buttons["study.heroContinue"]
-        XCTAssertTrue(read.waitForExistence(timeout: 15))
+        // 诊断（临时）：第二轮该按钮等待超时。失败时把无障碍层级打进日志，
+        // 以坐实/推翻「卡片容器标识 study.heroCard 级联覆盖按钮标识」的判断；断言本身不变，
+        // App 侧修复落地后删除本段。
+        let heroAppeared = read.waitForExistence(timeout: 15)
+        if !heroAppeared {
+            print("【诊断】study.heroContinue 未出现，无障碍层级如下：\n\(app.debugDescription)")
+        }
+        XCTAssertTrue(heroAppeared)
         XCTAssertTrue(read.isHittable)
         XCTAssertTrue(read.label.contains("继续阅读"))
         XCTAssertGreaterThanOrEqual(read.frame.height, 44)
@@ -603,8 +631,11 @@ final class DesignFlowTests: XCTestCase {
             XCTAssertTrue(tools.frame.intersection(app.frame).contains(button.frame), "滚动后工具按钮必须完整露出，不能只露出图标就算可点击")
             XCTAssertTrue(app.buttons["reader.back"].isHittable)
             XCTAssertGreaterThanOrEqual(button.frame.height, 44)
-            XCTAssertGreaterThanOrEqual(button.frame.minX, 20)
-            XCTAssertLessThanOrEqual(button.frame.maxX, app.frame.maxX - 20, "大字号不能把工具面板撑出水平边距")
+            // 边距口径以代码为准：构建 136 起底部工具面板贴边全宽，chapterBar 工具格的水平内边距就是 16
+            // （ReaderView.chapterBar 的 .padding(.horizontal, 16)）；云端实测 minX 恰为 16.0，
+            // 原阈值 20 是旧浮层面板时期的口径，已过期。此处仍要求按钮完整落在 16 边距内、不被撑出屏幕。
+            XCTAssertGreaterThanOrEqual(button.frame.minX, 16)
+            XCTAssertLessThanOrEqual(button.frame.maxX, app.frame.maxX - 16, "大字号不能把工具面板撑出水平边距")
         }
         XCTAssertLessThanOrEqual(app.buttons["reader.bookmark"].frame.maxX, app.frame.maxX - 12)
         screenshot(app, "功能键-最大字号阅读工具")
@@ -616,7 +647,11 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("stats")
         let settings = app.buttons["profile.settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.navigationBars["我的"].exists, "当前目的地应是「我的」（旧页签已删除）")
+        // 「我的」在新结构里不用系统导航栏：StatsView(ji) 自绘页眉（构建 135 起 ji 版隐藏系统导航栏、
+        // 无系统返回箭头），目的地标志是页眉的「我的」标题与它专属的返回按钮 study.profileBack，
+        // app.navigationBars["我的"] 在此结构下不存在，原断言落点错误。
+        XCTAssertTrue(app.staticTexts["我的"].exists, "当前目的地应是「我的」（旧页签已删除）")
+        XCTAssertTrue(app.buttons["study.profileBack"].exists, "「我的」页眉应带返回书库的按钮")
         let statistics = app.buttons["profile.stats"]
         XCTAssertTrue(statistics.isHittable)
         statistics.tap()
@@ -724,18 +759,25 @@ final class DesignFlowTests: XCTestCase {
     func testOriginalReaderChromeDoesNotResizeOrMoveItsColumn() throws {
         // B 类改写（141 统一引擎）：视口/栏宽稳定性的等价断言改用原生页布局捕获，
         // 与分页阅读的同名验证同口径（ChapterBlockParser 块级分页）。
+        // 第二轮实测：翻一页后在 captureReaderLayout 处等待超时（XCTWaiterResult 超时，
+        // 「真实正文布局应连续稳定」）。样本章节是「标题+正文→插图→引文→表格→正文」的块序，
+        // 插图 / 表格整块独占页没有 reader.nativePage 正文，翻到这类页面时捕获恒为 nil，
+        // 原写法只翻一页恰好落在这类页面上。故前进时跳过无正文的块页（记录翻页数）、
+        // 返回时按相同次数对称翻回；工具显隐不移动正文的断言本体与稳定性口径不变。
         let app = launch("reader-original", original: true)
         XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
         let capture = { self.nativeLayout(in: app) }
         let first = try captureReaderLayout(capture)
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: first.viewport.maxX - 12, dy: first.viewport.midY)).tap()
-        waitForReadingCondition({ capture()?.text != first.text }, "原书样本必须实际翻到另一页正文")
+        let turns = try XCTUnwrap(advanceToTextPage(in: app, capture: capture, differentFrom: first),
+                                  "原书样本必须实际翻到另一页正文")
         let reading = try captureReaderLayout(capture)
+        XCTAssertNotEqual(reading.text, first.text, "原书样本必须实际翻到另一页正文")
         try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-原书样本")
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: reading.viewport.minX + 12, dy: reading.viewport.midY)).tap()
-        waitForReadingCondition({ capture()?.text == first.text }, "工具开关后上一页应回到原来那一页文字")
+        for _ in 0..<turns {
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: reading.viewport.minX + 12, dy: reading.viewport.midY)).tap()
+        }
+        waitForReadingCondition({ capture()?.text == first.text }, "工具开关后应回到原来那一页文字")
     }
 
     func testPDFReaderKeepsReadingToolsAndNotesReachable() {
