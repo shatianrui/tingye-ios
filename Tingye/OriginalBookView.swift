@@ -470,6 +470,23 @@ struct OriginalBookView: UIViewRepresentable {
             switch gesture.state {
             case .began: dragStartPage = currentPage(view)
             case .ended, .cancelled:
+                // 已在末页还继续左滑（或已在首页继续右滑）：分页吸附本身到不了下一章，
+                // 把这次越界拖拽顺势交给翻章通路，与点按边缘翻页（page(by:) 的越界分支）同一出口，
+                // 免得每读完一章都得去目录里手选下一章。
+                if loaded {
+                    let translation = gesture.translation(in: view).x
+                    let velocity = gesture.velocity(in: view).x
+                    let width = max(1, view.scrollView.bounds.width)
+                    let lastPage = max(0, Int((view.scrollView.contentSize.width / width).rounded()) - 1)
+                    if dragStartPage >= lastPage, translation < -50 || velocity < -600 {
+                        manualRevision += 1; pendingPosition = nil
+                        onEdgeTurn?(1); return
+                    }
+                    if dragStartPage <= 0, translation > 50 || velocity > 600 {
+                        manualRevision += 1; pendingPosition = nil
+                        onEdgeTurn?(-1); return
+                    }
+                }
                 // 等分页吸附动画落定再读页码。
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self, weak view] in
                     guard let self, let view else { return }
