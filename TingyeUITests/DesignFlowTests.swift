@@ -17,6 +17,14 @@ final class DesignFlowTests: XCTestCase {
         attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        // 目标既可能在视口下方，也可能在上方：从设置目录底部（外观）返回后，
+        // 顶部的「阅读排版」就在视口上方，单向 swipeUp 永远滑不到它。
+        // 先向上方（swipeDown）找：目标已存在且不在上方时提前转入向下查找。
+        for _ in 0..<6 {
+            if element.isHittable { return }
+            if element.exists, !element.frame.isEmpty, element.frame.minY >= app.frame.minY { break }
+            app.swipeDown()
+        }
         for _ in 0..<10 {
             if element.isHittable { return }
             app.swipeUp()
