@@ -301,9 +301,9 @@ enum ChapterBlockParser {
     private static let imgSrcRegex = try! NSRegularExpression(pattern: #"(?i)\bsrc\s*=\s*["']([^"']+)["']"#)
 
     static func blocks(for chapter: Chapter) -> [ChapterBlock]? {
-        guard let html = chapter.fields["document"]?.object?["html"]?.string, !html.isEmpty else {
+        guard let html = chapter.documentHTML, !html.isEmpty else {
             // 无原书 HTML 的图片章（MOBI 图片页等）：图片引用在 nativeImages 里，整章即图片块序列。
-            let refs = chapter.fields["nativeImages"]?.array?.compactMap(\.string) ?? []
+            let refs = chapter.nativeImageRefs ?? []
             guard chapter.text.isEmpty, !refs.isEmpty else { return nil }
             return refs.map { ChapterBlock(kind: .image(ref: $0), range: NSRange(location: 0, length: 0)) }
         }
