@@ -1,14 +1,18 @@
 import Foundation
 import CoreFoundation
 import PDFKit
-import ZIPFoundation
+import ReadiumZIPFoundation
 
 enum BookImporter {
-    struct Imported: Sendable { let book: Book; var progress = ReadingProgress() }
+    struct Imported: Sendable { let book: Book; var progress = ReadingProgress(); var source: EPUBSourceStaging? = nil }
     static func read(_ url: URL) throws -> Imported {
         let title = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension.lowercased()
-        if ext == "epub" { return Imported(book: try epub(url).validated()) }
+        if ext == "epub" {
+            let source = try EPUBSourceStaging(copying: url)
+            // Parse the exact copy we retain, avoiding a source-file change between parsing and hashing.
+            return Imported(book: try epub(source.url, fallbackTitle: title).validated(), source: source)
+        }
         if ext == "docx" { return Imported(book: try docx(url, title: title).validated()) }
         if ["mobi", "azw", "azw3", "prc"].contains(ext) { return Imported(book: try MobiReader.book(url, fallbackTitle: title).validated()) }
         if ["cbz", "zip"].contains(ext) { return Imported(book: try ComicImporter.book(url, title: title).validated()) }
@@ -117,12 +121,12 @@ enum BookImporter {
         }
         return parts.joined(separator: "/")
     }
-    private static func epub(_ url: URL) throws -> Book {
+    private static func epub(_ url: URL, fallbackTitle: String) throws -> Book {
         let zip = try SafeArchive(url: url)
         let container = try XMLNode.parse(zip.data("META-INF/container.xml"))
         guard let path = container.descendants("rootfile").first?.attributes["full-path"], !path.hasPrefix("/"), !path.split(separator: "/").contains("..") else { throw ReaderError.message("EPUB 缺少书籍目录。") }
         let opf = try XMLNode.parse(zip.data(path))
-        let title = opf.descendants("title").first?.allText.trimmingCharacters(in: .whitespacesAndNewlines) ?? url.deletingPathExtension().lastPathComponent
+        let title = opf.descendants("title").first?.allText.trimmingCharacters(in: .whitespacesAndNewlines) ?? fallbackTitle
         let author = opf.descendants("creator").first?.allText ?? "佚名"
         let items = opf.descendants("item")
         var manifest: [String: XMLNode] = [:]
@@ -183,14 +187,42 @@ enum BookImporter {
     }
 }
 
+/// Compatibility boundary for the synchronous legacy importers. The fork is an async actor.
+/// Legacy callers remain synchronous; the independent task only talks to the archive actor.
 final class SafeArchive {
-    let archive: Archive
-    init(url: URL) throws { archive = try Archive(url: url, accessMode: .read) }
+    let archive: [Entry]
+    private let reader: Archive
+    init(url: URL) throws {
+        reader = try Self.blocking { try await Archive(url: url, accessMode: .read) }
+        let reader = reader
+        archive = try Self.blocking { try await reader.entries() }
+    }
     func data(_ path: String) throws -> Data {
-        guard let entry = archive[path], entry.type == .file else { throw ReaderError.message("压缩书籍缺少资源：\(path)") }
+        guard let entry = archive.first(where: { $0.path == path }), entry.type == .file else {
+            throw ReaderError.message("压缩书籍缺少资源：\(path)")
+        }
+        let reader = reader
+        return try Self.blocking {
+            let buffer = ArchiveBuffer()
+            _ = try await reader.extract(entry) { chunk in await buffer.append(chunk) }
+            return await buffer.data
+        }
+    }
+    /// Only the legacy synchronous API uses this bridge; new Readium code uses async directly.
+    static func blocking<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) throws -> T {
+        let result = BlockingResult<T>(), semaphore = DispatchSemaphore(value: 0)
+        Task.detached {
+            do { result.value = .success(try await operation()) }
+            catch { result.value = .failure(error) }
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return try result.value!.get()
+    }
+    private final class BlockingResult<T>: @unchecked Sendable { var value: Result<T, Error>? }
+    private actor ArchiveBuffer {
         var data = Data()
-        _ = try archive.extract(entry) { chunk in data.append(chunk) }
-        return data
+        func append(_ chunk: Data) { data.append(chunk) }
     }
 }
 

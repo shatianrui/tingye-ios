@@ -9,7 +9,13 @@ test.add_dependency(app)
 ui_test = project.new_target(:ui_test_bundle, 'TingyeUITests', :ios, '17.0')
 ui_test.add_dependency(app)
 group = project.main_group.new_group('Tingye', 'Tingye')
-Dir.glob(File.join(root, 'Tingye', '*.swift')).sort.each { |f| app.source_build_phase.add_file_reference(group.new_file(File.basename(f))) }
+# Preserve nested source groups such as Readium when regenerating the project.
+Dir.glob(File.join(root, 'Tingye', '**', '*.swift')).sort.each do |f|
+  relative = f.delete_prefix(File.join(root, 'Tingye') + '/')
+  parts = relative.split('/')
+  parent = parts[0...-1].inject(group) { |g, part| g.groups.find { |child| child.path == part } || g.new_group(part, part) }
+  app.source_build_phase.add_file_reference(parent.new_file(parts.last))
+end
 resources = group.new_group('Resources', 'Resources')
 Dir.glob(File.join(root, 'Tingye', 'Resources', '*')).sort.each { |f| app.resources_build_phase.add_file_reference(resources.new_file(File.basename(f))) }
 tests = project.main_group.new_group('TingyeTests', 'TingyeTests')
@@ -20,11 +26,11 @@ end
 ui_tests = project.main_group.new_group('TingyeUITests', 'TingyeUITests')
 Dir.glob(File.join(root, 'TingyeUITests', '*.swift')).sort.each { |f| ui_test.source_build_phase.add_file_reference(ui_tests.new_file(File.basename(f))) }
 package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
-package.repositoryURL = 'https://github.com/weichsel/ZIPFoundation.git'
-package.requirement = { 'kind' => 'exactVersion', 'version' => '0.9.20' }
+package.repositoryURL = 'https://github.com/readium/ZIPFoundation.git'
+package.requirement = { 'kind' => 'exactVersion', 'version' => '3.0.1' }
 project.root_object.package_references << package
 product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
-product.product_name = 'ZIPFoundation'; product.package = package; app.package_product_dependencies << product
+product.product_name = 'ReadiumZIPFoundation'; product.package = package; app.package_product_dependencies << product
 framework = project.new(Xcodeproj::Project::Object::PBXBuildFile); framework.product_ref = product; app.frameworks_build_phase.files << framework
 smb_package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
 smb_package.repositoryURL = 'https://github.com/kishikawakatsumi/SMBClient.git'
@@ -33,6 +39,30 @@ project.root_object.package_references << smb_package
 smb_product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
 smb_product.product_name = 'SMBClient'; smb_product.package = smb_package; app.package_product_dependencies << smb_product
 smb_framework = project.new(Xcodeproj::Project::Object::PBXBuildFile); smb_framework.product_ref = smb_product; app.frameworks_build_phase.files << smb_framework
+def link_product(project, target, package, name)
+  product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+  product.product_name = name; product.package = package
+  target.package_product_dependencies << product
+  build = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+  build.product_ref = product; target.frameworks_build_phase.files << build
+end
+readium = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+readium.repositoryURL = 'https://github.com/readium/swift-toolkit.git'
+readium.requirement = { 'kind' => 'exactVersion', 'version' => '3.11.1' }
+project.root_object.package_references << readium
+%w[ReadiumShared ReadiumStreamer ReadiumNavigator].each { |name| link_product(project, app, readium, name) }
+link_product(project, test, readium, 'ReadiumShared')
+link_product(project, test, package, 'ReadiumZIPFoundation')
+soup = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+soup.repositoryURL = 'https://github.com/scinfu/SwiftSoup.git'
+soup.requirement = { 'kind' => 'exactVersion', 'version' => '2.13.5' }
+project.root_object.package_references << soup
+link_product(project, app, soup, 'SwiftSoup')
+pow_package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+pow_package.repositoryURL = 'https://github.com/EmergeTools/Pow.git'
+pow_package.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.0.6' }
+project.root_object.package_references << pow_package
+link_product(project, app, pow_package, 'Pow')
 project.build_configurations.each do |config|
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
@@ -40,7 +70,7 @@ project.build_configurations.each do |config|
 end
 [app, test, ui_test].each do |target|
   target.build_configurations.each do |config|
-    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '128', 'MARKETING_VERSION' => '1.24.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
+    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '142', 'MARKETING_VERSION' => '1.25.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
   end
 end
 app.build_configurations.each do |config|

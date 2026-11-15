@@ -83,6 +83,7 @@ final class AppModel: ObservableObject {
     /// 还原替换书库期间暂停目录和书籍写入。
     @Published var restoringLibrary = false
     private var activeBookWrites = 0
+    private var publicationWrites: Set<String> = []
     private var libraryGeneration = UUID()
     private var indexTasks: [UUID: Task<Void, Never>] = [:]
     private var playbackObserver: AnyCancellable?
@@ -335,14 +336,22 @@ final class AppModel: ObservableObject {
         }
     }
     /// 写入新导入的书籍。编码、校验与逐章分句在后台进行，大书导入不阻塞界面。
-    func add(_ book: Book, progress: ReadingProgress = .init()) async throws {
+    func add(_ input: Book, progress: ReadingProgress = .init(), source: EPUBSourceStaging? = nil) async throws {
         try requireWritableLibrary()
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
-        var entry = try await Task.detached(priority: .userInitiated) {
-            try disk.write(book)
-            return ShelfEntry(book: book, progress: progress)
+        guard publicationWrites.insert(input.id).inserted else { throw ReaderError.message("这本书正在保存，请稍后重试。") }
+        defer { publicationWrites.remove(input.id) }
+        let generation = libraryGeneration, captured = owner
+        let prepared = try await Task.detached(priority: .userInitiated) {
+            try disk.prepareImport(input, source: source)
         }.value
+        try Task.checkCancellation(); try checkOwner(captured)
+        guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
+        let book = prepared.book
+        var entry = await Task.detached(priority: .userInitiated) { ShelfEntry(book: book, progress: progress) }.value
+        try Task.checkCancellation(); try checkOwner(captured)
+        guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
         // 同 ID 书被替换（构建 142）：此前新条目会把旧书的书签、划线与听书位置一并清掉。
         // 现在带锚点的标注按新书内容重定位后保留；导入自带进度（备份 JSON，updatedAt > 0）
         // 优先，否则沿用旧阅读进度（同样重定位）；无锚点旧标注原样保留，不钳制写入。
@@ -361,7 +370,7 @@ final class AppModel: ObservableObject {
         var updated = entries.filter { $0.id != book.id }
         updated.insert(entry, at: 0)
         catalogSaveTask?.cancel(); catalogDirty = false
-        try disk.saveCatalog(updated); entries = updated; forget(book.id); remember(book); indexLibrary()
+        try disk.commitImport(prepared, catalog: updated); entries = updated; forget(book.id); remember(book); indexLibrary()
     }
     func scheduleCatalogSave() {
         guard !restoringLibrary else { return }
@@ -435,12 +444,13 @@ final class AppModel: ObservableObject {
     }
     func removeLocal(_ id: String) throws {
         try requireWritableLibrary()
+        guard !publicationWrites.contains(id) else { throw ReaderError.message("这本书正在保存，请稍后重试。") }
         if player.book?.id == id { player.stop() }
         var next = entries
         next.removeAll { $0.id == id }
         catalogSaveTask?.cancel(); catalogDirty = false
-        // Commit catalog first so a failed delete never leaves a missing file listed as readable.
-        try disk?.saveCatalog(next); entries = next; forget(id); try disk?.remove(id)
+        // Roll back catalog, Book and source together if any part of deletion fails.
+        try disk?.remove(id, catalog: next); entries = next; forget(id)
     }
     /// 删除本机副本，并从全部 iCloud 备份快照与进度同步中移除该书。iCloud 失败时本机副本保留，可重试。
     func removeLocalAndICloud(_ id: String) {
@@ -489,14 +499,17 @@ final class AppModel: ObservableObject {
         importReport = ImportReport(items: urls.map { ImportItem(name: $0.lastPathComponent) })
         // 解析中的导入也属于写入事务，防止旧文件在还原完成后才继续提交。
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
-        let captured = owner
+        let captured = owner, generation = libraryGeneration
         var failures: [String] = []
         for (index, url) in urls.enumerated() {
             importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
                 let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.read(url) }.value
-                try checkOwner(captured); try await add(imported.book, progress: imported.progress)
+                try checkOwner(captured)
+                guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
+                try Task.checkCancellation()
+                try await add(imported.book, progress: imported.progress, source: imported.source)
                 importReport?.items[index].state = .imported(imported.book.id)
             } catch {
                 let reason = error is DecodingError ? "文件内容无法解析，可能已损坏或不是有效的听页备份。请重新下载原文件后再导入。" : error.localizedDescription
@@ -548,6 +561,8 @@ final class AppModel: ObservableObject {
     func markChapters(_ id: String, chapters: Set<Int>, read: Bool) async throws {
         try requireWritableLibrary()
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
+        guard publicationWrites.insert(id).inserted else { throw ReaderError.message("这本书正在保存，请稍后重试。") }
+        defer { publicationWrites.remove(id) }
         guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
         var value = try await loadBook(id)
         var marked = Set(value.fields["nativeReadChapters"]?.array?.compactMap(\.int) ?? [])
@@ -560,21 +575,27 @@ final class AppModel: ObservableObject {
     func repair(_ id: String, from url: URL) async throws {
         try requireWritableLibrary()
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
-        let captured = owner
+        let captured = owner, generation = libraryGeneration
+        guard publicationWrites.insert(id).inserted else { throw ReaderError.message("这本书正在保存，请稍后重试。") }
+        defer { publicationWrites.remove(id) }
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-        var value = try await Task.detached { try BookImporter.read(url).book }.value
+        let imported = try await Task.detached { try BookImporter.read(url) }.value
+        var value = imported.book
         try checkOwner(captured)
         guard value.format.caseInsensitiveCompare(row.format) == .orderedSame else { throw ReaderError.message("请选择与原书相同格式的文件。") }
         value.fields["id"] = .string(id)
         let old = try await loadBook(id)
         for key in ["nativeReadChapters", "category"] { if let field = old.fields[key] { value.fields[key] = field } }
-        // 大书的整本编码与逐章分句放后台，避免阻塞界面。
-        let counts = try await Task.detached(priority: .userInitiated) { [disk] in
-            try disk?.write(value)
-            return value.chapters.map { Sentence.split($0.text).count }
+        guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
+        let replacement = value
+        let (prepared, counts) = try await Task.detached(priority: .userInitiated) {
+            let prepared = try disk.prepareImport(replacement, source: imported.source, origin: .repaired)
+            return (prepared, replacement.chapters.map { Sentence.split($0.text).count })
         }.value
-        forget(id); remember(value); indexLibrary()
+        value = prepared.book
+        try Task.checkCancellation(); try checkOwner(captured)
+        guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
         if let index = entries.firstIndex(where: { $0.id == id }) {
             var next = entries; next[index].title = value.title; next[index].author = value.author; next[index].chapterCount = value.chapters.count
             next[index].sentenceCounts = counts
@@ -600,7 +621,8 @@ final class AppModel: ObservableObject {
                 next[index].highlights = Locator.relocated(highlights, in: value)
             }
             catalogSaveTask?.cancel(); catalogDirty = false
-            try disk?.saveCatalog(next); entries = next
+            try disk.commitImport(prepared, catalog: next); entries = next
+            forget(id); remember(value); indexLibrary()
         }
         if player.book?.id == id { player.stop() }
         notify("书籍内容与封面已修复，书籍标识、书签和阅读进度已保留。")
@@ -609,6 +631,8 @@ final class AppModel: ObservableObject {
     func resplit(_ id: String) async throws {
         try requireWritableLibrary()
         activeBookWrites += 1; defer { activeBookWrites -= 1 }
+        guard publicationWrites.insert(id).inserted else { throw ReaderError.message("这本书正在保存，请稍后重试。") }
+        defer { publicationWrites.remove(id) }
         guard let row = entries.first(where: { $0.id == id }), row.format.uppercased() == "TXT" else {
             throw ReaderError.message("只有 TXT 书籍可以重新分章。")
         }

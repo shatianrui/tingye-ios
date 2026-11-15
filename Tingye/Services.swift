@@ -585,6 +585,19 @@ enum CloudSpeech {
     }
 }
 
+private struct PublicationWriteJournal: Codable {
+    let id: String
+    let previous: [String: Bool]
+}
+
+final class PreparedPublicationWrite: @unchecked Sendable {
+    let book: Book
+    let directory: URL
+    var journalOwnsDirectory = false
+    init(book: Book, directory: URL) { self.book = book; self.directory = directory }
+    deinit { if !journalOwnsDirectory { try? FileManager.default.removeItem(at: directory) } }
+}
+
 struct LibraryDisk: Sendable {
     let root: URL
     init(owner: String, base: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]) throws {
@@ -597,6 +610,7 @@ struct LibraryDisk: Sendable {
             else { try? FileManager.default.removeItem(at: rollback) }
         }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Self.recoverPublications(root: root)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("Books"), withIntermediateDirectories: true)
     }
     func file(_ id: String) throws -> URL {
@@ -609,9 +623,184 @@ struct LibraryDisk: Sendable {
         return try JSONDecoder().decode([ShelfEntry].self, from: Data(contentsOf: url))
     }
     func saveCatalog(_ entries: [ShelfEntry]) throws { try Integrity.encoder().encode(entries).write(to: root.appendingPathComponent("catalog.json"), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
-    func write(_ book: Book) throws { try Integrity.encoder().encode(book.validated()).write(to: file(book.id), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
+    func write(_ book: Book) throws {
+        // Ordinary text-state writes retain a verified, matching source. Replacements without
+        // that descriptor must isolate the previous original, including legacy restore callers.
+        let old = try? read(book.id)
+        let retainedSource = book.epubSource == nil ? true : (try sourceURL(for: book)) != nil
+        if old?.epubSource == book.epubSource, retainedSource {
+            try Integrity.encoder().encode(book.validated()).write(to: file(book.id), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        } else {
+            try commitImport(prepareImport(book, source: nil))
+        }
+    }
     func read(_ id: String) throws -> Book { try JSONDecoder().decode(Book.self, from: Data(contentsOf: file(id))).validated() }
-    func remove(_ id: String) throws { let url = try file(id); if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }; removeIndex(id) }
+    func remove(_ id: String, catalog: [ShelfEntry]? = nil) throws {
+        let fm = FileManager.default, book = try file(id), publication = try publicationDirectory(id), epoch = try publicationCacheEpochURL(id)
+        let stage = root.appendingPathComponent(".PublicationTransactions").appendingPathComponent(UUID().uuidString)
+        try fm.createDirectory(at: stage, withIntermediateDirectories: true)
+        var journalOwnsStage = false
+        defer { if !journalOwnsStage { try? fm.removeItem(at: stage) } }
+        var previous: [String: Bool] = [:]
+        let targets: [(String, URL)] = [("book", book), ("publication", publication), ("epoch", epoch)]
+            + (catalog == nil ? [] : [("catalog", root.appendingPathComponent("catalog.json"))])
+        for (name, url) in targets {
+            previous[name] = fm.fileExists(atPath: url.path)
+            if previous[name] == true { try Self.backupPublicationItem(url, to: stage.appendingPathComponent("old-" + name)) }
+        }
+        let journal = PublicationWriteJournal(id: id, previous: previous)
+        try JSONEncoder().encode(journal).write(to: stage.appendingPathComponent("journal.json"), options: .atomic)
+        journalOwnsStage = true
+        do {
+            for url in [publication, book, epoch] where fm.fileExists(atPath: url.path) { try fm.removeItem(at: url) }
+            if let catalog { try saveCatalog(catalog) }
+            try Data().write(to: stage.appendingPathComponent("committed"), options: .atomic)
+        } catch {
+            try Self.rollbackPublication(journal, stage: stage, root: root)
+            try? fm.removeItem(at: stage)
+            throw error
+        }
+        try? fm.removeItem(at: stage)
+        removeIndex(id)
+    }
+
+    var publicationsDirectory: URL { root.appendingPathComponent("Publications", isDirectory: true) }
+    func publicationDirectory(_ id: String) throws -> URL {
+        guard Book.validID(id) else { throw ReaderError.message("书籍标识无效。") }
+        return publicationsDirectory.appendingPathComponent(id, isDirectory: true)
+    }
+    private func publicationCacheEpochURL(_ id: String) throws -> URL {
+        guard Book.validID(id) else { throw ReaderError.message("书籍标识无效。") }
+        return root.appendingPathComponent(".PublicationCacheEpochs").appendingPathComponent(id)
+    }
+    func publicationCacheEpoch(_ id: String) throws -> String {
+        let url = try publicationCacheEpochURL(id)
+        guard FileManager.default.fileExists(atPath: url.path) else { return "legacy" }
+        let value = try String(contentsOf: url, encoding: .utf8)
+        guard UUID(uuidString: value) != nil else { throw ReaderError.message("Publication 缓存版本无效。") }
+        return value
+    }
+    func sourceURL(for book: Book) throws -> URL? {
+        guard book.format.uppercased() == "EPUB", let source = book.epubSource, source.isValid(for: book.id) else { return nil }
+        let url = root.appendingPathComponent(source.relativePath)
+        let sidecar = try publicationDirectory(book.id).appendingPathComponent("source.json")
+        guard let saved = try? JSONDecoder().decode(EPUBSource.self, from: Data(contentsOf: sidecar)), saved == source,
+              (try? PublicationDigest.file(url)) == source.sha256 else { return nil }
+        return url
+    }
+
+    /// Staging contains complete replacement files; no live library file is touched here.
+    /// JSON imports deliberately discard any path-only source descriptor (attachments arrive in unit 4).
+    func prepareImport(_ input: Book, source: EPUBSourceStaging?, origin: EPUBSource.Origin = .imported) throws -> PreparedPublicationWrite {
+        var book = try input.validated()
+        book.epubSource = nil
+        if book.format.uppercased() == "EPUB", let source {
+            book.epubSource = EPUBSource(relativePath: EPUBSource.path(book.id), sha256: source.sha256,
+                                         origin: origin, mappingVersion: EPUBSource.currentMappingVersion)
+        }
+        let directory = root.appendingPathComponent(".PublicationTransactions").appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let prepared = PreparedPublicationWrite(book: book, directory: directory)
+        try Integrity.encoder().encode(book).write(to: directory.appendingPathComponent("new-book.json"), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        try Data(UUID().uuidString.utf8).write(to: directory.appendingPathComponent("new-epoch"), options: .atomic)
+        if let metadata = book.epubSource, let source {
+            let publication = directory.appendingPathComponent("new-publication")
+            try FileManager.default.createDirectory(at: publication, withIntermediateDirectories: true)
+            let copied = publication.appendingPathComponent("source.epub")
+            try FileManager.default.copyItem(at: source.url, to: copied)
+            guard try PublicationDigest.file(copied) == metadata.sha256 else { throw ReaderError.message("EPUB 原文件校验失败。") }
+            try Integrity.encoder().encode(metadata).write(to: publication.appendingPathComponent("source.json"), options: .atomic)
+        }
+        return prepared
+    }
+
+    /// Called without suspension after AppModel's owner/generation checks. Backup + recovery journal
+    /// covers Book, source/sidecar and catalog together, including process interruption between renames.
+    func commitImport(_ prepared: PreparedPublicationWrite, catalog: [ShelfEntry]? = nil) throws {
+        let fm = FileManager.default, stage = prepared.directory, id = prepared.book.id
+        let bookURL = try file(id), publication = try publicationDirectory(id), catalogURL = root.appendingPathComponent("catalog.json"), epochURL = try publicationCacheEpochURL(id)
+        let targets: [(String, URL)] = [("book", bookURL), ("publication", publication), ("epoch", epochURL)] + (catalog == nil ? [] : [("catalog", catalogURL)])
+        var previous: [String: Bool] = [:]
+        for (name, url) in targets {
+            previous[name] = fm.fileExists(atPath: url.path)
+            if previous[name] == true { try Self.backupPublicationItem(url, to: stage.appendingPathComponent("old-" + name)) }
+        }
+        let journal = PublicationWriteJournal(id: id, previous: previous)
+        try JSONEncoder().encode(journal).write(to: stage.appendingPathComponent("journal.json"), options: .atomic)
+        // From this point the on-disk journal owns cleanup until commit/rollback finishes.
+        prepared.journalOwnsDirectory = true
+        do {
+            if fm.fileExists(atPath: publication.path) { try fm.removeItem(at: publication) }
+            let replacement = stage.appendingPathComponent("new-publication")
+            if fm.fileExists(atPath: replacement.path) {
+                try fm.createDirectory(at: publicationsDirectory, withIntermediateDirectories: true)
+                try fm.moveItem(at: replacement, to: publication)
+            }
+            try fm.createDirectory(at: epochURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(contentsOf: stage.appendingPathComponent("new-epoch")).write(to: epochURL, options: .atomic)
+            let newBook = stage.appendingPathComponent("new-book.json")
+            if fm.fileExists(atPath: bookURL.path) { _ = try fm.replaceItemAt(bookURL, withItemAt: newBook) }
+            else { try fm.moveItem(at: newBook, to: bookURL) }
+            if let catalog { try saveCatalog(catalog) }
+            try Data().write(to: stage.appendingPathComponent("committed"), options: .atomic)
+        } catch {
+            // Keep the journal if rollback itself fails; next LibraryDisk initialization retries it.
+            try Self.rollbackPublication(journal, stage: stage, root: root)
+            try? fm.removeItem(at: stage)
+            throw error
+        }
+        try? fm.removeItem(at: stage)
+        // Derived files are content-addressed; the new descriptor/snapshot selects a new revision.
+        // Old files can be reclaimed by PublicationStore when no session pins them.
+        removeIndex(id)
+    }
+
+    /// Live files are immutable and always replaced atomically. Hard links avoid copying an
+    /// entire image-heavy JSON/source on the main actor during the short commit window.
+    private static func backupPublicationItem(_ source: URL, to destination: URL) throws {
+        let fm = FileManager.default
+        let values = try source.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        if values.isDirectory == true, values.isSymbolicLink != true {
+            try fm.createDirectory(at: destination, withIntermediateDirectories: true)
+            for child in try fm.contentsOfDirectory(at: source, includingPropertiesForKeys: nil) {
+                try backupPublicationItem(child, to: destination.appendingPathComponent(child.lastPathComponent))
+            }
+        } else {
+            do { try fm.linkItem(at: source, to: destination) }
+            catch { try fm.copyItem(at: source, to: destination) }
+        }
+    }
+
+    private static func rollbackPublication(_ journal: PublicationWriteJournal, stage: URL, root: URL) throws {
+        guard Book.validID(journal.id) else { throw ReaderError.message("Publication 事务标识无效。") }
+        let fm = FileManager.default
+        for name in ["publication", "book", "catalog", "epoch"] where journal.previous[name] != nil {
+            let target: URL
+            switch name {
+            case "book": target = root.appendingPathComponent("Books/" + journal.id + ".json")
+            case "publication": target = root.appendingPathComponent("Publications/" + journal.id)
+            case "epoch": target = root.appendingPathComponent(".PublicationCacheEpochs/" + journal.id)
+            default: target = root.appendingPathComponent("catalog.json")
+            }
+            if fm.fileExists(atPath: target.path) { try fm.removeItem(at: target) }
+            if journal.previous[name] == true {
+                try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try fm.copyItem(at: stage.appendingPathComponent("old-" + name), to: target)
+            }
+        }
+    }
+    private static func recoverPublications(root: URL) throws {
+        let fm = FileManager.default, directory = root.appendingPathComponent(".PublicationTransactions")
+        guard fm.fileExists(atPath: directory.path) else { return }
+        for stage in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+            if !fm.fileExists(atPath: stage.appendingPathComponent("committed").path),
+               fm.fileExists(atPath: stage.appendingPathComponent("journal.json").path) {
+                let journal = try JSONDecoder().decode(PublicationWriteJournal.self, from: Data(contentsOf: stage.appendingPathComponent("journal.json")))
+                try rollbackPublication(journal, stage: stage, root: root)
+            }
+            try fm.removeItem(at: stage)
+        }
+    }
 
     /// 书架索引缓存（分类与封面缩略图）：重启后直接读取，免得每次启动都解码整本书（多图 EPUB 可达上百 MB）。
     struct IndexCache: Codable, Sendable { var category: String?; var hasCover: Bool }

@@ -52,6 +52,51 @@ struct Chapter: Codable, Equatable, Sendable {
     func encode(to encoder: Encoder) throws { try fields.encode(to: encoder) }
 }
 
+/// Only relative library paths are persisted. Missing/invalid metadata falls back to rebuilding JSON.
+struct EPUBSource: Codable, Equatable, Sendable {
+    enum Origin: String, Codable, Sendable { case imported, repaired }
+    var relativePath: String
+    var sha256: String
+    var origin: Origin
+    var mappingVersion: Int
+    static let currentMappingVersion = 1
+    static func path(_ id: String) -> String { "Publications/\(id)/source.epub" }
+    func isValid(for id: String) -> Bool {
+        Book.validID(id) && relativePath == Self.path(id)
+            && sha256.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil
+            && mappingVersion > 0
+    }
+}
+
+/// Owns a private copy made while the importer still has security-scoped access.
+/// The last reference removes it on success, cancellation, or failure (including standalone importer tests).
+final class EPUBSourceStaging: @unchecked Sendable {
+    let directory: URL
+    let url: URL
+    let sha256: String
+    init(copying source: URL) throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-epub-" + UUID().uuidString)
+        let url = directory.appendingPathComponent("source.epub")
+        self.directory = directory; self.url = url
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.copyItem(at: source.resolvingSymlinksInPath(), to: url)
+            sha256 = try PublicationDigest.file(url)
+        } catch { try? FileManager.default.removeItem(at: directory); throw error }
+    }
+    deinit { try? FileManager.default.removeItem(at: directory) }
+}
+
+enum PublicationDigest {
+    static func data(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+    static func file(_ url: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }
+        var hash = SHA256()
+        while let chunk = try handle.read(upToCount: 1024 * 1024), !chunk.isEmpty { hash.update(data: chunk) }
+        return hash.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 struct Book: Codable, Identifiable, Equatable, Sendable {
     var fields: [String: JSONValue] { didSet { chapters = Self.chapters(in: fields) } }
     /// 章节数组随 `fields` 更新一次性生成：界面每次刷新都会读它，现算会为几千章的书反复分配整个数组。
@@ -63,6 +108,18 @@ struct Book: Codable, Identifiable, Equatable, Sendable {
     var title: String { fields["title"]?.string ?? "未命名" }
     var author: String { fields["author"]?.string ?? "佚名" }
     var format: String { fields["format"]?.string ?? "TXT" }
+    var epubSource: EPUBSource? {
+        get {
+            guard let raw = fields["epubSource"], let data = try? JSONEncoder().encode(raw),
+                  let source = try? JSONDecoder().decode(EPUBSource.self, from: data), source.isValid(for: id) else { return nil }
+            return source
+        }
+        set {
+            if let newValue, let data = try? JSONEncoder().encode(newValue),
+               let raw = try? JSONDecoder().decode(JSONValue.self, from: data) { fields["epubSource"] = raw }
+            else { fields.removeValue(forKey: "epubSource") }
+        }
+    }
     var color: String { fields["color"]?.string ?? "green" }
     var sample: Bool { fields["sample"]?.bool ?? id.hasPrefix("sample-") }
     var pdf: Data? { fields["pdf"]?.string.flatMap { Data(base64Encoded: $0, options: .ignoreUnknownCharacters) } }

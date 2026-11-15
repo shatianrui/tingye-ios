@@ -1,0 +1,48 @@
+{
+  "id": "readium-legacy-fixture",
+  "title": "听页存量重建夹具",
+  "author": "听页测试",
+  "format": "EPUB",
+  "language": "zh-CN",
+  "description": "原创测试夹具，多章、body 残壳、重复路径、封面及缺失依赖。",
+  "resources": {
+    "r0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGM4kGAARAwQCgAnDgVBIdqHkgAAAABJRU5ErkJggg==",
+    "r1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGM4kGAARAwQCgAnDgVBIdqHkgAAAABJRU5ErkJggg=="
+  },
+  "cover": "tingye-resource:r0",
+  "chapters": [
+    {
+      "title": "第一章 山页",
+      "text": "第一章 山页\n山中有一页。\n去往第二章。",
+      "nativeImages": [
+        "tingye-resource:r1"
+      ],
+      "document": {
+        "path": "OEBPS/中文/第一章.xhtml",
+        "html": "<body class=\"publisher\"><h1 id=\"start\">第一章 山页</h1><p>山中有一页。<br>图在这里<img src=\"tingye-resource:r1\" alt=\"测试图\"></p><a href=\"第二章.xhtml#end\">去往第二章</a></body>",
+        "css": "body { color: #333; } p { margin: 1em; background-image: url(tingye-resource:r1); } @font-face {font-family: gone; src: url(lost.woff);} @import \"missing.css\";"
+      }
+    },
+    {
+      "title": "第二章 水页",
+      "text": "第二章 水页\n水中有两页。",
+      "nativeImages": [],
+      "document": {
+        "path": "OEBPS/中文/第二章.xhtml",
+        "html": "<h1>第二章 水页</h1><p id=\"end\">水中有两页。 &amp; 继续。</p><img src=\"lost.jpg\" alt=\"缺失插图\"><a href=\"第一章.xhtml#start\">回到山页</a><script>bad()</script>",
+        "css": "p { background: url(https://example.invalid/missing.png); }"
+      }
+    },
+    {
+      "title": "第三章 旧文",
+      "text": "只有文本与图片的旧章节。\n这段文字仍然可以听书和搜索。",
+      "nativeImages": [
+        "tingye-resource:r0"
+      ],
+      "document": {
+        "path": "OEBPS/中文/第一章.xhtml",
+        "css": ""
+      }
+    }
+  ]
+}

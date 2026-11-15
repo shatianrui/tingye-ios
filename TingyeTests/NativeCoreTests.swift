@@ -1460,7 +1460,7 @@ private final class MemoryKeyValueStore: ProgressKeyValueStore {
 
 // MARK: - 1.14 书库、书源、阅读与听书增强
 
-import ZIPFoundation
+import ReadiumZIPFoundation
 
 extension NativeCoreTests {
     func testPalmDOCDecompressionHandlesLiteralsSpacesAndBackReferences() {
@@ -1542,10 +1542,10 @@ extension NativeCoreTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-comic.cbz")
         try? FileManager.default.removeItem(at: url)
         defer { try? FileManager.default.removeItem(at: url) }
-        let archive = try Archive(url: url, accessMode: .create)
+        let archive = try SafeArchive.blocking { try await Archive(url: url, accessMode: .create) }
         for name in ["10.png", "2.png", "1.png", "__MACOSX/._1.png", "readme.txt"] {
             let data = name.hasSuffix(".txt") ? Data("hi".utf8) : png
-            try archive.addEntry(with: name, type: .file, uncompressedSize: Int64(data.count)) { position, size in data.subdata(in: Int(position)..<Int(position) + size) }
+            try SafeArchive.blocking { try await archive.addEntry(with: name, type: .file, uncompressedSize: Int64(data.count)) { position, size in data.subdata(in: Int(position)..<Int(position) + size) } }
         }
         let book = try BookImporter.read(url).book
         XCTAssertEqual(book.format, "CBZ")
