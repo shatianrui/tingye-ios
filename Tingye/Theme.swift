@@ -849,17 +849,34 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
     var name: String {
         ["paper": "默认", "mist": "雾灰", "ancient": "旧书", "eink": "浅灰", "white": "纯白", "blue": "深蓝", "night": "夜读"][rawValue] ?? rawValue
     }
-    var swatch: Color {
-        switch self {
-        case .paper:   Self.paperColor(0xFAF9F5, 0x141413)
-        case .mist:    Self.paperColor(0xE6EBF1, 0x1D2733)
-        case .ancient: Self.paperColor(0xF3E7D6, 0x2A2118)
-        case .eink:    Self.paperColor(0xF0F0F0, 0x1E1E1E)
-        case .white:   Self.paperColor(0xFFFFFF, 0x000000)
-        case .blue:    Self.paperColor(0x1A2C3A, 0x1A2C3A)
-        case .night:   Self.paperColor(0x101012, 0x101012)
-        }
+    /// PLAN 4.2 的实际色值；原生动态色和 Readium 快照共用同一决策。
+    struct Palette: Equatable {
+        let background: UInt32
+        let foreground: UInt32
+        let secondary: UInt32
+        let isDark: Bool
     }
+    func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
+        let night = darkAppearance && !alwaysLight
+        let values: (UInt32, UInt32, UInt32)
+        switch self {
+        case .paper: values = night ? (0x141413, 0xEFEDE6, 0x99968A) : (0xFAF9F5, 0x1C1B18, 0x6E6A5A)
+        case .mist: values = night ? (0x1D2733, 0xD8E2EC, 0x93A3B5) : (0xE6EBF1, 0x14181F, 0x666666)
+        case .ancient: values = night ? (0x2A2118, 0xEAD9BE, 0xB39B78) : (0xF3E7D6, 0x2C2418, 0x6E5F4B)
+        case .eink: values = night ? (0x1E1E1E, 0xE8E8E8, 0xA8A8A8) : (0xF0F0F0, 0x242424, 0x666666)
+        case .white: values = night ? (0x000000, 0xEFEFEA, 0xA9A9A2) : (0xFFFFFF, 0x14181F, 0x666666)
+        case .blue: values = (0x1A2C3A, 0xD5E4F0, 0x8AA0B4)
+        case .night: values = (0x101012, 0xEFEDE6, 0xA5A296)
+        }
+        return Palette(background: values.0, foreground: values.1, secondary: values.2, isDark: dark || night)
+    }
+    func color(_ key: KeyPath<Palette, UInt32>) -> Color {
+        Color(UIColor { traits in
+            UIColor(hex: self.resolve(darkAppearance: traits.userInterfaceStyle == .dark,
+                                      alwaysLight: UserDefaults.standard.bool(forKey: "study.paperAlwaysLight"))[keyPath: key])
+        })
+    }
+    var swatch: Color { color(\.background) }
     var dark: Bool { self == .blue || self == .night }
     /// 纸族动态色：随外观取日/夜成对值；「浅纸常亮」（study.paperAlwaysLight）开启时锁定日间值。
     static func paperColor(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -868,8 +885,8 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
             return UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
         })
     }
-    static let xuan = Self.paperColor(0xFAF9F5, 0x141413)
-    static let xuanSecondary = Theme.ink3
+    static let xuan = ReaderPaper.paper.color(\.background)
+    static let xuanSecondary = ReaderPaper.paper.color(\.secondary)
 }
 
 struct ReaderPreferences: Equatable {
@@ -887,30 +904,9 @@ struct ReaderPreferences: Equatable {
     /// 简繁转换：none / s2t（简→繁）/ t2s（繁→简）
     var convert = "none"
     var kind: ReaderPaper { ReaderPaper(rawValue: paper) ?? .paper }
-    /// 默认纸色跟随外观；用户选择的其他纸色保持原样。
-    var background: Color { paper == "paper" ? ReaderPaper.xuan : kind.swatch }
-    var foreground: Color {
-        switch kind {
-        case .mist:    return ReaderPaper.paperColor(0x14181F, 0xD8E2EC)
-        case .ancient: return ReaderPaper.paperColor(0x2C2418, 0xEAD9BE)
-        case .eink:    return ReaderPaper.paperColor(0x242424, 0xE8E8E8)
-        case .white:   return ReaderPaper.paperColor(0x14181F, 0xEFEFEA)
-        case .blue:    return Color(hex: 0xD5E4F0)
-        case .night:   return Color(hex: 0xEFEDE6)
-        case .paper:   return Theme.ink
-        }
-    }
-    var secondary: Color {
-        switch kind {
-        case .mist:    return ReaderPaper.paperColor(0x666666, 0x93A3B5)
-        case .ancient: return ReaderPaper.paperColor(0x6E5F4B, 0xB39B78)
-        case .eink:    return ReaderPaper.paperColor(0x666666, 0xA8A8A8)
-        case .white:   return ReaderPaper.paperColor(0x666666, 0xA9A9A2)
-        case .blue:    return Color(hex: 0x8AA0B4)
-        case .night:   return Color(hex: 0xA5A296)
-        case .paper:   return ReaderPaper.xuanSecondary
-        }
-    }
+    var background: Color { kind.color(\.background) }
+    var foreground: Color { kind.color(\.foreground) }
+    var secondary: Color { kind.color(\.secondary) }
     /// 原生阅读跟读标记（v29 起统一陶土，日/夜同值），纸色设置不变；透明度规则见 highlight。
     var highlightBand: UIColor { UIColor(hex: 0xD97757) }
     /// 连续滚动模式整句铺底：半透明陶土

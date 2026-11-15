@@ -351,6 +351,7 @@ struct ReaderView: View {
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
     @AppStorage("app.appearance") private var appearance = "system"
+    @AppStorage("study.paperAlwaysLight") private var paperAlwaysLight = false
     /// 自动翻页间隔（秒），0 为关闭；只在本次阅读有效
     @State private var autoTurn = 0
 
@@ -360,7 +361,7 @@ struct ReaderView: View {
     }
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
-    private var isDarkPaper: Bool { prefs.kind.dark || (prefs.kind == .paper && colorScheme == .dark) }
+    private var isDarkPaper: Bool { prefs.kind.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight).isDark }
     /// 控件以当前纸色决定明暗；构建 139 起此色与 Theme.accent 同值（陶土），
     /// 用于正文侧强调（选区面板传参、顶栏书签与正文页眉状态字），
     /// 全 App 不再有钴蓝残留；chrome（底部面板、滑杆、上下章）仍用 Theme 陶土令牌。

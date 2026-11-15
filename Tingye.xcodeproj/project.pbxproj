@@ -72,6 +72,14 @@
 		7DAD836D7B68BD52205F2226 /* PublicationMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3F69C29B0A95321AFE176D; };
 		E6E4B64C306147286FD85246 /* LegacyEPUBBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8427F4B464B173E93B5F4C90; };
 		80EE7426B420AD1363C1B66C /* ReadiumPublicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FFF9AECE6193CFC6B548C4; };
+		70CB9BDE35442479F552225D /* ReaderRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5969E135A8DFD835C08187 /* ReaderRouter.swift */; };
+		24B8229D1F81C77906F7012C /* EPUBNavigatorHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */; };
+		1863220B58CF6D853EB8826C /* ReadiumReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */; };
+		CD9F8B88FF560100DEB8630A /* ReadiumPreferencesBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */; };
+		03D04C3BBB7AC643579A704C /* ReadiumFontProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */; };
+		18EBF78813181429518CF154 /* EPUBDisplayTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */; };
+		6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */; };
+		B82DC5D75AE11EFED3BBA8E0 /* ReadiumNavigator in Frameworks */ = {isa = PBXBuildFile; productRef = 95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -144,6 +152,13 @@
 		BE3F69C29B0A95321AFE176D /* PublicationMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicationMap.swift; sourceTree = "<group>"; };
 		8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyEPUBBuilder.swift; sourceTree = "<group>"; };
 		00FFF9AECE6193CFC6B548C4 /* ReadiumPublicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumPublicationTests.swift; sourceTree = "<group>"; };
+		FB5969E135A8DFD835C08187 /* ReaderRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderRouter.swift; sourceTree = "<group>"; };
+		72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBNavigatorHost.swift; sourceTree = "<group>"; };
+		38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumReaderView.swift; sourceTree = "<group>"; };
+		BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumPreferencesBridge.swift; sourceTree = "<group>"; };
+		CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumFontProvider.swift; sourceTree = "<group>"; };
+		001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBDisplayTransform.swift; sourceTree = "<group>"; };
+		E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumPreferencesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +181,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B82DC5D75AE11EFED3BBA8E0 /* ReadiumNavigator in Frameworks */,
 				A73403E3E1E62BB83CF8D78D /* ReadiumZIPFoundation in Frameworks */,
 				71F703DDB5BED7A3C54499E7 /* ReadiumShared in Frameworks */,
 				DA453AB3B8F3B62BC16CD003 /* Foundation.framework in Frameworks */,
@@ -249,6 +265,7 @@
 		5D763E0B084300393DBF327E /* TingyeTests */ = {
 			isa = PBXGroup;
 			children = (
+				E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */,
 				00FFF9AECE6193CFC6B548C4 /* ReadiumPublicationTests.swift */,
 				7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */,
 				A839E16D3CC3AB497E0E251A /* Fixtures */,
@@ -285,7 +302,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
+		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */, CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */, BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */, 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */, 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */, FB5969E135A8DFD835C08187 /* ReaderRouter.swift */, A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -315,6 +332,7 @@
 			);
 			packageProductDependencies = (
 				6FE489BB458EF17E5D382BBF /* ReadiumZIPFoundation */,
+				95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */,
 				7F2766429B7B9CC3B70F43A2 /* ReadiumShared */,
 			);
 			name = TingyeTests;
@@ -426,6 +444,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */,
 				80EE7426B420AD1363C1B66C /* ReadiumPublicationTests.swift in Sources */,
 				B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */,
 			);
@@ -438,6 +457,12 @@
 				E6E4B64C306147286FD85246 /* LegacyEPUBBuilder.swift in Sources */,
 				7DAD836D7B68BD52205F2226 /* PublicationMap.swift in Sources */,
 				7AB789C76E9D9022F2BD0A16 /* PublicationStore.swift in Sources */,
+				70CB9BDE35442479F552225D /* ReaderRouter.swift in Sources */,
+				24B8229D1F81C77906F7012C /* EPUBNavigatorHost.swift in Sources */,
+				1863220B58CF6D853EB8826C /* ReadiumReaderView.swift in Sources */,
+				CD9F8B88FF560100DEB8630A /* ReadiumPreferencesBridge.swift in Sources */,
+				03D04C3BBB7AC643579A704C /* ReadiumFontProvider.swift in Sources */,
+				18EBF78813181429518CF154 /* EPUBDisplayTransform.swift in Sources */,
 				A7E3E313B999A5800F2326F4 /* ReadiumService.swift in Sources */,
 				66E47CFD1A5399FEAB44C89B /* AppModel.swift in Sources */,
 				A11111111111111111111111 /* ICloudBackup.swift in Sources */,
@@ -821,6 +846,7 @@
 		64D2F619EF9DA078647BD841 /* SwiftSoup */ = {isa = XCSwiftPackageProductDependency; package = 11D452ADCA43E69068C7D770; productName = SwiftSoup; };
 		7F2766429B7B9CC3B70F43A2 /* ReadiumShared */ = {isa = XCSwiftPackageProductDependency; package = 9132BE6BE3494C6A8D3F5E83; productName = ReadiumShared; };
 		6FE489BB458EF17E5D382BBF /* ReadiumZIPFoundation */ = {isa = XCSwiftPackageProductDependency; package = 1E964A218AB648A323745C7F; productName = ReadiumZIPFoundation; };
+		95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */ = {isa = XCSwiftPackageProductDependency; package = 9132BE6BE3494C6A8D3F5E83; productName = ReadiumNavigator; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 10A97ADF49E2D26FD1505CC9 /* Project object */;

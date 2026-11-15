@@ -1,6 +1,202 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "正在打开 EPUB…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening EPUB…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB を開いています…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在打开 EPUB…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在開啟 EPUB…"
+          }
+        }
+      }
+    },
+    "EPUB 打开失败": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t open EPUB"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB を開けませんでした"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 打开失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 開啟失敗"
+          }
+        }
+      }
+    },
+    "阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your reading position and notes are saved. Try again, or return to the shelf and repair the book file."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読書位置とメモは保存されています。再試行するか、本棚に戻って本のファイルを修復してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閱讀位置和摘記已保留。可重試，或返回書架透過修書補齊檔案。"
+          }
+        }
+      }
+    },
+    "EPUB 使用标准翻页；简繁转换尚未支持，设置值会保留。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB uses standard page turns. Simplified/traditional Chinese conversion is not yet supported; your settings are saved."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB は標準のページめくりを使用します。簡体字・繁体字変換は未対応ですが、設定は保存されます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 使用标准翻页；简繁转换尚未支持，设置值会保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 使用標準翻頁；簡繁轉換尚未支援，設定值會保留。"
+          }
+        }
+      }
+    },
+    "无法将当前章节映射到 EPUB 资源。阅读位置已保留，请用修书补齐原文件后重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This chapter could not be matched to an EPUB resource. Your reading position is saved. Repair the book with the original file, then try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この章に対応する EPUB リソースが見つかりません。読書位置は保存されています。元のファイルで本を修復してから再試行してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法将当前章节映射到 EPUB 资源。阅读位置已保留，请用修书补齐原文件后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法將目前章節對應到 EPUB 資源。閱讀位置已保留，請用修書補齊原檔案後重試。"
+          }
+        }
+      }
+    },
+    "EPUB 打开已取消，请重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening EPUB was canceled. Please try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB を開く操作がキャンセルされました。再試行してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 打开已取消，请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB 開啟已取消，請重試。"
+          }
+        }
+      }
+    },
+    "无法跳到所选章节，请重试或选择目录中的其他章节。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t open the selected chapter. Try again or choose another chapter from the contents."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択した章を開けませんでした。再試行するか、目次から別の章を選んでください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法跳到所选章节，请重试或选择目录中的其他章节。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法跳到所選章節，請重試或選擇目錄中的其他章節。"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "localizations": {
         "en": {

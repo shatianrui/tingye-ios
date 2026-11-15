@@ -26,6 +26,26 @@ struct PublicationMap: Codable, Equatable, Sendable {
                                originalPath: path, resourceRoot: "EPUB/images/")
         }
     }
+    /// 原包不能按文本章下标硬对齐 spine：旧导入曾跳过非线性/空资源。
+    /// 本单元只用路径或唯一标题提供资源映射；模糊全文消歧留单元 3。
+    init(book: Book, readingOrder: [String], titles: [String: String], revision: String) {
+        version = Self.schemaVersion
+        generatorVersion = 0
+        contentHash = revision
+        publicationRevision = revision
+        chapters = book.chapters.enumerated().compactMap { index, chapter in
+            let original = chapter.fields["document"]?.object?["path"]?.string
+            let byPath = original.flatMap(Self.normalized).flatMap { path in
+                readingOrder.first { Self.normalized($0) == path }
+            }
+            let title = chapter.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let byTitle = readingOrder.filter { href in
+                !title.isEmpty && titles[href]?.trimmingCharacters(in: .whitespacesAndNewlines) == title
+            }
+            guard let href = byPath ?? (byTitle.count == 1 ? byTitle.first : nil) else { return nil }
+            return ChapterLink(chapterIndex: index, href: href, originalPath: original, resourceRoot: "")
+        }
+    }
     func href(for chapter: Int) -> String? { chapters.first { $0.chapterIndex == chapter }?.href }
     func chapter(for href: String) -> Int? {
         guard let path = Self.normalized(href) else { return nil }

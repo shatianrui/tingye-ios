@@ -98,7 +98,7 @@ enum FontLibrary {
 
 /// 我的字体：导入、预览、选用、删除
 struct MyFontsView: View {
-    @AppStorage("reader.font") private var font = "serif"
+    @AppStorage("reader.font") private var font = "system"
     @EnvironmentObject var model: AppModel
     @State private var fonts = FontLibrary.fonts
     @State private var importing = false

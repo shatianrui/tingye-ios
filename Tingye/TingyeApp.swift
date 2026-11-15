@@ -277,8 +277,7 @@ struct StudyRootView: View {
         #endif
         .fullScreenCover(item: $model.selectedBook) { book in
             NavigationStack {
-                if book.fields["comic"]?.bool == true { ComicReaderView(book: book) }
-                else { ReaderView(book: book, player: model.player) }
+                RoutedReaderView(book: book)
             }
                 .environmentObject(model)
                 .tint(Theme.accent)

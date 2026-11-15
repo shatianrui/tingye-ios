@@ -88,6 +88,15 @@ final class AppModel: ObservableObject {
     private var indexTasks: [UUID: Task<Void, Never>] = [:]
     private var playbackObserver: AnyCancellable?
     private(set) var disk: LibraryDisk?
+    private var readiumPublicationStore: PublicationStore?
+    /// 一个书库共享一个 Store；阅读会话持有自己的 pin，不受清缓存/换库影响。
+    func publicationStore() throws -> PublicationStore {
+        if let readiumPublicationStore { return readiumPublicationStore }
+        guard let disk else { throw ReaderError.message("本机书架尚未就绪。") }
+        let store = PublicationStore(disk: disk)
+        readiumPublicationStore = store
+        return store
+    }
     private var cache: [String: Book] = [:]
     /// 锚点生成用的单章分句缓存（构建 142）：进度保存频率高（听书逐句），只留最近一章。
     private var anchorSentenceCache: (key: String, sentences: [Sentence])?
@@ -153,6 +162,7 @@ final class AppModel: ObservableObject {
         for book in Samples.books where !rows.contains(where: { $0.id == book.id }) { try next.write(book); rows.append(LegacyCatalog.row(book: book, metadata: legacyRows[book.id])) }
         try next.saveCatalog(rows)
         if shouldMigrate { try Data("complete".utf8).write(to: migrationMarker, options: .atomic) }
+        readiumPublicationStore = nil
         disk = next; entries = rows
         readingSeconds = UserDefaults.standard.dictionary(forKey: "reading.seconds." + owner) as? [String: Double] ?? [:]
         loadSessions()

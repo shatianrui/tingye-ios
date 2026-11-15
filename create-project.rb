@@ -52,6 +52,7 @@ readium.requirement = { 'kind' => 'exactVersion', 'version' => '3.11.1' }
 project.root_object.package_references << readium
 %w[ReadiumShared ReadiumStreamer ReadiumNavigator].each { |name| link_product(project, app, readium, name) }
 link_product(project, test, readium, 'ReadiumShared')
+link_product(project, test, readium, 'ReadiumNavigator')
 link_product(project, test, package, 'ReadiumZIPFoundation')
 soup = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
 soup.repositoryURL = 'https://github.com/scinfu/SwiftSoup.git'
