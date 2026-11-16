@@ -44,6 +44,26 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertLessThan(element.frame.maxY, done.frame.minY)
     }
 
+    /// 系统路由按钮的标签随语言变化。优先认我们打上的标识，再认常见标签。
+    /// 只在按钮完整落在屏幕内、且不被底部保存栏挡住时返回，避免对屏外元素问 isHittable。
+    private func audioOutput(in app: XCUIApplication, above save: XCUIElement) -> XCUIElement? {
+        let candidates = [
+            app.buttons["voice.audioOutput"],
+            app.buttons["AirPlay"],
+            app.buttons["隔空播放"],
+            app.buttons["选择音频输出设备"],
+        ]
+        for candidate in candidates {
+            guard candidate.exists else { continue }
+            let frame = candidate.frame
+            guard frame.width > 10, frame.height > 10 else { continue }
+            guard app.frame.insetBy(dx: 0, dy: 4).contains(frame) else { continue }
+            if save.exists, frame.maxY > save.frame.minY { continue }
+            return candidate
+        }
+        return nil
+    }
+
     private func originalText(_ text: String, in web: XCUIElement) -> XCUIElement {
         web.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
@@ -685,7 +705,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5), "取消删除应保留书籍")
     }
 
-    func testPlayerToolsAreDirectAndPreservePausedState() {
+    func testPlayerToolsAreDirectAndPreservePausedState() throws {
         let app = launch("player")
         XCTAssertTrue(app.buttons["player.voice"].waitForExistence(timeout: 15))
         let ids = ["player.contents", "player.rate", "player.voice", "player.sleep"]
@@ -694,18 +714,18 @@ final class DesignFlowTests: XCTestCase {
         for id in ids { XCTAssertTrue(app.buttons[id].isHittable) }
         app.buttons["player.voice"].tap()
         XCTAssertTrue(app.navigationBars["声音与朗读"].waitForExistence(timeout: 5))
-        let airplay = app.buttons["AirPlay"]
-        XCTAssertTrue(airplay.waitForExistence(timeout: 5))
         let save = app.buttons["voice.save"]
         let lists = app.collectionViews.allElementsBoundByIndex.filter { $0.frame.height > 200 }
         let list = lists.max { $0.frame.height < $1.frame.height } ?? app
+        // 最后一行是懒加载的，系统按钮标签又会是 AirPlay 或「隔空播放」。先滚到底再按固定标识找。
+        var route = audioOutput(in: app, above: save)
         for _ in 0..<12 {
-            let frame = airplay.frame
-            let aboveSave = !save.exists || frame.maxY <= save.frame.minY
-            if frame.width > 20, frame.height > 20, app.frame.insetBy(dx: 0, dy: 4).contains(frame), aboveSave, airplay.isHittable { break }
+            if let route { break }
             list.swipeUp()
+            route = audioOutput(in: app, above: save)
         }
-        XCTAssertTrue(airplay.isHittable, "音频输出应露在保存栏上方")
+        let found = try XCTUnwrap(route, "音频输出应露在保存栏上方")
+        XCTAssertTrue(found.isHittable, "音频输出应露在保存栏上方")
         screenshot(app, "功能键-声音与播放设备")
         app.buttons["取消声音设置，不保存修改"].tap()
         XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))

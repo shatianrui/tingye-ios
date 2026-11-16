@@ -601,15 +601,36 @@ extension View {
     func keepScreenAwake() -> some View { modifier(KeepAwakeModifier()) }
 }
 
-/// 系统 AirPlay 路由选择按钮
+/// 系统 AirPlay 路由选择按钮。
+/// 内层按钮的系统标签会随语言变成 AirPlay 或「隔空播放」，测试和旁白都认固定标识。
 struct AirPlayButton: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
-        let view = AVRoutePickerView()
+        let view = RoutePickerView()
         view.activeTintColor = UIColor(Theme.accent)
         view.tintColor = UIColor(Theme.ink)
         return view
     }
-    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
+        (uiView as? RoutePickerView)?.markRouteButton()
+    }
+}
+
+private final class RoutePickerView: AVRoutePickerView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        markRouteButton()
+    }
+    func markRouteButton() {
+        markControls(in: self)
+    }
+    private func markControls(in view: UIView) {
+        for child in view.subviews {
+            if let control = child as? UIControl, control.accessibilityIdentifier != "voice.audioOutput" {
+                control.accessibilityIdentifier = "voice.audioOutput"
+            }
+            markControls(in: child)
+        }
+    }
 }
 struct LibraryNavigationHiddenKey: PreferenceKey {
     static let defaultValue = false

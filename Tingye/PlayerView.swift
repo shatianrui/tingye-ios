@@ -768,9 +768,8 @@ struct VoiceSettingsView: View {
                     Text("音频输出").font(.subheadline.weight(.medium))
                     Spacer(minLength: 8)
                     AirPlayButton().frame(width: 44, height: 44)
-                        .accessibilityLabel("选择音频输出设备")
-                        .accessibilityIdentifier("voice.audioOutput")
                 }
+                .accessibilityElement(children: .contain)
             }
             .listRowBackground(Theme.surface)
             // 底部保存栏会盖住最后一行。留出与保存栏相当的滚动余量，AirPlay 才能完整露出来。
