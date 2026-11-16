@@ -60,7 +60,7 @@ struct TxtRulesView: View {
                 TextField("粘贴一段原文试试", text: $sample, axis: .vertical).lineLimit(3...8)
                 ForEach(Array(previewTitles.enumerated()), id: \.offset) { index, title in
                     HStack(spacing: 12) {
-                        Text(String(format: "%02d", index + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.accent).monospacedDigit()
+                        Text(String(format: "%02d", index + 1)).font(Theme.mono(15, weight: .medium)).foregroundStyle(Theme.accent)
                         Text(title).lineLimit(1)
                     }
                 }
