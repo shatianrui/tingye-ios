@@ -55,6 +55,8 @@ enum ReadiumAnnotations {
         return batch
     }
     /// Locate the first visible code point, including when a long paragraph spans several pages.
+    /// Also records `pageEnd`: the exclusive offset of the last code point still on this page,
+    /// so read-aloud can turn as soon as that character has been spoken.
     /// DOM-order traversal works for scrolling, columns and vertical writing; all work is bounded.
     static let visibleRangeScript = #"""
     (() => {
@@ -69,28 +71,54 @@ enum ReadiumAnnotations {
         const peers = Array.from(el.parentElement.children).filter(e => e.tagName === el.tagName);
         return css(el.parentElement) + ' > ' + tag + ':nth-of-type(' + (peers.indexOf(el) + 1) + ')';
       };
+      const point = (node, offset) => {
+        const texts = Array.from(node.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+        return {cssSelector:css(node.parentElement), textNodeIndex:texts.indexOf(node), charOffset:offset};
+      };
+      const afterViewport = range => {
+        const box = range.getBoundingClientRect();
+        return box.left >= innerWidth || box.top >= innerHeight;
+      };
+      const lastVisible = node => {
+        const range = document.createRange();
+        let lo = 0, hi = node.length, answer = -1;
+        while (lo < hi) {
+          let mid = (lo + hi) >> 1;
+          if (mid > 0 && node.data.charCodeAt(mid) >= 0xDC00 && node.data.charCodeAt(mid) <= 0xDFFF) mid--;
+          const size = node.data.codePointAt(mid) > 0xFFFF ? 2 : 1;
+          range.setStart(node, mid); range.setEnd(node, Math.min(node.length, mid + size));
+          if (visible(range)) { answer = mid; lo = mid + size; }
+          else if (afterViewport(range)) hi = mid;
+          else lo = mid + size;
+        }
+        return answer;
+      };
       const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
-      let node, visited = 0;
+      let node, visited = 0, anchor = null, pageEnd = null, seen = false;
       while ((node = walker.nextNode()) && ++visited <= 12000) {
         if (!node.data.trim() || node.parentElement.closest('script,style,noscript,nav')) continue;
         const style = getComputedStyle(node.parentElement);
         if (style.visibility !== 'visible' || style.display === 'none' || style.opacity === '0') continue;
         const range = document.createRange(); range.selectNodeContents(node);
-        if (!visible(range)) continue;
-        let low = 0, high = node.length;
-        while (high - low > 1) {
-          const mid = Math.floor((low + high) / 2);
-          range.setStart(node, low); range.setEnd(node, mid);
-          if (visible(range)) high = mid; else low = mid;
+        if (!visible(range)) { if (seen) break; continue; }
+        const last = lastVisible(node);
+        if (last < 0) { if (seen) break; continue; }
+        seen = true;
+        const size = node.data.codePointAt(last) > 0xFFFF ? 2 : 1;
+        pageEnd = point(node, last + size);
+        if (!anchor) {
+          let low = 0, high = node.length;
+          while (high - low > 1) {
+            const mid = Math.floor((low + high) / 2);
+            range.setStart(node, low); range.setEnd(node, mid);
+            if (visible(range)) high = mid; else low = mid;
+          }
+          if (low && node.data.charCodeAt(low) >= 0xDC00 && node.data.charCodeAt(low) <= 0xDFFF) low--;
+          const end = low + (node.data.codePointAt(low) > 0xFFFF ? 2 : 1);
+          anchor = {start:point(node, low), end:point(node, end)};
         }
-        if (low && node.data.charCodeAt(low) >= 0xDC00 && node.data.charCodeAt(low) <= 0xDFFF) low--;
-        const end = low + (node.data.codePointAt(low) > 0xFFFF ? 2 : 1);
-        const texts = Array.from(node.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
-        const selector = css(node.parentElement), index = texts.indexOf(node);
-        return {start:{cssSelector:selector,textNodeIndex:index,charOffset:low},
-                end:{cssSelector:selector,textNodeIndex:index,charOffset:end}};
       }
-      return null;
+      return anchor ? {start:anchor.start, end:anchor.end, pageEnd} : null;
     })()
     """#
     /// Toolkit's selection carries quote/context; capture the actual range too, to disambiguate repeated text.

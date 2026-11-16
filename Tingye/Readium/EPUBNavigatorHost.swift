@@ -16,6 +16,8 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     var onSelection: (ReadiumShared.Locator, ReadiumAnnotations.SelectionAction) -> Void = { _, _ in }
     var onDecoration: (String) -> Void = { _ in }
     let onLocation: (Int?, ReadiumShared.Locator, UUID?) -> Void
+    /// Last visible character's exclusive DOM point, plus the resource href it belongs to.
+    var onVisibleEnd: (JSONValue, String) -> Void = { _, _ in }
     let onTap: () -> Void
     let onError: (String) -> Void
 
@@ -201,15 +203,22 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                         locations.position = locator.locations.position
                     })
                 }
-                if confirmedRequest == nil,
-                   case .success(let value) = await navigator.evaluateJavaScript(ReadiumAnnotations.visibleRangeScript),
+                if case .success(let value) = await navigator.evaluateJavaScript(ReadiumAnnotations.visibleRangeScript),
                    JSONSerialization.isValidJSONObject(value),
                    let data = try? JSONSerialization.data(withJSONObject: value),
-                   let span = try? JSONDecoder().decode(JSONValue.self, from: data),
-                   var raw = StoredLocator.json(precise)?.object {
-                    var locations = raw["locations"]?.object ?? [:]; locations["domRange"] = span
-                    raw["locations"] = .object(locations)
-                    precise = StoredLocator.readium(.object(raw)) ?? precise
+                   let span = try? JSONDecoder().decode(JSONValue.self, from: data) {
+                    guard !Task.isCancelled, self.navigator === navigator else { return }
+                    if let pageEnd = span.object?["pageEnd"] {
+                        let href = navigator.currentLocation?.href.string ?? precise.href.string
+                        self.parent.onVisibleEnd(pageEnd, href)
+                    }
+                    if confirmedRequest == nil, var raw = StoredLocator.json(precise)?.object {
+                        var stored = span
+                        if var object = stored.object { object.removeValue(forKey: "pageEnd"); stored = .object(object) }
+                        var locations = raw["locations"]?.object ?? [:]; locations["domRange"] = stored
+                        raw["locations"] = .object(locations)
+                        precise = StoredLocator.readium(.object(raw)) ?? precise
+                    }
                 }
                 guard !Task.isCancelled, self.navigator === navigator else { return }
                 let resource = self.parent.publication.readingOrder.firstIndex {

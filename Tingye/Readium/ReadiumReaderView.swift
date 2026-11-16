@@ -150,6 +150,11 @@ struct ReadiumReaderView: View {
     @State private var draft: Highlight?
     @State private var locationTask: Task<Void, Never>?
     @State private var jumpTask: Task<Void, Never>?
+    @State private var visibleEndTask: Task<Void, Never>?
+    @State private var speechPageTask: Task<Void, Never>?
+    @State private var visibleSpeechChapter: Int?
+    @State private var visibleNativeEnd: Int?
+    @State private var speechTurnAttempt: (end: Int, offset: Int)?
     @State private var locationGeneration = UUID()
     @State private var epubPageToken = ""
     @AppStorage("reader.fontSize") private var fontSize = 19.0
@@ -200,6 +205,7 @@ struct ReadiumReaderView: View {
                         speechDecorations: speechDecorations, searchDecorations: searchDecorations,
                         onSelection: selection, onDecoration: activateDecoration,
                         onLocation: locationChanged,
+                        onVisibleEnd: noteVisibleEnd,
                         onTap: { withAnimation(.snappy(duration: 0.25)) { chrome.toggle() } },
                         onError: { session.error = $0; updateVisibility() }
                     )
@@ -257,7 +263,8 @@ struct ReadiumReaderView: View {
         .task(id: retry) { await open() }
         .onDisappear {
             visible = false; updateVisibility(); persist(); model.readerClosed(book.id)
-            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
+            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel()
+            visibleEndTask?.cancel(); speechPageTask?.cancel(); locationGeneration = UUID()
             session.close()
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { persist() } }
@@ -267,7 +274,8 @@ struct ReadiumReaderView: View {
         }
         .task(id: annotationKey) { await refreshAnnotations() }
         .onChange(of: model.publicationGeneration[book.id]) { _, _ in
-            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
+            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel()
+            visibleEndTask?.cancel(); speechPageTask?.cancel(); locationGeneration = UUID()
             ready = false; sheet = nil; draft = nil; session.close(); retry = UUID()
         }
         .onChange(of: convert) { _, _ in
@@ -279,6 +287,9 @@ struct ReadiumReaderView: View {
         }
         .onReceive(model.player.$playing.combineLatest(model.player.$chapter, model.player.$position).receive(on: DispatchQueue.main)) { _ in
             refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position)
+        }
+        .onReceive(model.player.followPublisher.receive(on: DispatchQueue.main)) { _ in
+            turnSpeechPageIfNeeded()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position) }
@@ -444,7 +455,9 @@ struct ReadiumReaderView: View {
     @MainActor private func open() async {
         ready = false; mappedChapter = false
         speechDecorations = []; searchDecorations = []; pendingSearch = nil; speechNavigation = false
-        locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
+        visibleNativeEnd = nil; visibleSpeechChapter = nil; speechTurnAttempt = nil
+        locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel()
+        visibleEndTask?.cancel(); speechPageTask?.cancel(); locationGeneration = UUID()
         request = nil; expectedLocation = nil; expectedChapter = nil; expectedOriginal = nil
         updateVisibility()
         do {
@@ -639,11 +652,64 @@ struct ReadiumReaderView: View {
                 guard visible, session.bridge === bridge, sessionEpoch == model.publicationGeneration[book.id] else { return }
                 speechDecorations = mark.map { [$0] } ?? []
                 if following, sheet != .player, scenePhase == .active {
+                    var destination = locator
+                    var original = result.locator
+                    if let offset = model.player.followOffset,
+                       let page = try await ReadiumSpeechBridge.pageLocator(chapter: c, offset: offset, bridge: bridge, mode: mode) {
+                        destination = page.display
+                        original = page.original ?? original
+                    }
+                    try Task.checkCancellation()
                     speechNavigation = true
-                    expectedOriginal = result.locator; expectedLocation = locator; expectedChapter = result.target.chapter
-                    request = .init(locator: locator)
+                    expectedOriginal = original; expectedLocation = destination; expectedChapter = result.target.chapter
+                    request = .init(locator: destination)
                 }
             } catch is CancellationError {} catch { speechDecorations = [] }
+        }
+    }
+    /// 当前页最后一个可见字的原生偏移。朗读光标越过它时立刻翻页。
+    private func noteVisibleEnd(_ point: JSONValue, _ href: String) {
+        visibleEndTask?.cancel()
+        let mode = convert
+        visibleEndTask = Task { @MainActor in
+            guard let bridge = session.bridge else { return }
+            do {
+                guard let end = try await bridge.nativePageEnd(href: href, pageEnd: point, mode: mode) else { return }
+                try Task.checkCancellation()
+                guard session.bridge === bridge else { return }
+                visibleSpeechChapter = end.chapter
+                visibleNativeEnd = end.offset
+                if let offset = model.player.followOffset, model.player.chapter == end.chapter, offset < end.offset {
+                    speechTurnAttempt = nil
+                }
+                turnSpeechPageIfNeeded()
+            } catch is CancellationError {} catch {}
+        }
+    }
+    private func turnSpeechPageIfNeeded() {
+        guard following, sheet != .player, scenePhase == .active,
+              model.player.book?.id == book.id, model.player.playing,
+              let offset = model.player.followOffset,
+              let end = visibleNativeEnd, let pageChapter = visibleSpeechChapter,
+              model.player.chapter == pageChapter, offset >= end,
+              let bridge = session.bridge else { return }
+        if speechTurnAttempt?.end == end, speechTurnAttempt?.offset == offset { return }
+        speechTurnAttempt = (end, offset)
+        let mode = convert
+        speechPageTask?.cancel()
+        speechPageTask = Task { @MainActor in
+            do {
+                guard let page = try await ReadiumSpeechBridge.pageLocator(chapter: pageChapter, offset: offset, bridge: bridge, mode: mode) else { return }
+                try Task.checkCancellation()
+                guard following, model.player.followOffset == offset, visibleNativeEnd == end else { return }
+                speechNavigation = true
+                expectedOriginal = page.original
+                expectedLocation = page.display
+                expectedChapter = pageChapter
+                request = .init(locator: page.display)
+            } catch is CancellationError {} catch {
+                if speechTurnAttempt?.end == end, speechTurnAttempt?.offset == offset { speechTurnAttempt = nil }
+            }
         }
     }
     private func showSearch(_ decoration: Decoration) {

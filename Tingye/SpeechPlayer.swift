@@ -219,6 +219,80 @@ struct VoiceOptions {
     }
 }
 
+/// 朗读翻页用的字光标。字还在发声时停在这个字上；这个字的时间片一结束就落到下一个字，
+/// 不等下一个词的回调。这样本页最后一个字读完，阅读页会立刻翻到下一页。
+/// 句子本身还没结束时，光标不会跨出这句，避免尾部静音期间提前跟到下一句。
+enum SpeechFollowCursor {
+    struct Slice: Equatable {
+        let range: NSRange
+        let start: Double
+        let end: Double
+    }
+    static func offset(text: String, words: [Slice], time: Double) -> Int {
+        let ns = text as NSString
+        let limit = ns.length
+        guard limit > 0 else { return 0 }
+        let lastIndex = limit - 1
+        let slices = words.filter { $0.end > $0.start && $0.range.length > 0 && $0.range.location < limit }
+            .sorted { $0.start == $1.start ? $0.range.location < $1.range.location : $0.start < $1.start }
+        guard let first = slices.first else { return 0 }
+        if time < first.start { return min(max(0, first.range.location), lastIndex) }
+        var finished = 0
+        for slice in slices {
+            let start = max(0, min(slice.range.location, limit))
+            let end = max(start, min(NSMaxRange(slice.range), limit))
+            guard end > start else { continue }
+            if time < slice.start { return min(start, lastIndex) }
+            if time < slice.end {
+                return min(characterOffset(ns, range: NSRange(location: start, length: end - start), from: slice.start, to: slice.end, time: time), lastIndex)
+            }
+            finished = end
+        }
+        // 本句里还有字：词已经读完，立刻落到下一个字（页界就在这里）。已经是句末则留在最后一个字。
+        if finished < limit { return finished }
+        return lastIndex
+    }
+    private static func characterOffset(_ ns: NSString, range: NSRange, from start: Double, to end: Double, time: Double) -> Int {
+        let slice = ns.substring(with: range)
+        var units: [(length: Int, weight: Double)] = []
+        slice.enumerateSubstrings(in: slice.startIndex..<slice.endIndex, options: .byComposedCharacterSequences) { value, _, _, _ in
+            guard let value else { return }
+            let weight = characterWeight(value)
+            units.append(((value as NSString).length, weight))
+        }
+        let total = units.reduce(0) { $0 + $1.weight }
+        guard total > 0, end > start else { return range.location }
+        var cursor = start
+        var utf16 = range.location
+        let span = end - start
+        for unit in units {
+            let next = min(end, cursor + span * unit.weight / total)
+            if unit.weight > 0, time < next { return utf16 }
+            utf16 += unit.length
+            cursor = next
+        }
+        return min(NSMaxRange(range), ns.length)
+    }
+    /// 与云端无时间戳时的分字权重一致：汉字 1，英文 0.5，停顿标点 0.6，其余符号不占时间。
+    private static func characterWeight(_ value: String) -> Double {
+        guard let scalar = value.unicodeScalars.first, !CharacterSet.whitespacesAndNewlines.contains(scalar) else { return 0 }
+        let pauses = CharacterSet(charactersIn: "，,、；;：:。！？.!?…—")
+        if pauses.contains(scalar) { return 0.6 }
+        if CharacterSet.punctuationCharacters.contains(scalar) || CharacterSet.symbols.contains(scalar) { return 0 }
+        return scalar.isASCII ? 0.5 : 1
+    }
+    /// 系统语音没有逐字时间戳：按权重估算这一段读完要多久，供光标在回调到来前前进。
+    static func estimatedDuration(_ text: String, charactersPerSecond: Double) -> Double {
+        var total = 0.0
+        text.enumerateSubstrings(in: text.startIndex..<text.endIndex, options: .byComposedCharacterSequences) { value, _, _, _ in
+            guard let value else { return }
+            total += characterWeight(value)
+        }
+        guard total > 0, charactersPerSecond > 0 else { return 0.05 }
+        return max(0.04, total / charactersPerSecond)
+    }
+}
+
 @MainActor
 final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     @Published private(set) var book: Book?
@@ -255,6 +329,9 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     private var preparedAudio: (key: String, player: AVAudioPlayer)?
     /// 当前句在去掉尾部静音、补回标点停顿后应结束的时间点（音频时间轴）。
     private var stopAt: TimeInterval?
+    /// 系统语音当前正在读的一段：没有逐字回调，用估算时长在段内推进翻页光标。
+    private var systemSlice: (utterance: AVSpeechUtterance, range: NSRange, started: Date)?
+    private var systemPausedAt: Date?
     /// 下一章的分句结果：预取跨章节，读到章末时下一章开头已合成好。
     private var nextChapterSplit: (chapter: Int, sentences: [Sentence])?
     private var audioSessionReady = false
@@ -388,6 +465,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     func toggle() { playing ? pause() : resume() }
     func pause() {
+        if systemSlice != nil, systemPausedAt == nil { systemPausedAt = Date() }
         playing = false; buffering = false; generation = UUID(); task?.cancel(); task = nil
         prefetchTask?.cancel(); prefetchTask = nil; cloudRequests.retainOnly()
         if synth.isSpeaking { synth.pauseSpeaking(at: .immediate) }
@@ -399,12 +477,26 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         guard prepareAudioSession() else { return }
         error = nil; playing = true; resumeAfterInterruption = false
         if synth.isPaused {
+            if let paused = systemPausedAt, let slice = systemSlice {
+                systemSlice = (slice.utterance, slice.range, slice.started.addingTimeInterval(Date().timeIntervalSince(paused)))
+            }
+            systemPausedAt = nil
             if !synth.continueSpeaking() { pause(); error = "朗读未能恢复，请重新选择当前句重试。" }
+            else { startSystemClock() }
             updateNowPlaying()
         }
         else if let audio, audio.currentTime < audio.duration {
             if !audio.play() { pause(); error = "音频未能恢复，请重新选择当前句重试。" }
             else { prefetch(after: position, options: options); prepareNext() }
+            updateNowPlaying()
+        }
+        else if options.provider == "system", systemSlice != nil {
+            if let paused = systemPausedAt {
+                let held = Date().timeIntervalSince(paused)
+                if let slice = systemSlice { systemSlice = (slice.utterance, slice.range, slice.started.addingTimeInterval(held)) }
+            }
+            systemPausedAt = nil
+            startSystemClock()
             updateNowPlaying()
         }
         else { playSentence() }
@@ -413,7 +505,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         generation = UUID(); task?.cancel(); task = nil; utterance = nil; audio?.delegate = nil
         synth.stopSpeaking(at: .immediate); queued = [:]; audio?.stop(); audio = nil
         playing = false; buffering = false; error = nil; book = nil; sentences = []; chapterList = []; wordRange = nil; spokenOffset = 0; resumeAfterInterruption = false
-        clockTask?.cancel(); prefetchTask?.cancel(); cloudWords = []; audioCache = [:]; cacheOrder = []
+        clockTask?.cancel(); prefetchTask?.cancel(); cloudWords = []; systemSlice = nil; systemPausedAt = nil; audioCache = [:]; cacheOrder = []
         cloudRequests.retainOnly(); lengths = nil; preparedAudio = nil; stopAt = nil; nextChapterSplit = nil; audioSessionReady = false
         setSleep(minutes: 0); MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -429,7 +521,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             else { playing = false; position = max(0, sentences.count - 1); buffering = false; cloudRequests.retainOnly(); updateNowPlaying(); return }
         } else if index < 0, chapter > 0 { chapter -= 1; sentences = Sentence.split(chapters[chapter].text); position = max(0, sentences.count - 1) }
         else { position = min(max(0, index), max(0, sentences.count - 1)) }
-        spokenOffset = 0; wordRange = nil; cloudWords = []; stopAt = nil; clockTask?.cancel()
+        spokenOffset = 0; wordRange = nil; cloudWords = []; systemSlice = nil; systemPausedAt = nil; stopAt = nil; clockTask?.cancel()
         onProgress?(book.id, chapter, position)
         if playing { playSentence() } else { buffering = false; cloudRequests.retainOnly(); updateNowPlaying() }
     }
@@ -449,7 +541,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         let wasPlaying = playing
         if let range = wordRange, let sentenceRange { spokenOffset = max(0, range.location - sentenceRange.location) }
         generation = UUID(); task?.cancel(); prefetchTask?.cancel(); clockTask?.cancel()
-        utterance = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
+        utterance = nil; systemSlice = nil; systemPausedAt = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
         preparedAudio = nil; stopAt = nil; buffering = false; playing = wasPlaying
         if wasPlaying { playSentence() } else { cloudRequests.retainOnly() }
     }
@@ -575,14 +667,16 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         stopAt = Self.playWindow(clip, text: text, duration: player.duration).stop
         guard player.play() else { throw ReaderError.message("音频无法播放，请重试或切换系统声音。") }
         clockTask?.cancel()
+        let slices = clip.words.map { SpeechFollowCursor.Slice(range: $0.range, start: $0.start, end: $0.end) }
         clockTask = Task { [weak self, weak player] in
             while !Task.isCancelled {
                 guard let self, let player, self.audio === player else { return }
                 if self.playing {
                     // 尾部只按实际音频电平裁剪，不按字幕：字幕可能提前结束或有词未匹配原文。
                     if let stop = self.stopAt, player.currentTime >= stop { self.finishClip(player); return }
-                    if let word = self.cloudWords.first(where: { player.currentTime >= $0.start && player.currentTime < $0.end }), let sentence = self.sentenceRange {
-                        self.wordRange = NSRange(location: sentence.location + offset + word.range.location, length: word.range.length)
+                    if let sentence = self.sentenceRange {
+                        let local = SpeechFollowCursor.offset(text: text, words: slices, time: player.currentTime)
+                        self.wordRange = NSRange(location: sentence.location + offset + local, length: 1)
                     }
                 }
                 // 临近结束时缩短轮询间隔，句间衔接误差控制在 10ms 内。
@@ -701,8 +795,36 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in
             guard let self, self.utterance === utterance, let sentence = self.sentenceRange else { return }
-            self.wordRange = NSRange(location: sentence.location + self.spokenOffset + characterRange.location, length: characterRange.length)
+            self.systemPausedAt = nil
+            self.systemSlice = (utterance, characterRange, Date())
+            self.publishSystemCursor()
+            self.startSystemClock()
+            if self.wordRange == nil {
+                self.wordRange = NSRange(location: sentence.location + self.spokenOffset + characterRange.location, length: max(1, characterRange.length))
+            }
         }
+    }
+    private func startSystemClock() {
+        clockTask?.cancel()
+        clockTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self, self.systemSlice != nil else { return }
+                if self.playing { self.publishSystemCursor() }
+                do { try await Task.sleep(for: .milliseconds(30)) } catch { return }
+            }
+        }
+    }
+    /// 系统语音一段开始时只有起点。按字重估算这段里每个字的结束时刻，读完本页最后一个字就推进光标。
+    private func publishSystemCursor() {
+        guard let slice = systemSlice, utterance === slice.utterance, let sentence = sentenceRange else { return }
+        let text = (currentText as NSString).substring(from: min(spokenOffset, max(0, (currentText as NSString).length)))
+        let ns = text as NSString
+        guard slice.range.location >= 0, NSMaxRange(slice.range) <= ns.length, slice.range.length > 0 else { return }
+        let piece = ns.substring(with: slice.range)
+        let duration = SpeechFollowCursor.estimatedDuration(piece, charactersPerSecond: charactersPerSecond)
+        let elapsed = Date().timeIntervalSince(slice.started)
+        let local = SpeechFollowCursor.offset(text: text, words: [.init(range: slice.range, start: 0, end: duration)], time: max(0, elapsed))
+        wordRange = NSRange(location: sentence.location + spokenOffset + local, length: 1)
     }
     /// 第 index 句的角色（未开启分角色时一律旁白）
     private func role(_ index: Int) -> DialogueRole { options.roles ? DialogueRoles.role(index, in: sentences) : .narrator }
@@ -730,7 +852,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
                   let index = self.queued[ObjectIdentifier(utterance)]?.index else { return }
             if let sleepUntil = self.sleepUntil, sleepUntil <= Date() { self.pause(); self.setSleep(minutes: 0); return }
             self.utterance = utterance; self.position = index
-            self.spokenOffset = 0; self.wordRange = nil
+            self.spokenOffset = 0; self.wordRange = nil; self.systemSlice = nil; self.systemPausedAt = nil
             self.onProgress?(book.id, self.chapter, index); self.updateNowPlaying()
             self.enqueueAhead()
         }

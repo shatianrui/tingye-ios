@@ -349,6 +349,13 @@ final class LocatorBridge {
         let chapter = map?.chapter(for: locator.href.string) ?? 0
         return result(.init(chapter: chapter, position: 0), StoredLocator.json(locator), .approximate)
     }
+    /// Native chapter offset just after the last character still visible on the current page.
+    func nativePageEnd(href: String, pageEnd: JSONValue, mode: String) async throws -> (chapter: Int, offset: Int)? {
+        guard let map, let chapter = map.chapter(for: href), book.chapters.indices.contains(chapter) else { return nil }
+        let index = try await self.index(chapter: chapter, href: href)
+        guard let domEnd = index.domOffset(ofEnd: pageEnd, mode: mode), let native = index.nativeOffset(atDOMEnd: domEnd) else { return nil }
+        return (chapter, native)
+    }
     /// Convert an original persisted locator to the current display DOM. Only the returned copy changes.
     func displayLocator(_ raw: JSONValue?, mode: String, requireRange: Bool = false) async throws -> ReadiumShared.Locator? {
         guard let locator = StoredLocator.readium(raw), EPUBTextTransform.enabled(mode) else { return StoredLocator.readium(raw) }

@@ -2634,4 +2634,22 @@ extension NativeCoreTests {
             XCTAssertEqual(model.notice?.importResults, true)
         }
     }
+
+    func testSpeechCursorTurnsWhenTheCharacterEndsNotWhenTheNextWordStarts() {
+        let text = "甲乙丙丁。"
+        let word = [SpeechFollowCursor.Slice(range: NSRange(location: 0, length: 4), start: 0, end: 4)]
+        XCTAssertEqual(SpeechFollowCursor.offset(text: text, words: word, time: 0.1), 0, "正在读「甲」时留在本页")
+        XCTAssertEqual(SpeechFollowCursor.offset(text: text, words: word, time: 1), 1, "「甲」读完立刻落到「乙」")
+        XCTAssertEqual(SpeechFollowCursor.offset(text: text, words: word, time: 3.5), 3)
+        XCTAssertEqual(SpeechFollowCursor.offset(text: text, words: word, time: 4), 4, "词读完后句内还有标点，立刻落到标点")
+        let sentence = [SpeechFollowCursor.Slice(range: NSRange(location: 0, length: 2), start: 0, end: 1)]
+        XCTAssertEqual(SpeechFollowCursor.offset(text: "甲乙", words: sentence, time: 2), 1, "句末尾部静音不能跟进下一句")
+        let gap = [
+            SpeechFollowCursor.Slice(range: NSRange(location: 0, length: 1), start: 0, end: 0.4),
+            SpeechFollowCursor.Slice(range: NSRange(location: 1, length: 1), start: 0.9, end: 1.3)
+        ]
+        XCTAssertEqual(SpeechFollowCursor.offset(text: "甲乙", words: gap, time: 0.2), 0)
+        XCTAssertEqual(SpeechFollowCursor.offset(text: "甲乙", words: gap, time: 0.4), 1, "本页最后一个字一结束，空隙里也要翻过去")
+        XCTAssertEqual(SpeechFollowCursor.offset(text: "甲乙", words: gap, time: 0.7), 1)
+    }
 }

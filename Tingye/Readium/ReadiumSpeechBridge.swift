@@ -28,4 +28,22 @@ enum ReadiumSpeechBridge {
         let decoration = exact.map { Decoration(id: "speech-current", locator: $0, style: ReadiumAnnotations.style(color: "clay", kind: "background")) }
         return (result, location, decoration)
     }
+    /// Locator for the character currently being followed, so the visible page can move
+    /// before the sentence ends.
+    static func pageLocator(chapter: Int, offset: Int, bridge: LocatorBridge, mode: String) async throws -> (original: JSONValue?, display: ReadiumShared.Locator)? {
+        guard bridge.book.chapters.indices.contains(chapter) else { return nil }
+        let text = bridge.book.chapters[chapter].text as NSString
+        guard offset >= 0, offset < text.length else { return nil }
+        let rest = text.substring(from: offset)
+        let length = rest.first.map { (String($0) as NSString).length } ?? 1
+        let sentences = Sentence.split(bridge.book.chapters[chapter].text)
+        let target = LocatorTarget(chapter: chapter, position: Sentence.index(at: offset, in: sentences),
+                                   textRange: NSRange(location: offset, length: max(1, length)))
+        let result = try await bridge.resolve(target)
+        if let exact = try await bridge.displayLocator(result.locator, mode: mode, requireRange: true) {
+            return (result.locator, exact)
+        }
+        guard let display = try await bridge.displayLocator(result.locator, mode: mode) else { return nil }
+        return (result.locator, display)
+    }
 }

@@ -232,4 +232,29 @@ final class ReadiumLocatorTests: XCTestCase {
             XCTAssertEqual(try JSONDecoder().decode(BackupPacket.self, from: JSONEncoder().encode(packet)).progress, row.progress)
         }
     }
+
+    func testVisiblePageEndMapsToTheNativeCharacterAfterIt() throws {
+        let native = "甲乙丙丁。"
+        let index = try TextDOMIndex(native: native, xhtml: "<html><body><p>\(native)</p></body></html>")
+        let node = try XCTUnwrap(index.nodes.first { $0.text.contains("甲") })
+        let point: JSONValue = .object([
+            "cssSelector": .string(node.selector),
+            "textNodeIndex": .number(Double(node.index)),
+            "charOffset": .number(2)
+        ])
+        let dom = try XCTUnwrap(index.domOffset(ofEnd: point))
+        XCTAssertEqual(index.nativeOffset(atDOMEnd: dom), 2, "本页在「甲乙」之后结束")
+    }
+
+    func testSpeechPageLocatorTargetsTheCharacterBeingRead() async throws {
+        let text = "第一句还在这一页。第二句已经翻过去了。"
+        let book = LocatorTestSupport.book([text])
+        let bridge = try await LocatorTestSupport.bridge(book, self)
+        let offset = (text as NSString).range(of: "第二").location
+        let page = try XCTUnwrap(try await ReadiumSpeechBridge.pageLocator(chapter: 0, offset: offset, bridge: bridge, mode: "none"))
+        XCTAssertEqual(page.display.text.highlight, "第")
+        let restored = try await bridge.reverse(page.display, chapterHint: 0)
+        XCTAssertEqual(restored.target.chapter, 0)
+        XCTAssertEqual(restored.target.position, Sentence.index(at: offset, in: Sentence.split(text)))
+    }
 }

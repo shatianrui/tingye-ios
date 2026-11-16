@@ -195,6 +195,28 @@ struct TextDOMIndex: Sendable {
         }
         return Point(cssSelector: node.selector, textNodeIndex: node.index, charOffset: displayOffset)
     }
+    /// Exclusive raw-DOM offset of a live page-end point (`pageEnd` from the visible-range script).
+    func domOffset(ofEnd point: JSONValue, mode: String = "none") -> Int? {
+        guard let object = point.object, let charOffset = StoredLocator.integer(object["charOffset"]), charOffset > 0 else { return nil }
+        var start = object
+        start["charOffset"] = .number(Double(charOffset - 1))
+        guard let range = range(from: .object(["start": .object(start), "end": point]), mode: mode) else { return nil }
+        return NSMaxRange(range)
+    }
+    /// Map an exclusive raw-DOM offset back to the native chapter text. Whitespace-normalized
+    /// texts must match; otherwise the boundary is ambiguous and the caller should not turn.
+    func nativeOffset(atDOMEnd end: Int) -> Int? {
+        let raw = domText as NSString
+        guard end >= 0, nativeMap.text == domMap.text else { return nil }
+        if end == 0 { return 0 }
+        let nativeLength = (native as NSString).length
+        if end >= raw.length { return nativeLength }
+        guard let norm = domMap.outputRange(NSRange(location: 0, length: end)) else { return 0 }
+        let normEnd = NSMaxRange(norm)
+        guard normEnd > 0 else { return 0 }
+        guard normEnd <= nativeMap.sourceRanges.count else { return nativeLength }
+        return NSMaxRange(nativeMap.sourceRanges[normEnd - 1])
+    }
     /// Decode Readium's DOM range by resolving its CSS selector against the original DOM.
     func range(from span: JSONValue, mode: String = "none") -> NSRange? {
         func offset(_ value: JSONValue?) -> Int? {
