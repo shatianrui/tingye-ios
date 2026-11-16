@@ -15,7 +15,8 @@ struct ReadingCalendarView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     header
                     VStack(spacing: 12) { weekdayRow; grid }
-                        .padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .padding(Theme.insetCompact).background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
                     dayDetail
                     monthSummary
                 }
@@ -48,7 +49,7 @@ struct ReadingCalendarView: View {
     private var weekdayRow: some View {
         HStack(spacing: 0) {
             ForEach(Self.weekdaySymbols(calendar), id: \.self) { day in
-                Text(day).font(.caption.weight(.bold)).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
+                Text(day).font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
             }
         }
         .accessibilityHidden(true)
@@ -74,8 +75,8 @@ struct ReadingCalendarView: View {
             }
             .foregroundStyle(minutes >= goalMinutes ? Theme.onAccent : (future ? Theme.ink3.opacity(0.5) : Theme.ink))
             .frame(maxWidth: .infinity, minHeight: 48)
-            .background(minutes >= goalMinutes ? Theme.accent : minutes > 0 ? Theme.accentSoft : Theme.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { if isSelected { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.accent, lineWidth: 2) } }
+            .background(minutes >= goalMinutes ? Theme.accent : minutes > 0 ? Theme.accentSoft : Theme.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+            .overlay { if isSelected { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.accent, lineWidth: 2) } }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -90,12 +91,12 @@ struct ReadingCalendarView: View {
         let books = Dictionary(grouping: sessions, by: \.title).map { ($0.key, $0.value.reduce(0) { $0 + $1.seconds }) }.sorted { $0.1 > $1.1 }
         return VStack(alignment: .leading, spacing: 10) {
             Text(selected.formatted(.dateTime.month().day().weekday(.wide).locale(Locale.app)))
-                .font(.caption.weight(.bold)).tracking(0.6).foregroundStyle(Theme.accent)
+                .font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(minutes)").font(Theme.display(40, relativeTo: .largeTitle)).monospacedDigit()
                 Text("分钟").font(.subheadline).foregroundStyle(Theme.ink2)
                 Spacer()
-                if minutes >= goalMinutes { Text("达成目标").font(.caption.weight(.bold)).foregroundStyle(Theme.accent) }
+                if minutes >= goalMinutes { Text("达成目标").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent) }
             }
             ForEach(books, id: \.0) { title, seconds in
                 HStack {
@@ -119,8 +120,9 @@ struct ReadingCalendarView: View {
             summary("\(reached)", "达标天数")
             summary("\(total)", "本月分钟")
         }
-        .padding(20)
-        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(Theme.insetCompact)
+        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
     }
     private func summary(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
