@@ -209,17 +209,6 @@ struct ReadiumReaderView: View {
                     })
                 }
             }
-            #if DEBUG
-            if UIReview.isolated {
-                // 网页无障碍坐标会持续跳动。UI 测试改读这个稳定页码，阅读栏位置仍用网页视图本身的 frame。
-                Text(epubPageToken.isEmpty ? "未分页" : epubPageToken)
-                    .font(.system(size: 4))
-                    .foregroundStyle(Color(hex: palette.background))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .accessibilityIdentifier("reader.epubPage")
-                    .allowsHitTesting(false)
-            }
-            #endif
             if session.loading { ProgressView("正在打开 EPUB…") }
             if let error = session.error {
                 VStack(spacing: 16) {
@@ -233,6 +222,21 @@ struct ReadiumReaderView: View {
                 .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 18))
                 .padding(20)
             }
+        }
+        .overlay(alignment: .topLeading) {
+            #if DEBUG
+            if UIReview.isolated {
+                // 网页无障碍坐标会持续跳动。UI 测试改读这个稳定页码，阅读栏位置仍用网页视图本身的 frame。
+                // 只占左上角 8 点，避免挡住翻页点击。
+                Text("·")
+                    .font(.system(size: 4))
+                    .foregroundStyle(Color(hex: palette.background))
+                    .frame(width: 8, height: 8)
+                    .accessibilityIdentifier("reader.epubPage")
+                    .accessibilityLabel(epubPageToken.isEmpty ? "未分页" : epubPageToken)
+                    .allowsHitTesting(false)
+            }
+            #endif
         }
         .overlay(alignment: .top) { if chrome || session.error != nil || session.loading { topBar } }
         .overlay(alignment: .bottom) { if chrome && ready && session.error == nil { bottomBar } }
@@ -461,9 +465,10 @@ struct ReadiumReaderView: View {
     }
     private func pageToken(for locator: ReadiumShared.Locator) -> String {
         let href = PublicationMap.normalized(locator.href.string) ?? locator.href.string
-        if let position = locator.locations.position { return "\(href)#\(position)" }
-        let bucket = Int(((locator.locations.progression ?? 0) * 100).rounded())
-        return "\(href)@\(bucket)"
+        let position = locator.locations.position.map(String.init) ?? "-"
+        // 同一资源里翻页时 position 可能不变，阅读进度会变。2% 一档，避开亚像素级抖动。
+        let bucket = Int(((locator.locations.progression ?? 0) * 50).rounded())
+        return "\(href)#\(position)@\(bucket)"
     }
     private func locationChanged(resource: Int?, locator: ReadiumShared.Locator, confirmedRequest: UUID?) {
         guard session.error == nil, let bridge = session.bridge else { return }
