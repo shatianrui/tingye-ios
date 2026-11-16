@@ -1849,8 +1849,21 @@ struct ContentsView: View {
     private func contentsTab(_ title: String, value: Int) -> some View {
         Button { mode = value } label: {
             Text(title)
+                .font(Theme.sans(13))
+                .foregroundStyle(mode == value ? Theme.onInk : Theme.ink2)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 36)
+                .background {
+                    Capsule().fill(mode == value ? Theme.ink : Theme.surface)
+                }
+                .overlay {
+                    if mode != value { Capsule().strokeBorder(Theme.line, lineWidth: 1) }
+                }
         }
-        .buttonStyle(ChipPillStyle(selected: mode == value))
+        // 保持 plain 按钮样式：自定义 ButtonStyle 在 List 行里会接管行的点击语义。
+        .buttonStyle(.plain)
+        .contentShape(Capsule())
+        .frame(minHeight: Theme.iconButtonSize)
         .accessibilityAddTraits(mode == value ? .isSelected : [])
     }
     private func chapterRow(index: Int, chapter: Chapter, snippet: String?, matchOffset: Int?) -> some View {
@@ -2205,9 +2218,20 @@ struct ReadingPreferencesView: View {
     private func fontChip(_ key: String, _ title: String) -> some View {
         Button { Haptics.selection(); font = key } label: {
             Text(L(title))
+                .font(Theme.sans(13))
+                .foregroundStyle(font == key ? Theme.onInk : Theme.ink2)
+                .padding(.horizontal, 6)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background {
+                    Capsule().fill(font == key ? Theme.ink : Theme.surface)
+                }
+                .overlay {
+                    if font != key { Capsule().strokeBorder(Theme.line, lineWidth: 1) }
+                }
         }
-        .buttonStyle(ChipPillStyle(selected: font == key))
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
+        .contentShape(Capsule())
+        .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
         .accessibilityAddTraits(font == key ? .isSelected : [])
     }
 

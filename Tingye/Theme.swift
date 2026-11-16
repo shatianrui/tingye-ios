@@ -607,7 +607,7 @@ struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(selected ? .medium : .regular))
+            .font(Theme.sans(13, weight: selected ? .medium : .regular))
             .foregroundStyle(selected ? Theme.onInk : Theme.ink2)
             .padding(.horizontal, 14)
             .frame(minHeight: 36)
