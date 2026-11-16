@@ -12,14 +12,14 @@
 | [`colors_and_type.css`](colors_and_type.css) | CSS 令牌与组件样式（与 `Tingye/Theme.swift` 一一对应） |
 | [`design-spec.json`](design-spec.json) | 机器可读规格（仓库顶层 `Design/design-spec.json` 与本文件同源） |
 | [`pages/`](pages/) | 高保真视觉稿，28 屏，自包含 HTML，离线可开 |
-| [`previews/`](previews/) | 上述页面的 PNG 渲染（390×844 @2x）与总览图 |
+| [`previews/`](previews/) | 上述页面的渲染图：34 张单屏 PNG（@2x，256 色调色板）+ 2 张分组接触表 JPG |
 | [`app-icon/`](app-icon/) | 应用图标「声页」：生成器、SVG、三变体 PNG、设计说明 |
 | [`gallery.html`](gallery.html) | 全屏画廊：28 屏实时可交互（离线可开） |
 | `contrast-check.py` | 配色对比度逐对计算（WCAG） |
 | `sync-check.py` | 令牌三处同值校验（Swift ↔ CSS ↔ 文档） |
 | `lint-pages.py` | 设计稿自检：拼写、class、硬编码颜色、外部资源、实心按钮用色、内容溢出 |
 | `verify-swift.py` | Swift 侧静态验收：令牌引用、v29 API 回归、写死圆角 / 阴影 / 按压缩放、写死色值 |
-| `render-previews.py` | 渲染管线：HTML → PNG → 总览图 |
+| `render-previews.py` | 渲染管线：HTML → 单屏 PNG（256 色调色板）→ 两张分组接触表 JPG |
 | `make-gallery.py` | 画廊生成器：把 `pages/` 拼成一张可交互总览 |
 
 ## 三十秒看懂
@@ -43,7 +43,7 @@ python3 contrast-check.py    # 配色对比度：全部通过
 python3 sync-check.py        # 令牌三处一致：无漂移
 python3 lint-pages.py        # 设计稿自检：28 页全过
 python3 verify-swift.py      # Swift 侧静态验收：全部通过（不含编译）
-python3 render-previews.py   # 重新渲染 PNG 与总览图
+python3 render-previews.py   # 重新渲染单屏 PNG 与两张接触表
 python3 make-gallery.py      # 重建画廊
 ```
 
