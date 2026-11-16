@@ -465,10 +465,15 @@ struct ReadiumReaderView: View {
     }
     private func pageToken(for locator: ReadiumShared.Locator) -> String {
         let href = PublicationMap.normalized(locator.href.string) ?? locator.href.string
+        let start = StoredLocator.json(locator)?.object?["locations"]?.object?["domRange"]?.object?["start"]?.object
+        if let selector = start?["cssSelector"]?.string, !selector.isEmpty {
+            // 同一段跨页时选择器不变，字符偏移会变。40 字一档，避开首字可见性的来回跳动。
+            let offset = (start?["charOffset"]?.int ?? 0) / 40
+            return "page|\(href)|\(selector)|\(offset)"
+        }
         let position = locator.locations.position.map(String.init) ?? "-"
-        // 同一资源里翻页时 position 可能不变，阅读进度会变。2% 一档，避开亚像素级抖动。
         let bucket = Int(((locator.locations.progression ?? 0) * 50).rounded())
-        return "\(href)#\(position)@\(bucket)"
+        return "page|\(href)#\(position)@\(bucket)"
     }
     private func locationChanged(resource: Int?, locator: ReadiumShared.Locator, confirmedRequest: UUID?) {
         guard session.error == nil, let bridge = session.bridge else { return }

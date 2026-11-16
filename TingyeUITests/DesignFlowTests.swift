@@ -164,8 +164,8 @@ final class DesignFlowTests: XCTestCase {
             if let next = capture(), next.text != baseline.text { return turns }
             guard turns < 4 else { return nil }
             let before = capture()
-            app.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: baseline.viewport.maxX - 12, dy: baseline.viewport.midY)).tap()
+            // Readium 分页靠左右滑，点右缘会落到工具栏切换区，页码不会变。
+            app.webViews.firstMatch.swipeLeft()
             turns += 1
             // 等这一翻落地（捕获变化或落到无正文的块页）后再继续判断，避免对着过渡帧连点。
             let settle = Date().addingTimeInterval(3)
@@ -257,7 +257,7 @@ final class DesignFlowTests: XCTestCase {
         let page = app.descendants(matching: .any)["reader.epubPage"]
         guard web.exists, page.exists, web.frame.width > 40, web.frame.height > 80 else { return nil }
         let token = page.label
-        guard token.contains("#") || token.contains("@") else { return nil }
+        guard token.hasPrefix("page|") else { return nil }
         func q(_ value: CGFloat) -> CGFloat { value.rounded() }
         let frame = web.frame
         return .init(viewport: CGRect(x: q(frame.minX), y: q(frame.minY), width: q(frame.width), height: q(frame.height)),
