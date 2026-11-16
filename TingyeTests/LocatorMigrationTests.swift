@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 import ReadiumShared
 @testable import Tingye
 
@@ -13,6 +14,22 @@ final class LocatorKeyValueStore: ProgressKeyValueStore {
 
 @MainActor
 final class LocatorMigrationTests: XCTestCase {
+    private func isolatedModel(disk: LibraryDisk) throws -> AppModel {
+        let suite = "locator." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+        defaults.set(false, forKey: ProgressSync.enabledKey)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: LocatorKeyValueStore(), defaults: defaults, account: { false }))
+        addTeardownBlock { @MainActor in
+            defer { defaults.removePersistentDomain(forName: suite) }
+            // Join indexing and migrations before temporary files are removed.
+            _ = try await model.beginLibraryRestore()
+            let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("TingyeReadium").appendingPathComponent(disk.root.lastPathComponent)
+            if FileManager.default.fileExists(atPath: cache.path) { try FileManager.default.removeItem(at: cache) }
+        }
+        return model
+    }
     func testBothCatalogGenerationsMigrateAllFourKindsAndAreIdempotent() async throws {
         let book = try JSONDecoder().decode(Book.self, from: LocatorTestSupport.fixture("locator-book.json"))
         let bridge = try await LocatorTestSupport.bridge(book, self)
@@ -84,19 +101,25 @@ final class LocatorMigrationTests: XCTestCase {
     }
     func testAtomicAppMigrationCreatesSnapshotAndCanBeRetriedAfterFailure() async throws {
         let base = try LocatorTestSupport.temporary(self)
-        let disk = try LibraryDisk(owner: "locator-test", base: base)
-        let book = LocatorTestSupport.book(format: "TXT")
+        let disk = try LibraryDisk(owner: "locator-" + UUID().uuidString, base: base)
+        var book = LocatorTestSupport.book(format: "TXT")
+        book.fields["id"] = .string(UUID().uuidString)
         let entry = ShelfEntry(book: book, progress: .init(chapter: 0, position: 1))
         try disk.write(book); try disk.saveCatalog([entry])
-        let suite = "locator." + UUID().uuidString, defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-        defaults.set(false, forKey: ProgressSync.enabledKey)
-        let model = AppModel(disk: disk, progressSync: ProgressSync(store: LocatorKeyValueStore(), defaults: defaults, account: { false }))
-        defer { model.cancelAllLocatorMigrations() }
+        let model = try isolatedModel(disk: disk)
+        var transitions: [LocatorMigration.State] = []
+        let observation = model.locatorMigration.$states.sink { states in
+            if let state = states[book.id] { transitions.append(state) }
+        }
+        defer { observation.cancel() }
+        // Force the idle scan into the foreground task's debounce window, without a sleep.
+        model.scheduleIdleLocatorMigration(after: .zero)
         await model.migrateLocators(book.id)
+        XCTAssertEqual(transitions, [.waiting, .running, .completed(exact: 1, relocated: 0, approximate: 0, unresolved: 0)])
         XCTAssertNotNil(try disk.catalog()[0].progress.locator)
         let snapshot = disk.root.appendingPathComponent("LocatorMigration/catalog-before-v1.json")
-        let old = try JSONDecoder().decode([ShelfEntry].self, from: Data(contentsOf: snapshot))
+        let originalSnapshot = try Data(contentsOf: snapshot)
+        let old = try JSONDecoder().decode([ShelfEntry].self, from: originalSnapshot)
         XCTAssertNil(old[0].progress.locator)
         let committed = try Data(contentsOf: disk.root.appendingPathComponent("catalog.json"))
         let bookURL = try disk.file(book.id), backup = try Data(contentsOf: bookURL)
@@ -106,22 +129,23 @@ final class LocatorMigrationTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), committed)
         try backup.write(to: bookURL)
         await model.migrateLocators(book.id)
+        XCTAssertEqual(model.locatorMigration.states[book.id], .completed(exact: 1, relocated: 0, approximate: 0, unresolved: 0))
         XCTAssertNotNil(model.locatorMigration.receipts[book.id])
+        XCTAssertNotNil(try disk.locatorReceipt(book.id))
+        XCTAssertNotNil(try disk.catalog()[0].progress.locator)
+        XCTAssertEqual(try Data(contentsOf: snapshot), originalSnapshot, "The first catalog snapshot survives retries")
     }
     func testRepairSameIDRevokesOldLocatorAndRelocatesOnlyOnPreciseConversion() async throws {
-        let base = try LocatorTestSupport.temporary(self), disk = try LibraryDisk(owner: "repair-locators", base: base)
-        let old = LocatorTestSupport.book(["旧章。", "目标句。后句。"])
+        let base = try LocatorTestSupport.temporary(self), disk = try LibraryDisk(owner: "repair-" + UUID().uuidString, base: base)
+        var old = LocatorTestSupport.book(["旧章。", "目标句。后句。"])
+        old.fields["id"] = .string(UUID().uuidString)
         let oldBridge = try await LocatorTestSupport.bridge(old, self)
         var entry = ShelfEntry(book: old, progress: .init(chapter: 1, position: 0, anchor: .init(quote: "目标句。")))
         entry.bookmarks = [.init(chapter: 1, position: 0, excerpt: "目标句。", anchor: .init(quote: "目标句。"))]
         entry.highlights = [.init(chapter: 1, start: 0, end: 1, text: "目标句。后句。", anchor: .init(quote: "目标句。"), note: "旧笔记")]
         let (migrated, _) = try await LocatorMigration().convert(entry, using: oldBridge)
         try disk.write(old); try disk.saveCatalog([migrated])
-        let suite = "repair-locator." + UUID().uuidString, defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-        defaults.set(false, forKey: ProgressSync.enabledKey)
-        let model = AppModel(disk: disk, progressSync: ProgressSync(store: LocatorKeyValueStore(), defaults: defaults, account: { false }))
-        defer { model.cancelAllLocatorMigrations() }
+        let model = try isolatedModel(disk: disk)
         let replacement = LocatorTestSupport.book(["目标句。后句。", "新增章。", "旧章。"])
         let built = try await LegacyEPUBBuilder().build(replacement, to: base.appendingPathComponent("replacement"))
         try await model.repair(old.id, from: built.url)
@@ -132,8 +156,16 @@ final class LocatorMigrationTests: XCTestCase {
         model.saveProgress(old.id, chapter: 0, position: 0, locator: migrated.progress.locator,
                            revision: migrated.progress.publicationRevision, generation: nil)
         XCTAssertEqual(model.entries[0].progress, protected, "A replaced reader session cannot overwrite the repaired entry")
+        model.scheduleIdleLocatorMigration(after: .zero)
         await model.migrateLocators(old.id)
         let next = try XCTUnwrap(model.entries.first { $0.id == old.id })
+        let receipt = try XCTUnwrap(model.locatorMigration.receipts[old.id])
+        XCTAssertEqual(receipt.references["reading"], .textRelocated)
+        XCTAssertEqual(receipt.references["bookmark:\(migrated.bookmarks[0].id)"], .textRelocated)
+        XCTAssertEqual(receipt.references["highlight:\(migrated.notes[0].id)"], .textRelocated)
+        XCTAssertEqual(model.locatorMigration.states[old.id], .completed(exact: 0, relocated: 3, approximate: 0, unresolved: 0))
+        XCTAssertEqual(try disk.locatorReceipt(old.id)?.revision, receipt.revision)
+        XCTAssertEqual(try disk.catalog()[0].progress, next.progress)
         XCTAssertNotEqual(next.progress.publicationRevision, migrated.progress.publicationRevision)
         XCTAssertEqual(next.progress.chapter, 0); XCTAssertEqual(next.notes[0].note, "旧笔记")
         XCTAssertEqual(next.progress.locator?.object?["locations"]?.object?["tingyeChapter"]?.int, 0)

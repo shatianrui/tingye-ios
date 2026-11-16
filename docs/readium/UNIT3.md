@@ -110,3 +110,36 @@ API 核对使用版本化上游源码：[Locator](https://github.com/readium/swi
 - **实现依据：** `LocatorBridge.resolve` 对 TXT 先经 `textTarget` 验证/重定位，再由 `logical` 按当前文本调用 `Locator.anchor`；`LocatorMigration.convert` 仅在 precise（exact / textRelocated）时回写兼容坐标与锚点。`invalidated` 仅清四类引用的 publicationRevision，保留传入的已迁移锚点，不负责恢复迁移前数据。这也与构建 142 以来 `AppModel.repair` 调用 `Locator.resolve` / `Locator.relocated`、位置移动时按新文本重建并回写锚点的既有语义一致；此处上下文没有取错句子。
 - **最小修改：** 仅在该用例把失效保留断言的比较对象从 `entry.progress.anchor` 改为 `migrated.progress.anchor`，并增加首次迁移和再次迁移的上述两个完整 TextAnchor 等值断言，明确检验 quote、before、after。原有 revision、Locator 存在性、位置 2 和反向转换断言全部保留，未删除或弱化断言。另一个实际锚点上下文生成缺陷未在本轮排查路径中发现。
 - **验证与范围：** 本轮仅修改 `TingyeTests/LocatorMigrationTests.swift` 中该方法与本文追加记录；已做修改前后文件内容/校验值对照、断言及夹具/上下文规则静态核对。未修改实现、其他测试、构建号 142、workflows、依赖或工程配置，未做 git 操作。本环境无 Swift / xcodebuild / iOS SDK，未执行 XCTest、未触发 CI；须在 Mac/CI 重新运行该用例及 unit-tests，不能据静态核对宣称 160/160 通过。
+
+### 3. Tests #16 三例跨运行不稳定：迁移等待边界与 WebKit 就绪条件
+
+2026-11-16 UTC，据提供的记录，Tests #15 为 159/160，#16 为 157/160；两次之间 App 代码未变。此次仅修改 `AppModel.swift` 的迁移调度、下述三个测试及本文；交付状态保持**待重新验证**。下面区分可由代码证明的缺陷、能产生所报结果的执行交错与尚无运行轨迹证明的部分；15.572 秒耗时只说明不能依赖通常的执行速度，不能单凭耗时认定磁盘、Readium 或 WebKit 故障。
+
+**逐例裁定与证据（失败行号指修复前，其他行号指修复后）：**
+
+| 用例及原失败点 | 根因裁定 | 代码证据与结果来源 |
+| --- | --- | --- |
+| `testAtomicAppMigrationCreatesSnapshotAndCanBeRetriedAfterFailure`，原 `LocatorMigrationTests.swift:97` | **实现调度竞态，显式 async 等待边界错误**；Locator 非 nil 的期望正确。 | `AppModel.init:125–130` 自动安排空闲扫描；原 `migrateLocators` 安排任务 A 后仅等待一次 `locatorTasks[id]?.value`。原空闲循环无条件调用 `scheduleLocatorMigration`，后者取消 A、发布新 token 和任务 B（现 `AppModel.swift:814–826` 仍是前台防抖入口）。A 的取消处理及 defer 都只处理自己的 token，因此不会清掉 B；等待 A 的调用者却已经可以返回，磁盘 catalog 尚未被 B 提交，Locator 仍为 nil。快照在转换前写入（`:830`），所以“快照已经存在”也不能充当“catalog 已提交”的条件。 |
+| `testRepairSameIDRevokesOldLocatorAndRelocatesOnlyOnPreciseConversion`，原 `:138–139` | **同一实现调度竞态导致读取修书后、迁移提交前的合法中间状态**；两个 0 的期望都正确。 | 这里比较的不是迁移计数：`progress.chapter` 与 Locator `locations.tingyeChapter` 都是零基章节索引。夹具把唯一的 `目标句。后句。` 从旧索引 1 移到新索引 0。`repair` 对 EPUB 保留旧兼容坐标，`LocatorMigration.invalidated:33–42` 仅清 revision、保留旧 Locator，故此时两字段都仍为 **1**。若 A 被空闲扫描替换而显式等待提前结束，测试恰好读到这两个旧值；`XCTAssertNotEqual(nil, oldRevision)` 还会通过，不能证明已迁移。`LocatorBridge.textTarget:103–153` 应在旧第 1 章找不到 quote 后找到唯一的新第 0 章；`resolve:155–219` 生成 `tingyeChapter = 0`，`LocatorMigration.convert:52–54` 仅在 precise 时把兼容 chapter 更新为 0。因此应修等待边界，不能把期望改成 1。 |
+| `testOriginalReaderRestoresSavesAndJumpsWithoutSpeech`，原 `NativeCoreTests.swift:1808` | **测试异步写法缺少完成条件**；页差 `0...1` 的期望保留。没有证据把它归因于迁移共享状态。 | `OriginalBookView.Coordinator.restorePosition:421–425` 先清 pending，再异步发 `.defaultClient` JavaScript，completion 为 nil；`apply:536–544` 自身也异步，`didFinish:558–569` 另有 400 ms 后的布局校正，`viewportDidChange:427–442` 有 120 ms 防抖。旧测试用 700/500/400 ms 固定等待代替这些操作的完成条件，并在两次显式 restore 后立即从 `.page` 查询页码。`settled:505–515` 的保存回调只证明读出了目标页的句号，不证明 DOM 与 UIKit 的滚动位置已一致。因而 `manualPage` 与 `restored` 可能取自不同阶段，页差越界不等于句级恢复合同错误。修复的是这些可证的等待缺口；没有 #16 的 WebKit/任务时间线，不能宣称已经实测重现其唯一调度顺序。 |
+
+前两例可静态构造同一执行序列：显式调用创建 A 并等待 → 空闲扫描取消 A、创建 B → A 在取消检查处退出（若正在等待 detached I/O，需先等该 I/O 返回）→ 调用者恢复执行、读取旧 catalog/旧章节 → B 稍后才提交。此交错不需要两个测试共享 AppModel，也不需要测试执行顺序变化。最终 catalog 校验/写入均在 MainActor 且中间不 suspension，因此不是半写 catalog。
+
+**repair、快照/receipt 与共享状态核对：**
+
+- `AppModel.repair:616–675` 在导入/准备期间持有 `publicationWrites`，提交时清 revision、更新会话 generation，并安排新迁移；迁移提交前还校验库代次、owner、同书写锁、任务 token 及四类引用 token（`:854–858`）。旧任务在 repair 之前完成只会写旧书的合法结果；repair 期间不能提交；repair 后旧 token 或含旧 revision 的引用快照不能通过校验。本路径没有证据需要另加 repair 撤销/提交锁，原会话回写屏障断言完整保留。
+- `LocatorMigration.swift:98–118` 先保存首次全库 catalog 备份，再保存每书本次引用快照。`AppModel.swift:865–868` 顺序为原子 catalog → 内存 entries → 尽力写 receipt → 内存 committed；receipt 是诊断，不是事务权威，写盘失败被允许，不能反过来据 receipt 存在推断本次重试完成。测试现在同时检查终态、内存与磁盘结果；故障阶段仍要求 catalog 字节不变，重试后首次 catalog 快照也要求字节不变。
+- 原两个测试已经各有 UUID 临时 base 和 defaults suite（`LocatorTestSupport.temporary:12–16`），KVS 是独立 `LocatorKeyValueStore`、account=false、同步关闭；不存在它们共同写同一 catalog 或标准 ProgressSync 时钟的证据。`LocatorMigration`、AppModel entries/tasks 和 `ReadiumService` 都是实例状态。原 book ID 固定为 `locator-book`，owner 固定；`PublicationStore.swift:19–21` 的派生缓存路径只取 owner，不含临时 base，故修书测试跨运行会复用缓存命名空间。内容 hash/epoch 可防止直接选错内容，但旧清理只 cancel、不 join，也不清缓存，不能用这种清理保证后台工作不跨用例存活。
+- 本轮两个测试改用独立 UUID book ID、owner、defaults suite 和临时 base；`LocatorMigrationTests.isolatedModel:17–32` 注册 async teardown，在临时目录删除前调用现有 `beginLibraryRestore:296–307` 暂停写入并取消、等待索引与迁移，再清理该 owner 的缓存和 defaults。清理用于隔离，不作为成功断言的替代。修书中 replacement 仍通过 repair 强制采用原书 ID，继续覆盖同 ID 合同。
+- Native 用例自身创建 WKWebView/Coordinator，websiteDataStore 已为 nonPersistent，不读 catalog/KVS；`OriginalDocument.html` 默认使用新的 ReaderPreferences 值。唯一相关的静态分句 memo（`OriginalBookView.swift:67–77`）由完整文本键控并加锁；没有复用别本书分句的证据。本轮在 defer 中撤销 delegate/callback、停加载并改变 document key，使延迟 apply/viewport 回调失效。AppModel 的 SpeechPlayer 构造会读取标准语音配置，但本例不构造播放器、不读取该配置；不能把这种全局读取当作三例的泄漏根因。
+
+**最小修复及确定性：**
+
+- `AppModel.swift:780–809`：空闲扫描发现同书任务时直接等待，不调用前台防抖入口取消它；显式 `migrateLocators` 循环等待当前任务，如果等待期间已有新的前台任务替换它，就继续等待替代任务。默认 2 秒空闲启动、前台 200 ms 防抖及编辑取消语义保持不变。空闲方法增加 `after` 参数，默认仍为 2 秒，测试传 `.zero` 强制制造重叠，避免依赖 CI 负载碰巧跨过 2 秒。
+- 原子迁移测试（`:102` 起）在显式任务的防抖窗口触发空闲扫描，要求状态只经过 waiting → running → completed(exact:1)，并保留坏 JSON 故障与重试断言。即使显式等待被修好，若空闲路径回退到取消重建，额外 waiting 仍会使测试失败。修书测试（`:138` 起）也强制该重叠，新增 reading/bookmark/highlight 三项均为 textRelocated、completed(relocated:3)、receipt revision 及磁盘进度一致的断言，再检查原有 chapter/tingyeChapter=0。此处的 relocated:3 才是引用条数，与原失败的章节索引无关。
+- Native 测试（`:1730` 起）删除全部固定 sleep，保留手动保存 expectation；其余操作按条件轮询，10 秒是失败上限、20 ms 仅是轮询间隔，不是“睡够即可通过”。等待要求加载完成、pending 已被消费、字体已加载、目标句首字在指定视口内、DOM 已停在目标整页、UIKit 与 DOM 横向位置一致；页码读取统一在 `.defaultClient`，最后也等待同 world 的请求完成。原有页差、跳转、缩放几何、无朗读标记、旧回调不能覆盖新 revision 等所有断言均保留，超时立即失败并抛错，不带默认页继续执行。此条件不能保证 WebKit 永不超时，但不会因机器快慢而在未就绪时拿中间页码充当结果。
+- PLAN 5.3 第 7 条的“先备份、每书原子、可取消、可重复”与本文既有事务口径均不变：只改变谁等待/替换任务及测试何时观察结果；没有改转换等级、precise 写兼容字段、unresolved 保留业务数据、catalog 权威或 receipt 尽力落盘的合同。
+
+**范围外发现，仅记录：** `snapshotForLocatorMigration:102–104` 的首次全库快照是 fileExists 后再原子写，两个不同书的 detached 快照任务可同时看到文件不存在；若其中一本先提交 catalog，另一个随后读取/覆盖备份，首次备份可能含已迁移内容。`.atomic` 不等于“仅首次创建”。这是多书并发下的独立实现缺陷；本次三个测试各只有一书，没有以它解释本次失败，也没有按本轮要求扩大修复范围。后续应单独做首次快照并发创建的事务保护与多书回归。
+
+**实际验证与待验证项：** 已用修改前文件副本做逐方法比较，确认只改这三个测试、原断言全部保留、测试方法数不变；两个内嵌 JavaScript 块经 Node 语法检查通过。文件 SHA-256 清单核对只允许上述四个文件改变，构建号 142、workflows、依赖/锁文件及工程配置均未改；未执行任何 git 操作。环境无 Swift、xcodebuild、iOS SDK，因此未进行 Swift 类型检查、XCTest 或真实 WebKit 复现，不能把静态交错分析记为测试通过。Mac/CI 仍需分别单跑三例、合跑 LocatorMigrationTests → NativeCoreTests、重复运行全量 160 例，并确认独跑/整套结果一致；状态保持**待重新验证**。

@@ -779,7 +779,9 @@ extension AppModel {
     }
     func migrateLocators(_ id: String) async {
         scheduleLocatorMigration(id)
-        await locatorTasks[id]?.value
+        // A foreground edit can supersede the task while we await it. Join its
+        // replacement too, so returning never exposes a still-pending transaction.
+        while let task = locatorTasks[id] { await task.value }
     }
     func cancelAllLocatorMigrations() {
         idleLocatorTask?.cancel(); idleLocatorTask = nil
@@ -789,10 +791,10 @@ extension AppModel {
         locatorTasks[id]?.cancel()
         locatorMigration.set(.cancelled, for: id)
     }
-    func scheduleIdleLocatorMigration() {
+    func scheduleIdleLocatorMigration(after delay: Duration = .seconds(2)) {
         idleLocatorTask?.cancel()
         idleLocatorTask = Task { [weak self] in
-            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            do { try await Task.sleep(for: delay) } catch { return }
             guard let self else { return }
             let ids = self.entries.filter(\.local).map(\.id)
             for id in ids {
@@ -801,7 +803,9 @@ extension AppModel {
                 while self.selectedBook != nil || self.player.playing || self.restoringLibrary {
                     do { try await Task.sleep(for: .seconds(2)) } catch { return }
                 }
-                self.scheduleLocatorMigration(id)
+                // An idle scan joins foreground work; it must not debounce/cancel
+                // the transaction that a caller of migrateLocators is awaiting.
+                if self.locatorTasks[id] == nil { self.scheduleLocatorMigration(id) }
                 await self.locatorTasks[id]?.value
                 await Task.yield()
             }

@@ -1734,21 +1734,63 @@ extension NativeCoreTests {
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 480), configuration: config)
         let coordinator = OriginalBookView.Coordinator()
         coordinator.view = web
+        defer {
+            coordinator.onPositionChange = nil
+            coordinator.loaded = false
+            coordinator.key = "disposed"
+            coordinator.view = nil
+            web.stopLoading()
+            web.navigationDelegate = nil
+        }
+        enum WaitError: Error { case timedOut(String) }
+        @MainActor func waitUntil(_ description: String, condition: @MainActor () async throws -> Bool) async throws {
+            let clock = ContinuousClock(), deadline = clock.now.advanced(by: .seconds(10))
+            while !(try await condition()) {
+                guard clock.now < deadline else {
+                    XCTFail("Timed out waiting for \(description)")
+                    throw WaitError.timedOut(description)
+                }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+        }
+        @MainActor func page() async throws -> Int {
+            let value = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .defaultClient)
+            return try XCTUnwrap(value as? Int)
+        }
         coordinator.key = "chapter-0"
         coordinator.follow = false
         let text = (1...300).map { "这是第\($0)句用于验证原书阅读位置的正文。" }.joined()
         coordinator.readingScript = OriginalReadingPosition.script(text: text)
         coordinator.script = OriginalSpeechHighlight.script(text: text, range: nil, follow: false, color: "#ffff00")
+        // Readiness requires the requested sentence, DOM scroll and UIKit scroll
+        // to agree, including the viewport/font layout and the queued JS restore.
+        @MainActor func waitForPosition(_ position: Int, height: Int) async throws {
+            let offset = Sentence.split(text)[position].range.location
+            try await waitUntil("sentence \(position) at height \(height)") {
+                guard coordinator.loaded, coordinator.pendingPosition == nil else { return false }
+                let json = try await web.evaluateJavaScript("""
+                    (() => {
+                      const node = document.querySelector('p').firstChild, range = document.createRange();
+                      range.setStart(node, \(offset)); range.setEnd(node, \(offset + 1));
+                      const rect = range.getBoundingClientRect();
+                      const targetPage = Math.max(0, Math.floor((scrollX + rect.left + 1) / innerWidth));
+                      return JSON.stringify({ready: document.fonts.status === 'loaded' &&
+                        Math.abs(innerHeight - \(height)) < 1 && Math.abs(scrollX - targetPage * innerWidth) < 0.5 &&
+                        rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1 && rect.bottom <= innerHeight + 1,
+                        x: scrollX});
+                    })()
+                    """, in: nil, contentWorld: .defaultClient) as! String
+                let state = try JSONSerialization.jsonObject(with: Data(json.utf8)) as! [String: Any]
+                return state["ready"] as? Bool == true &&
+                    abs(web.scrollView.contentOffset.x - CGFloat((state["x"] as! NSNumber).doubleValue)) < 1
+            }
+        }
         coordinator.requestPosition(80, revision: 0)
         web.navigationDelegate = coordinator
         web.loadHTMLString(OriginalDocument.html("<p>\(text)</p>", css: ""), baseURL: nil)
-        for _ in 0..<200 {
-            if coordinator.loaded { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
+        try await waitForPosition(80, height: 480)
         XCTAssertTrue(coordinator.loaded)
-        try await Task.sleep(for: .milliseconds(700))
-        let initialPage = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int ?? 0
+        let initialPage = try await page()
         XCTAssertGreaterThan(initialPage, 0, "没有播放声音时也应恢复到章内保存的位置")
         let marks = try await web.evaluateJavaScript("document.querySelectorAll('mark[data-ty-speech]').length", in: nil, contentWorld: .page) as? Int
         XCTAssertEqual(marks, 0, "恢复阅读位置不应制造朗读高亮")
@@ -1757,7 +1799,7 @@ extension NativeCoreTests {
         web.frame.size.height = 300
         web.layoutIfNeeded()
         coordinator.viewportDidChange(web)
-        try await Task.sleep(for: .milliseconds(500))
+        try await waitForPosition(80, height: 300)
         let offset = Sentence.split(text)[80].range.location
         let resizedJSON = try await web.evaluateJavaScript("""
             (() => {
@@ -1779,8 +1821,8 @@ extension NativeCoreTests {
         web.frame.size.height = 480
         web.layoutIfNeeded()
         coordinator.viewportDidChange(web)
-        try await Task.sleep(for: .milliseconds(500))
-        let expandedPage = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int
+        try await waitForPosition(80, height: 480)
+        let expandedPage = try await page()
         XCTAssertEqual(expandedPage, initialPage, "收起工具后仍应回到相同阅读句所在页")
 
         let saved = expectation(description: "Manual page saved")
@@ -1789,8 +1831,12 @@ extension NativeCoreTests {
         XCTAssertTrue(coordinator.accessibilityNextPage())
         await fulfillment(of: [saved], timeout: 5)
         XCTAssertGreaterThan(savedPosition, 80)
-        try await Task.sleep(for: .milliseconds(400))
-        let manualPage = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int
+        try await waitUntil("manual page in DOM and UIKit") {
+            let domPage = try await page()
+            let nativePage = Int((web.scrollView.contentOffset.x / web.scrollView.bounds.width).rounded())
+            return domPage == initialPage + 1 && nativePage == domPage
+        }
+        let manualPage: Int? = try await page()
         XCTAssertEqual(manualPage, initialPage + 1)
 
         // 翻页回写不能反过来跳到句首；书签/搜索的显式 revision 必须触发定位。
@@ -1798,11 +1844,13 @@ extension NativeCoreTests {
         XCTAssertNil(coordinator.pendingPosition)
         coordinator.requestPosition(240, revision: 1)
         coordinator.restorePosition(web)
-        let jumped = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int ?? 0
+        try await waitForPosition(240, height: 480)
+        let jumped = try await page()
         XCTAssertGreaterThan(jumped, initialPage + 1)
         coordinator.requestPosition(savedPosition, revision: 2)
         coordinator.restorePosition(web)
-        let restored = try await web.evaluateJavaScript("Math.round(scrollX / innerWidth)", in: nil, contentWorld: .page) as? Int
+        try await waitForPosition(savedPosition, height: 480)
+        let restored: Int? = try await page()
         // 跨端进度精确到句子；页首句横跨两页时，应从该句起点恢复，避免漏读。
         XCTAssertGreaterThan(restored ?? 0, 0)
         XCTAssertTrue((0...1).contains((manualPage ?? 0) - (restored ?? 0)))
@@ -1810,7 +1858,10 @@ extension NativeCoreTests {
         _ = coordinator.accessibilityNextPage()
         coordinator.requestPosition(260, revision: 3)
         coordinator.restorePosition(web)
-        try await Task.sleep(for: .milliseconds(400))
+        try await waitForPosition(260, height: 480)
+        // A completion in the same content world drains the preceding page-read
+        // and restore requests before checking the stale callback's guard.
+        _ = try await web.evaluateJavaScript("0", in: nil, contentWorld: .defaultClient)
         XCTAssertEqual(coordinator.readingPosition, 260)
         withExtendedLifetime(coordinator) {}
     }
