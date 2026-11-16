@@ -26,6 +26,12 @@ name: Tests
 on:
   workflow_dispatch:
   pull_request:
+  # 这条集成分支没有拉取请求权限，也不能 workflow_dispatch。
+  # 推送到下面两个分支时直接跑测试，合入 main 后这条过滤不会匹配 main。
+  push:
+    branches:
+      - cursor/land-readium-redesign-50d7
+      - redesign/anthropic-readium-20261117
 
 permissions:
   contents: read
