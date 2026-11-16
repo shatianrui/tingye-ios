@@ -26,7 +26,7 @@ struct BookDetailView: View {
             if let entry {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack {
-                        Text("书籍详情").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
+                        Text("书籍详情").font(Theme.serif(28)).foregroundStyle(Theme.ink)
                         Spacer()
                         CircleIconButton(systemName: Icon.close, label: "返回书库") { dismiss() }
                     }
@@ -110,7 +110,7 @@ struct BookDetailView: View {
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
     }
 
@@ -192,7 +192,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.contents, title: "全部目录", subtitle: "\(entry.chapterCount) \(chapterUnit(entry))")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.contents")
                 if !chapterTitles.isEmpty {
                     VStack(spacing: 0) {
@@ -206,7 +206,7 @@ struct BookDetailView: View {
                                     Text(String(format: "%02d", index + 1))
                                         .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(chapterTitles[index]).font(.subheadline)
+                                        Text(chapterTitles[index]).font(Theme.serif(15))
                                             .foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
                                             .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                                         if entry.started && index == entry.progress.chapter {
@@ -215,7 +215,7 @@ struct BookDetailView: View {
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 12)
+                                .padding(.horizontal, Theme.insetCompact).padding(.vertical, 12)
                                 .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                                 .contentShape(Rectangle())
                             }
@@ -240,7 +240,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.highlight, title: "书摘与笔记", subtitle: "\(entry.notes.count) 条")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.notes")
                 NavigationLink {
                     List {
@@ -267,7 +267,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.bookmark(false), title: "阅读书签", subtitle: "\(entry.bookmarks.count) 个")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.bookmarks")
             }
         }
@@ -300,7 +300,7 @@ struct BookDetailView: View {
             Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink2).multilineTextAlignment(.trailing)
             ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink2)
         }
-        .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 56)
+        .padding(.horizontal, Theme.insetCompact).padding(.vertical, 14).frame(minHeight: 56)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .contentShape(Rectangle())
     }
@@ -432,7 +432,7 @@ struct ChapterManagerView: View {
                             .frame(width: 28)
                     }
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(chapter.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
+                        Text(chapter.title).font(Theme.serif(15)).foregroundStyle(Theme.ink).lineLimit(2)
                         Text("\(read.contains(index) ? "已读" : "未读") · 共 \(chapter.text.count) 字")
                             .font(.caption).foregroundStyle(read.contains(index) ? Theme.accent : Theme.ink3)
                     }
@@ -623,7 +623,7 @@ struct ProfileView: View {
     private func settingsLink(_ route: SettingsDestination, icon: String? = nil, color: Color = Theme.accent, title: String, subtitle: String? = nil, value: String? = nil, disclosure: Bool = true) -> some View {
         Button { settingsRoute = route } label: {
             settingsRow(icon: icon, color: color, title: title, subtitle: subtitle, value: value, disclosure: disclosure)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.insetCompact)
                 .frame(minHeight: subtitle == nil ? 52 : 64)
                 .overlay(alignment: .bottom) { RowDivider() }
                 .contentShape(Rectangle())
@@ -684,7 +684,7 @@ struct AppearanceView: View {
             VStack(alignment: .leading, spacing: 26) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("让听页，更合你的习惯。")
-                        .scaledFont(23, weight: .semibold, relativeTo: .title2)
+                        .font(Theme.serif(23, relativeTo: .title2))
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text("温柔的纸色，顺应每一刻的光。")
@@ -721,7 +721,7 @@ struct AppearanceView: View {
                 appearancePreview(value)
                 VStack(alignment: .leading, spacing: 7) {
                     Text(L(title))
-                        .font(.headline)
+                        .font(Theme.serif(17))
                         .foregroundStyle(Theme.ink)
                     Text(L(subtitle))
                         .font(.caption)
@@ -732,28 +732,29 @@ struct AppearanceView: View {
                     .font(.system(size: 22, weight: .regular))
                     .foregroundStyle(selected ? Theme.accent : Theme.line)
             }
-            .padding(16)
+            .padding(Theme.insetCompact)
             .background(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).fill(Theme.surface))
             .overlay { if selected { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.accent.opacity(0.45), lineWidth: 1) } }
             .contentShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         }
-        .buttonStyle(PressButtonStyle(scale: 0.99))
+        .buttonStyle(PressButtonStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("appearance.\(value)")
     }
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x101725) : Color(hex: 0xFAF9F6)
-        let foreground = dark ? Color(hex: 0xF3F5FA) : Color(hex: 0x17233A)
+        // 预览沿用应用自身的 Anthropic 调色：奶油画布 / 深墨底 / 陶土标记。
+        let background = dark ? Color(hex: 0x141413) : Color(hex: 0xFAF9F5)
+        let foreground = dark ? Color(hex: 0xFAF9F5) : Color(hex: 0x141413)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 4, height: 4)
+                Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA34E2B)).frame(width: 4, height: 4)
                 Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            Rectangle().fill(Color(hex: dark ? 0x192236 : 0xFFFFFF)).frame(height: 25)
+            Rectangle().fill(Color(hex: dark ? 0x1F1E1D : 0xFFFFFF)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA34E2B)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
@@ -764,8 +765,8 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x101725)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF0F0F0)) }
+                Rectangle().fill(Color(hex: 0x141413)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xFAF9F5)) }
             }
         }
         .clipShape(Rectangle())

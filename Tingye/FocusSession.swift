@@ -205,7 +205,7 @@ struct FocusStartView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(bookTitle).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                 Text(chapterTitle.isEmpty ? "第 \(chapter + 1) 章" : "第 \(chapter + 1) 章 · \(chapterTitle)")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
             }
             SectionTitle(title: "专注时长")
             Picker("专注时长", selection: $mode) {
@@ -214,9 +214,10 @@ struct FocusStartView: View {
                 Text("自定义").tag(2)
             }
             .pickerStyle(.segmented)
+            .tint(Theme.ink)
             if mode == 2 {
                 Stepper(value: $customMinutes, in: 10...90, step: 5) {
-                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).foregroundStyle(Theme.ink)
+                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).monospacedDigit().foregroundStyle(Theme.ink)
                 }
             }
             Text("专注期间照常计入阅读统计，不会重复计。")
@@ -234,14 +235,14 @@ struct FocusStartView: View {
 
     private var runningSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("正在专注").font(.caption).foregroundStyle(Theme.accent)
+            Text("正在专注").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
             TimelineView(.periodic(from: .now, by: 15)) { context in
                 Text(remainingLabel(at: context.date))
                     .font(Theme.display(40)).monospacedDigit().foregroundStyle(Theme.ink)
                     .onChange(of: context.date) { _, _ in store.completeIfDue(currentChapter: chapter) }
             }
             Text("目标 \(store.targetMinutes) 分钟 · 从第 \(store.chapterAtStart + 1) 章开始")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
             Button {
                 store.finish(currentChapter: chapter)
             } label: { Text("结束专注") }
@@ -305,19 +306,21 @@ struct FocusSummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("专注完成").font(.caption).foregroundStyle(Theme.accent)
-                Text(minutesText).font(Theme.display(40)).monospacedDigit().foregroundStyle(Theme.ink)
+                Text("专注完成").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
+                Text(minutesText).font(Theme.display(40)).foregroundStyle(Theme.ink)
                 Text("读到第 \(store.chapterAtEnd + 1) 章" + (newHighlights.map { " · 新增 \($0) 条摘记" } ?? ""))
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
             }
             VStack(alignment: .leading, spacing: 12) {
-                Text("今日一句").font(.caption2.weight(.medium))
-                Text(quoteText).font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(7)
+                Text("今日一句").font(Theme.masthead).tracking(Theme.kickerTracking)
+                Text(quoteText).font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-            .foregroundStyle(Theme.onWarm)
+            .padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+            .foregroundStyle(Theme.ink)
+            .softCardShadow()
             Button { store.dismissSummary(); onContinue() } label: { Text("继续读") }
                 .buttonStyle(PrimaryButtonStyle(height: 50))
                 .accessibilityIdentifier("focus.summary.continue")

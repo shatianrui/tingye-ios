@@ -22,7 +22,7 @@ struct DailyQuoteCard: View {
     var body: some View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
-                Text("今日摘句").font(.caption2.weight(.medium)).foregroundStyle(Theme.onWarm)
+                Text("今日摘句").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
                 Group {
                     if let quote, quote.entryID == entry.id {
                         Text(quote.text)
@@ -30,14 +30,15 @@ struct DailyQuoteCard: View {
                         Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
                     }
                 }
-                .font(Theme.serifSemibold(23, relativeTo: .title2))
+                .font(Theme.serif(23, relativeTo: .title2))
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(Theme.onWarm)
+                .foregroundStyle(Theme.ink)
                 .changeEffect(.shine(duration: 1.0), value: quote == nil, isEnabled: !reduceMotion)
                 Text("—— " + sourceLine(entry))
                     .font(Theme.serif(13, relativeTo: .caption))
-                    .foregroundStyle(Theme.onWarm)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.ink3)
                     .lineLimit(2)
                 if !compact {
                     HStack(spacing: 10) {
@@ -54,16 +55,18 @@ struct DailyQuoteCard: View {
                     if let quote, quote.entryID == entry.id {
                         QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
                             HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享摘句卡片").underline() }
-                                .font(.footnote.weight(.medium)).foregroundStyle(Theme.onWarm)
+                                .font(.footnote.weight(.medium)).foregroundStyle(Theme.accent)
                                 .frame(minHeight: 44)
                         }
                         .accessibilityIdentifier("quote.share")
                     }
                 }
             }
-            .padding(20)
+            .padding(Theme.insetCompact)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+            .softCardShadow()
             .contextMenu {
                 Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
                 Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }
@@ -138,29 +141,29 @@ struct QuoteShareCard: View {
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
             }
-            .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
-            .foregroundStyle(Color(hex: 0x17233A))
-            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6).padding(.top, 20)
+            .font(.system(size: 13, weight: .medium).width(.expanded)).tracking(Theme.kickerTracking)
+            .foregroundStyle(Theme.ink)
+            Capsule().fill(Theme.clay).frame(width: 72, height: 6).padding(.top, 20)
             Spacer(minLength: 48)
             Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
                 .frame(height: 80, alignment: .top).offset(x: -6)
             Text(text)
-                .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x17233A))
+                .font(Theme.serif(quoteSize)).lineSpacing(quoteSize * 0.4)
+                .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 48)
-            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6)
-            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x17233A)).padding(.top, 20)
+            Capsule().fill(Theme.clay).frame(width: 72, height: 6)
+            Text("《\(title)》").font(Theme.serif(26)).foregroundStyle(Theme.ink).padding(.top, 20)
             let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
             if !byline.isEmpty {
-                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x647084)).padding(.top, 6)
+                Text(byline).font(Theme.sans(18)).foregroundStyle(Theme.ink3).padding(.top, 6)
             }
-            Rectangle().fill(Color(hex: 0x17233A)).frame(height: 1).padding(.top, 28)
+            Rectangle().fill(Theme.ink).frame(height: 1).padding(.top, 28)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFAF9F6))
+        .background(Theme.bg)
         .environment(\.colorScheme, .light)
     }
 

@@ -36,11 +36,10 @@ struct MenuSettingsView: View {
                         save()
                     })) {
                         HStack(spacing: 12) {
-                            Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.accent).monospacedDigit()
+                            Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1)).font(Theme.mono(15, weight: .medium)).foregroundStyle(Theme.accent)
                             Text(tool.rawValue)
                             if tool == SelectionTool.visible(order: order, hidden: hidden).first {
-                                Text("默认").font(.caption2.weight(.medium)).foregroundStyle(Theme.accent)
-                                    .padding(.horizontal, 8).padding(.vertical, 4).background(Theme.accentSoft, in: Capsule())
+                                SealBadge(text: "默认")
                             }
                         }
                     }

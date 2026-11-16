@@ -67,14 +67,14 @@ struct ComicReaderView: View {
                     Button { dismiss() } label: {
                         ThemeIcon(symbol: Icon.back, size: 24)
                             .frame(width: 44, height: 44)
-                            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+                            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("返回")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(book.title).font(Theme.sans(20, weight: .bold)).lineLimit(2)
+                        Text(book.title).font(Theme.serif(20)).lineLimit(2)
                         Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                            .font(Theme.mono(12)).foregroundStyle(Theme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -102,7 +102,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(12)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 Spacer()
                 VStack(spacing: 4) {
                     HStack {
@@ -142,10 +142,10 @@ struct ComicReaderView: View {
                         .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, 8)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             }
             .frame(maxWidth: 760)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Theme.inset)
             .padding(.vertical, 12)
             .foregroundStyle(Theme.ink)
             .opacity(chrome ? 1 : 0)
@@ -176,10 +176,10 @@ struct ComicReaderView: View {
             ThemeIcon(symbol: icon, size: 24)
             Text(L(title)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.onAccent : Theme.ink3)
+        .foregroundStyle(selected ? Theme.onInk : Theme.ink3)
         .frame(maxWidth: .infinity, minHeight: 58)
         .padding(.vertical, 4)
-        .background(selected ? Theme.accent : Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+        .background(selected ? Theme.ink : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
         .contentShape(Rectangle())
     }
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {
@@ -204,7 +204,7 @@ struct ComicReaderView: View {
                         Text("全部页面").tag(false)
                         Text("书签 \(bookmarks.count)").tag(true)
                     }
-                    .pickerStyle(.segmented).listRowBackground(Color.clear)
+                    .pickerStyle(.segmented).tint(Theme.ink).listRowBackground(Color.clear)
                     if onlyBookmarks && directoryPages.isEmpty {
                         Text("还没有书签。阅读时轻点顶部的书签图标，保存当前页。")
                             .font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear)
@@ -214,12 +214,12 @@ struct ComicReaderView: View {
                             HStack(spacing: 14) {
                                 ComicPage(book: book, index: index, fit: .thumbnail)
                                     .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
-                                Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
+                                Text(String(format: "%02d", index + 1)).font(Theme.mono(13, weight: .medium))
                                     .foregroundStyle(index == page ? Theme.accent : Theme.ink3).frame(width: 36)
-                                Text("第 \(index + 1) 页").font(.system(size: 15)).foregroundStyle(Theme.ink)
+                                Text("第 \(index + 1) 页").font(Theme.sans(15)).foregroundStyle(Theme.ink)
                                 Spacer()
                                 if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
-                                if index == page { Text("在读").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent) }
+                                if index == page { SealBadge(text: "在读") }
                             }
                             .frame(minHeight: 48).contentShape(Rectangle())
                         }
