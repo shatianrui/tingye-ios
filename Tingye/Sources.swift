@@ -116,6 +116,14 @@ struct SourcesView: View {
                         .buttonStyle(PrimaryButtonStyle(height: 50))
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
+                    Text("点选一本书后立即导入，无需再次确认。")
+                        .font(.caption).foregroundStyle(Theme.ink2)
+                    Button("批量选择文件") { model.requestFileImport(allowsMultipleSelection: true); dismiss() }
+                        .buttonStyle(SecondaryButtonStyle(height: 44))
+                        .disabled(model.busy)
+                        .accessibilityIdentifier("sources.importBatch")
+                    Text("批量模式请勾选文件，再点「打开」或「完成」。")
+                        .font(.caption).foregroundStyle(Theme.ink2)
                 }
                 .padding(Theme.inset).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))

@@ -5,6 +5,18 @@ import ZIPFoundation
 
 enum BookImporter {
     struct Imported: Sendable { let book: Book; var progress = ReadingProgress() }
+    /// Coordinate file-provider reads off the main actor. The picker normally gives us a copy;
+    /// this also handles security-scoped URLs delivered by Open In / drag and drop.
+    static func readCoordinated(_ url: URL) throws -> Imported {
+        var coordinationError: NSError?
+        var result: Result<Imported, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinationError) { readableURL in
+            result = Result { try read(readableURL) }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let result else { throw ReaderError.message("无法读取所选文件，请在「文件」App 中确认文件已下载后重试。") }
+        return try result.get()
+    }
     static func read(_ url: URL) throws -> Imported {
         let title = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension.lowercased()

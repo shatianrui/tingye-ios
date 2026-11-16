@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 /// 书库：清晰的书目、柔和的封面网格与可跨分组的搜索和整理。
 struct ShelfView: View {
@@ -11,6 +12,7 @@ struct ShelfView: View {
     @State private var filter = "全部"
     @State private var category: String?
     @State private var importing = false
+    @State private var batchImport = false
     @State private var showingSources = false
     @State private var showingImportResults = false
     @State private var searching = false
@@ -145,11 +147,14 @@ struct ShelfView: View {
         .toolbar(.hidden, for: .tabBar)
         .preference(key: LibraryNavigationHiddenKey.self, value: editing || searching)
         .animation(Theme.smoothSpring, value: editing)
-        .bookImporter(isPresented: $importing)
+        .bookImporter(isPresented: $importing, allowsMultipleSelection: batchImport)
         .sheet(isPresented: $showingSources, onDismiss: {
             // ImportHub 内点「选择文件」只登记请求并关闭面板；面板完全关闭后才从本根层打开
             // 文件选择器，避免选择器在 sheet 内部呈现时回调被吞（点「打开」无反应）。
-            if model.consumeFileImportRequest() { importing = true }
+            if model.consumeFileImportRequest() {
+                batchImport = model.fileImportAllowsMultipleSelection
+                importing = true
+            }
         }) { ImportHubView().environmentObject(model).tint(Theme.accent) }
         .sheet(isPresented: $showingImportResults) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
     }
@@ -1265,25 +1270,69 @@ struct GroupPickerView: View {
 
 // MARK: - 导入（书库与书源共用）
 
+/// Copy selected provider documents into the sandbox before parsing them.
+/// The ordinary entry imports one book on tap; batch selection is a separate explicit action.
+struct LocalBookPicker: UIViewControllerRepresentable {
+    var allowsMultipleSelection = false
+    let completion: ([URL]?) -> Void
+
+    static func controller(allowsMultipleSelection: Bool, delegate: UIDocumentPickerDelegate) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
+        picker.allowsMultipleSelection = allowsMultipleSelection
+        picker.shouldShowFileExtensions = true
+        picker.delegate = delegate
+        #if DEBUG
+        if UIReview.isolated && UIReview.screen == "sources-file-import" {
+            picker.directoryURL = UIReview.localImportDirectory
+        }
+        #endif
+        return picker
+    }
+    func makeCoordinator() -> Coordinator { Coordinator(completion: completion) }
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = Self.controller(allowsMultipleSelection: allowsMultipleSelection, delegate: context.coordinator)
+        picker.view.accessibilityIdentifier = "bookImport.documentPicker"
+        return picker
+    }
+    func updateUIViewController(_ controller: UIDocumentPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        private var completed = false
+        private let completion: ([URL]?) -> Void
+        init(completion: @escaping ([URL]?) -> Void) { self.completion = completion }
+        private func finish(_ urls: [URL]?) {
+            guard !completed else { return }
+            completed = true
+            completion(urls)
+        }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { finish(urls) }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish(nil) }
+    }
+}
+
 private struct BookImportModifier: ViewModifier {
     @EnvironmentObject var model: AppModel
     @Binding var isPresented: Bool
+    var allowsMultipleSelection = false
     func body(content: Content) -> some View {
-        content.fileImporter(isPresented: $isPresented, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
-            switch result {
-            case .success(let urls):
-                // 空结果不能静默吞掉：要么导入，要么明确报错。
+        content.sheet(isPresented: $isPresented) {
+            LocalBookPicker(allowsMultipleSelection: allowsMultipleSelection) { urls in
+                isPresented = false
+                // nil is cancellation; empty success retains PR10's explicit error.
+                guard let urls else { return }
+                // Deliver copies directly; picker onDismiss must not hold the selection.
                 if urls.isEmpty { model.message = "没有选中可导入的文件，请重新选择。" }
                 else { model.beginImport(urls) }
-            case .failure(let error):
-                model.message = error.localizedDescription
             }
+            .ignoresSafeArea()
         }
     }
 }
 
 extension View {
-    func bookImporter(isPresented: Binding<Bool>) -> some View { modifier(BookImportModifier(isPresented: isPresented)) }
+    func bookImporter(isPresented: Binding<Bool>, allowsMultipleSelection: Bool = false) -> some View {
+        modifier(BookImportModifier(isPresented: isPresented, allowsMultipleSelection: allowsMultipleSelection))
+    }
 }
 
 /// 最近一批导入的逐项结果。失败文件重新选择，避免复用已经失效的安全作用域 URL。

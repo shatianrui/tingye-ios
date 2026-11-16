@@ -2398,3 +2398,65 @@ extension NativeCoreTests {
         }
     }
 }
+
+@MainActor
+final class LocalFileImportTests: XCTestCase {
+    func testOrdinaryPickerUsesCopyModeAndSingleSelection() {
+        let delegate = LocalBookPicker.Coordinator { _ in }
+        let picker = LocalBookPicker.controller(allowsMultipleSelection: false, delegate: delegate)
+        XCTAssertFalse(picker.allowsMultipleSelection)
+        XCTAssertTrue(picker.shouldShowFileExtensions)
+        XCTAssertEqual(picker.documentPickerMode, .import)
+        XCTAssertTrue(LocalBookPicker.controller(allowsMultipleSelection: true, delegate: delegate).allowsMultipleSelection)
+    }
+    func testPickerDeliversSelectedFileExactlyOnceAndCancellationIsNil() {
+        let url = URL(fileURLWithPath: "/tmp/local.txt")
+        var selections: [[URL]?] = []
+        let delegate = LocalBookPicker.Coordinator { selections.append($0) }
+        let picker = LocalBookPicker.controller(allowsMultipleSelection: false, delegate: delegate)
+        delegate.documentPicker(picker, didPickDocumentsAt: [url])
+        delegate.documentPickerWasCancelled(picker)
+        XCTAssertEqual(selections, [[url]])
+        var cancellations = 0
+        let cancelDelegate = LocalBookPicker.Coordinator { XCTAssertNil($0); cancellations += 1 }
+        cancelDelegate.documentPickerWasCancelled(picker)
+        XCTAssertEqual(cancellations, 1)
+        cancelDelegate.documentPicker(picker, didPickDocumentsAt: [url])
+        XCTAssertEqual(cancellations, 1)
+    }
+    func testSelectedFileIsPersistedAndCanBeReadAfterSourceIsRemoved() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let disk = try LibraryDisk(owner: "local-import", base: folder)
+        let suite = "tests.local-import." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(false, forKey: ProgressSync.enabledKey)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
+        let source = folder.appendingPathComponent("本地书籍.TXT")
+        try Data("第一章 开始\n本地文件正文。".utf8).write(to: source)
+        try await model.importWithFeedback([source])
+        let entry = try XCTUnwrap(model.entries.first)
+        XCTAssertEqual(model.importReport?.successes, 1)
+        XCTAssertEqual(model.importReport?.failures, 0)
+        try FileManager.default.removeItem(at: source)
+        XCTAssertTrue(try disk.read(entry.id).chapters[0].text.contains("本地文件正文"))
+        XCTAssertEqual(try disk.catalog().first?.id, entry.id)
+        _ = try await model.beginLibraryRestore()
+    }
+    func testMissingProviderFileIsReportedInsteadOfSilentlyIgnoringSelection() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let disk = try LibraryDisk(owner: "missing-file", base: folder)
+        let suite = "tests.local-import." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(false, forKey: ProgressSync.enabledKey)
+        let model = AppModel(disk: disk, progressSync: ProgressSync(store: MemoryKeyValueStore(), defaults: defaults, account: { false }))
+        try await model.importWithFeedback([folder.appendingPathComponent("missing.epub")])
+        XCTAssertEqual(model.importReport?.failures, 1)
+        XCTAssertTrue(model.entries.isEmpty)
+        XCTAssertTrue(model.notice?.importResults == true)
+        _ = try await model.beginLibraryRestore()
+    }
+}

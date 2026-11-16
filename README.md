@@ -126,6 +126,8 @@ xcodebuild -project Tingye.xcodeproj -scheme Tingye -configuration Debug \
 
 ## 文档与许可
 
+- [本地文件导入历史补丁与终审记录（已实现、尚未经 iOS/CI/真机验证）](docs/LOCAL-IMPORT-FIX.md)
+
 - [当前 Figma：听页品牌与 iOS UI 重设计](https://www.figma.com/design/dYtodq4gYGkOJw1EPODDMY?node-id=16-22)
 - [阅读优先：1.24.0（122）改动与兼容说明](docs/READING-FIRST.md)
 - [当前版本验收：1.24.0（123）](docs/VALIDATION-123.md)

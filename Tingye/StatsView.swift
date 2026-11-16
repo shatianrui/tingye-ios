@@ -622,6 +622,7 @@ private struct SettingsDirectoryView: View {
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
     @State private var importingBooks = false
+    @State private var batchImport = false
 
     private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
 
@@ -671,11 +672,14 @@ private struct SettingsDirectoryView: View {
         }
         .sheet(isPresented: $showingImportHub, onDismiss: {
             // 与书库页同口径：ImportHub 内登记的文件导入请求在面板关闭后从本层打开选择器。
-            if model.consumeFileImportRequest() { importingBooks = true }
+            if model.consumeFileImportRequest() {
+                batchImport = model.fileImportAllowsMultipleSelection
+                importingBooks = true
+            }
         }) {
             ImportHubView().environmentObject(model).tint(Theme.accent)
         }
-        .bookImporter(isPresented: $importingBooks)
+        .bookImporter(isPresented: $importingBooks, allowsMultipleSelection: batchImport)
     }
 
     private func settingsEntry(icon: String, title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) -> some View {

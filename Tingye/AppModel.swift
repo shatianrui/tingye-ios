@@ -463,7 +463,11 @@ final class AppModel: ObservableObject {
     /// 选择器也不关闭的呈现冲突。入口只登记请求并关闭面板，宿主页（书库页 / 设置页）
     /// 在 sheet 的 onDismiss 里消费请求，改从根层视图打开选择器，全程只有一个 presentation。
     @Published private(set) var fileImportRequested = false
-    func requestFileImport() { fileImportRequested = true }
+    @Published private(set) var fileImportAllowsMultipleSelection = false
+    func requestFileImport(allowsMultipleSelection: Bool = false) {
+        fileImportAllowsMultipleSelection = allowsMultipleSelection
+        fileImportRequested = true
+    }
     /// 宿主在 sheet 完全关闭后消费请求；返回 true 表示应立即打开文件选择器。
     func consumeFileImportRequest() -> Bool {
         defer { fileImportRequested = false }
@@ -495,7 +499,7 @@ final class AppModel: ObservableObject {
             importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-                let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.read(url) }.value
+                let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.readCoordinated(url) }.value
                 try checkOwner(captured); try await add(imported.book, progress: imported.progress)
                 importReport?.items[index].state = .imported(imported.book.id)
             } catch {
@@ -563,7 +567,7 @@ final class AppModel: ObservableObject {
         let captured = owner
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-        var value = try await Task.detached { try BookImporter.read(url).book }.value
+        var value = try await Task.detached { try BookImporter.readCoordinated(url).book }.value
         try checkOwner(captured)
         guard value.format.caseInsensitiveCompare(row.format) == .orderedSame else { throw ReaderError.message("请选择与原书相同格式的文件。") }
         value.fields["id"] = .string(id)

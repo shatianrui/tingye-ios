@@ -848,3 +848,25 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "功能键-横屏固定播放控制", wholeScreen: true)
     }
 }
+
+extension DesignFlowTests {
+    func testSingleTapLocalFileImportsThroughSystemPicker() {
+        let app = launch("sources-file-import")
+        let choose = app.buttons["sources.importFile"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 15))
+        choose.tap()
+        // Files can resolve directoryURL to the app's Documents root; enter the real folder if shown.
+        let folder = app.cells.containing(.staticText, identifier: "LocalImportFixture").firstMatch
+        if folder.waitForExistence(timeout: 5) { folder.tap() }
+        let file = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "点击导入")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 20), app.debugDescription)
+        screenshot(app, "系统选择器-选择本地书籍")
+        file.tap()
+        let results = app.buttons.matching(identifier: "import.results").firstMatch
+        XCTAssertTrue(results.waitForExistence(timeout: 20), "Single file tap should dismiss the picker and start import: " + app.debugDescription)
+        results.tap()
+        XCTAssertTrue(app.staticTexts["1 本书导入成功"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["点击导入.txt"].exists)
+        screenshot(app, "本地文件-单击导入成功")
+    }
+}
