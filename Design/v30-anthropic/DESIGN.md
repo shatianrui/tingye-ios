@@ -264,10 +264,10 @@ PR #15 触发的 `Tests` 工作流给出**真实编译结果**（run #32 / #33 /
 |---|---|
 | `Tingye` 目标编译 | ✅ **通过** —— 216 个 `SwiftCompile` 任务，0 个 `error:`，本次改动的 21 个 Swift 文件全部进入编译 |
 | 资源目录（`Assets.xcassets`） | ✅ **通过** —— `actool` 0 错误，`AppIcon.appiconset` 可用 |
-| 单元测试（113 条） | ✅ **通过** —— run #34：`Executed 113 tests, with 0 failures` |
-| UI 回归（27 条） | run #34：**1 条失败**（见下）；run #33：2 条；run #32：1 条 |
+| 单元测试（113 条） | ✅ **通过** —— run #37：`Executed 113 tests, with 0 failures`（run #34、#36 亦全过） |
+| UI 回归（27 条） | ✅ **通过** —— run #37：`Executed 27 tests, with 0 failures`，**整轮 CI 结论 success** |
 
-#### 唯一反复出现的失败：书内搜索框不可命中
+#### 曾经反复出现的失败：书内搜索框不可命中（已修复）
 
 ```
 DesignFlowTests.testReaderNotesAndSearchOpenWithoutStartingAudio
@@ -281,7 +281,10 @@ DesignFlowTests.testReaderNotesAndSearchOpenWithoutStartingAudio
 2. 失败点是系统 `.searchable` **收起式抽屉**（`displayMode: .automatic`）在模拟器上取不到有效激活点；
 3. 仓库作者已在 `integrate/ios-import-v30-search`（commit `0a338be`）定位并修复：
    改为 `placement: .navigationBarDrawer(displayMode: .always)` 常显搜索框，搜索态改用 `.large` sheet。
-   本分支已**移植该修复**，PR #15 不再依赖后续合并即可通过该用例。
+   本分支已**移植该修复**。
+
+**修复后的验证**：run #37 整轮 CI 结论 **success** —— 单元测试 113 条 0 失败、UI 回归 27 条 0 失败
+（该用例 28.96s 通过）、`SwiftCompile` 0 错误。
 
 #### 其余偶发项（与本次改动无关）
 
