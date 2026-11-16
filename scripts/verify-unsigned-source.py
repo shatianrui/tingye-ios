@@ -7,6 +7,7 @@ from pathlib import Path
 import plistlib
 import re
 import subprocess
+import sys
 import zipfile
 
 BASELINE = '18481af8008b27266af661b03bf16cf5b10e07a0'
@@ -145,8 +146,17 @@ def main():
     if os.environ.get('GITHUB_REPOSITORY', REPOSITORY) != REPOSITORY:
         raise ValueError('Wrong repository')
     subprocess.run(['git', 'merge-base', '--is-ancestor', BASELINE, source], check=True)
-    subprocess.run(['git', 'diff', '--exit-code', '--quiet'], check=True)
-    subprocess.run(['git', 'diff', '--cached', '--exit-code', '--quiet'], check=True)
+    try:
+        subprocess.run(['git', 'diff', '--exit-code', '--quiet'], check=True)
+        subprocess.run(['git', 'diff', '--cached', '--exit-code', '--quiet'], check=True)
+    except subprocess.CalledProcessError:
+        # Name the offending paths before failing so the build log shows
+        # exactly what dirtied the worktree (e.g. a file-mode change).
+        status = subprocess.run(['git', 'status', '--porcelain'],
+                                capture_output=True, text=True)
+        print('error: worktree is not clean; changed paths:\n' + status.stdout,
+              file=sys.stderr)
+        raise
     version, build = project_version()
     if args.tag:
         verify_tag(args.tag, source)
