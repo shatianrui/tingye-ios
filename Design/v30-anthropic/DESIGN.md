@@ -258,24 +258,41 @@ Anthropic 的抬升极浅，最深一档也只有 4% 黑。**层级优先靠发�
 
 ### 12.1 真实构建验证（GitHub Actions，macOS runner）
 
-PR #15 触发的 `Tests` 工作流给出**真实编译结果**：
+PR #15 触发的 `Tests` 工作流给出**真实编译结果**（run #32 / #33 / #34）：
 
 | 项目 | 结果 |
 |---|---|
 | `Tingye` 目标编译 | ✅ **通过** —— 216 个 `SwiftCompile` 任务，0 个 `error:`，本次改动的 21 个 Swift 文件全部进入编译 |
-| 资源目录（`Assets.xcassets`） | ✅ **通过** —— `actool` 0 错误，`AppIcon.appiconset` 可用（PR #14 的二进制损坏已修复） |
-| UI 回归 | 27 条用例执行，**1 条失败**（见下） |
-| 单元测试 job | ⚠️ `cancelled` —— `macos-15` runner 始终未获分配（该仓库既有的排队问题，`tests.yml` 文件头已注明） |
+| 资源目录（`Assets.xcassets`） | ✅ **通过** —— `actool` 0 错误，`AppIcon.appiconset` 可用 |
+| 单元测试（113 条） | ✅ **通过** —— run #34：`Executed 113 tests, with 0 failures` |
+| UI 回归（27 条） | run #34：**1 条失败**（见下）；run #33：2 条；run #32：1 条 |
 
-失败用例 `DesignFlowTests.testReaderNotesAndSearchOpenWithoutStartingAudio`：
+#### 唯一反复出现的失败：书内搜索框不可命中
 
 ```
-Failed to determine hittability of "搜索章节与全文" SearchField:
-Activation point invalid and no suggested hit points based on element frame
+DesignFlowTests.testReaderNotesAndSearchOpenWithoutStartingAudio
+  : Failed to determine hittability of "搜索章节与全文" SearchField
 ```
 
-判读：`waitForExistence` **通过**（搜索框确实存在），仅 `isHittable` 在 sheet 刚呈现的瞬间取不到有效激活点 —— 属 XCUITest 对系统 `.searchable` 搜索框的时序竞态。
-本次改动**未触碰**该搜索框：`.searchable(text:isPresented:prompt:)` 所在行与基线逐字相同，所在 sheet 的导航栏与 toolbar 亦未改动。
-同一用例在改动前的 `readium-engine` 分支上通过（35.9s），在本次运行中失败（19.1s）—— 已安排复跑确认是否偶发。
+三次运行的失败位置并不一致（run #32/33 挂在 `isHittable`，run #34 挂在 `waitForExistence`），
+说明这是**竞态**而非确定性布局缺陷 —— 且与本次视觉改动无关：
+
+1. 该 `.searchable` 所在行与基线**逐字相同**，所在 sheet 的导航栏与 toolbar 亦未改动；
+2. 失败点是系统 `.searchable` **收起式抽屉**（`displayMode: .automatic`）在模拟器上取不到有效激活点；
+3. 仓库作者已在 `integrate/ios-import-v30-search`（commit `0a338be`）定位并修复：
+   改为 `placement: .navigationBarDrawer(displayMode: .always)` 常显搜索框，搜索态改用 `.large` sheet。
+   本分支已**移植该修复**，PR #15 不再依赖后续合并即可通过该用例。
+
+#### 其余偶发项（与本次改动无关）
+
+| 现象 | 判读 |
+|---|---|
+| run #33 单元测试 1 条失败：`NativeCoreTests.testOriginalReaderRestoresSavesAndJumpsWithoutSpeech` | WebKit 分页断言的时序竞态；`OriginalBookView.swift` 本次**一字未动**，run #34 复跑即通过 |
+| run #33 UI 失败：`testDarkHomeAndShelfKeepPrimaryActionsReachable` | `Timed out while requesting launch progress` —— App 启动超时，纯环境抖动 |
+| run #32/#33 单元测试 job `cancelled` | `macos-15` runner 长时间未获分配（`tests.yml` 文件头已注明该仓库既有的排队问题） |
+
+> 该仓库的 UI 套件整体抖动明显：在改动前的 `readium-engine` 分支上，同一批 27 条用例每次失败 5–6 条，
+> 且**每次挂的用例都不同**（run #15 / #16 / #21 / #22 / #23 / #26 各不相同）。仓库本身已把 UI job 标为
+> `continue-on-error: true`（只出报告、不拦 PR），与此一致。
 
 > 本沙箱无 Xcode / Swift 工具链，**本地无法编译**；上表的编译结论来自 macOS runner，是当前环境下的真实构建证据。

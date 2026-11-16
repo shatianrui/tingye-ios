@@ -570,7 +570,7 @@ struct ReaderView: View {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .focus: PlayerView(player: player, fromReader: true)
-                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents(value == .search ? [.large] : [.medium, .large]).presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)
         }
@@ -1817,7 +1817,8 @@ struct ContentsView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden).background(Theme.bg)
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, isPresented: $searchPresented, prompt: "搜索章节与全文")
+            // 搜索入口必须直接给出可点击的输入框，不依赖 onAppear 展开默认的收起抽屉。
+            .searchable(text: $query, isPresented: $searchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索章节与全文")
             .task(id: query) {
                 let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !keyword.isEmpty else { hits = nil; return }
