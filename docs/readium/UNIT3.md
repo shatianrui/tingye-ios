@@ -99,3 +99,14 @@ API 核对使用版本化上游源码：[Locator](https://github.com/readium/swi
 - 防复发补齐两处限定：旧文本锚点工具调用使用 `Tingye.Locator.anchor`；装饰样式配置使用 `ReadiumNavigator.Decoration.Style.HighlightConfig`。原有 `ReadiumShared.Locator` 构造已限定并保留；排查文件没有 `Link`、`Location` 的显式类型引用，没有其他未限定的上述同名类型。其余显式引用为标准库/Foundation/XCTest 类型、听页自有模型或唯一的 Readium 类型（如 `EPUBPreferences`、`AnyURL`），未发现其他同名歧义风险。两个既有测试文件无需修改。
 - 本轮仅修改上述两个新测试文件与本文档；未改断言预期值或测试逻辑，未做 git 操作，未改 App、构建号 142、workflows、依赖或工程配置。已静态核对六处代码修改仅为五处类型限定与一处 `try`，保留全部 25 个测试方法，并对照修改前文件校验值检查改动范围。
 - 本环境无 Swift / xcodebuild / iOS SDK，未执行测试编译或 XCTest，也未触发 CI；需在 Mac/CI 重新验证 unit-tests 与 ui-tests，不能将本次静态核对记为编译或用例通过。
+
+### 2. Tests #15 唯一失败：revision 失效时保留迁移后的锚点
+
+2026-11-16 UTC，据本次提供的 Tests #15 日志，unit-tests 共 160 个、159 通过，唯一失败为 `LocatorMigrationTests.testRevisionInvalidationPreservesReferencesAndMigratesAgain`；ReadiumLocatorTests 为 15/15，LocatorMigrationTests 为 9/10。以下为本轮定向裁定，交付状态保持**待重新验证**。
+
+- **裁定：测试期望错误，实现保持不变。** 报错断言位于首次 `migration.convert(entry, using: bridge)` 及 `invalidated(migrated)` 之后、新文本 `changed` 构造之前，并非再次迁移后的比较。原断言把失效后的锚点与首次迁移前手写的仅含 quote 的 `entry.progress.anchor` 比较，混淆了迁移与失效两个阶段。
+- **夹具证据：** 本用例使用内联 TXT 夹具；`LocatorTestSupport.book` 将传入字符串原样作为章节 text。旧文本 `第一句。目标句。` 分句为索引 0 的 `第一句。` 和索引 1 的 `目标句。`；目标句唯一且位于章末。`Locator.anchor` 从相邻至多两句拼接上下文，因此首次精确迁移得到完整 `TextAnchor(quote: "目标句。", before: "第一句。", after: nil)`，不是 before 为 nil 的手写初始锚点。新文本 `新增句。第一句。目标句。` 中目标句移动至索引 2，重定位后 before 应为 `新增句。第一句。`，after 仍为 nil。
+- **合同依据：** PLAN 5.3 第 4 条要求由文本范围求出句号/跨度并“生成新的 TextAnchor”；第 5 条要求无效/变版走 TextAnchor 重定位，禁止覆盖的是失败条目的旧文本与锚点；第 6 条明确 TXT 同样采用逻辑 Locator。本文“PLAN 5.3 转换合同”已明确精确/文本重定位成功时可更新兼容坐标/锚点，失败或 unresolved 不更新。因此“保留旧引用”不等于成功迁移后锚点必须逐字段维持初始值。
+- **实现依据：** `LocatorBridge.resolve` 对 TXT 先经 `textTarget` 验证/重定位，再由 `logical` 按当前文本调用 `Locator.anchor`；`LocatorMigration.convert` 仅在 precise（exact / textRelocated）时回写兼容坐标与锚点。`invalidated` 仅清四类引用的 publicationRevision，保留传入的已迁移锚点，不负责恢复迁移前数据。这也与构建 142 以来 `AppModel.repair` 调用 `Locator.resolve` / `Locator.relocated`、位置移动时按新文本重建并回写锚点的既有语义一致；此处上下文没有取错句子。
+- **最小修改：** 仅在该用例把失效保留断言的比较对象从 `entry.progress.anchor` 改为 `migrated.progress.anchor`，并增加首次迁移和再次迁移的上述两个完整 TextAnchor 等值断言，明确检验 quote、before、after。原有 revision、Locator 存在性、位置 2 和反向转换断言全部保留，未删除或弱化断言。另一个实际锚点上下文生成缺陷未在本轮排查路径中发现。
+- **验证与范围：** 本轮仅修改 `TingyeTests/LocatorMigrationTests.swift` 中该方法与本文追加记录；已做修改前后文件内容/校验值对照、断言及夹具/上下文规则静态核对。未修改实现、其他测试、构建号 142、workflows、依赖或工程配置，未做 git 操作。本环境无 Swift / xcodebuild / iOS SDK，未执行 XCTest、未触发 CI；须在 Mac/CI 重新运行该用例及 unit-tests，不能据静态核对宣称 160/160 通过。
