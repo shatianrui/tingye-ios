@@ -73,7 +73,8 @@ final class ReadiumBackupSourceTests: XCTestCase {
     }
     func testOldBackupWithSameIDRevokesSourceAndCacheEpochButKeepsPinnedSession() async throws {
         let disk = try ReadiumUnit4Support.disk(self), book = try commit(try await imported(), to: disk)
-        let store = PublicationStore(disk: disk), pin = try await store.pin(store.prepare(book))
+        let store = PublicationStore(disk: disk)
+        let pin = try await store.pin(try await store.prepare(book))
         let epoch = try disk.publicationCacheEpoch(book.id)
         let row = ShelfEntry(book: book)
         let archive = ICloudArchive(owner: "old", books: [.init(packet: .init(book: book, progress: .init()), bookmarks: [])])

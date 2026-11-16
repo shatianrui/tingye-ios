@@ -292,8 +292,6 @@
 			children = (
 				04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */,
 				AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */,
-				2E248C6CA56B9B41B0E76089 /* ReadiumSpeechBridge.swift */,
-				EB954FF0C305979CA8161C09 /* EPUBTextSnapshotBuilder.swift */,
 				DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */,
 				3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */,
 				E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */,
@@ -333,7 +331,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (1A735B2AADC54FC0B741BED1 /* StoredLocator.swift */, B9B8861EAE4A1D1250FE469F /* TextDOMIndex.swift */, 30634F5EB23E72E8C422A7BA /* LocatorBridge.swift */, 50734DCF7783BDF4ED5A9B7C /* LocatorMigration.swift */, 9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */, 001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */, CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */, BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */, 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */, 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */, FB5969E135A8DFD835C08187 /* ReaderRouter.swift */, A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
+		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (1A735B2AADC54FC0B741BED1 /* StoredLocator.swift */, B9B8861EAE4A1D1250FE469F /* TextDOMIndex.swift */, 30634F5EB23E72E8C422A7BA /* LocatorBridge.swift */, 50734DCF7783BDF4ED5A9B7C /* LocatorMigration.swift */, 9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */, 001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */, EB954FF0C305979CA8161C09 /* EPUBTextSnapshotBuilder.swift */, CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */, BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */, 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */, 2E248C6CA56B9B41B0E76089 /* ReadiumSpeechBridge.swift */, 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */, FB5969E135A8DFD835C08187 /* ReaderRouter.swift */, A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -442,10 +440,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0FB11ED18F54D11464A42C8F /* Pow-LICENSE.txt in Resources */,
-				C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */,
-				D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */,
-				E875FF88648FE8F277BA2836 /* ReadiumSpeechBridge.swift in Sources */,
-				1978E45004476611088B5FD9 /* EPUBTextSnapshotBuilder.swift in Sources */,
 				36892EC415D1296C7AD84679 /* Fixtures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -485,6 +479,8 @@
 				6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */,
 				80EE7426B420AD1363C1B66C /* ReadiumPublicationTests.swift in Sources */,
 				B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */,
+				C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */,
+				D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,6 +503,8 @@
 				03D04C3BBB7AC643579A704C /* ReadiumFontProvider.swift in Sources */,
 				18EBF78813181429518CF154 /* EPUBDisplayTransform.swift in Sources */,
 				A7E3E313B999A5800F2326F4 /* ReadiumService.swift in Sources */,
+				1978E45004476611088B5FD9 /* EPUBTextSnapshotBuilder.swift in Sources */,
+				E875FF88648FE8F277BA2836 /* ReadiumSpeechBridge.swift in Sources */,
 				66E47CFD1A5399FEAB44C89B /* AppModel.swift in Sources */,
 				A11111111111111111111111 /* ICloudBackup.swift in Sources */,
 				1A042B7B53782BCC1951F854 /* BookImporter.swift in Sources */,
