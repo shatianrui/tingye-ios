@@ -98,9 +98,18 @@ struct SMBBrowser: View {
         List {
             if let error {
                 Section {
-                    Label(error, systemImage: Icon.warning).foregroundStyle(Theme.danger)
-                    Button("重新加载") { Task { await load() } }.disabled(loading)
+                    VStack(alignment: .leading, spacing: Theme.space3) {
+                        Label(error, systemImage: Icon.warning)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.danger)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button("重新加载") { Task { await load() } }
+                            .buttonStyle(SecondaryButtonStyle(height: 40))
+                            .disabled(loading)
+                    }
+                    .padding(.vertical, Theme.space2)
                 }
+                .listRowBackground(Theme.dangerSoft)
             }
             if share == nil {
                 ForEach(shares, id: \.self) { name in
@@ -108,7 +117,7 @@ struct SMBBrowser: View {
                         Label(name, systemImage: Icon.folderFill).foregroundStyle(Theme.ink)
                     }
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(Theme.bg)
             } else {
                 ForEach(shownFiles) { item in
                     if item.isFolder {
@@ -118,11 +127,11 @@ struct SMBBrowser: View {
                             .disabled(!ImportableFile.accepts(item.name) || model.busy)
                     }
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(Theme.bg)
             }
         }
         .overlay {
-            if loading { ProgressView() }
+            if loading { ProgressView().tint(Theme.ink3) }
             else if error == nil && (share == nil ? shares.isEmpty : shownFiles.isEmpty) {
                 ContentUnavailableView(share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), systemImage: Icon.folder)
             }
@@ -142,18 +151,26 @@ struct SMBBrowser: View {
 
     private func row(_ item: SMBEntry) -> some View {
         let importable = ImportableFile.accepts(item.name)
-        return HStack(spacing: 14) {
+        return HStack(spacing: Theme.space3) {
             ThemeIcon(symbol: item.isFolder ? Icon.folder : importable ? Icon.read : Icon.document, size: 24)
-                .foregroundStyle(item.isFolder ? Theme.accent : importable ? Theme.ink2 : Theme.ink3)
+                .foregroundStyle(item.isFolder ? Theme.ink2 : importable ? Theme.ink2 : Theme.ink3)
                 .frame(width: 24, height: 44).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.name).font(.subheadline.weight(.medium)).foregroundStyle(item.isFolder || importable ? Theme.ink : Theme.ink3).lineLimit(2)
-                if !item.isFolder { Text(ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file)).font(.caption).foregroundStyle(Theme.ink3) }
+                if !item.isFolder {
+                    Text(ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file))
+                        .font(Theme.mono(12))
+                        .foregroundStyle(Theme.ink3)
+                }
             }
             Spacer()
-            if !item.isFolder && importable { Label("导入", systemImage: Icon.downloadFile).font(.caption.weight(.medium)).foregroundStyle(Theme.accent) }
+            if !item.isFolder && importable {
+                Label("导入", systemImage: Icon.downloadFile)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Theme.accent)
+            }
         }
-        .padding(.vertical, 6).contentShape(Rectangle())
+        .padding(.vertical, Theme.space2).contentShape(Rectangle())
     }
 
     private func load() async {

@@ -106,7 +106,7 @@ struct MyFontsView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("让文字更合心意", systemImage: Icon.fonts).font(.headline).foregroundStyle(Theme.ink)
+                    Label("让文字更合心意", systemImage: Icon.fonts).font(Theme.serif(17)).foregroundStyle(Theme.ink)
                     Text("山静似太古，日长如小年。")
                         .font(Theme.serif(22)).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)

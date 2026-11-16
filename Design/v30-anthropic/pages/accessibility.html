@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 无障碍与适配</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* AX5：字号整体放大，行高与留白同步放开 */
+  .ax5 { font-size: 22px; }
+  .ax5 .t-book { font-size: 24px; }
+  .ax5 .t-caption { font-size: 18px; }
+  .ax5 .row { padding: var(--ty-space-5) 0; }
+  .ax5 .toolbar-4 .tool { font-size: 15px; }
+  .ax5 .btn-primary, .ax5 .btn-secondary { font-size: 20px; min-height: 60px; }
+  .ax5 .chip { font-size: 19px; min-height: 48px; }
+
+  /* 深色走查 */
+  .dark .ink { color: var(--ty-ink); }
+
+  /* SE 小屏 */
+  .se { width: 375px; height: 667px; outline-width: 8px; }
+  .se .content { padding-left: var(--ty-inset-compact); padding-right: var(--ty-inset-compact); }
+  .se .topbar { padding-left: var(--ty-inset-compact); padding-right: var(--ty-inset-compact); }
+
+  .kbd {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 290px;
+    background: #D1D3D9; /* exempt: 模拟系统键盘，非应用界面 */ border-radius: 12px 12px 0 0; z-index: 70;
+    padding: 10px 4px;
+  }
+  .kbd .kr { display: flex; justify-content: center; gap: 6px; margin-bottom: 9px; }
+  .kbd .key {
+    background: #fff; /* exempt: 模拟系统键盘，非应用界面 */ border-radius: 5px; height: 42px; flex: 1; margin: 0 2px;
+    box-shadow: 0 1px 0 #8A8C90; /* exempt: 模拟系统键盘，非应用界面 */ display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #16161A; /* exempt: 模拟系统键盘，非应用界面 */
+  }
+  .kbd .key.wide { flex: 4; }
+  .kbd .key.space { flex: 6; }
+
+  /* 对比度样本 */
+  .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sw { border-radius: var(--ty-radius-sm); padding: 10px 12px; }
+  .sw .n { font-size: 11px; opacity: 0.75; }
+  .sw .v { font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ① AX5 最大字号 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar ax5">
+      <div class="topbar">
+        <div style="flex:1"><span class="title" style="font-size:22px;">书库</span></div>
+        <button class="btn-icon" type="button" aria-label="搜索">
+          <svg class="ico" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+        </button>
+      </div>
+      <div class="content">
+        <div class="hstack" style="flex-wrap:wrap;gap:8px;margin-bottom:var(--ty-space-4);">
+          <span class="chip is-selected">全部</span>
+          <span class="chip">在读</span>
+          <span class="chip">待读</span>
+        </div>
+        <div class="row">
+          <span class="bookcover lg" style="width:56px;height:78px;font-size:20px;">故</span>
+          <div style="flex:1;min-width:0;">
+            <div class="t-book">故乡</div>
+            <div class="t-caption">鲁迅 · 第三章 · 昨天</div>
+          </div>
+          <span class="seal-dot"></span>
+        </div>
+        <div class="row">
+          <span class="bookcover lg" style="width:56px;height:78px;font-size:20px;">城</span>
+          <div style="flex:1;min-width:0;">
+            <div class="t-book">城南旧事</div>
+            <div class="t-caption">林海音 · 第六章 · 5 月 10 日</div>
+          </div>
+          <span class="badge is-outline">待读</span>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="toolbar-4">
+          <button class="tool is-active" type="button"><span>目录</span></button>
+          <button class="tool" type="button"><span>排版</span></button>
+          <button class="tool" type="button"><span>摘记</span></button>
+          <button class="tool" type="button"><span>更多</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">无障碍 · AX5 最大字号</div>
+    <div class="cap-note">
+      字号放大时同步放开行高与留白，<b>不缩字掩盖溢出</b>：书名 24pt、副文 18pt、按钮 20pt。
+      底栏四键保持等分且命中区 ≥44pt；图标按钮全部带无障碍标签。
+    </div>
+    <div class="cap-tokens">serif 书名 · system medium · 圆角与间距仍走令牌</div>
+  </div>
+</div>
+
+<!-- ② 深色模式 -->
+<div class="wrap">
+  <div class="device dark">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div style="flex:1;min-width:0;">
+          <div class="title">故乡</div>
+          <div class="sub">第三章 · 船舱里的冬天</div>
+        </div>
+        <button class="btn-icon" type="button" aria-label="书签">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 4h11v16l-5.5-4-5.5 4z"></path></svg>
+        </button>
+      </div>
+      <div class="content">
+        <div style="font-family:var(--ty-font-serif);font-size:17px;line-height:2;color:var(--ty-ink-strong);">
+          <p style="margin:0 0 18px;">时候既然是深冬；渐近故乡时，天气又阴暗了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村。</p>
+          <p style="margin:0;">我所记得的故乡全不如此。我的故乡好得多了。</p>
+        </div>
+        <div class="marker" style="margin-top:18px;">
+          <div style="font-family:var(--ty-font-serif);font-size:17px;line-height:1.9;color:var(--ty-ink);">
+            但要我还记得起他的美丽，说出他的佳处来，却又没有影像，没有言语了。仿佛也就如此。
+          </div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="toolbar-4">
+          <button class="tool is-active" type="button"><span>目录</span></button>
+          <button class="tool" type="button"><span>排版</span></button>
+          <button class="tool" type="button"><span>摘记</span></button>
+          <button class="tool" type="button"><span>更多</span></button>
+        </div>
+        <div class="listenbar" style="margin:12px 0 0;">
+          <span class="ink-circle sm">
+            <svg class="ico fill" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"></path></svg>
+          </span>
+          <span class="sentence">我所记得的故乡全不如此</span>
+          <span class="playdot"></span>
+        </div>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">深色模式 · 阅读器</div>
+    <div class="cap-note">
+      画布与卡面互换，暖中性保持；陶土不翻面，跟读带用陶土淡底 + 陶土竖条（双通道，不只靠颜色）。
+      主按钮在深色下翻成纸底深字，始终成对。
+    </div>
+    <div class="cap-tokens">canvas #141413 · surface #1F1E1D · clay #D97757 · clay-text #F0AD88</div>
+  </div>
+</div>
+
+<!-- ③ SE 小屏 + 键盘 -->
+<div class="wrap">
+  <div class="device se">
+    <div class="island" style="width:96px;height:26px;top:8px;"></div>
+    <div class="statusbar" style="height:44px;padding:10px 22px 0;font-size:13px;">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app" style="padding-top:44px;">
+      <div class="topbar">
+        <div style="flex:1"><span class="title">书库</span></div>
+      </div>
+      <div class="content" style="padding-bottom:290px;">
+        <div class="searchbar">
+          <svg class="ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+          <span>故乡</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="row">
+            <span class="bookcover">故</span>
+            <div style="flex:1;min-width:0;"><div class="t-book">故乡</div><div class="t-caption">鲁迅 · 24%</div></div>
+          </div>
+          <div class="row">
+            <span class="bookcover">故</span>
+            <div style="flex:1;min-width:0;"><div class="t-book">故乡（插图本）</div><div class="t-caption">鲁迅 · 待读</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="kbd">
+      <div class="kr">
+        <span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">r</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">i</span><span class="key">o</span><span class="key">p</span>
+      </div>
+      <div class="kr">
+        <span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">f</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">k</span><span class="key">l</span>
+      </div>
+      <div class="kr">
+        <span class="key wide">⇧</span><span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key">m</span>
+      </div>
+      <div class="kr">
+        <span class="key space">空格</span><span class="key">↵</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">小屏 · iPhone SE 3（375pt）+ 键盘</div>
+    <div class="cap-note">
+      375pt 宽时页面边距收到 20pt；键盘升起时结果仍可点、仍可打开详情，
+      <b>不靠缩小字体腾地方</b>。
+    </div>
+    <div class="cap-tokens">inset-compact 20 · 行高与留白随容器放开</div>
+  </div>
+</div>
+
+<!-- ④ 对比度样本 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="topbar">
+        <div style="flex:1"><span class="title">对比度样本</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+      <div class="content">
+        <div class="swatches">
+          <div class="sw" style="background:var(--ty-canvas);border:1px solid var(--ty-line);">
+            <div class="n">canvas #FAF9F5</div><div class="v" style="color:var(--ty-ink);">ink 17.50:1</div>
+          </div>
+          <div class="sw" style="background:var(--ty-surface);border:1px solid var(--ty-line);">
+            <div class="n">surface #FFFFFF</div><div class="v" style="color:var(--ty-ink-2);">ink2 10.90:1</div>
+          </div>
+          <div class="sw" style="background:var(--ty-surface-subtle);">
+            <div class="n">surfaceSubtle #F0EFE6</div><div class="v" style="color:var(--ty-ink-3);">ink3 4.50:1</div>
+          </div>
+          <div class="sw" style="background:var(--ty-canvas);border:1px solid var(--ty-line);">
+            <div class="n">clayText #A34E2B</div><div class="v" style="color:var(--ty-clay-text);">陶土文字 5.41:1</div>
+          </div>
+          <div class="sw" style="background:var(--ty-clay);">
+            <div class="n" style="color:var(--ty-on-clay);opacity:0.8;">clay #D97757</div><div class="v" style="color:var(--ty-on-clay);">onClay 5.90:1</div>
+          </div>
+          <div class="sw" style="background:var(--ty-canvas);border:1px solid var(--ty-line);">
+            <div class="n">ink4 #8E8C84</div><div class="v" style="color:var(--ty-ink-4);">ink4 3.20:1</div>
+          </div>
+        </div>
+        <div style="margin-top:var(--ty-space-5);" class="t-caption">
+          全部数值由 <span class="mono">Design/v30-anthropic/contrast-check.py</span> 计算，可随时复跑。
+        </div>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">对比度 · 自动化守护</div>
+    <div class="cap-note">
+      正文与关键文字 ≥4.5:1，极次级与图标类 ≥3:1，由脚本守住而不是靠眼睛。
+      深色模式同表另算一套。
+    </div>
+    <div class="cap-tokens">canvas · ink 梯度四档 · clay 单一品牌色</div>
+  </div>
+</div>
+
+</body>
+</html>

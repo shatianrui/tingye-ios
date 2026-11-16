@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 添书 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：添书（来源 + 权威格式清单 + 最近导入结果） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .src { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-3) 0; border-bottom: 1px solid var(--ty-line); }
+  .src:last-child { border-bottom: none; }
+  .src .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+
+  .fmt { display: flex; flex-wrap: wrap; gap: var(--ty-space-2); }
+  .fmt .badge { font-weight: 500; }
+
+  .badge.is-danger { background: var(--ty-danger-soft); color: var(--ty-danger); }
+  .res { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-3) 0; border-bottom: 1px solid var(--ty-line); }
+  .res:last-child { border-bottom: none; }
+  .res .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .res .sub { display: block; font-size: var(--ty-caption); color: var(--ty-ink-4); margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">添书</span>
+        <button class="btn-icon" aria-label="格式说明">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+        <!-- 五种来源 -->
+        <div class="card" style="padding: var(--ty-space-1) var(--ty-space-4); flex:none;">
+          <div class="src">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.5z"/><path d="M13 3.5v6h6"/></svg>
+            <span class="nm fill">从文件导入</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="src">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5a12 12 0 0 1 16 0"/><path d="M7 13a8 8 0 0 1 10 0"/><path d="M10 16.4a3.6 3.6 0 0 1 4 0"/><circle cx="12" cy="19.4" r="1"/></svg>
+            <span class="nm fill">WiFi 传书</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="src">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5h9a4 4 0 0 0 .6-8 5.5 5.5 0 0 0-10.4 1.5 3.5 3.5 0 0 0 .8 6.5z"/></svg>
+            <span class="nm fill">WebDAV</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="src">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14v15H5z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg>
+            <span class="nm fill">OPDS</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="src">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="2"/><rect x="3.5" y="14" width="17" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg>
+            <span class="nm fill">SMB</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+
+        <div class="t-meta" style="margin-top: var(--ty-space-3); flex:none;">
+          WiFi 传书使用 6 位口令；WebDAV / OPDS / SMB 需先在「远程书源」里配置好书源。
+        </div>
+
+        <!-- 权威格式清单 -->
+        <div class="t-book" style="margin: var(--ty-space-4) 0 var(--ty-space-2); flex:none;">支持的格式</div>
+        <div class="fmt" style="flex:none;">
+          <span class="badge">TXT</span>
+          <span class="badge">EPUB</span>
+          <span class="badge">MOBI / AZW / AZW3</span>
+          <span class="badge">PDF</span>
+          <span class="badge">HTML</span>
+          <span class="badge">Markdown</span>
+          <span class="badge">DOCX</span>
+          <span class="badge">CBZ / 图片 ZIP</span>
+          <span class="badge">听页备份 JSON</span>
+        </div>
+
+        <!-- 最近导入结果 -->
+        <div class="hstack" style="margin: var(--ty-space-4) 0 var(--ty-space-1); flex:none;">
+          <span class="t-book fill">最近导入</span>
+          <span class="badge is-outline">演示</span>
+        </div>
+        <div style="flex:none;">
+          <div class="res">
+            <span class="nm fill">小王子.epub</span>
+            <span class="t-meta">昨天 20:12</span>
+            <span class="badge is-outline">已导入</span>
+          </div>
+          <div class="res">
+            <span class="nm fill">城南旧事.txt<span class="sub">编码无法识别（GBK），可重新选择文件</span></span>
+            <span class="badge is-danger">失败</span>
+          </div>
+          <div class="res">
+            <span class="nm fill">呼兰河传.pdf<span class="sub">文件已加密，不支持 DRM</span></span>
+            <span class="badge is-danger">失败</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">添书 · 导入中心</div>
+    <div class="cap-note">
+      全 App 唯一导入入口：五种来源（系统文件 / WiFi 传书 / WebDAV / OPDS / SMB）收进同一张白卡，图标 + 名称 + 推进箭头。
+      格式清单收敛为一处权威说明（原先散在四处），用小徽标平铺；最近导入结果常驻，逐项给状态——已导入用描边徽标，失败用语义红并写明原因，单项失败不中断其余，可重新选择文件。
+      本页导入记录为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      card 白底 + 发丝线 · badge is-outline / is-danger · 1.5px 线性图标
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

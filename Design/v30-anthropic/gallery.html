@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 · v30「Claude · Anthropic」设计画廊</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  body { display:block; padding:56px 40px 80px; background:var(--ty-canvas); }
+  header { max-width:1180px; margin:0 auto 44px; }
+  header .kicker { font-size:11px; font-weight:500; letter-spacing:2px; color:var(--ty-clay-text); text-transform:uppercase; }
+  header h1 { font-family:var(--ty-font-serif); font-size:40px; color:var(--ty-ink); margin:10px 0 12px; font-weight:400; }
+  header p { font-size:16px; color:var(--ty-ink-2); line-height:1.7; max-width:760px; }
+  header .rule { height:2px; background:var(--ty-ink); margin:22px 0 0; width:56px; }
+  .grid { max-width:1180px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(291.7px,1fr)); gap:34px 26px; }
+  .card { margin:0; }
+  .frame { width:251.7px; height:543.1px; overflow:hidden;
+            border-radius:20px; box-shadow:0 6px 20px rgba(20,20,19,0.13);
+            border:6px solid #1B1A18; background:var(--ty-canvas); }
+  .frame iframe { width:406px; height:956px; border:0; transform-origin:0 0;
+                   transform:translateY(-24.8px) scale(0.62); }
+  figcaption { margin-top:11px; display:flex; flex-direction:column; gap:2px; }
+  figcaption .nm { font-family:var(--ty-font-serif); font-size:15px; color:var(--ty-ink); }
+  figcaption .fn { font-family:var(--ty-font-mono); font-size:11px; color:var(--ty-ink-4); }
+  footer { max-width:1180px; margin:56px auto 0; padding-top:22px; border-top:1px solid var(--ty-line);
+            font-size:12px; color:var(--ty-ink-4); display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="kicker">TINGYE · DESIGN GALLERY</div>
+    <h1>听页 · v30「Claude · Anthropic」</h1>
+    <p>全界面视觉重设计：奶油画布、四档暖中性墨色、唯一品牌色陶土只标记「正在发生」；
+       宋体做标题、等宽做数字、实心墨底做主动作。信息架构沿用 v29「书房」，数据层与功能行为不变。</p>
+    <div class="rule"></div>
+  </header>
+
+  <div class="grid">
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reader.html" title="阅读器 · 静读态" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">阅读器 · 静读态</span>
+        <span class="fn">reader.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reader-chrome.html" title="阅读器 · 工具态" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">阅读器 · 工具态</span>
+        <span class="fn">reader-chrome.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reader-contents.html" title="目录面板" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">目录面板</span>
+        <span class="fn">reader-contents.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reader-preferences.html" title="排版面板" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">排版面板</span>
+        <span class="fn">reader-preferences.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reader-annotations.html" title="选区面板" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">选区面板</span>
+        <span class="fn">reader-annotations.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/notes.html" title="摘记列表" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">摘记列表</span>
+        <span class="fn">notes.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/player.html" title="听书面板" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">听书面板</span>
+        <span class="fn">player.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/voice.html" title="声音设置" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">声音设置</span>
+        <span class="fn">voice.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/focus.html" title="专注会话" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">专注会话</span>
+        <span class="fn">focus.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/focus-summary.html" title="专注小结" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">专注小结</span>
+        <span class="fn">focus-summary.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/book-finish.html" title="读完收尾" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">读完收尾</span>
+        <span class="fn">book-finish.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/comic.html" title="漫画阅读" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">漫画阅读</span>
+        <span class="fn">comic.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/shelf.html" title="书库 · 列表" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">书库 · 列表</span>
+        <span class="fn">shelf.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/shelf-grid.html" title="书库 · 网格" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">书库 · 网格</span>
+        <span class="fn">shelf-grid.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/library-management.html" title="书库 · 整理" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">书库 · 整理</span>
+        <span class="fn">library-management.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/book-detail.html" title="书籍详情" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">书籍详情</span>
+        <span class="fn">book-detail.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/import.html" title="添书" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">添书</span>
+        <span class="fn">import.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/remote-sources.html" title="远程书源" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">远程书源</span>
+        <span class="fn">remote-sources.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/me.html" title="我的" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">我的</span>
+        <span class="fn">me.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/stats.html" title="统计" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">统计</span>
+        <span class="fn">stats.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/reading-calendar.html" title="阅读日历" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">阅读日历</span>
+        <span class="fn">reading-calendar.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/settings-reading.html" title="设置 · 阅读" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">设置 · 阅读</span>
+        <span class="fn">settings-reading.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/settings-general.html" title="设置 · 通用" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">设置 · 通用</span>
+        <span class="fn">settings-general.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/settings-data.html" title="设置 · 数据与备份" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">设置 · 数据与备份</span>
+        <span class="fn">settings-data.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/settings-about.html" title="设置 · 关于" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">设置 · 关于</span>
+        <span class="fn">settings-about.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/states.html" title="状态与空态" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">状态与空态</span>
+        <span class="fn">states.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/accessibility.html" title="无障碍与适配" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">无障碍与适配</span>
+        <span class="fn">accessibility.html</span>
+      </figcaption>
+    </figure>
+    <figure class="card">
+      <div class="frame">
+        <iframe src="pages/app-icon.html" title="应用图标" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+      </div>
+      <figcaption>
+        <span class="nm">应用图标</span>
+        <span class="fn">app-icon.html</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <footer>
+    <span>Design/v30-anthropic · 28 屏 · 由 make-gallery.py 生成</span>
+    <span>本页每格都是可交互的真实设计稿（iframe 内嵌）</span>
+  </footer>
+</body>
+</html>

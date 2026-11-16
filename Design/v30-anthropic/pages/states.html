@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 状态与空态</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+
+  .empty-wrap { padding: var(--ty-space-12) var(--ty-space-6); }
+
+  /* 导入结果 */
+  .imp-list { list-style: none; margin: 0; padding: 0; }
+  .imp-item { padding: var(--ty-space-3) 0; border-bottom: 1px solid var(--ty-line); }
+  .imp-item .nm { font-size: var(--ty-body); color: var(--ty-ink); }
+  .imp-item .st { font-size: var(--ty-caption); margin-top: 3px; }
+  .imp-item .st.ok { color: var(--ty-ink-3); }
+  .imp-item .st.bad { color: var(--ty-danger); }
+  .imp-item .st.warn { color: var(--ty-clay-text); }
+
+  /* 顶部提示条 */
+  .toast-bar {
+    position: absolute; top: 54px; left: 0; right: 0;
+    background: var(--ty-ink); color: var(--ty-canvas);
+    padding: var(--ty-space-3) var(--ty-inset);
+    font-size: var(--ty-caption); z-index: 60;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--ty-space-3);
+  }
+
+  /* 确认弹窗 */
+  .dialog {
+    position: absolute; left: var(--ty-space-6); right: var(--ty-space-6); top: 50%;
+    transform: translateY(-50%);
+    background: var(--ty-surface); border: 1px solid var(--ty-line);
+    border-radius: var(--ty-radius-lg); padding: var(--ty-space-6);
+    z-index: 60; box-shadow: var(--ty-shadow-lg);
+  }
+  .dialog .t { font-family: var(--ty-font-serif); font-size: 17px; color: var(--ty-ink); margin-bottom: var(--ty-space-2); }
+  .dialog .m { font-size: var(--ty-body); color: var(--ty-ink-2); line-height: 1.6; }
+  .dialog .acts { display: flex; gap: var(--ty-space-3); margin-top: var(--ty-space-6); }
+  .dialog .acts .btn-secondary, .dialog .acts .btn-primary { flex: 1; }
+
+  /* 搜索无结果 */
+  .nores { padding: var(--ty-space-8) var(--ty-space-6); text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ① 书房空态 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="content" style="display:flex;align-items:center;justify-content:center;">
+        <div class="empty">
+          <div class="msg">还没有书。<br>导入一本，开始读。</div>
+          <button class="btn-secondary" type="button" style="width:auto;padding:0 28px;">
+            <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            <span>添加书籍</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">空态 · 书房</div>
+    <div class="cap-note">全 App 统一空态语汇：宋体一句话 + 一个描边按钮，不出现插图型空态。页面底永远是奶油画布。</div>
+    <div class="cap-tokens">canvas · serif · btn-secondary（白底 + 发丝线）</div>
+  </div>
+</div>
+
+<!-- ② 导入结果逐项状态 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div style="flex:1"><span class="title">添书</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+      <div class="content">
+        <div class="t-kicker" style="margin-bottom:var(--ty-space-3);">最近导入</div>
+        <ul class="imp-list">
+          <li class="imp-item">
+            <div class="nm">故乡.txt</div>
+            <div class="st ok">已导入 · 12 章 · 86 KB</div>
+          </li>
+          <li class="imp-item">
+            <div class="nm">飞鸟集.epub</div>
+            <div class="st ok">已导入 · 4 章 · 1.2 MB</div>
+          </li>
+          <li class="imp-item">
+            <div class="nm">扫描件.pdf</div>
+            <div class="st bad">失败 · 不支持扫描件 OCR 朗读，请先做文字识别</div>
+          </li>
+          <li class="imp-item">
+            <div class="nm">春.docx</div>
+            <div class="st warn">已导入 · 章节识别异常，按全文一段处理</div>
+          </li>
+        </ul>
+        <button class="btn-secondary" type="button" style="width:100%;margin-top:var(--ty-space-5);">
+          <span>重新选择失败的文件</span>
+        </button>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">导入结果 · 逐项状态</div>
+    <div class="cap-note">失败与异常用 danger / 陶土字双通道标出，单项失败不中断其余；提示消失后仍可在添书页查看最近结果。</div>
+    <div class="cap-tokens">ink-2 / danger / clay-text · 无插图 · 行间发丝线</div>
+  </div>
+</div>
+
+<!-- ③ 顶部提示条 + 破坏性确认 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="topbar">
+        <div style="flex:1"><span class="title">书库</span></div>
+      </div>
+      <div class="content">
+        <div class="row"><span class="bookcover">故</span><div style="flex:1"><div class="t-book">故乡</div><div class="t-caption">鲁迅 · 24%</div></div></div>
+        <div class="row"><span class="bookcover">城</span><div style="flex:1"><div class="t-book">城南旧事</div><div class="t-caption">林海音 · 78%</div></div></div>
+      </div>
+    </div>
+    <div class="toast-bar">
+      <span>已导入《故乡》，可直接开始阅读</span>
+      <svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </div>
+    <div class="scrim"></div>
+    <div class="dialog">
+      <div class="t">删除《城南旧事》？</div>
+      <div class="m">这本书的阅读进度、摘记与书签会一并删除。此操作无法撤销。</div>
+      <div class="acts">
+        <button class="btn-secondary" type="button"><span>取消</span></button>
+        <button class="btn-secondary" type="button" style="color:var(--ty-danger);font-weight:600;"><span>删除</span></button>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">反馈 · 提示条与确认弹窗</div>
+    <div class="cap-note">普通成功用可关闭的非阻断提示条（墨底纸字、直角贴边、无阴影）；破坏性操作仍需确认，但不做红色实心按钮——实心只留给墨色主按钮，破坏性用 danger 字。</div>
+    <div class="cap-tokens">ink / canvas / danger · 浮层 shadow-lg · 无插图</div>
+  </div>
+</div>
+
+<!-- ④ 搜索无结果 -->
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+    <div class="app has-homebar">
+      <div class="topbar">
+        <div class="searchbar" style="flex:1;">
+          <svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+          <span>沙俄</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="清除">
+          <svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="m9 9 6 6M15 9l-6 6"></path></svg>
+        </button>
+      </div>
+      <div class="content">
+        <div class="nores">
+          <div class="msg" style="font-family:var(--ty-font-serif);font-size:17px;color:var(--ty-ink-2);line-height:1.7;">
+            没有找到「沙俄」。<br>换个书名或作者试试。
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="homebar"></div>
+  </div>
+  <div class="caption">
+    <div class="cap-title">空态 · 搜索无结果</div>
+    <div class="cap-note">搜索时收起页首与类型栏，键盘上方保持结果可操作；无结果同样用宋体一句话，不放插图。</div>
+    <div class="cap-tokens">canvas · serif · ink-2</div>
+  </div>
+</div>
+
+</body>
+</html>

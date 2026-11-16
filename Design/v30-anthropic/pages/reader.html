@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 阅读器 · 静读态</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：静读态 */
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .reader-body { padding-top: var(--ty-space-4); }
+  .reader-body p {
+    margin: 0 0 var(--ty-space-4);
+    font-size: 19px; line-height: 1.95;
+    text-align: justify; text-justify: inter-ideograph;
+  }
+  .reader-body p:last-child { margin-bottom: 0; }
+
+  .r-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 var(--ty-inset) var(--ty-space-2);
+    font-size: var(--ty-caption); color: var(--ty-ink-4);
+  }
+  .listenbar { padding: var(--ty-space-2) var(--ty-space-4); }
+  .listenbar .play-key { flex: none; }
+  .listenbar .expand { flex: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <!-- 正文占满全屏，顶部无任何 chrome -->
+      <div class="content paper reader-body">
+        <p>我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。</p>
+        <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村。</p>
+        <p>阿！这不是我二十年来时时记得的故乡？</p>
+        <p>我所记得的故乡全不如此。我的故乡好得多了。但要我记起他的美丽，说出他的佳处来，却又没有影像，没有言辞了。</p>
+        <p>于是我自己解释说：故乡本也如此，——虽然没有进步，也未必有如我所感的悲凉。</p>
+        <p>我这次是专为了别他而来的。我们多年聚族而居的老屋，已经公同卖给别姓了。</p>
+      </div>
+
+      <!-- 页脚小字 -->
+      <div class="r-foot">
+        <span>第三章 · 本章 42%</span>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <!-- 听条：当前句 + 圆形播放键 + 展开 -->
+      <div class="listenbar">
+        <button class="ink-circle sm play-key" type="button" aria-label="暂停朗读">
+          <svg class="ico fill" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <rect x="7" y="5" width="3.6" height="14" rx="1"></rect>
+            <rect x="13.4" y="5" width="3.6" height="14" rx="1"></rect>
+          </svg>
+        </button>
+        <span class="playdot"></span>
+        <span class="sentence">阿！这不是我二十年来时时记得的故乡？</span>
+        <button class="btn-icon expand" type="button" aria-label="展开听书面板">
+          <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M6 14.5 12 8.5l6 6"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">阅读器 · 静读态</div>
+    <div class="cap-note">
+      正文占满全屏，顶部不出现任何 chrome。底部只留一条听条：墨底圆形播放键、当前句宋体一行、右侧展开箭头；
+      听条上方是页脚小字「第三章 · 本章 42%」，右下角带「演示」标记，数据为设计稿演示值。
+    </div>
+    <div class="cap-tokens">
+      canvas / ink / ink-4 / clay · 正文 19px 宋体 line-height 1.95 · 段落间距 20 · 听条 surface-subtle + radius-lg
+    </div>
+  </div>
+</div>
+</body>
+</html>

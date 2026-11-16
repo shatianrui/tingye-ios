@@ -73,10 +73,10 @@ struct BookFinishView: View {
             BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
-                Text("全书读完").font(.caption).foregroundStyle(Theme.accent)
+                Text("全书读完").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
                 Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                 Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(Theme.ink2)
-                Text(statsLine).font(.caption).foregroundStyle(Theme.ink2)
+                Text(statsLine).font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
                     .accessibilityIdentifier("finish.statsLine")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -86,7 +86,7 @@ struct BookFinishView: View {
     private var quoteCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("今日一句").font(.caption2.weight(.medium))
+                Text("今日一句").font(Theme.masthead).tracking(Theme.kickerTracking)
                 Spacer()
                 if quotes.count > 1 {
                     Button { quoteIndex = (quoteIndex + 1) % quotes.count; noteSaved = false } label: {
@@ -96,22 +96,24 @@ struct BookFinishView: View {
                     .accessibilityIdentifier("finish.quote.next")
                 }
             }
-            Text(quoteText).font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(7)
+            Text(quoteText).font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 16) {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
-                    .font(.caption)
+                    .font(.caption).monospacedDigit()
                 Spacer()
                 QuoteShareLink(text: quoteText, title: entry.title, author: entry.author, chapter: quoteChapterLabel) {
                     HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享").underline() }
-                        .font(.footnote.weight(.medium)).frame(minHeight: 44).contentShape(Rectangle())
+                        .font(.footnote.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44).contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("finish.quote.share")
             }
         }
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .foregroundStyle(Theme.onWarm)
+        .padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+        .foregroundStyle(Theme.ink)
+        .softCardShadow()
     }
 
     private var finishNoteSection: some View {
@@ -120,8 +122,8 @@ struct BookFinishView: View {
             TextEditor(text: $finishNote)
                 .frame(minHeight: 110)
                 .padding(8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.lineField, lineWidth: 1) }
                 .onChange(of: finishNote) { _, _ in noteSaved = false }
                 .accessibilityLabel("读完感")
             HStack {
@@ -144,7 +146,7 @@ struct BookFinishView: View {
                     BookCoverView(title: next.title, color: next.color, author: next.author, image: model.covers[next.id], width: 56)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
+                        Text(next.title).font(Theme.serif(15)).foregroundStyle(Theme.ink).lineLimit(2)
                         Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(Theme.ink2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

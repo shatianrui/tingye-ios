@@ -122,11 +122,11 @@ struct StatsView: View {
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressButtonStyle(scale: 0.92))
+                    .buttonStyle(PressButtonStyle())
                     .accessibilityLabel("返回")
                     .accessibilityIdentifier("study.profileBack")
                 }
-                Text("我的").scaledFont(28, weight: .bold, relativeTo: .title)
+                Text("我的").font(Theme.serif(28, relativeTo: .title))
                 Spacer()
                 Button { showingSettings = true } label: {
                     ThemeIcon(symbol: Icon.settings, size: 22).frame(width: 44, height: 44)
@@ -147,14 +147,15 @@ struct StatsView: View {
                 DailyQuoteCard(compact: true)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("今日摘句").font(.caption2.weight(.medium))
+                    Text("今日摘句").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.accent)
                     Text("把日子过慢一点，\n让喜欢的文字多停留一会儿。")
-                        .font(Theme.serifSemibold(23, relativeTo: .title2)).lineSpacing(7)
-                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(Theme.onWarm)
+                        .font(Theme.serif(23, relativeTo: .title2)).lineSpacing(7)
+                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(Theme.ink3)
                 }
-                .foregroundStyle(Theme.onWarm)
-                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .foregroundStyle(Theme.ink)
+                .padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
                 .softCardShadow()
             }
             profileEntry("设置", value: "阅读 · 声音 · 数据") { showingSettings = true }
@@ -174,18 +175,20 @@ struct StatsView: View {
         let streak = AppModel.readingStreak(model.readingSeconds).current
         return Button { showingStats = true } label: {
             VStack(alignment: .leading, spacing: 16) {
-                Text("这个月，读听了").font(.caption)
-                Text(Self.preciseDuration(seconds)).scaledFont(36, weight: .bold, relativeTo: .largeTitle)
-                    .minimumScaleFactor(0.6).lineLimit(1).monospacedDigit()
+                Text("这个月，读听了").font(Theme.masthead).tracking(Theme.kickerTracking)
+                Text(Self.preciseDuration(seconds)).font(Theme.display(36, relativeTo: .largeTitle))
+                    .minimumScaleFactor(0.6).lineLimit(1)
                 ViewThatFits(in: .horizontal) {
                     HStack { Text("累计读完 \(finished) 本"); Spacer(); Text("连续阅读 \(streak) 天") }
                     VStack(alignment: .leading, spacing: 6) { Text("累计读完 \(finished) 本"); Text("连续阅读 \(streak) 天") }
                 }
                 .font(.caption)
+                .monospacedDigit()
             }
-            .foregroundStyle(Theme.onAccent)
-            .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .foregroundStyle(Theme.ink)
+            .padding(Theme.inset).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
             .softCardShadow()
         }
         .buttonStyle(.plain)
@@ -200,7 +203,7 @@ struct StatsView: View {
                 Text(value).font(.caption).foregroundStyle(Theme.ink2)
                 ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink2)
             }
-            .padding(16).frame(maxWidth: .infinity, minHeight: 56)
+            .padding(Theme.insetCompact).frame(maxWidth: .infinity, minHeight: 56)
             .background(Theme.surface)
             .contentShape(Rectangle())
         }
@@ -214,12 +217,9 @@ struct StatsView: View {
                 HStack(spacing: 6) {
                     ForEach(Period.allCases) { item in
                         Button { period = item } label: {
-                            Text(L(item.rawValue)).font(.caption.weight(.medium))
-                                .foregroundStyle(period == item ? Theme.onAccent : Theme.ink2)
-                                .padding(.horizontal, 16).frame(minHeight: 40)
-                                .background(period == item ? Theme.accent : Theme.surface2, in: Capsule())
+                            Text(L(item.rawValue))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ChipPillStyle(selected: period == item))
                         .accessibilityAddTraits(period == item ? .isSelected : [])
                         .accessibilityLabel("按" + item.rawValue + "查看")
                     }
@@ -227,7 +227,8 @@ struct StatsView: View {
             }
             .onChange(of: period) { _, _ in offset = 0 }
             VStack(alignment: .leading, spacing: 14) { header; chart }
-                .padding(20).background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .padding(Theme.insetCompact).background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
                 .softCardShadow()
             goalCard
             sessionsCard
@@ -253,7 +254,7 @@ struct StatsView: View {
             Text(period == .day && offset == 0 ? "今天读听时长" : "本期读听时长")
                 .font(.caption).foregroundStyle(Theme.ink2)
             Text(Self.preciseDuration(totalSeconds))
-                .font(.system(size: durationSize, weight: .bold)).monospacedDigit()
+                .font(Theme.display(durationSize))
                 .minimumScaleFactor(0.6).lineLimit(1)
                 .foregroundStyle(Theme.ink)
             summaryLayout {
@@ -263,7 +264,7 @@ struct StatsView: View {
             .font(.caption).foregroundStyle(Theme.ink2)
             if unclassified >= 60 {
                 Text("另有 \(Int(unclassified / 60)) 分钟旧版记录未区分阅读与听书")
-                    .font(.caption2).foregroundStyle(Theme.ink2)
+                    .font(.caption2).monospacedDigit().foregroundStyle(Theme.ink2)
             }
             if period == .all { Text(intervalLabel).font(.caption).foregroundStyle(Theme.ink2) }
         }
@@ -353,7 +354,7 @@ struct StatsView: View {
                 .font(.caption)
                 .foregroundStyle(Theme.ink2)
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text("\(value)").scaledFont(28, weight: .heavy, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
+                Text("\(value)").font(Theme.display(28, relativeTo: .title2)).foregroundStyle(Theme.ink)
                 Text(L(unit)).font(.caption).foregroundStyle(Theme.ink3)
             }
         }
@@ -368,22 +369,23 @@ struct StatsView: View {
         let fraction = min(1, today / Double(max(1, goalMinutes) * 60))
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("每日目标").scaledFont(20, weight: .bold, relativeTo: .title3)
+                Text("每日目标").font(Theme.serif(20, relativeTo: .title3))
                 Spacer()
                 Button("修改") { editGoal() }.font(.caption).frame(minHeight: 44)
             }
             Button { editGoal() } label: {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("今天 \(Int(today / 60)) / \(goalMinutes) 分钟").font(.subheadline.weight(.medium))
+                        Text("今天 \(Int(today / 60)) / \(goalMinutes) 分钟").font(.subheadline.weight(.medium)).monospacedDigit()
                         Spacer(minLength: 8)
                         Text(fraction >= 1 ? "已完成 ✓" : "\(Int(fraction * 100))%")
                             .font(.caption).monospacedDigit()
                     }
                     ProgressBar(value: fraction, track: Theme.line, tint: Theme.accent, height: 4)
                 }
-                .foregroundStyle(Theme.onWarm)
-                .padding(16).background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .foregroundStyle(Theme.ink)
+                .padding(Theme.insetCompact).background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
             }
             .buttonStyle(.plain)
             .accessibilityLabel("每日目标 \(goalMinutes) 分钟，已读 \(Int(today / 60)) 分钟")
@@ -474,7 +476,7 @@ struct StatsView: View {
         }()
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .lastTextBaseline) {
-                Text("阅读节奏").font(.caption.weight(.medium)).foregroundStyle(Theme.ink2)
+                Text("阅读节奏").font(Theme.masthead).tracking(Theme.kickerTracking).foregroundStyle(Theme.ink2)
                 Text(period == .day ? (offset == 0 ? "本周 · 分钟" : "所在周 · 分钟") : unit == .day ? "分钟 / 天" : "分钟 / 月")
                     .font(.caption2).foregroundStyle(Theme.ink2)
                     .fixedSize()
@@ -508,7 +510,7 @@ struct StatsView: View {
         if period == .day || period == .week {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("逐次记录").scaledFont(20, weight: .bold, relativeTo: .title3)
+                    Text("逐次记录").font(Theme.serif(20, relativeTo: .title3))
                     Spacer()
                     Button("查看日历") { showingCalendar = true }
                         .font(.caption).frame(minHeight: 44)
@@ -525,7 +527,7 @@ struct StatsView: View {
                             ThemeIcon(symbol: session.listening ? Icon.listen : Icon.read, size: 24)
                                 .foregroundStyle(Theme.ink).accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(session.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
+                                Text(session.title).font(Theme.serif(15)).foregroundStyle(Theme.ink).lineLimit(2)
                                 Text((session.listening ? "听书 " : "阅读 ") + "\(max(1, Int(session.seconds / 60))) 分钟 · " + timeRange(session))
                                     .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
                             }
@@ -567,9 +569,9 @@ struct StatsView: View {
                             Text(String(format: "%02d", index + 1)).font(Theme.display(28)).monospacedDigit()
                                 .foregroundStyle(index == 0 ? Theme.accent : Theme.ink).frame(width: 34, alignment: .leading)
                             BookCoverView(title: entry?.title ?? row.value.title, color: entry?.color ?? "gray", image: model.covers[row.key], width: 34)
-                            Text(entry?.title ?? row.value.title).font(Theme.serif(15).weight(.medium)).lineLimit(1)
+                            Text(entry?.title ?? row.value.title).font(Theme.serif(15)).lineLimit(1)
                             Spacer(minLength: 8)
-                            Text(Self.durationText(row.value.seconds)).font(.system(size: 13, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.ink2)
+                            Text(Self.durationText(row.value.seconds)).font(Theme.mono(13, weight: .semibold)).foregroundStyle(Theme.ink2)
                         }
                         .frame(minHeight: 72)
                         RowDivider()
@@ -690,7 +692,7 @@ private struct SettingsDirectoryView: View {
             .frame(minHeight: 56)
             .contentShape(Rectangle())
         }
-        .buttonStyle(PressButtonStyle(scale: 0.99))
+        .buttonStyle(PressButtonStyle())
     }
 
 }

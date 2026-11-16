@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 专注会话</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+
+  /* 开始页只有三件事：时长、当前书名与章节、开始按钮 */
+  .focus {
+    display: flex; flex-direction: column; height: 100%;
+    padding-top: var(--ty-space-8);
+  }
+  .focus .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-ink-3); text-transform: uppercase; }
+  .focus .book { margin-top: var(--ty-space-3); }
+  .focus .chapter { margin-top: var(--ty-space-2); font-size: var(--ty-body); color: var(--ty-ink-3); }
+
+  .dur { margin-top: var(--ty-space-2); }
+  .dur .lbl { font-size: var(--ty-caption); color: var(--ty-ink-3); margin-bottom: var(--ty-space-3); }
+  .dur .chips { display: flex; gap: var(--ty-space-2); }
+  .dur .chips .chip { flex: 1; justify-content: center; }
+
+  .stepper {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: var(--ty-space-4); height: var(--ty-min-touch);
+    border: 1px solid var(--ty-line); border-radius: var(--ty-radius-pill);
+    background: var(--ty-surface); padding: 0 var(--ty-space-2);
+  }
+  .stepper .sbtn {
+    width: var(--ty-min-touch); height: var(--ty-min-touch); border: none; background: none;
+    color: var(--ty-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .stepper .sval { font-size: var(--ty-body); color: var(--ty-ink); }
+  .dur .hint { margin-top: var(--ty-space-2); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .focus-foot { margin-top: auto; padding-bottom: var(--ty-space-2); }
+  .focus-foot .btn-primary { width: 100%; }
+  .focus-foot .note { margin-top: var(--ty-space-3); font-size: var(--ty-caption); color: var(--ty-ink-4); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回阅读器">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid"><span class="title">专注</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content focus">
+        <!-- 当前书名与章节 -->
+        <div>
+          <div class="k">专注会话</div>
+          <div class="book t-page-title">故乡</div>
+          <div class="chapter">第三章 · 船舱里的冬天</div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- 时长 -->
+        <div class="dur">
+          <div class="lbl">时长</div>
+          <div class="chips">
+            <button class="chip" type="button">25 分钟</button>
+            <button class="chip" type="button">45 分钟</button>
+            <button class="chip is-selected" type="button">自定义</button>
+          </div>
+          <div class="stepper">
+            <button class="sbtn" type="button" aria-label="减少 5 分钟">
+              <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 12h12"></path></svg>
+            </button>
+            <span class="sval mono">30 分钟</span>
+            <button class="sbtn" type="button" aria-label="增加 5 分钟">
+              <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 12h12M12 6v12"></path></svg>
+            </button>
+          </div>
+          <div class="hint">10–90 分钟，步进 5。计时沿用阅读计时，不另开第二个时钟。</div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- 开始 -->
+        <div class="focus-foot">
+          <button class="btn-primary" type="button">开始专注</button>
+          <div class="note">专注期间不打断阅读；到时只在页脚提示「专注完成」。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">专注 · 会话开始页</div>
+    <div class="cap-note">
+      开始页只有三件事：时长（25 / 45 分钟 + 自定义 10–90 步进 5）、当前书名与章节、开始按钮。
+      大量留白、不放进度环也不做跳动动画，符合「动效几乎为零」的基线。
+    </div>
+    <div class="cap-tokens">
+      canvas / ink / ink-3 / clay · 宋体 34 书名 · 胶囊筛选 radius-pill · 实心墨底主按钮
+    </div>
+  </div>
+</div>
+</body>
+</html>

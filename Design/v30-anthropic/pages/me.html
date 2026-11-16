@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 我的（深色）· v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：我的（书库工具栏进入的二级页） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .grp-h {
+    font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker);
+    color: var(--ty-ink-3); margin: var(--ty-space-3) 0 var(--ty-space-2);
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat .n {
+    font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-weight: 600;
+    font-size: 24px; color: var(--ty-ink); letter-spacing: -0.5px; line-height: 1.15;
+  }
+  .quote {
+    font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink);
+    line-height: 1.7; margin-top: var(--ty-space-2);
+  }
+  .entry { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-3) 0; border-bottom: 1px solid var(--ty-line); min-height: 44px; }
+  .entry:last-child { border-bottom: none; }
+  .entry .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device dark">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">我的</span>
+        <button class="btn-icon" aria-label="设置">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.47 1z"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- 本月读听概览 -->
+        <div class="card" style="padding: var(--ty-space-4); flex:none;">
+          <div class="hstack">
+            <span class="t-kicker fill">本月 · 2026 年 5 月</span>
+            <span class="badge is-outline">演示数据</span>
+          </div>
+          <div class="grid-2" style="gap: var(--ty-space-2) var(--ty-space-4); margin-top: var(--ty-space-3);">
+            <div class="stat">
+              <span class="t-caption">阅读时长</span>
+              <span class="n">12<span style="font-size:13px; font-weight:400; font-family: var(--ty-font-sans); color: var(--ty-ink-3);"> 小时 40 分</span></span>
+            </div>
+            <div class="stat">
+              <span class="t-caption">听书时长</span>
+              <span class="n">3<span style="font-size:13px; font-weight:400; font-family: var(--ty-font-sans); color: var(--ty-ink-3);"> 小时 12 分</span></span>
+            </div>
+            <div class="stat">
+              <span class="t-caption">新增摘记</span>
+              <span class="n">27<span style="font-size:13px; font-weight:400; font-family: var(--ty-font-sans); color: var(--ty-ink-3);"> 条</span></span>
+            </div>
+            <div class="stat">
+              <span class="t-caption">在读</span>
+              <span class="n">3<span style="font-size:13px; font-weight:400; font-family: var(--ty-font-sans); color: var(--ty-ink-3);"> 本</span></span>
+            </div>
+          </div>
+          <hr class="rule" style="margin: var(--ty-space-3) 0 var(--ty-space-2);">
+          <div class="hstack">
+            <span class="t-caption fill">较上月 +18% · 连续阅读 9 天</span>
+            <span class="t-meta">数据源：阅读会话</span>
+          </div>
+        </div>
+
+        <!-- 阅读入口 -->
+        <div class="grp-h">阅读</div>
+        <div style="flex:none;">
+          <div class="entry">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5V6.5A1.5 1.5 0 0 1 5.5 5H10v14H5.5A1.5 1.5 0 0 0 4 20.5M10 5h4.5A1.5 1.5 0 0 1 16 6.5V19M16 10h3.5A1.5 1.5 0 0 1 21 11.5v6.5a1.5 1.5 0 0 1-1.5 1.5H16"/></svg>
+            <span class="nm fill">阅读足迹</span>
+            <span class="t-caption">日 / 周 / 月 / 年</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="entry">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round"><path d="M6 4.5h9.5L19 8v11.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"/><path d="M15 4.5V8h4"/></svg>
+            <span class="nm fill">我的书摘</span>
+            <span class="t-caption">27 条</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+
+        <!-- 今日摘句 -->
+        <div class="grp-h">今日摘句</div>
+        <div class="card" style="padding: var(--ty-space-3) var(--ty-space-4); flex:none;">
+          <p class="quote" style="margin:0;">「多年以后，面对行刑队，父亲将会回想起带他去见识冰块的那个下午。」</p>
+          <div class="t-meta" style="margin-top: var(--ty-space-3);">百年孤独 · 第 9 章 · 昨天 21:34 划线</div>
+          <hr class="rule" style="margin: var(--ty-space-3) 0 var(--ty-space-2);">
+          <div class="hstack gap-3">
+            <span class="btn-text">换一句</span>
+            <span class="btn-text">复制</span>
+            <span class="spacer"></span>
+            <span class="t-meta">共 3 句可换</span>
+          </div>
+        </div>
+
+        <!-- 设置与导出 -->
+        <div class="grp-h">设置与数据</div>
+        <div style="flex:none;">
+          <div class="entry">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.47 1z"/></svg>
+            <span class="nm fill">设置</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="entry">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v10"/><path d="M8 11l4 4 4-4"/><path d="M5 18.5h14"/></svg>
+            <span class="nm fill">导出阅读数据</span>
+            <span class="t-caption">CSV / Markdown</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">我的（二级页 · 深色变体）</div>
+    <div class="cap-note">
+      「我的」不是底栏页签，而是从书库页工具栏进入的二级页，因此带返回箭头与设置入口。
+      本月读听概览用等宽数字分读 / 听两组呈现；阅读足迹与我的书摘是入口；今日摘句是卡片；设置与导出收在最后。
+      深色变体下画布与卡面互换、暖中性不变：奶油换炭黑、陶土与发丝线同步转深色。本页所有统计为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      dark 画布 · mono 等宽数字 · card 1px 发丝线 · 陶土仅用于印章点与进度
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -117,8 +117,9 @@ struct SourcesView: View {
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
                 }
-                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .padding(Theme.inset).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
                 NavigationLink(value: "wifi-transfer") {
                     SourceActionRow(icon: Icon.wifi, title: "从电脑传书", subtitle: "同一 WiFi 下，用浏览器发送文件")
                 }
@@ -256,7 +257,7 @@ private struct SourceActionRow: View {
             ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink).accessibilityHidden(true)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 64)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
         .contentShape(Rectangle())
     }
 }
@@ -582,12 +583,12 @@ struct OPDSBrowser: View {
         HStack(spacing: 16) {
             AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { BookCoverView(title: entry.title, color: "gray", width: 44) }
                 .frame(width: 44, height: 63)
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.coverRadius(44), style: .continuous))
             VStack(alignment: .leading, spacing: 6) {
                 Text(entry.title).font(Theme.serifSemibold(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
                 if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
                 Text(acquisition.fileExtension.uppercased()).font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.accent)
-                    .padding(.horizontal, 6).padding(.vertical, 2).background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .padding(.horizontal, 6).padding(.vertical, 2).background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.buttonRadiusSmall, style: .continuous))
             }
             Spacer()
             Label("导入", systemImage: Icon.downloadFile)
@@ -747,8 +748,9 @@ struct WiFiTransferView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .padding(Theme.inset).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
 
                 HStack(spacing: 12) {
                     ThemeIcon(symbol: Icon.downloadFile, size: 24).foregroundStyle(Theme.ink).accessibilityHidden(true)
@@ -761,19 +763,19 @@ struct WiFiTransferView: View {
                         .font(.caption).foregroundStyle(Theme.accent).monospacedDigit()
                 }
                 .padding(16).frame(minHeight: 64)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 if server.received.isEmpty {
                     Text("还没有收到文件。\n从电脑选择文件，接收后会自动加入书库。")
                         .font(.caption).foregroundStyle(Theme.ink2)
                         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(server.received.reversed().enumerated()), id: \.offset) { _, line in
                             Text(line).font(.caption)
                                 .foregroundStyle(line.hasPrefix("✗") ? Theme.danger : Theme.ink2)
                                 .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                         }
                     }
                 }

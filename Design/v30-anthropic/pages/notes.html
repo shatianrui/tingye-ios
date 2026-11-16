@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 摘记</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+
+  /* 顶部切换 */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: var(--ty-space-3); padding: 0 0 var(--ty-space-3); }
+  .switch-row .count { font-size: var(--ty-caption); color: var(--ty-ink-4); white-space: nowrap; }
+
+  /* 摘抄条 */
+  .strips { list-style: none; margin: 0; padding: 0; }
+  .strip {
+    padding: var(--ty-space-4) 0 var(--ty-space-4) var(--ty-space-4);
+    border-left: 3px solid var(--ty-ink);
+    border-bottom: 1px solid var(--ty-line);
+  }
+  .strip.has-note { border-left-color: var(--ty-clay); }
+  .strip .q {
+    margin: 0; font-family: var(--ty-font-serif); font-size: 16px; line-height: 1.8; color: var(--ty-ink);
+  }
+  .strip .n { margin: var(--ty-space-2) 0 0; font-size: var(--ty-body); color: var(--ty-ink-2); }
+  .strip .meta { margin-top: var(--ty-space-3); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+  .strip .meta .dot { color: var(--ty-ink-4); margin: 0 6px; }
+
+  .export-bar { padding: var(--ty-space-3) var(--ty-inset) var(--ty-space-4); }
+  .export-bar .btn-secondary { width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回阅读器">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid"><span class="title">摘记</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content">
+        <div class="switch-row">
+          <div class="segmented">
+            <button class="seg is-active" type="button">本书</button>
+            <button class="seg" type="button">全部</button>
+          </div>
+          <span class="count">本书 5 条 · 全部 18 条</span>
+        </div>
+
+        <ul class="strips">
+          <li class="strip has-note">
+            <p class="q">我所记得的故乡全不如此。我的故乡好得多了。</p>
+            <p class="n">想起小时候在院里看瓜的那一夜。</p>
+            <div class="meta">故乡<span class="dot">·</span>第三章<span class="dot">·</span>3 月 12 日</div>
+          </li>
+          <li class="strip">
+            <p class="q">阿！这不是我二十年来时时记得的故乡？</p>
+            <div class="meta">故乡<span class="dot">·</span>第三章<span class="dot">·</span>3 月 12 日</div>
+          </li>
+          <li class="strip has-note">
+            <p class="q">冷风吹进船舱中，呜呜的响。</p>
+            <p class="n">像今天冬天的早晨。</p>
+            <div class="meta">故乡<span class="dot">·</span>第三章<span class="dot">·</span>3 月 11 日</div>
+          </li>
+          <li class="strip">
+            <p class="q">几房的本家大约已经搬走了，所以很寂静。</p>
+            <div class="meta">故乡<span class="dot">·</span>第三章<span class="dot">·</span>3 月 11 日</div>
+          </li>
+          <li class="strip">
+            <p class="q">我这次是专为了别他而来的。</p>
+            <div class="meta">故乡<span class="dot">·</span>第二章<span class="dot">·</span>3 月 9 日</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bottombar export-bar">
+        <button class="btn-secondary" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 4v10M8.5 10.5 12 14l3.5-3.5"></path><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"></path></svg>
+          <span>导出 Markdown</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">摘记 · 列表</div>
+    <div class="cap-note">
+      形态是「摘抄条」而不是卡片：左侧 3px 竖线区分状态（有笔记为陶土、无笔记为墨色），原文宋体、笔记系统字体、
+      末行元信息「书名 · 章 · 日期」。顶部「本书 / 全部」切换，底部「导出 Markdown」导出含章节与日期的纯文本。
+    </div>
+    <div class="cap-tokens">
+      ink / clay / ink-2 / ink-4 / line · 摘抄条无卡壳 · 底部次按钮白底发丝线 · 演示数据
+    </div>
+  </div>
+</div>
+</body>
+</html>
