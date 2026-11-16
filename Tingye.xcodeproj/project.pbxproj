@@ -87,6 +87,11 @@
 		B3CB68FBB99C371259E8E71E /* ReadiumAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */; };
 		9BE3FE4B5B56E0721276A16E /* ReadiumLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */; };
 		3451B1CE75B99F39FF4823B3 /* LocatorMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */; };
+		1978E45004476611088B5FD9 /* EPUBTextSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB954FF0C305979CA8161C09 /* EPUBTextSnapshotBuilder.swift */; };
+		E875FF88648FE8F277BA2836 /* ReadiumSpeechBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E248C6CA56B9B41B0E76089 /* ReadiumSpeechBridge.swift */; };
+		D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */; };
+		C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */; };
+		0FB11ED18F54D11464A42C8F /* Pow-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -173,6 +178,11 @@
 		9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumAnnotations.swift; sourceTree = "<group>"; };
 		DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumLocatorTests.swift; sourceTree = "<group>"; };
 		3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorMigrationTests.swift; sourceTree = "<group>"; };
+		EB954FF0C305979CA8161C09 /* EPUBTextSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EPUBTextSnapshotBuilder.swift"; sourceTree = "<group>"; };
+		2E248C6CA56B9B41B0E76089 /* ReadiumSpeechBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumSpeechBridge.swift"; sourceTree = "<group>"; };
+		AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumTextSnapshotTests.swift"; sourceTree = "<group>"; };
+		04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumBackupSourceTests.swift"; sourceTree = "<group>"; };
+		5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Pow-LICENSE.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,6 +219,7 @@
 		1BE9C5E15EF178E3AF247624 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */,
 				9096C06BA41AE4394F34D26A /* Readium-Dependencies-LICENSE.txt */,
 				7488EEE807736709DBD5BA84 /* Readium-LICENSE.txt */,
 				DD2AE6F7DFFDF0B7F18CCF21 /* LXGW-OFL.txt */,
@@ -279,6 +290,10 @@
 		5D763E0B084300393DBF327E /* TingyeTests */ = {
 			isa = PBXGroup;
 			children = (
+				04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */,
+				AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */,
+				2E248C6CA56B9B41B0E76089 /* ReadiumSpeechBridge.swift */,
+				EB954FF0C305979CA8161C09 /* EPUBTextSnapshotBuilder.swift */,
 				DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */,
 				3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */,
 				E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */,
@@ -426,6 +441,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0FB11ED18F54D11464A42C8F /* Pow-LICENSE.txt in Resources */,
+				C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */,
+				D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */,
+				E875FF88648FE8F277BA2836 /* ReadiumSpeechBridge.swift in Sources */,
+				1978E45004476611088B5FD9 /* EPUBTextSnapshotBuilder.swift in Sources */,
 				36892EC415D1296C7AD84679 /* Fixtures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

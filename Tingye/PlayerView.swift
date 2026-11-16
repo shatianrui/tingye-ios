@@ -344,10 +344,10 @@ struct PlayerView: View {
                 }
                 if let entry = model.entries.first(where: { $0.id == book.id }) {
                     let stored = entry.listeningProgress
-                    let target = LocatorTarget(chapter: player.chapter, position: player.position,
-                                               anchor: model.locatorAnchor(bookID: book.id, chapter: player.chapter, position: player.position),
-                                               locator: stored?.chapter == player.chapter && stored?.position == player.position ? stored?.locator : nil,
-                                               publicationRevision: stored?.publicationRevision)
+                    var target = ReadiumSpeechBridge.sentence(book: book, chapter: player.chapter, position: player.position)
+                    if stored?.chapter == player.chapter && stored?.position == player.position {
+                        target.locator = stored?.locator; target.publicationRevision = stored?.publicationRevision
+                    }
                     model.open(entry, target: target)
                 }
                 dismiss(); model.showingPlayer = false

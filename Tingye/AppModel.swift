@@ -300,6 +300,7 @@ final class AppModel: ObservableObject {
         try commitCatalogSave()
         flushSessionsSave()
         restoringLibrary = true
+        for entry in entries { publicationGeneration[entry.id] = UUID() }
         openTask?.cancel(); openTask = nil; selectedBook = nil
         let tasks = Array(indexTasks.values) + Array(locatorTasks.values)
         invalidateLibraryCache()
@@ -545,7 +546,7 @@ final class AppModel: ObservableObject {
             importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-                let imported = try await Task.detached(priority: .userInitiated) { try BookImporter.read(url) }.value
+                let imported = try await Task.detached(priority: .userInitiated) { try await BookImporter.read(url) }.value
                 try checkOwner(captured)
                 guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
                 try Task.checkCancellation()
@@ -621,7 +622,7 @@ final class AppModel: ObservableObject {
         defer { publicationWrites.remove(id) }
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-        let imported = try await Task.detached { try BookImporter.read(url) }.value
+        let imported = try await Task.detached { try await BookImporter.read(url) }.value
         var value = imported.book
         try checkOwner(captured)
         guard value.format.caseInsensitiveCompare(row.format) == .orderedSame else { throw ReaderError.message("请选择与原书相同格式的文件。") }

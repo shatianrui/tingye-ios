@@ -73,31 +73,40 @@ struct StorageView: View {
         }
     }
     private func clear(_ kind: StorageUsage.Kind) {
-        StorageUsage.clear(kind)
-        if kind == .covers { model.clearIndexCache() }
-        model.notify("已清理\(kind.title)。")
-        rescan()
+        Task {
+            do {
+                if kind == .derived { try await model.publicationStore().clearCache() }
+                else { StorageUsage.clear(kind) }
+                if kind == .covers { model.clearIndexCache() }
+                model.notify(kind == .derived ? "已清理当前书库的 EPUB 派生缓存。" : "已清理\(kind.title)。")
+                rescan()
+            } catch { model.message = error.localizedDescription }
+        }
     }
 }
 
 /// 存储占用的统计与清理，不依赖界面，便于测试。
 enum StorageUsage {
     enum Kind: String, CaseIterable, Sendable {
-        case library, speech, covers, temporary
-        var title: String { ["library": "书库", "speech": "语音缓存", "covers": "封面与其他缓存", "temporary": "临时文件"][rawValue]! }
+        case library, originals, derived, speech, covers, temporary
+        var title: String { ["library": "书库文本与摘记", "originals": "书库原 EPUB", "derived": "EPUB 派生缓存", "speech": "语音缓存", "covers": "封面与其他缓存", "temporary": "临时文件"][rawValue]! }
         var detail: String {
             switch self {
-            case .library: "书籍、资源、进度与书摘"
+            case .library: "书籍文本、资源、进度与书摘"
+            case .originals: "书库的一部分，随备份保存的原文件"
+            case .derived: "清理当前书库的可重建文件；保留正在阅读的文件与其他书库缓存"
             case .speech: "云语音合成的音频"
             case .covers: "封面缩略图、分类索引"
             case .temporary: "导入、导出与分享时的中间文件"
             }
         }
-        var clearable: Bool { self != .library }
+        var clearable: Bool { self != .library && self != .originals }
         var url: URL? {
             let fm = FileManager.default
             switch self {
             case .library: return fm.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("TingyeNative")
+            case .originals: return nil
+            case .derived: return fm.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("TingyeReadium")
             case .speech: return fm.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("TTSAudio")
             case .covers: return fm.urls(for: .cachesDirectory, in: .userDomainMask).first
             case .temporary: return fm.temporaryDirectory
@@ -106,11 +115,26 @@ enum StorageUsage {
     }
     struct Item: Identifiable, Sendable { let kind: Kind; let bytes: Int64; var id: String { kind.rawValue } }
 
-    static func scan() -> [Item] {
+    static func scan(libraryRoot: URL? = nil, derivedRoot: URL? = nil) -> [Item] {
+        let library = libraryRoot ?? Kind.library.url
+        let originals: Int64
+        if let libraryRoot { originals = size(of: libraryRoot.appendingPathComponent("Publications")) }
+        else {
+            originals = ((try? FileManager.default.contentsOfDirectory(at: library ?? URL(fileURLWithPath: "/nonexistent"), includingPropertiesForKeys: nil)) ?? [])
+                .reduce(0) { $0 + size(of: $1.appendingPathComponent("Publications")) }
+        }
         let speech = size(of: Kind.speech.url)
+        let allDerived = size(of: Kind.derived.url)
         return Kind.allCases.map { kind in
-            // 「封面与其他缓存」不重复计入语音缓存。
-            Item(kind: kind, bytes: kind == .covers ? max(0, size(of: kind.url) - speech) : size(of: kind.url))
+            let bytes: Int64
+            switch kind {
+            case .library: bytes = max(0, size(of: library) - originals)
+            case .originals: bytes = originals
+            case .derived: bytes = size(of: derivedRoot ?? kind.url)
+            case .covers: bytes = max(0, size(of: kind.url) - speech - allDerived)
+            default: bytes = size(of: kind.url)
+            }
+            return Item(kind: kind, bytes: bytes)
         }
     }
     static func size(of url: URL?) -> Int64 {
@@ -123,12 +147,12 @@ enum StorageUsage {
         return total
     }
     static func clear(_ kind: Kind) {
-        guard kind.clearable, let folder = kind.url else { return }
+        guard kind.clearable, kind != .derived, let folder = kind.url else { return }
         let fm = FileManager.default
         if kind == .speech { CloudSpeech.clearDiskCache(); return }
         for url in (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? [] {
             // 清「封面与其他缓存」时保留语音缓存，由它自己的按钮处理。
-            if kind == .covers && url.lastPathComponent == "TTSAudio" { continue }
+            if kind == .covers && ["TTSAudio", "TingyeReadium"].contains(url.lastPathComponent) { continue }
             try? fm.removeItem(at: url)
         }
     }

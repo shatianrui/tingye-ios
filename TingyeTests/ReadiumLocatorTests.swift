@@ -153,7 +153,7 @@ final class ReadiumLocatorTests: XCTestCase {
         let data = try XCTUnwrap(Data(base64Encoded: text, options: .ignoreUnknownCharacters))
         let url = try LocatorTestSupport.temporary(self).appendingPathComponent("original.epub")
         try data.write(to: url)
-        let book = try BookImporter.read(url).book
+        let book = try await BookImporter.read(url).book
         let publication = try await ReadiumService().open(url)
         let map = PublicationMap(book: book, readingOrder: ["EPUB/extra.xhtml"] + publication.readingOrder.map(\.href), titles: [:], revision: PublicationDigest.data(data))
         let bridge = try LocatorBridge(book: book, map: map, publication: publication)

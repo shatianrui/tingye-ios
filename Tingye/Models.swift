@@ -328,6 +328,7 @@ struct BackupPacket: Codable, Sendable {
     var version = 2
     var book: Book
     var progress: ReadingProgress
+    var epubAttachment: EPUBBackupAttachment? = nil
     func validated(id: String) throws -> BackupPacket {
         _ = try book.validated()
         guard format == "tingye-backup", version == 2, book.id == id,

@@ -5,13 +5,14 @@ import ReadiumZIPFoundation
 
 enum BookImporter {
     struct Imported: Sendable { let book: Book; var progress = ReadingProgress(); var source: EPUBSourceStaging? = nil }
-    static func read(_ url: URL) throws -> Imported {
+    static func read(_ url: URL) async throws -> Imported {
         let title = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension.lowercased()
         if ext == "epub" {
             let source = try EPUBSourceStaging(copying: url)
             // Parse the exact copy we retain, avoiding a source-file change between parsing and hashing.
-            return Imported(book: try epub(source.url, fallbackTitle: title).validated(), source: source)
+            let snapshot = try await EPUBTextSnapshotBuilder.open(source.url, fallbackTitle: title, revision: "source-" + source.sha256)
+            return Imported(book: try snapshot.book.validated(), source: source)
         }
         if ext == "docx" { return Imported(book: try docx(url, title: title).validated()) }
         if ["mobi", "azw", "azw3", "prc"].contains(ext) { return Imported(book: try MobiReader.book(url, fallbackTitle: title).validated()) }
@@ -25,7 +26,7 @@ enum BookImporter {
         if ext == "json" {
             if let packet = try? JSONDecoder().decode(BackupPacket.self, from: data) {
                 let valid = try packet.validated(id: packet.book.id)
-                return Imported(book: valid.book, progress: valid.progress)
+                return try await restored(valid)
             }
             return Imported(book: try JSONDecoder().decode(Book.self, from: data).validated())
         }
@@ -48,7 +49,6 @@ enum BookImporter {
     }
     static func normalize(_ text: String) -> String { text.replacingOccurrences(of: "\u{FEFF}", with: "").replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n") }
     private static let headingRegex = try! NSRegularExpression(pattern: #"(?m)^(?:第[零〇一二三四五六七八九十百千万两\d]+[章回卷部篇节].{0,65}|Chapter\s+\d+.{0,65}|#{1,3}\s+.{1,65})$"#, options: [.caseInsensitive])
-    private static let linkRegex = try! NSRegularExpression(pattern: #"(?i)<link\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>"#)
     /// 按标题行分章；`rule` 为用户自定义正则（nil 用内置规则）。超过 `maxLength` 字的章节在段落处继续切分。
     static func splitText(_ source: String, title: String, rule: NSRegularExpression? = nil, maxLength: Int = TxtChapterRules.defaultMaxLength) -> [Chapter] {
         limitLength(splitByHeadings(source, title: title, regex: rule ?? headingRegex), maxLength: maxLength)
@@ -120,59 +120,6 @@ enum BookImporter {
             else if part != "." { parts.append(String(part)) }
         }
         return parts.joined(separator: "/")
-    }
-    private static func epub(_ url: URL, fallbackTitle: String) throws -> Book {
-        let zip = try SafeArchive(url: url)
-        let container = try XMLNode.parse(zip.data("META-INF/container.xml"))
-        guard let path = container.descendants("rootfile").first?.attributes["full-path"], !path.hasPrefix("/"), !path.split(separator: "/").contains("..") else { throw ReaderError.message("EPUB 缺少书籍目录。") }
-        let opf = try XMLNode.parse(zip.data(path))
-        let title = opf.descendants("title").first?.allText.trimmingCharacters(in: .whitespacesAndNewlines) ?? fallbackTitle
-        let author = opf.descendants("creator").first?.allText ?? "佚名"
-        let items = opf.descendants("item")
-        var manifest: [String: XMLNode] = [:]
-        for item in items { if let id = item.attributes["id"] { manifest[id] = item } }
-        var resources: [String: JSONValue] = [:], imagePaths: [String: String] = [:]
-        var cover: String?
-        let coverID = opf.descendants("meta").first(where: { $0.attributes["name"] == "cover" })?.attributes["content"]
-        for item in items {
-            guard let type = item.attributes["media-type"], ["image/png", "image/jpeg", "image/gif", "image/webp"].contains(type), let href = item.attributes["href"] else { continue }
-            let resourcePath = try resolve(base: path, href: href)
-            let bytes = try zip.data(resourcePath)
-            let key = "r\(resources.count)"
-            resources[key] = .string("data:\(type);base64," + bytes.base64EncodedString()); imagePaths[resourcePath] = key
-            if item.attributes["properties"]?.contains("cover-image") == true || item.attributes["id"] == coverID { cover = "tingye-resource:" + key }
-        }
-        var cssFiles: [String: String] = [:]
-        for item in items where item.attributes["media-type"] == "text/css" {
-            if let href = item.attributes["href"] { let cssPath = try resolve(base: path, href: href); cssFiles[cssPath] = try decode(zip.data(cssPath)) }
-        }
-        var chapters: [Chapter] = []
-        for ref in opf.descendants("itemref") where ref.attributes["linear"] != "no" {
-            guard let id = ref.attributes["idref"], let item = manifest[id], let href = item.attributes["href"] else { continue }
-            let chapterPath = try resolve(base: path, href: href)
-            let html = try decode(zip.data(chapterPath))
-            var chapter = HTMLText.chapter(html, title: "第 \(chapters.count + 1) 章")
-            let images = HTMLText.imageSources(html).compactMap { href -> JSONValue? in
-                guard let path = try? resolve(base: chapterPath, href: href), let key = imagePaths[path] else { return nil }
-                return .string("tingye-resource:" + key)
-            }
-            chapter.fields["nativeImages"] = .array(images)
-            let original = HTMLText.replacingImageSources(in: html) { source in
-                guard let resourcePath = try? resolve(base: chapterPath, href: source), let key = imagePaths[resourcePath] else { return nil }
-                return "tingye-resource:" + key
-            }
-            var styles = ""
-            for match in linkRegex.matches(in: html, range: NSRange(location: 0, length: html.utf16.count)) {
-                let href = (html as NSString).substring(with: match.range(at: 1))
-                if let target = try? resolve(base: chapterPath, href: href), let css = cssFiles[target] { styles += css + "\n" }
-            }
-            chapter.fields["document"] = .object(["html": .string(OriginalDocument.sanitized(original)), "css": .string(styles), "path": .string(chapterPath)])
-            if !chapter.text.isEmpty || !images.isEmpty { chapters.append(chapter) }
-        }
-        guard !chapters.isEmpty else { throw ReaderError.message("EPUB 未找到可阅读章节；不支持 DRM 加密书籍。") }
-        var extras: [String: JSONValue] = ["resources": .object(resources), "description": .string(opf.descendants("description").first?.allText ?? ""), "category": .string(opf.descendants("subject").first?.allText ?? "其他")]
-        if let cover { extras["cover"] = .string(cover) }
-        return Book(title: title, author: author, format: "EPUB", chapters: chapters, extras: extras)
     }
     private static func docx(_ url: URL, title: String) throws -> Book {
         let zip = try SafeArchive(url: url)

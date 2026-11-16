@@ -48,7 +48,7 @@ final class ReadiumPublicationTests: XCTestCase {
         let zip = try SafeArchive(url: url)
         XCTAssertEqual(try string(zip, "mimetype"), "application/epub+zip")
         XCTAssertTrue(try string(zip, "EPUB/one.xhtml").contains("第一章 原包"))
-        let imported = try BookImporter.read(url)
+        let imported = try await BookImporter.read(url)
         XCTAssertEqual(imported.book.chapters.count, 2)
         XCTAssertNotNil(imported.source)
         XCTAssertNil(imported.book.epubSource) // Metadata binds only when a library transaction commits.
@@ -149,9 +149,9 @@ final class ReadiumPublicationTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: session.url.path))
     }
 
-    func testSourceCommitRepairReplacementAndDeleteAreBoundToBookAndSidecar() throws {
+    func testSourceCommitRepairReplacementAndDeleteAreBoundToBookAndSidecar() async throws {
         let base = try temporary(), disk = try LibraryDisk(owner: "source", base: base)
-        let imported = try BookImporter.read(fixture("original.epub"))
+        let imported = try await BookImporter.read(fixture("original.epub"))
         let prepared = try disk.prepareImport(imported.book, source: imported.source)
         try disk.commitImport(prepared, catalog: [ShelfEntry(book: prepared.book)])
         let stored = try disk.read(imported.book.id)
@@ -176,9 +176,9 @@ final class ReadiumPublicationTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: try disk.file(stored.id).path))
     }
 
-    func testSourceCatalogFailureRollsBackAndRestartReplaysUnfinishedJournal() throws {
+    func testSourceCatalogFailureRollsBackAndRestartReplaysUnfinishedJournal() async throws {
         let base = try temporary(), disk = try LibraryDisk(owner: "rollback", base: base)
-        let imported = try BookImporter.read(fixture("original.epub"))
+        let imported = try await BookImporter.read(fixture("original.epub"))
         let first = try disk.prepareImport(imported.book, source: imported.source)
         try disk.commitImport(first)
         let old = try disk.read(first.book.id), original = try XCTUnwrap(disk.sourceURL(for: old))

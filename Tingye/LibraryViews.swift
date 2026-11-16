@@ -327,7 +327,7 @@ struct BookDetailView: View {
         model.run("正在导出《\(row.title)》") { [model] in
             let book = try await model.loadBook(row.id)
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(row.id + ".json")
-            let packet = BackupPacket(book: book, progress: row.progress)
+            let packet = BackupPacket(book: book, progress: row.progress, epubAttachment: try model.disk?.backupAttachment(for: book))
             try await Task.detached(priority: .userInitiated) { try Integrity.encoder().encode(packet).write(to: url, options: .atomic) }.value
             export = ExportedBook(url: url)
         }
@@ -604,7 +604,7 @@ struct ProfileView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                settingsLink(.licenses, icon: Icon.license, color: Theme.ink2, title: "开源字体许可")
+                settingsLink(.licenses, icon: Icon.license, color: Theme.ink2, title: "开源组件与字体许可")
             } header: { settingSectionTitle("关于听页") } footer: {
                 Text("\(model.entries.count) 本书，保存在本机和你的私人 iCloud。无需注册账号。")
                     .font(.caption).foregroundStyle(Theme.ink3)
@@ -777,9 +777,52 @@ struct AppearanceView: View {
 /// 开源字体许可页:展示应用内嵌字体的 OFL 授权文本。
 struct FontLicenseView: View {
     private let fonts: [(name: String, resource: String)] = [("思源宋体 Noto Serif CJK", "Noto-OFL"), ("霞鹜文楷 LXGW WenKai", "LXGW-OFL")]
+    private let components: [(name: String, license: String, url: String)] = [
+        ("Readium Swift Toolkit 3.11.1", "BSD-3-Clause", "https://github.com/readium/swift-toolkit/blob/3.11.1/LICENSE"),
+        ("SwiftSoup 2.13.5", "MIT", "https://github.com/scinfu/SwiftSoup/blob/2.13.5/LICENSE"),
+        ("ReadiumZIPFoundation 3.0.1", "MIT", "https://github.com/readium/ZIPFoundation/blob/3.0.1/LICENSE"),
+        ("ZIPFoundation 原项目（fork 上游）", "MIT", "https://github.com/weichsel/ZIPFoundation"),
+        ("SMBClient 0.3.1", "MIT", "https://github.com/kishikawakatsumi/SMBClient/blob/0.3.1/LICENSE"),
+        ("Pow 1.0.6", "MIT", "https://github.com/EmergeTools/Pow/blob/1.0.6/LICENSE"),
+        ("CryptoSwift 1.10.0", "Zlib（含署名条款）", "https://github.com/krzyzanowskim/CryptoSwift/blob/1.10.0/LICENSE"),
+        ("Zip 2.1.2", "MIT", "https://github.com/marmelroy/Zip/blob/2.1.2/LICENSE"),
+        ("DifferenceKit 1.3.0", "Apache-2.0", "https://github.com/ra1028/DifferenceKit/blob/1.3.0/LICENSE"),
+        ("ReadiumFuzi 4.0.0", "MIT", "https://github.com/readium/Fuzi/blob/4.0.0/LICENSE"),
+        ("Lucide 图标", "ISC / MIT（逐图归属见许可）", "https://lucide.dev/license")
+    ]
+    // Package.resolved contains these optional/host-tool packages; the app does not link their products.
+    private let resolvedTools: [(name: String, license: String, url: String)] = [
+        ("CSQLite 3.50.4", "Apache-2.0（含 Swift 例外与第三方条款）", "https://github.com/stephencelis/CSQLite/blob/3.50.4/LICENSE"),
+        ("ReadiumGCDWebServer 4.0.0", "BSD-3-Clause", "https://github.com/readium/GCDWebServer/blob/4.0.0/LICENSE"),
+        ("SQLCipher.swift 4.11.0", "BSD-3-Clause / 社区版条款", "https://github.com/sqlcipher/SQLCipher.swift/blob/4.11.0/LICENSE.md"),
+        ("SQLite.swift 0.16.0", "MIT", "https://github.com/stephencelis/SQLite.swift/blob/0.16.0/LICENSE.txt"),
+        ("swift-argument-parser 1.0.1", "Apache-2.0（含 Swift 例外）", "https://github.com/apple/swift-argument-parser/blob/1.0.1/LICENSE.txt"),
+        ("swift-docc-plugin 1.5.0", "Apache-2.0（含 Swift 例外）", "https://github.com/swiftlang/swift-docc-plugin/blob/1.5.0/LICENSE.txt"),
+        ("swift-docc-symbolkit 1.0.0", "Apache-2.0（含 Swift 例外）", "https://github.com/swiftlang/swift-docc-symbolkit/blob/1.0.0/LICENSE.txt")
+    ]
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                SectionTitle(text: "开源组件")
+                ForEach(components, id: \.name) { component in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Link(component.name, destination: URL(string: component.url)!)
+                        Text(component.license).font(.caption).foregroundStyle(Theme.ink2)
+                    }
+                }
+                ForEach(["Readium-LICENSE", "Readium-Dependencies-LICENSE", "ZIPFoundation-LICENSE", "SMBClient-LICENSE", "Pow-LICENSE", "Lucide-LICENSE"], id: \.self) { resource in
+                    DisclosureGroup(resource) { Text(license(resource)).font(.caption.monospaced()).textSelection(.enabled) }
+                }
+                DisclosureGroup("依赖解析中的可选组件与构建工具") {
+                    ForEach(resolvedTools, id: \.name) { component in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Link(component.name, destination: URL(string: component.url)!)
+                            Text(component.license).font(.caption).foregroundStyle(Theme.ink2)
+                        }
+                    }
+                }
+                SectionTitle(text: "字体")
+
                 ForEach(fonts, id: \.name) { font in
                     VStack(alignment: .leading, spacing: 8) {
                         SectionTitle(text: font.name)
@@ -804,7 +847,7 @@ struct FontLicenseView: View {
         }
         .paperBackground()
         .foregroundStyle(Theme.ink)
-        .navigationTitle("开源字体许可")
+        .navigationTitle("开源组件与字体许可")
         .navigationBarTitleDisplayMode(.inline)
     }
     private func license(_ resource: String) -> String {

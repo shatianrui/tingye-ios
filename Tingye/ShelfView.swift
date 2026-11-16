@@ -322,6 +322,7 @@ struct ShelfView: View {
                 BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(entry.title)
+                        .accessibilityIdentifier("study.heroTitle")
                         .font(Theme.serif(20))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
@@ -334,6 +335,7 @@ struct ShelfView: View {
                         Text("第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
                             .font(.caption2)
                             .foregroundStyle(Theme.ink3)
+                            .accessibilityIdentifier("study.heroChapter")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

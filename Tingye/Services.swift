@@ -690,10 +690,11 @@ struct LibraryDisk: Sendable {
     }
 
     /// Staging contains complete replacement files; no live library file is touched here.
-    /// JSON imports deliberately discard any path-only source descriptor (attachments arrive in unit 4).
+    /// JSON imports discard path-only descriptors; validated backup attachments arrive as source staging.
     func prepareImport(_ input: Book, source: EPUBSourceStaging?, origin: EPUBSource.Origin = .imported) throws -> PreparedPublicationWrite {
         var book = try input.validated()
         book.epubSource = nil
+        if source == nil { book.fields.removeValue(forKey: "epubTextMap") }
         if book.format.uppercased() == "EPUB", let source {
             book.epubSource = EPUBSource(relativePath: EPUBSource.path(book.id), sha256: source.sha256,
                                          origin: origin, mappingVersion: EPUBSource.currentMappingVersion)

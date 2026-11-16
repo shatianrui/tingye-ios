@@ -1344,7 +1344,7 @@ struct ReaderView: View {
     private func shareBook() {
         do {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(book.id + ".json")
-            try Integrity.encoder().encode(BackupPacket(book: book, progress: entry?.progress ?? .init())).write(to: url, options: .atomic)
+            try Integrity.encoder().encode(BackupPacket(book: book, progress: entry?.progress ?? .init(), epubAttachment: try model.disk?.backupAttachment(for: book))).write(to: url, options: .atomic)
             shareItem = ExportedBook(url: url)
         } catch { model.message = error.localizedDescription }
     }
@@ -1697,6 +1697,13 @@ enum ReaderSearch {
         let snippet: String
         let offset: Int
     }
+    /// Recover the exact body hit range. A title-only result has no body range to decorate.
+    static func hitRange(in chapter: Chapter, query: String, offset: Int) -> NSRange? {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines), text = chapter.text as NSString
+        guard !keyword.isEmpty, offset >= 0, offset < text.length else { return nil }
+        let range = text.range(of: keyword, options: [.caseInsensitive, .anchored], range: NSRange(location: offset, length: text.length - offset))
+        return range.location == offset && range.length > 0 ? range : nil
+    }
     static func matches(in chapters: [Chapter], query: String, limit: Int = 200) -> [Match] {
         let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !keyword.isEmpty, limit > 0 else { return [] }
@@ -1894,7 +1901,10 @@ struct ContentsView: View {
         guard let matchOffset else { openTarget(.init(chapter: index, position: 0)); return }
         let sentences = Sentence.split(chapter.text)
         let position = Sentence.index(at: matchOffset, in: sentences)
-        openTarget(.init(chapter: index, position: position, textRange: NSRange(location: matchOffset, length: max(1, min(query.utf16.count, chapter.text.utf16.count - matchOffset))), anchor: Locator.anchor(in: sentences, at: position)))
+        let range: NSRange?
+        if book.format.uppercased() == "EPUB" { range = ReaderSearch.hitRange(in: chapter, query: query, offset: matchOffset) }
+        else { range = NSRange(location: matchOffset, length: max(1, min(query.utf16.count, chapter.text.utf16.count - matchOffset))) }
+        openTarget(.init(chapter: index, position: position, textRange: range, anchor: Locator.anchor(in: sentences, at: position)))
     }
     private func openTarget(_ target: LocatorTarget) {
         if let onTarget { onTarget(target); return }

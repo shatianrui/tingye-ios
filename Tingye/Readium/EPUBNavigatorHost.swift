@@ -11,6 +11,8 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     let fonts: [ReadiumFontProvider.FontFile]
     let request: Request?
     var decorations: [Decoration] = []
+    var speechDecorations: [Decoration] = []
+    var searchDecorations: [Decoration] = []
     var onSelection: (ReadiumShared.Locator, ReadiumAnnotations.SelectionAction) -> Void = { _, _ in }
     var onDecoration: (String) -> Void = { _ in }
     let onLocation: (Int?, ReadiumShared.Locator, UUID?) -> Void
@@ -109,6 +111,8 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
         var navigatorReady = false
         var deferredLocation: ReadiumShared.Locator?
         var appliedDecorations: [Decoration]?
+        var appliedSpeech: [Decoration]?
+        var appliedSearch: [Decoration]?
         init(_ parent: EPUBNavigatorHost) { self.parent = parent }
         func install(in controller: Container, location: ReadiumShared.Locator) {
             if navigationTask != nil { requestID = nil }
@@ -134,7 +138,7 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                 next.observeDecorationInteractions(inGroup: ReadiumAnnotations.userGroup) { [weak self] event in
                     self?.parent.onDecoration(event.decoration.id)
                 }
-                appliedDecorations = nil
+                appliedDecorations = nil; appliedSpeech = nil; appliedSearch = nil
                 applyDecorations()
                 fonts = parent.fonts
                 preferences = parent.preferences
@@ -144,9 +148,19 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
             }
         }
         func applyDecorations() {
-            guard let navigator, appliedDecorations != parent.decorations else { return }
-            navigator.apply(decorations: parent.decorations, in: ReadiumAnnotations.userGroup)
-            appliedDecorations = parent.decorations
+            guard let navigator else { return }
+            if appliedDecorations != parent.decorations {
+                navigator.apply(decorations: parent.decorations, in: ReadiumAnnotations.userGroup)
+                appliedDecorations = parent.decorations
+            }
+            if appliedSpeech != parent.speechDecorations {
+                navigator.apply(decorations: parent.speechDecorations, in: ReadiumAnnotations.speechGroup)
+                appliedSpeech = parent.speechDecorations
+            }
+            if appliedSearch != parent.searchDecorations {
+                navigator.apply(decorations: parent.searchDecorations, in: ReadiumAnnotations.searchGroup)
+                appliedSearch = parent.searchDecorations
+            }
         }
         func navigateIfNeeded() {
             // go() 在 Navigator 初始化前会返回 false；收到首个位置回调后再发请求。

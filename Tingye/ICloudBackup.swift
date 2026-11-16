@@ -22,6 +22,7 @@ struct ICloudArchive: Codable, Sendable {
         var highlights: [Highlight]?
         var listeningProgress: ReadingProgress?
         var lastReadAt: Double?
+        var epubAttachment: EPUBBackupAttachment? = nil
         func validated() throws -> Self {
             let packet = try packet.validated(id: packet.book.id)
             if let listeningProgress {
@@ -210,18 +211,27 @@ struct ICloudBackupStore: Sendable {
 extension LibraryDisk {
     /// Validate and stage the full merged library before replacing any existing files.
     /// `progress` 在每本书暂存后报告；`willReplace` 在替换本机书库前调用。
-    func restore(_ archive: ICloudArchive, owner: String, entries: [ShelfEntry], progress: ICloudProgress? = nil, willReplace: (@Sendable () -> Void)? = nil) throws -> [ShelfEntry] {
+    func restore(_ archive: ICloudArchive, owner: String, entries: [ShelfEntry], progress: ICloudProgress? = nil, willReplace: (@Sendable () -> Void)? = nil) async throws -> [ShelfEntry] {
         // 存档 owner 是来源账号（可能来自旧账号目录），按存档自身校验；内容还原进当前书库。
+        try Task.checkCancellation()
         _ = try archive.validated(owner: archive.owner)
         let fm = FileManager.default, parent = root.deletingLastPathComponent()
         let staging = parent.appendingPathComponent("restore-" + UUID().uuidString)
         let rollback = root.appendingPathExtension("restore-backup")
         defer { try? fm.removeItem(at: staging) }
         try fm.copyItem(at: root, to: staging)
+        let stageDisk = try LibraryDisk(owner: staging.lastPathComponent, base: parent.deletingLastPathComponent())
         var next = entries
         progress?(0, archive.books.count)
         for (index, item) in archive.books.enumerated() {
-            let book = item.packet.book
+            try Task.checkCancellation()
+            var packet = item.packet
+            packet.epubAttachment = item.epubAttachment ?? packet.epubAttachment
+            let imported = try await BookImporter.restored(packet)
+            try Task.checkCancellation()
+            let prepared = try stageDisk.prepareImport(imported.book, source: imported.source)
+            try stageDisk.commitImport(prepared)
+            let book = prepared.book
             var row = ShelfEntry(book: book, progress: item.packet.progress)
             row.bookmarks = item.bookmarks
             row.group = item.group; row.hidden = item.hidden; row.highlights = item.highlights
@@ -242,6 +252,7 @@ extension LibraryDisk {
             progress?(index + 1, archive.books.count)
         }
         try Integrity.encoder().encode(next).write(to: staging.appendingPathComponent("catalog.json"), options: .atomic)
+        try Task.checkCancellation()
         willReplace?()
         if fm.fileExists(atPath: rollback.path) { try fm.removeItem(at: rollback) }
         try fm.moveItem(at: root, to: rollback)
@@ -412,7 +423,7 @@ extension AppModel {
                 do { book = try await Task.detached(priority: .utility) { try disk.read(row.id) }.value }
                 catch { throw ReaderError.message("读取《\(row.title)》失败，未写入备份：\(error.localizedDescription)") }
                 try Task.checkCancellation()
-                items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt))
+                items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt, epubAttachment: try disk.backupAttachment(for: book)))
                 step(id, .readingLocal, completed: index + 1, total: rows.count)
             }
             step(id, .writing, detail: "正在把 \(items.count) 本书写入一份新快照（单个文件，无法细分进度）。")
@@ -433,7 +444,7 @@ extension AppModel {
             let book: Book
             do { book = try await Task.detached(priority: .utility) { try disk.read(row.id) }.value }
             catch { throw ReaderError.message("读取《\(row.title)》失败，未生成导出：\(error.localizedDescription)") }
-            items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt))
+            items.append(ICloudArchive.Item(packet: BackupPacket(book: book, progress: row.progress), bookmarks: row.bookmarks, group: row.group, hidden: row.hidden, highlights: row.highlights, listeningProgress: row.listeningProgress, lastReadAt: row.lastReadAt, epubAttachment: try disk.backupAttachment(for: book)))
         }
         // 全库 JSON 编码与写盘是最重的一步，移出主线程（与 backupToICloud 的 detached 模式一致）；
         // 归档构建、格式与内容不变。owner 先在主线程取值，避免在 detached 中读模型状态。
@@ -569,7 +580,7 @@ extension AppModel {
             }
             do {
                 restored = try await Task.detached(priority: .userInitiated) {
-                    try disk.restore(archive, owner: captured, entries: rows, progress: progress, willReplace: replacing)
+                    try await disk.restore(archive, owner: captured, entries: rows, progress: progress, willReplace: replacing)
                 }.value
             } catch { throw ReaderError.message("\(error.localizedDescription)\n还原未完成，本机书架保持原样。") }
             step(id, .reloading, detail: "重新载入书架。")

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import UIKit
 import ReadiumShared
 import ReadiumNavigator
@@ -134,6 +135,16 @@ struct ReadiumReaderView: View {
     @State private var originalLocation: JSONValue?
     @State private var expectedOriginal: JSONValue?
     @State private var decorations: [Decoration] = []
+    @State private var speechDecorations: [Decoration] = []
+    @State private var searchDecorations: [Decoration] = []
+    @State private var startSpeechTask: Task<Void, Never>?
+    @State private var speechTask: Task<Void, Never>?
+    @State private var searchTask: Task<Void, Never>?
+    @State private var following = false
+    @State private var audioActive = false
+    @State private var audioPlaying = false
+    @State private var speechNavigation = false
+    @State private var pendingSearch: Decoration?
     @State private var unresolvedAnnotations: [UUID] = []
     @State private var draft: Highlight?
     @State private var locationTask: Task<Void, Never>?
@@ -184,12 +195,17 @@ struct ReadiumReaderView: View {
                             fontFamily: ReadiumFontProvider.family(for: font, files: fonts),
                             fontLineHeight: ReadiumFontProvider.lineHeight(for: font, size: fontSize, files: fonts)),
                         fonts: fonts, request: request, decorations: decorations,
+                        speechDecorations: speechDecorations, searchDecorations: searchDecorations,
                         onSelection: selection, onDecoration: activateDecoration,
                         onLocation: locationChanged,
                         onTap: { withAnimation(.snappy(duration: 0.25)) { chrome.toggle() } },
                         onError: { session.error = $0; updateVisibility() }
                     )
                     .accessibilityIdentifier("reader.epubNavigator")
+                    .simultaneousGesture(DragGesture(minimumDistance: 12).onChanged { _ in
+                        guard expectedLocation == nil else { return }
+                        following = false; speechNavigation = false
+                    })
                 }
             }
             if session.loading { ProgressView("正在打开 EPUB…") }
@@ -216,14 +232,17 @@ struct ReadiumReaderView: View {
         .task(id: retry) { await open() }
         .onDisappear {
             visible = false; updateVisibility(); persist(); model.readerClosed(book.id)
-            locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
+            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
             session.close()
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { persist() } }
-        .onChange(of: sheet) { _, _ in updateVisibility() }
+        .onChange(of: sheet) { _, value in
+            updateVisibility()
+            if value == nil { refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position) }
+        }
         .task(id: annotationKey) { await refreshAnnotations() }
         .onChange(of: model.publicationGeneration[book.id]) { _, _ in
-            locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
+            locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
             ready = false; sheet = nil; draft = nil; session.close(); retry = UUID()
         }
         .onChange(of: convert) { _, _ in
@@ -232,6 +251,12 @@ struct ReadiumReaderView: View {
         .onChange(of: model.readerJump) { _, jump in
             guard let jump, jump.id == book.id, session.bridge != nil else { return }
             jumpTo(jump.target, explicit: true)
+        }
+        .onReceive(model.player.$playing.combineLatest(model.player.$chapter, model.player.$position).receive(on: DispatchQueue.main)) { _ in
+            refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position) }
         }
         .onChange(of: font) { _, _ in fonts = ReadiumFontProvider.files() }
         .onReceive(model.$selectedBook) { selected in
@@ -258,7 +283,7 @@ struct ReadiumReaderView: View {
                     NavigationStack {
                         ContentsView(book: book, chapters: book.chapters, currentChapter: chapter,
                                      bookmarks: entry?.bookmarks ?? [], startsSearching: true,
-                                     onTarget: { target in jumpTo(target); sheet = nil }) { c, p in
+                                     onTarget: { target in jumpTo(target, search: true); sheet = nil }) { c, p in
                             jumpTo(chapter: c, position: p); sheet = nil
                         }
                     }
@@ -279,8 +304,8 @@ struct ReadiumReaderView: View {
     private var topBar: some View {
         HStack(spacing: 12) {
             Button { persist(); dismiss() } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
-                .accessibilityLabel("返回")
-            Text(title).font(Theme.sans(14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity)
+                .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
+            Text(title).accessibilityIdentifier("reader.currentTitle").font(Theme.sans(14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity)
             Button {
                 let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
                 model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
@@ -288,19 +313,36 @@ struct ReadiumReaderView: View {
             } label: {
                 Image(systemName: entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true ? "bookmark.fill" : "bookmark")
                     .frame(width: 44, height: 44)
-            }.disabled(!ready || !mappedChapter).accessibilityLabel("书签")
+            }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
         }
         .padding(.horizontal, 12)
         .background(Color(hex: palette.background))
     }
     private var bottomBar: some View {
         HStack(spacing: 0) {
-            chromeButton("目录", symbol: "list.bullet") { sheet = .contents }
+            chromeButton("目录", symbol: "list.bullet") { sheet = .contents }.accessibilityIdentifier("reader.contents")
             chromeButton("听书", symbol: "headphones", enabled: mappedChapter) {
-                model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: position))
-                sheet = .player
+                startSpeech()
             }
-            chromeButton("设置", symbol: "textformat.size") { sheet = .preferences }
+            .accessibilityIdentifier("reader.listen")
+            if audioActive {
+                chromeButton(audioPlaying ? "暂停" : "继续", symbol: audioPlaying ? "pause.fill" : "play.fill") {
+                    if model.player.playing { model.player.pause() } else { model.player.resume() }
+                }.accessibilityIdentifier("reader.toggle")
+                .accessibilityLabel(audioPlaying ? "暂停朗读" : "继续朗读")
+                chromeButton(following ? "停止跟随" : "回到朗读", symbol: "text.line.first.and.arrowtriangle.forward") {
+                    if following {
+                        following = false
+                    } else if model.player.playing {
+                        following = true
+                        refreshSpeech(playing: true, chapter: model.player.chapter, position: model.player.position)
+                    } else {
+                        jumpTo(ReadiumSpeechBridge.sentence(book: book, chapter: model.player.chapter, position: model.player.position))
+                    }
+                }.accessibilityIdentifier("reader.returnToSpeech")
+                .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
+            }
+            chromeButton("设置", symbol: "textformat.size") { sheet = .preferences }.accessibilityIdentifier("reader.preferences")
         }
         .padding(.vertical, 12)
         .background(Color(hex: palette.background).ignoresSafeArea(edges: .bottom))
@@ -313,7 +355,7 @@ struct ReadiumReaderView: View {
     }
     private var contentsView: some View {
         List {
-            Button("搜索书内文字") { sheet = .search }
+            Button("搜索书内文字") { following = false; sheet = .search }.accessibilityIdentifier("reader.search")
             if !session.contents.isEmpty {
                 ForEach(session.contents) { item in
                     Button {
@@ -340,12 +382,14 @@ struct ReadiumReaderView: View {
                 NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) { note in jumpTo(.init(note)); sheet = nil }
             }
         }
+        .accessibilityIdentifier("reader.epubContents")
         .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }
     }
     @MainActor private func open() async {
         ready = false; mappedChapter = false
-        locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
+        speechDecorations = []; searchDecorations = []; pendingSearch = nil; speechNavigation = false
+        locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel(); locationGeneration = UUID()
         request = nil; expectedLocation = nil; expectedChapter = nil; expectedOriginal = nil
         updateVisibility()
         do {
@@ -361,13 +405,16 @@ struct ReadiumReaderView: View {
             expectedOriginal = session.initialOriginal; originalLocation = session.initialOriginal
             if let latest = model.readerJump, latest.id == book.id, latest != jump { jumpTo(latest.target, explicit: true) }
             await refreshAnnotations()
+            refreshSpeech(playing: model.player.playing, chapter: model.player.chapter, position: model.player.position)
         } catch { session.error = error.localizedDescription }
     }
     private func navigateLink(_ link: ReadiumShared.Link) {
+        following = false
         guard let bridge = session.bridge else { return }
         jumpTask?.cancel()
         jumpTask = Task { @MainActor in
             guard let result = await bridge.resolve(link: link), let locator = try? await bridge.displayLocator(result.locator, mode: convert), !Task.isCancelled, session.bridge === bridge else { return }
+            speechNavigation = false; pendingSearch = nil
             expectedLocation = locator; expectedOriginal = result.locator
             expectedChapter = bridge.map?.chapter(for: locator.href.string)
             request = .init(locator: locator)
@@ -376,7 +423,8 @@ struct ReadiumReaderView: View {
     private func jumpTo(chapter: Int, position: Int, explicit: Bool = false) {
         jumpTo(.init(chapter: chapter, position: position), explicit: explicit)
     }
-    private func jumpTo(_ target: LocatorTarget, explicit: Bool = false) {
+    private func jumpTo(_ target: LocatorTarget, explicit: Bool = false, search: Bool = false) {
+        following = false
         guard let bridge = session.bridge else { return }
         jumpTask?.cancel()
         jumpTask = Task { @MainActor in
@@ -386,6 +434,13 @@ struct ReadiumReaderView: View {
                 try Task.checkCancellation()
                 guard session.bridge === bridge else { return }
                 guard let locator else { throw ReaderError.message("无法定位所选原文，标注已保留。") }
+                var hitDecoration: Decoration?
+                if search, target.textRange != nil, resolved.precise, let hit = try await bridge.displayLocator(resolved.locator, mode: convert, requireRange: true) {
+                    hitDecoration = Decoration(id: "search-hit", locator: hit, style: ReadiumAnnotations.style(color: "yellow", kind: "background"))
+                }
+                try Task.checkCancellation()
+                guard session.bridge === bridge else { return }
+                speechNavigation = false; pendingSearch = hitDecoration
                 expectedOriginal = resolved.locator; expectedLocation = locator; expectedChapter = resolved.target.chapter
                 if explicit { pendingJump = (target.chapter, target.position) }
                 request = .init(locator: locator)
@@ -411,6 +466,7 @@ struct ReadiumReaderView: View {
                 guard mappedChapter else { ready = true; updateVisibility(); return }
                 chapter = result.target.chapter; position = result.target.position
                 originalLocation = result.locator
+                if let pendingSearch { showSearch(pendingSearch); self.pendingSearch = nil }
                 expectedLocation = nil; expectedChapter = nil; expectedOriginal = nil
                 if let pendingJump, let jump = model.readerJump, jump.id == book.id,
                    jump.chapter == pendingJump.chapter, jump.position == pendingJump.position { model.readerJump = nil }
@@ -421,7 +477,7 @@ struct ReadiumReaderView: View {
         }
     }
     private func persist() {
-        guard ready, mappedChapter, expectedLocation == nil, session.error == nil else { return }
+        guard ready, mappedChapter, !following, !speechNavigation, expectedLocation == nil, session.error == nil else { return }
         // 与 ReaderView.persist 共用 sync.update / TextAnchor / KVS / 1200ms catalog 防抖。
         model.saveProgress(book.id, chapter: chapter, position: position, locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
     }
@@ -482,6 +538,49 @@ struct ReadiumReaderView: View {
         if entry?.notes.contains(where: { $0.id == highlight.id }) == true { model.updateHighlight(book.id, highlight) }
         else { model.addHighlight(book.id, highlight) }
         sheet = nil
+    }
+    private func startSpeech() {
+        guard ready, expectedLocation == nil, let bridge = session.bridge else { return }
+        startSpeechTask?.cancel()
+        startSpeechTask = Task { @MainActor in
+            do {
+                await locationTask?.value
+                try Task.checkCancellation()
+                let progress = try await ReadiumSpeechBridge.start(visible: originalLocation, chapter: chapter, position: position, bridge: bridge)
+                try Task.checkCancellation()
+                guard visible, session.bridge === bridge, sessionEpoch == model.publicationGeneration[book.id] else { return }
+                following = true
+                model.startListening(book, showPlayer: false, from: progress)
+                sheet = .player
+            } catch is CancellationError {} catch { model.message = error.localizedDescription }
+        }
+    }
+    private func refreshSpeech(playing: Bool, chapter c: Int, position p: Int) {
+        speechTask?.cancel()
+        audioActive = model.player.book?.id == book.id
+        audioPlaying = playing && audioActive
+        guard playing, audioActive, let bridge = session.bridge else { speechDecorations = []; return }
+        let mode = convert
+        speechTask = Task { @MainActor in
+            do {
+                let (result, locator, mark) = try await ReadiumSpeechBridge.playback(chapter: c, position: p, bridge: bridge, mode: mode)
+                try Task.checkCancellation()
+                guard visible, session.bridge === bridge, sessionEpoch == model.publicationGeneration[book.id] else { return }
+                speechDecorations = mark.map { [$0] } ?? []
+                if following, sheet != .player, scenePhase == .active {
+                    speechNavigation = true
+                    expectedOriginal = result.locator; expectedLocation = locator; expectedChapter = result.target.chapter
+                    request = .init(locator: locator)
+                }
+            } catch is CancellationError {} catch { speechDecorations = [] }
+        }
+    }
+    private func showSearch(_ decoration: Decoration) {
+        searchTask?.cancel(); searchDecorations = [decoration]
+        searchTask = Task { @MainActor in
+            do { try await Task.sleep(for: .seconds(2)); try Task.checkCancellation(); searchDecorations = [] }
+            catch {}
+        }
     }
     private func updateVisibility() {
         model.setReadingSurface(book.id, visible: visible && ready && session.error == nil && sheet != .player)

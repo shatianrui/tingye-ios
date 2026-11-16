@@ -99,6 +99,36 @@ final class LocatorMigrationTests: XCTestCase {
         let restored = try await nextBridge.reverse(location)
         XCTAssertEqual(restored.target.position, 2)
     }
+    func testConcurrentFirstMigrationOfTwoBooksKeepsPremigrationCatalogSnapshot() async throws {
+        let base = try LocatorTestSupport.temporary(self)
+        let disk = try LibraryDisk(owner: UUID().uuidString, base: base)
+        var first = LocatorTestSupport.book(["甲一。甲二。"], format: "TXT")
+        var second = LocatorTestSupport.book(["乙一。乙二。"], format: "TXT")
+        first.fields["id"] = .string(UUID().uuidString); second.fields["id"] = .string(UUID().uuidString)
+        let rows = [ShelfEntry(book: first, progress: .init(chapter: 0, position: 1)),
+                    ShelfEntry(book: second, progress: .init(chapter: 0, position: 1))]
+        try disk.write(first); try disk.write(second); try disk.saveCatalog(rows)
+        let before = try Data(contentsOf: disk.root.appendingPathComponent("catalog.json"))
+        let model = try isolatedModel(disk: disk)
+        let firstID = first.id, secondID = second.id
+        async let a: Void = model.migrateLocators(firstID)
+        async let b: Void = model.migrateLocators(secondID)
+        _ = await (a, b)
+        XCTAssertTrue(try disk.catalog().allSatisfy { $0.progress.locator != nil })
+        let snapshot = disk.root.appendingPathComponent("LocatorMigration/catalog-before-v1.json")
+        XCTAssertEqual(try Data(contentsOf: snapshot), before)
+        let saved = try JSONDecoder().decode([ShelfEntry].self, from: Data(contentsOf: snapshot))
+        XCTAssertEqual(saved.map(\.id), rows.map(\.id))
+        XCTAssertTrue(saved.allSatisfy { $0.progress.locator == nil })
+        // A late/repeated snapshot must not replace the first one with an already migrated catalog.
+        let migrated = try disk.catalog()
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for row in migrated { group.addTask { try disk.snapshotForLocatorMigration(row) } }
+            try await group.waitForAll()
+        }
+        XCTAssertEqual(try Data(contentsOf: snapshot), before)
+    }
+
     func testAtomicAppMigrationCreatesSnapshotAndCanBeRetriedAfterFailure() async throws {
         let base = try LocatorTestSupport.temporary(self)
         let disk = try LibraryDisk(owner: "locator-" + UUID().uuidString, base: base)

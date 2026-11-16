@@ -1,7 +1,8 @@
 import Foundation
 
-/// One store per library session. This unit does not attach it to any UI/router.
+/// One shared store per library. Reader sessions own independent pin files.
 actor PublicationStore {
+    private static let sessionEpoch = UUID().uuidString
     struct Prepared: Sendable {
         let url: URL
         let revision: String
@@ -24,7 +25,14 @@ actor PublicationStore {
         try Task.checkCancellation()
         guard book.format.uppercased() == "EPUB" else { throw ReaderError.message("只有 EPUB 可以准备 Publication。") }
         if let source = try disk.sourceURL(for: book), let metadata = book.epubSource {
-            return Prepared(url: source, revision: "source-" + metadata.sha256, map: nil, report: nil)
+            let revision = "source-" + metadata.sha256
+            let map = book.fields["epubTextMap"].flatMap { value -> PublicationMap? in
+                guard let data = try? Integrity.encoder().encode(value),
+                      let map = try? JSONDecoder().decode(PublicationMap.self, from: data),
+                      map.version == PublicationMap.schemaVersion, map.publicationRevision == revision else { return nil }
+                return map
+            }
+            return Prepared(url: source, revision: revision, map: map, report: nil)
         }
         let hash = try PublicationMap.contentHash(for: book)
         let diskEpoch = try disk.publicationCacheEpoch(book.id)
@@ -58,7 +66,7 @@ actor PublicationStore {
     func pin(_ prepared: Prepared) throws -> SessionFile {
         let token = UUID(), directory = cacheRoot.appendingPathComponent(".Sessions")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let url = directory.appendingPathComponent(token.uuidString + ".epub")
+        let url = directory.appendingPathComponent(Self.sessionEpoch + "-" + token.uuidString + ".epub")
         do { try FileManager.default.linkItem(at: prepared.url, to: url) }
         catch { try FileManager.default.copyItem(at: prepared.url, to: url) }
         if prepared.revision.hasPrefix("source-"),
@@ -83,7 +91,10 @@ actor PublicationStore {
         } else if fm.fileExists(atPath: cacheRoot.path) {
             for directory in try fm.contentsOfDirectory(at: cacheRoot, includingPropertiesForKeys: nil) {
                 if directory.lastPathComponent == ".Sessions" {
-                    for file in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) where !pins.values.contains(file) {
+                    // All Store instances in this process share the prefix, including pre-restore
+                    // readers. Only prior-process orphan pins are eligible for cache cleanup.
+                    for file in try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                        where !file.lastPathComponent.hasPrefix(Self.sessionEpoch + "-") {
                         try fm.removeItem(at: file)
                     }
                 } else if !jobs.keys.contains(where: { $0.hasPrefix(directory.lastPathComponent + "/") }) {

@@ -522,7 +522,7 @@ final class NativeCoreTests: XCTestCase {
         }
     }
 
-    func testReaderSearchHandlesTitleOnlyWhitespaceAndResultLimits() {
+    func testReaderSearchHandlesTitleOnlyWhitespaceAndResultLimits() async throws {
         let chapters = [Chapter(title: "A Quiet Chapter", text: "只有正文。"), Chapter(title: "另一章", text: String(repeating: "阅读。", count: 240))]
         let title = ReaderSearch.matches(in: chapters, query: " quiet ")
         XCTAssertEqual(title.count, 1)
@@ -785,14 +785,14 @@ final class NativeCoreTests: XCTestCase {
             XCTAssertEqual(CTFrameGetVisibleStringRange(frame).length, range.length, "第 \(index + 1) 页有字被挤出")
         }
     }
-    func testEPUBAndDOCXImportFixtures() throws {
+    func testEPUBAndDOCXImportFixtures() async throws {
         let base = try XCTUnwrap(Bundle(for: Self.self).resourceURL?.appendingPathComponent("Fixtures"))
-        let epub = try BookImporter.read(base.appendingPathComponent("book.epub")).book
+        let epub = try await BookImporter.read(base.appendingPathComponent("book.epub")).book
         XCTAssertEqual(epub.title, "山水书")
         XCTAssertEqual(epub.chapters.count, 2)
         XCTAssertTrue(epub.chapters[0].text.contains("春风"))
         XCTAssertTrue(epub.chapters[1].text.contains("归人"))
-        let docx = try BookImporter.read(base.appendingPathComponent("book.docx")).book
+        let docx = try await BookImporter.read(base.appendingPathComponent("book.docx")).book
         XCTAssertTrue(docx.chapters[0].text.contains("听页原生阅读"))
     }
     @MainActor func testBundledFontAndSamples() {
@@ -852,9 +852,9 @@ final class NativeCoreTests: XCTestCase {
         XCTAssertFalse(html.contains("<script>"))
         XCTAssertTrue(html.contains("script-src 'none'"))
     }
-    func testEPUBRetainsOriginalHTMLAndStylesForRepair() throws {
+    func testEPUBRetainsOriginalHTMLAndStylesForRepair() async throws {
         let base = try XCTUnwrap(Bundle(for: Self.self).resourceURL?.appendingPathComponent("Fixtures"))
-        let book = try BookImporter.read(base.appendingPathComponent("book.epub")).book
+        let book = try await BookImporter.read(base.appendingPathComponent("book.epub")).book
         XCTAssertTrue(book.chapters.allSatisfy { $0.fields["document"]?.object?["html"]?.string != nil })
         let data = try Integrity.encoder().encode(book)
         XCTAssertEqual(try JSONDecoder().decode(Book.self, from: data), book)
@@ -905,7 +905,7 @@ final class ProgressAndBackupTests: XCTestCase {
         row.progress = .init(chapter: -1, position: -1, updatedAt: 1)
         XCTAssertGreaterThanOrEqual(row.readFraction, 0)
     }
-    func testICloudSnapshotsRestoreResourcesProgressBookmarksAndKeepOtherBooks() throws {
+    func testICloudSnapshotsRestoreResourcesProgressBookmarksAndKeepOtherBooks() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }
         let store = ICloudBackupStore(root: base.appendingPathComponent("cloud"))
@@ -922,7 +922,7 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertEqual(try store.snapshots(owner: "guest").count, 2)
         XCTAssertTrue(try store.snapshots(owner: "other-account").isEmpty)
         let recovered = try store.read(first, owner: "guest")
-        let rows = try disk.restore(recovered, owner: "guest", entries: disk.catalog())
+        let rows = try await disk.restore(recovered, owner: "guest", entries: disk.catalog())
         XCTAssertEqual(rows.count, 2)
         XCTAssertEqual(try disk.read(book.id), book)
         XCTAssertEqual(try disk.read(other.id), other)
@@ -937,11 +937,11 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertThrowsError(try store.read(first, owner: "other-account"))
         let before = try Data(contentsOf: disk.root.appendingPathComponent("catalog.json"))
         var invalid = recovered; invalid.books[0].packet.progress.chapter = 999
-        XCTAssertThrowsError(try disk.restore(invalid, owner: "guest", entries: rows))
+        await assertRestoreThrows(disk, invalid, owner: "guest", entries: rows)
         XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), before)
         var invalidListening = recovered
         invalidListening.books[0].listeningProgress?.chapter = 999
-        XCTAssertThrowsError(try disk.restore(invalidListening, owner: "guest", entries: rows))
+        await assertRestoreThrows(disk, invalidListening, owner: "guest", entries: rows)
         XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), before,
                        "听书位置无效的快照也必须在写入前拒绝，保留原书库")
         let legacy = ICloudArchive(owner: "guest", books: [.init(packet: .init(book: book, progress: row.progress), bookmarks: [mark])])
@@ -956,7 +956,7 @@ final class ProgressAndBackupTests: XCTestCase {
     }
 
     /// 新设备以 guest 运行时，旧账号目录下的快照仍可被发现并还原进当前书库。
-    func testICloudRestoreFallsBackToSnapshotsUnderOtherOwners() throws {
+    func testICloudRestoreFallsBackToSnapshotsUnderOtherOwners() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }
         let store = ICloudBackupStore(root: base.appendingPathComponent("cloud"))
@@ -970,7 +970,7 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertEqual(found.owner, "legacy-account")
         XCTAssertEqual(found.url, saved)
         let recovered = try store.read(found.url, owner: found.owner)
-        let rows = try disk.restore(recovered, owner: "guest", entries: disk.catalog())
+        let rows = try await disk.restore(recovered, owner: "guest", entries: disk.catalog())
         XCTAssertEqual(rows.map(\.id), [book.id])
         XCTAssertEqual(try disk.read(book.id), book)
         // 目录账号与存档记录不一致时仍拒绝。
@@ -1040,7 +1040,7 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertTrue(ICloudUploadStatus(url: URL(fileURLWithPath: "/a"), state: .uploaded).settled)
     }
 
-    func testICloudReadAndRestoreReportPerBookProgressAndRejectEmptyOrBrokenBackups() throws {
+    func testICloudReadAndRestoreReportPerBookProgressAndRejectEmptyOrBrokenBackups() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }
         let store = ICloudBackupStore(root: base.appendingPathComponent("cloud"))
@@ -1054,7 +1054,7 @@ final class ProgressAndBackupTests: XCTestCase {
         let read = try store.read(url, owner: "guest") { calls.add($0, $1) }
         XCTAssertEqual(calls.values, [[0, 3], [1, 3], [2, 3], [3, 3]])
         let restored = ProgressCalls()
-        let rows = try disk.restore(read, owner: "guest", entries: [], progress: { restored.add($0, $1) }, willReplace: { restored.add(-1, -1) })
+        let rows = try await disk.restore(read, owner: "guest", entries: [], progress: { restored.add($0, $1) }, willReplace: { restored.add(-1, -1) })
         XCTAssertEqual(restored.values, [[0, 3], [1, 3], [2, 3], [3, 3], [-1, -1]])
         XCTAssertEqual(rows.count, 3)
 
@@ -1062,7 +1062,7 @@ final class ProgressAndBackupTests: XCTestCase {
             XCTAssertTrue($0.localizedDescription.contains("不包含书籍"))
         }
         let before = try Data(contentsOf: disk.root.appendingPathComponent("catalog.json"))
-        XCTAssertThrowsError(try disk.restore(ICloudArchive(owner: "guest", books: []), owner: "guest", entries: rows))
+        await assertRestoreThrows(disk, ICloudArchive(owner: "guest", books: []), owner: "guest", entries: rows)
         XCTAssertEqual(try Data(contentsOf: disk.root.appendingPathComponent("catalog.json")), before)
         try Data("{\"format\":1}".utf8).write(to: url)
         XCTAssertThrowsError(try store.read(url, owner: "guest")) { XCTAssertTrue($0.localizedDescription.contains("无法解析")) }
@@ -1402,7 +1402,7 @@ final class ExtendedReadingTests: XCTestCase {
         let rect = view.layoutManager.boundingRect(forGlyphRange: glyph, in: view.textContainer).offsetBy(dx: 0, dy: view.textContainerInset.top)
         XCTAssertTrue(view.bounds.intersects(rect))
     }
-    @MainActor func testPDFImportRetainsPagesAndReadableText() throws {
+    @MainActor func testPDFImportRetainsPagesAndReadableText() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pdf")
         defer { try? FileManager.default.removeItem(at: url) }
         let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600))
@@ -1413,18 +1413,18 @@ final class ExtendedReadingTests: XCTestCase {
             }
         }
         try data.write(to: url)
-        let imported = try BookImporter.read(url).book
+        let imported = try await BookImporter.read(url).book
         XCTAssertEqual(imported.chapters.count, 2)
         XCTAssertTrue(imported.chapters[1].text.contains("Page 2"))
         XCTAssertEqual(imported.pdf, data)
     }
-    func testMarkdownAndBackupFileImportAndInvalidJSON() throws {
+    func testMarkdownAndBackupFileImportAndInvalidJSON() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: base) }
         let markdown = base.appendingPathComponent("sample.md")
         try Data("# 第一章\n**正文**与[链接](https://example.com)。".utf8).write(to: markdown)
-        let book = try BookImporter.read(markdown).book
+        let book = try await BookImporter.read(markdown).book
         XCTAssertTrue(book.chapters[0].text.contains("正文与链接。"))
         // Markdown 的原书图文与正文同源：两种模式的高亮与进度一致。
         let document = book.chapters[0].fields["document"]?.object
@@ -1433,10 +1433,10 @@ final class ExtendedReadingTests: XCTestCase {
         let backup = base.appendingPathComponent("backup.json")
         let progress = ReadingProgress(chapter: 0, position: 0, updatedAt: 999)
         try Integrity.encoder().encode(BackupPacket(book: book, progress: progress)).write(to: backup)
-        let imported = try BookImporter.read(backup)
+        let imported = try await BookImporter.read(backup)
         XCTAssertEqual(imported.book, book); XCTAssertEqual(imported.progress, progress)
         try Data("{broken".utf8).write(to: backup)
-        XCTAssertThrowsError(try BookImporter.read(backup))
+        await assertImportThrows(backup)
     }
 }
 
@@ -1478,7 +1478,7 @@ extension NativeCoreTests {
         XCTAssertEqual(MobiReader.trailingSize(record, flags: 0), 0)
     }
 
-    func testMobiImportReadsTitleAuthorAndSplitsOnPageBreaks() throws {
+    func testMobiImportReadsTitleAuthorAndSplitsOnPageBreaks() async throws {
         func be16(_ v: Int) -> [UInt8] { [UInt8(v >> 8 & 0xFF), UInt8(v & 0xFF)] }
         func be32(_ v: Int) -> [UInt8] { [UInt8(v >> 24 & 0xFF), UInt8(v >> 16 & 0xFF), UInt8(v >> 8 & 0xFF), UInt8(v & 0xFF)] }
         let html = Array("<p>第一章正文。</p><mbp:pagebreak/><h1>第二回</h1><p>hello hello</p>".utf8)
@@ -1514,7 +1514,7 @@ extension NativeCoreTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-test.mobi")
         try Data(file).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
-        let book = try BookImporter.read(url).book
+        let book = try await BookImporter.read(url).book
         XCTAssertEqual(book.title, "测试书名")
         XCTAssertEqual(book.author, "鲁迅")
         XCTAssertEqual(book.format, "MOBI")
@@ -1524,7 +1524,7 @@ extension NativeCoreTests {
         XCTAssertTrue(book.chapters[1].text.contains("hello hello"))
     }
 
-    func testMobiWithDRMIsRejected() throws {
+    func testMobiWithDRMIsRejected() async throws {
         var file = [UInt8](repeating: 0, count: 78)
         file.replaceSubrange(60..<68, with: Array("BOOKMOBI".utf8))
         file[77] = 2
@@ -1534,10 +1534,10 @@ extension NativeCoreTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-drm.azw")
         try Data(file).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
-        XCTAssertThrowsError(try BookImporter.read(url)) { XCTAssertTrue($0.localizedDescription.contains("DRM")) }
+        await assertImportThrows(url) { XCTAssertTrue($0.localizedDescription.contains("DRM")) }
     }
 
-    func testComicZipImportsImagesInNaturalOrderAsPages() throws {
+    func testComicZipImportsImagesInNaturalOrderAsPages() async throws {
         let png = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 6)).pngData { context in UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 4, height: 6)) }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-comic.cbz")
         try? FileManager.default.removeItem(at: url)
@@ -1547,7 +1547,7 @@ extension NativeCoreTests {
             let data = name.hasSuffix(".txt") ? Data("hi".utf8) : png
             try SafeArchive.blocking { try await archive.addEntry(with: name, type: .file, uncompressedSize: Int64(data.count)) { position, size in data.subdata(in: Int(position)..<Int(position) + size) } }
         }
-        let book = try BookImporter.read(url).book
+        let book = try await BookImporter.read(url).book
         XCTAssertEqual(book.format, "CBZ")
         XCTAssertEqual(book.fields["comic"]?.bool, true)
         XCTAssertEqual(book.chapters.map(\.title), ["第 1 页", "第 2 页", "第 3 页"])
@@ -2099,7 +2099,7 @@ extension NativeCoreTests {
         _ = try await model.beginLibraryRestore()
     }
 
-    func testRestoreInvalidatesOnlyRestoredBookIndexes() throws {
+    func testRestoreInvalidatesOnlyRestoredBookIndexes() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }
         let disk = try LibraryDisk(owner: "guest", base: base)
@@ -2109,7 +2109,7 @@ extension NativeCoreTests {
         try disk.saveCatalog([original, kept].map { ShelfEntry(book: $0) })
         var replacement = original; replacement.fields["category"] = .string("新分类")
         let archive = ICloudArchive(owner: "guest", books: [.init(packet: .init(book: replacement, progress: .init()), bookmarks: [])])
-        _ = try disk.restore(archive, owner: "guest", entries: disk.catalog())
+        _ = try await disk.restore(archive, owner: "guest", entries: disk.catalog())
         XCTAssertNil(disk.cachedIndex(original.id))
         XCTAssertFalse(FileManager.default.fileExists(atPath: disk.root.appendingPathComponent("Index/existing.jpg").path))
         XCTAssertEqual(disk.cachedIndex(kept.id)?.0.category, "旧分类")
@@ -2150,7 +2150,7 @@ extension NativeCoreTests {
         XCTAssertEqual(MobiReader.u16([UInt8](), 0), 0)
     }
 
-    func testMobiRejectsOutOfRangeHUFFRecordCountBeforeAllocation() throws {
+    func testMobiRejectsOutOfRangeHUFFRecordCountBeforeAllocation() async throws {
         var header = [UInt8](repeating: 0, count: 132)
         importFixPut16(17480, into: &header, at: 0)
         importFixPut16(1, into: &header, at: 8)
@@ -2160,10 +2160,10 @@ extension NativeCoreTests {
         importFixPut32(UInt32.max, into: &header, at: 0x74)
         let url = try importFixMobiFile(records: [header, [0], Array(importFixHuffRecords()[0])])
         defer { try? FileManager.default.removeItem(at: url) }
-        XCTAssertThrowsError(try BookImporter.read(url))
+        await assertImportThrows(url)
     }
 
-    func testMobiChapterCountDoesNotDropEnding() throws {
+    func testMobiChapterCountDoesNotDropEnding() async throws {
         var header = [UInt8](repeating: 0, count: 16)
         importFixPut16(1, into: &header, at: 0)
         importFixPut16(1, into: &header, at: 8)
@@ -2172,13 +2172,13 @@ extension NativeCoreTests {
             let body = Array(parts.joined(separator: "<mbp:pagebreak/>").utf8)
             let url = try importFixMobiFile(records: [header, body])
             defer { try? FileManager.default.removeItem(at: url) }
-            let imported = try BookImporter.read(url)
+            let imported = try await BookImporter.read(url)
             XCTAssertEqual(imported.book.chapters.count, count)
             XCTAssertTrue(imported.book.chapters.last?.text.contains("UNIQUE_ENDING") == true)
         }
     }
 
-    func testImportAcceptsBooksBeyondFormerSizeAndChapterLimits() throws {
+    func testImportAcceptsBooksBeyondFormerSizeAndChapterLimits() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: base) }
@@ -2186,7 +2186,7 @@ extension NativeCoreTests {
         let text = String(repeating: "字", count: 4_000_001)
         let textURL = base.appendingPathComponent("large.txt")
         try Data(text.utf8).write(to: textURL)
-        let largeText = try BookImporter.read(textURL).book
+        let largeText = try await BookImporter.read(textURL).book
         XCTAssertEqual(largeText.chapters.reduce(0) { $0 + $1.text.utf16.count }, 4_000_001)
 
         let manyChapters = Book(title: "章节很多的书", format: "TXT", chapters: (0..<3001).map { Chapter(title: "第 \($0 + 1) 章", text: "正文") })
@@ -2198,7 +2198,7 @@ extension NativeCoreTests {
         let handle = try FileHandle(forWritingTo: oversized)
         try handle.truncate(atOffset: 100 * 1024 * 1024 + 1)
         try handle.close()
-        XCTAssertThrowsError(try BookImporter.read(oversized)) { error in
+        await assertImportThrows(oversized) { error in
             XCTAssertFalse(error.localizedDescription.contains("100 MB"), "损坏文件可以报错，但不能再触发旧的文件大小上限")
         }
 
@@ -2211,7 +2211,7 @@ extension NativeCoreTests {
         pdf.append(Data(repeating: 0x20, count: 22 * 1024 * 1024))
         let pdfURL = base.appendingPathComponent("large.pdf")
         try pdf.write(to: pdfURL)
-        let largePDF = try BookImporter.read(pdfURL).book
+        let largePDF = try await BookImporter.read(pdfURL).book
         XCTAssertEqual(largePDF.chapters.count, 1)
         XCTAssertTrue(largePDF.chapters[0].text.contains("Large PDF remains readable"))
         XCTAssertEqual(largePDF.pdf, pdf)

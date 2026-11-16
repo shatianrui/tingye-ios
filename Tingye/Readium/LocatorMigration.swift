@@ -94,8 +94,12 @@ final class LocatorMigration: ObservableObject {
     }
 }
 
+private enum LocatorSnapshotLock { static let lock = NSLock() }
+
 extension LibraryDisk {
     func snapshotForLocatorMigration(_ entry: ShelfEntry) throws {
+        LocatorSnapshotLock.lock.lock()
+        defer { LocatorSnapshotLock.lock.unlock() }
         let directory = root.appendingPathComponent("LocatorMigration", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let catalog = directory.appendingPathComponent("catalog-before-v1.json")
