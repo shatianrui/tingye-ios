@@ -194,6 +194,42 @@ final class DesignFlowTests: XCTestCase {
         else { XCTAssertTrue(more.waitForNonExistence(timeout: 5)) }
     }
 
+    /// 打开阅读页「更多」面板并找到面板里的某个条目。
+    ///
+    /// 面板是 SwiftUI popover：在最大辅助字号下弹层可能来得慢，条目也可能落在可视区外；
+    /// 一次 5 秒的 waitForExistence 判不出「没开」和「开了但要滚」的区别。
+    /// 这里依次尝试：按「更多」→ 等条目 → 面板里向上滚一程再等 → 面板没开就再按一次。
+    private func openReaderMorePanel(_ app: XCUIApplication, expect row: String,
+                                     file: StaticString = #filePath, line: UInt = #line) {
+        let target = app.buttons[row]
+        // 面板首行（书内搜索）在，说明面板已经弹开。
+        func panelOpen() -> Bool { app.buttons["书内搜索"].exists }
+        if !panelOpen() {
+            let more = app.buttons["reader.more"]
+            XCTAssertTrue(more.waitForExistence(timeout: 15), "更多按钮应存在", file: file, line: line)
+            more.tap()
+        }
+        if target.waitForExistence(timeout: 10) { return }
+        // 面板已开但条目不在可视区：在面板里向上滚一程再找（真实用户在大字号下同样要滚）。
+        // 面板宽度固定 300 点，据此避开正文与工具条这些整宽滚动区。
+        for panel in app.scrollViews.allElementsBoundByIndex
+        where panel.identifier != "reader.tools" && panel.frame.width > 0 && panel.frame.width <= 340 {
+            for _ in 0..<3 {
+                panel.swipeUp()
+                if target.exists { return }
+            }
+        }
+        // 还是没找到：面板多半根本没弹出来，再按一次「更多」。
+        if !panelOpen() {
+            let more = app.buttons["reader.more"]
+            if more.exists && more.isHittable {
+                more.tap()
+                if target.waitForExistence(timeout: 10) { return }
+            }
+        }
+        XCTFail("更多面板未出现「\(row)」", file: file, line: line)
+    }
+
     private func assertReaderChromePreservesLayout(in app: XCUIApplication, baseline: ReaderLayoutCapture,
                                                   capture: @escaping () -> ReaderLayoutCapture?, name: String,
                                                   file: StaticString = #filePath, line: UInt = #line) throws {
@@ -483,9 +519,8 @@ final class DesignFlowTests: XCTestCase {
         let ids = ["reader.contents", "reader.preferences", "reader.notes", "reader.more"]
         let positions = ids.map { app.buttons[$0].frame.midX }
         XCTAssertFalse(app.buttons["reader.listen"].exists, "常驻工具应优先目录、排版与摘记")
-        app.buttons["reader.more"].tap()
+        openReaderMorePanel(app, expect: "从当前阅读位置听")
         let start = app.buttons["从当前阅读位置听"]
-        XCTAssertTrue(start.waitForExistence(timeout: 5))
         start.tap()
         XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
         setReadingTools(false, in: app, frame: nativeLayout(in: app)?.viewport ?? app.frame)
@@ -577,7 +612,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["reader.notes"].waitForExistence(timeout: 15))
         openReaderNotesAndReturn(in: app)
         XCTAssertFalse(app.buttons["reader.toggle"].exists)
-        app.buttons["reader.more"].tap()
+        openReaderMorePanel(app, expect: "书内搜索")
         app.buttons["书内搜索"].tap()
         let field = app.searchFields["搜索章节与全文"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
@@ -602,12 +637,10 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("reader")
         XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["reader.bookmark"].isHittable)
-        app.buttons["reader.more"].tap()
         // UIKit 系统菜单的 Section 子项不一定保留 SwiftUI identifier，按可见名称操作。
-        XCTAssertTrue(app.buttons["切换夜间纸色"].waitForExistence(timeout: 5))
+        openReaderMorePanel(app, expect: "切换夜间纸色")
         app.buttons["切换夜间纸色"].tap()
-        app.buttons["reader.more"].tap()
-        XCTAssertTrue(app.buttons["切换日间纸色"].waitForExistence(timeout: 5))
+        openReaderMorePanel(app, expect: "切换日间纸色")
         screenshot(app, "功能键-更多阅读操作与夜间切换")
     }
 
@@ -722,8 +755,7 @@ final class DesignFlowTests: XCTestCase {
         }
         XCTAssertLessThanOrEqual(app.buttons["reader.bookmark"].frame.maxX, app.frame.maxX - 12)
         screenshot(app, "功能键-最大字号阅读工具")
-        app.buttons["reader.more"].tap()
-        XCTAssertTrue(app.buttons["切换夜间纸色"].waitForExistence(timeout: 5))
+        openReaderMorePanel(app, expect: "切换夜间纸色")
     }
 
     func testMarginProfileAndAppearanceRoutesRemainAvailable() {
