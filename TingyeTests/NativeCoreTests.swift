@@ -1238,8 +1238,7 @@ final class ProgressAndBackupTests: XCTestCase {
     }
 
     @MainActor func testOriginalWebViewHighlightsAcrossTagsRepeatedSentencesAndClears() async throws {
-        let loaded = expectation(description: "WebKit loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
@@ -1247,8 +1246,14 @@ final class ProgressAndBackupTests: XCTestCase {
         web.navigationDelegate = delegate
         let html = "<p>春<b>风</b>📖。归来。</p><p>归来。</p><script>window.unsafe = true;</script>"
         let chapter = HTMLText.chapter(html, title: "正文")
-        web.loadHTMLString(OriginalDocument.html(html, css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        // 标记只加在送进 WebView 的那一份上：正文抽取仍用原文，句子切分不受影响。
+        let page = "<p data-marker='highlight'>春<b>风</b>📖。归来。</p><p>归来。</p><script>window.unsafe = true;</script>"
+        let ready = await loadOriginalPage(OriginalDocument.html(page, css: ""), in: web, delegate: delegate, marker: "highlight")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         let sentences = Sentence.split(chapter.text)
         XCTAssertEqual(sentences.count, 3)
         let first = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: chapter.text, range: sentences[0].range, follow: true, color: "#dce8e1"), in: nil, contentWorld: .defaultClient)
@@ -1270,16 +1275,19 @@ final class ProgressAndBackupTests: XCTestCase {
 
     /// 原书图文为横向分页：长文产生多页；跟读定位到后面页的句子时自动翻到该页。
     @MainActor func testOriginalWebViewPagingAndAutoPageTurn() async throws {
-        let loaded = expectation(description: "WebKit loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
         web.navigationDelegate = delegate
         let text = (1...300).map { "这是第\($0)句用来铺满多页的话。" }.joined()
-        web.loadHTMLString(OriginalDocument.html("<p>\(text)</p>", css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        let ready = await loadOriginalPage(OriginalDocument.html("<p data-marker='paging'>\(text)</p>", css: ""), in: web, delegate: delegate, marker: "paging")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         // 等排版与字体应用完成后再量宽度。
         try await Task.sleep(for: .milliseconds(300))
         let pageWidth = try await web.evaluateJavaScript("innerWidth", in: nil, contentWorld: .page) as? Int
@@ -1296,8 +1304,7 @@ final class ProgressAndBackupTests: XCTestCase {
 
     /// 与纯文本模式一致按字跟随：同一长句跨多页时，读到哪个字就翻到那个字所在页；不跟随时只报告页码不翻页。
     @MainActor func testOriginalWebViewFollowsSpokenCharacterWithinLongSentence() async throws {
-        let loaded = expectation(description: "WebKit loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
@@ -1305,8 +1312,12 @@ final class ProgressAndBackupTests: XCTestCase {
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 200), configuration: config)
         web.navigationDelegate = delegate
         let text = String(repeating: "长", count: 170) + "。"
-        web.loadHTMLString(OriginalDocument.html("<p>\(text)</p>", css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        let ready = await loadOriginalPage(OriginalDocument.html("<p data-marker='follow'>\(text)</p>", css: ""), in: web, delegate: delegate, marker: "follow")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         try await Task.sleep(for: .milliseconds(300))
         let sentences = Sentence.split(text)
         XCTAssertEqual(sentences.count, 1, "整段应是一个长句")
@@ -1328,17 +1339,20 @@ final class ProgressAndBackupTests: XCTestCase {
 
     /// 夜间纸色下，书籍样式写死的深色正文要改成阅读页正文色；浅色底的提示框里保留深色字。
     @MainActor func testOriginalWebViewFixesLowContrastBookColorsAtNight() async throws {
-        let loaded = expectation(description: "WebKit loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
         web.navigationDelegate = delegate
-        let html = #"<p class="normal">正文写死成深灰。</p><div class="note"><p>提示框里的字。</p></div>"#
+        let html = #"<p class="normal" data-marker='contrast'>正文写死成深灰。</p><div class="note"><p>提示框里的字。</p></div>"#
         let css = ".normal{color:#333} .note{background:#fff8dc} .note p{color:#999}"
-        web.loadHTMLString(OriginalDocument.html(html, css: css, color: "#e8e6e3", background: "transparent", paper: "#1c1b19"), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        let ready = await loadOriginalPage(OriginalDocument.html(html, css: css, color: "#e8e6e3", background: "transparent", paper: "#1c1b19"), in: web, delegate: delegate, marker: "contrast")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         _ = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: "正文写死成深灰。\n提示框里的字。", range: nil, follow: false, color: "#4a3226"), in: nil, contentWorld: .defaultClient)
         let body = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.normal')).color", in: nil, contentWorld: .page) as? String
         let note = try await web.evaluateJavaScript("getComputedStyle(document.querySelector('.note p')).color", in: nil, contentWorld: .page) as? String
@@ -1349,8 +1363,7 @@ final class ProgressAndBackupTests: XCTestCase {
 
     /// 每栏起点必须恰好落在整页边界上：书籍 CSS 改 body 边距时，翻到后面的页也不能错位。
     @MainActor func testOriginalWebViewColumnsAlignToPagesDespiteBookCSS() async throws {
-        let loaded = expectation(description: "WebKit loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
@@ -1358,8 +1371,12 @@ final class ProgressAndBackupTests: XCTestCase {
         web.navigationDelegate = delegate
         let text = (1...400).map { "这是第\($0)句用来铺满多页的话。" }.joined()
         let css = "body.calibre{margin:0 5%;padding:0 12px;max-width:30em} body{margin:3em}"
-        web.loadHTMLString(OriginalDocument.html("<body class=\"calibre\"><p>\(text)</p></body>", css: css), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        let ready = await loadOriginalPage(OriginalDocument.html("<body class=\"calibre\" data-marker='columns'><p>\(text)</p></body>", css: css), in: web, delegate: delegate, marker: "columns")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         try await Task.sleep(for: .milliseconds(300))
         _ = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: text, range: nil, follow: false, color: "#dce8e1"), in: nil, contentWorld: .defaultClient)
         let lefts = try await web.evaluateJavaScript("Array.from(document.querySelector('p').getClientRects()).map(r => Math.round(r.left + scrollX))", in: nil, contentWorld: .page) as? [Int] ?? []
@@ -1373,8 +1390,50 @@ final class ProgressAndBackupTests: XCTestCase {
 
 @MainActor private final class LoadDelegate: NSObject, WKNavigationDelegate {
     let complete: () -> Void
+    /// 导航失败原因：CI 上进程启动受阻时，这里比一句「超时」更能说明问题。
+    var failure: String?
     init(complete: @escaping () -> Void) { self.complete = complete }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { complete() }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { failure = error.localizedDescription }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { failure = error.localizedDescription }
+}
+
+/// 载入原书页面并等它真正可用，返回是否就绪。
+///
+/// 不把 didFinish 当成唯一信号：CI 模拟器上，前一个语音用例收尾时 CoreAudio 会占满 I/O 线程池，
+/// WebKit 的 WebContent 进程启动被拖住，导航迟迟不提交，文档始终是空的（getElementById 取不到元素）。
+/// 这里改为轮询真实 DOM（本次载入的标记元素已出现），并在超时后重载一次再等。
+/// 导航代理按参数传入，保证等待期间它不会被 ARC 提前释放（WKNavigationDelegate 是弱引用）。
+@MainActor
+private func loadOriginalPage(_ html: String, in web: WKWebView, delegate: LoadDelegate, marker: String) async -> Bool {
+    // 语音用例可能还留着 CoreAudio 的 I/O 负载，它会拖慢 WebKit 进程启动：先让音频会话彻底释放。
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    for attempt in 0..<2 {
+        delegate.failure = nil
+        web.loadHTMLString(html, baseURL: nil)
+        let deadline = Date().addingTimeInterval(attempt == 0 ? 45 : 60)
+        while Date() < deadline {
+            if await originalPageReady(web, marker: marker) { return true }
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+    }
+    return false
+}
+
+/// 原书页面是否已经可用：本次载入的标记元素已经出现在文档里。
+@MainActor
+private func originalPageReady(_ web: WKWebView, marker: String) async -> Bool {
+    let script = "document.readyState + '|' + (document.querySelector(\"[data-marker='\(marker)']\") ? '1' : '0')"
+    let state = (try? await web.evaluateJavaScript(script, in: nil, contentWorld: .page) as? String) ?? ""
+    return state.hasSuffix("|1")
+}
+
+/// 页面当前状态，用于失败信息。
+@MainActor
+private func originalPageState(_ web: WKWebView, delegate: LoadDelegate) async -> String {
+    let script = "document.readyState + '|' + (document.body ? document.body.innerHTML.length : -1)"
+    let state = (try? await web.evaluateJavaScript(script, in: nil, contentWorld: .page) as? String) ?? "未知"
+    return "readyState/正文长度=\(state)，导航失败=\(delegate.failure ?? "无")"
 }
 
 final class ExtendedReadingTests: XCTestCase {
@@ -1867,17 +1926,20 @@ extension NativeCoreTests {
     }
 
     @MainActor func testOriginalReadingPositionSurvivesRepeatedTextAndSpeechMarkup() async throws {
-        let loaded = expectation(description: "Reading positions loaded")
-        let delegate = LoadDelegate { loaded.fulfill() }
+        let delegate = LoadDelegate { }
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 400), configuration: config)
         web.navigationDelegate = delegate
         let text = String(repeating: "重复的📖句子。\n", count: 160)
-        let html = String(repeating: "<p>重复的<b>📖句子</b>。</p>", count: 160)
-        web.loadHTMLString(OriginalDocument.html(html, css: ""), baseURL: nil)
-        await fulfillment(of: [loaded], timeout: 40)
+        let html = "<p data-marker='position'>重复的<b>📖句子</b>。</p>" + String(repeating: "<p>重复的<b>📖句子</b>。</p>", count: 159)
+        let ready = await loadOriginalPage(OriginalDocument.html(html, css: ""), in: web, delegate: delegate, marker: "position")
+        guard ready else {
+            let state = await originalPageState(web, delegate: delegate)
+            XCTFail("原书页面未就绪：\(state)")
+            return
+        }
         _ = try await web.evaluateJavaScript(OriginalReadingPosition.script(text: text), in: nil, contentWorld: .defaultClient)
         let late = try await web.evaluateJavaScript(OriginalReadingPosition.restore(120), in: nil, contentWorld: .defaultClient) as? Int ?? -1
         XCTAssertGreaterThan(late, 0)
@@ -2421,17 +2483,23 @@ extension NativeCoreTests {
             UIColor.systemTeal.setFill(); context.fill(CGRect(x: 0, y: 0, width: 160, height: 90))
         }
         let imageData = try XCTUnwrap(image.pngData())
-        let source = "<p id='reader-text'>原书中的正文。</p><a id='reader-link' href='#chapter'>目录链接</a><a class='publication-link'>书内特定颜色</a><img id='artwork' src='data:image/png;base64,\(imageData.base64EncodedString())'><table><tr><td>原书表格</td></tr></table>"
+        // 只建一个 WebView：每建一个都要拉起一个 WebContent 进程，CI 模拟器上容易撞上进程启动高峰。
+        let config = WKWebViewConfiguration()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        config.websiteDataStore = .nonPersistent()
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
+        let delegate = LoadDelegate { }
+        web.navigationDelegate = delegate
         for key in ["hansans", "xixihei"] {
-            let loaded = expectation(description: "Original reader \(key) loaded")
-            let delegate = LoadDelegate { loaded.fulfill() }
-            let config = WKWebViewConfiguration()
-            config.defaultWebpagePreferences.allowsContentJavaScript = false
-            config.websiteDataStore = .nonPersistent()
-            let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 600), configuration: config)
-            web.navigationDelegate = delegate
-            web.loadHTMLString(OriginalDocument.html(source, css: ".publication-link {color:rgb(80, 65, 50)}", color: "#17233A", background: "transparent", paper: "#F6F0E4", preferences: ReaderPreferences(font: key), accent: "#315BEE"), baseURL: nil)
-            await fulfillment(of: [loaded], timeout: 40)
+            // 每次载入都换一个标记：复用同一个 WebView 时要确认读到的是新文档，而不是上一次那一页。
+            let marker = "reader-\(key)"
+            let source = "<p id='reader-text' data-marker='\(marker)'>原书中的正文。</p><a id='reader-link' href='#chapter'>目录链接</a><a class='publication-link'>书内特定颜色</a><img id='artwork' src='data:image/png;base64,\(imageData.base64EncodedString())'><table><tr><td>原书表格</td></tr></table>"
+            let ready = await loadOriginalPage(OriginalDocument.html(source, css: ".publication-link {color:rgb(80, 65, 50)}", color: "#17233A", background: "transparent", paper: "#F6F0E4", preferences: ReaderPreferences(font: key), accent: "#315BEE"), in: web, delegate: delegate, marker: marker)
+            guard ready else {
+                let state = await originalPageState(web, delegate: delegate)
+                XCTFail("原书页面（\(key)）未就绪：\(state)")
+                return
+            }
             let font = try await web.evaluateJavaScript("getComputedStyle(document.getElementById('reader-text')).fontFamily", in: nil, contentWorld: .page) as? String ?? ""
             XCTAssertTrue(font.contains(try XCTUnwrap(ReaderPreferences.bundledFonts[key])), key)
             XCTAssertFalse(font.contains("Songti"), "无衬线字体不能在原书模式退回宋体")
@@ -2445,7 +2513,7 @@ extension NativeCoreTests {
             XCTAssertEqual(result["publication"] as? String, "rgb(80, 65, 50)")
             XCTAssertEqual(try XCTUnwrap(result["ratio"] as? Double), 160.0 / 90.0, accuracy: 0.01)
             XCTAssertEqual(result["tables"] as? Int, 1)
-            withExtendedLifetime(delegate) {}
         }
+        withExtendedLifetime(delegate) {}
     }
 }

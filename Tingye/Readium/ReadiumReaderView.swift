@@ -465,7 +465,9 @@ struct ReadiumReaderView: View {
     }
     private func pageToken(for locator: ReadiumShared.Locator) -> String {
         let href = PublicationMap.normalized(locator.href.string) ?? locator.href.string
-        let start = StoredLocator.json(locator)?.object?["locations"]?.object?["domRange"]?.object?["start"]?.object
+        // 用原始 JSON 读 domRange：经合法性校验的定位器可能因 position < 1 被整条丢掉，
+        // 那时页码标记会退回旧口径，同一章翻页时不再变化，UI 回归会误判成「没有翻页」。
+        let start = StoredLocator.rawJSON(locator)?.object?["locations"]?.object?["domRange"]?.object?["start"]?.object
         if let selector = start?["cssSelector"]?.string, !selector.isEmpty {
             // 同一段跨页时选择器不变，字符偏移会变。40 字一档，避开首字可见性的来回跳动。
             let offset = (start?["charOffset"]?.int ?? 0) / 40

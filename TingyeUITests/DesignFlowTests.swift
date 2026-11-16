@@ -159,16 +159,18 @@ final class DesignFlowTests: XCTestCase {
     private func advanceToTextPage(in app: XCUIApplication, capture: () -> ReaderLayoutCapture?,
                                    differentFrom baseline: ReaderLayoutCapture) -> Int? {
         var turns = 0
-        let deadline = Date().addingTimeInterval(20)
+        // CI 模拟器上翻页落地偏慢，给足时间与次数：首屏是块级分页（插图/表格独占页），
+        // 要连着跳过若干无正文页才能落到正文页，翻不动就误判成「没有正文页」。
+        let deadline = Date().addingTimeInterval(40)
         while Date() < deadline {
             if let next = capture(), next.text != baseline.text { return turns }
-            guard turns < 4 else { return nil }
+            guard turns < 6 else { return nil }
             let before = capture()
             // Readium 分页靠左右滑，点右缘会落到工具栏切换区，页码不会变。
             app.webViews.firstMatch.swipeLeft()
             turns += 1
             // 等这一翻落地（捕获变化或落到无正文的块页）后再继续判断，避免对着过渡帧连点。
-            let settle = Date().addingTimeInterval(3)
+            let settle = Date().addingTimeInterval(4)
             while Date() < settle {
                 let next = capture()
                 let unchanged = (next == nil && before == nil) || (next.map { current in before?.nearlyEquals(current) ?? false } ?? false)
@@ -822,7 +824,8 @@ final class DesignFlowTests: XCTestCase {
         waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
         let capture = { self.epubLayout(in: app) }
         let first = try captureReaderLayout(capture)
-        let turns = try XCTUnwrap(advanceToTextPage(in: app, capture: capture, differentFrom: first))
+        let turns = try XCTUnwrap(advanceToTextPage(in: app, capture: capture, differentFrom: first),
+                                  "未能翻到与首屏不同的正文页（首屏页码标记：\(first.text.joined(separator: ","))）")
         let reading = try captureReaderLayout(capture)
         XCTAssertNotEqual(reading.text, first.text)
         for visible in [false, true, false, true] {

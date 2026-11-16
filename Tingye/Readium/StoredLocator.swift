@@ -46,6 +46,13 @@ struct StoredLocator: Codable, Equatable, Sendable {
         guard let string = try? locator.jsonString(), let data = string.data(using: .utf8) else { return nil }
         return validated(try? JSONDecoder().decode(JSONValue.self, from: data))
     }
+    /// 定位器的原始 JSON：不做合法性校验，只用来读可选字段（如 domRange）。
+    /// `validated` 会因为 position < 1、progression 越界等原因把整条定位器丢掉，
+    /// 读可选字段时不能走它——否则页码标记会退回不随翻页变化的旧口径。
+    static func rawJSON(_ locator: ReadiumShared.Locator) -> JSONValue? {
+        guard let string = try? locator.jsonString(), let data = string.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(JSONValue.self, from: data)
+    }
 }
 
 extension KeyedDecodingContainer {
