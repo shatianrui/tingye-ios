@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 设置·阅读 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：设置·阅读 */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .sec-h {
+    font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink);
+    margin: var(--ty-space-4) 0 var(--ty-space-2);
+  }
+  .strip { display: flex; }
+  .strip .cell { flex: 1; min-width: 0; }
+  .strip .k { font-size: 11px; color: var(--ty-ink-4); }
+  .strip .v {
+    font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-weight: 600;
+    font-size: 15px; color: var(--ty-ink); margin-top: 2px;
+  }
+  .strip .v.txt { font-family: var(--ty-font-serif); font-weight: 400; font-size: var(--ty-book-title); }
+
+  .sw { display: flex; flex-direction: column; align-items: center; gap: var(--ty-space-1); }
+  .sw i { display: block; width: 40px; height: 28px; border-radius: var(--ty-radius-sm); border: 1px solid var(--ty-line); }
+  .sw span { font-size: 11px; color: var(--ty-ink-3); }
+  .sw.is-on i { outline: 2px solid var(--ty-clay); outline-offset: 1px; }
+  .sw.is-on span { color: var(--ty-ink); }
+
+  .mini-chip {
+    display: flex; align-items: center; justify-content: center; gap: var(--ty-space-2);
+    height: 34px; border-radius: var(--ty-radius-sm); background: var(--ty-surface-subtle);
+    font-size: 13px; color: var(--ty-ink-2);
+  }
+  .mini-chip.is-on { background: var(--ty-ink); color: var(--ty-on-dark); }
+  .col-k { font-size: 12px; color: var(--ty-ink-3); margin-bottom: var(--ty-space-1); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回设置">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">阅读</span>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- 排版默认值 -->
+        <div class="sec-h" style="margin-top:0;">排版默认值</div>
+        <div class="strip" style="flex:none;">
+          <div class="cell">
+            <div class="k">字号</div>
+            <div class="v">17 pt</div>
+          </div>
+          <div class="cell">
+            <div class="k">行距</div>
+            <div class="v">1.8</div>
+          </div>
+          <div class="cell">
+            <div class="k">页边距</div>
+            <div class="v">24</div>
+          </div>
+          <div class="cell">
+            <div class="k">字体</div>
+            <div class="v txt">思源宋体</div>
+          </div>
+        </div>
+
+        <!-- 纸色 -->
+        <div class="sec-h">纸色</div>
+        <div class="hstack" style="flex:none; gap: var(--ty-space-3);">
+          <div class="sw is-on"><i style="background: var(--ty-canvas);"></i><span>宣纸</span></div>
+          <div class="sw"><i style="background: var(--ty-surface);"></i><span>纯白</span></div>
+          <div class="sw"><i style="background: var(--ty-surface-subtle);"></i><span>雾灰</span></div>
+          <div class="sw"><i style="background: var(--ty-surface-sunken);"></i><span>浅灰</span></div>
+          <div class="sw"><i style="background: var(--ty-clay-soft);"></i><span>旧书</span></div>
+          <div class="sw"><i style="background: var(--ty-ink);"></i><span>夜读</span></div>
+        </div>
+
+        <!-- 翻页与简繁 -->
+        <div class="sec-h">翻页与文字</div>
+        <div class="grid-2" style="gap: var(--ty-space-4); flex:none;">
+          <div>
+            <div class="col-k">翻页方式</div>
+            <div class="hstack gap-1">
+              <span class="mini-chip is-on fill">滑动</span>
+              <span class="mini-chip fill">仿真</span>
+              <span class="mini-chip fill">无</span>
+            </div>
+          </div>
+          <div>
+            <div class="col-k">简繁转换</div>
+            <div class="hstack gap-1">
+              <span class="mini-chip is-on fill">简体</span>
+              <span class="mini-chip fill">繁体</span>
+              <span class="mini-chip fill">不转换</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TXT 分章规则 -->
+        <div class="sec-h">TXT 分章规则</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">章节识别</span>
+            <span class="value">自动识别 · 2000 字/章</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+
+        <!-- 选段菜单面板顺序 -->
+        <div class="sec-h">选段菜单面板顺序</div>
+        <div class="grid-2" style="gap: var(--ty-space-2); flex:none;">
+          <div class="mini-chip">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8h.01M8 12h.01M8 16h.01M12 8h.01M12 12h.01M12 16h.01M16 8h.01M16 12h.01M16 16h.01"/></svg>
+            标注
+          </div>
+          <div class="mini-chip">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8h.01M8 12h.01M8 16h.01M12 8h.01M12 12h.01M12 16h.01M16 8h.01M16 12h.01M16 16h.01"/></svg>
+            笔记
+          </div>
+          <div class="mini-chip">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8h.01M8 12h.01M8 16h.01M12 8h.01M12 12h.01M12 16h.01M16 8h.01M16 12h.01M16 16h.01"/></svg>
+            引用
+          </div>
+          <div class="mini-chip">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8h.01M8 12h.01M8 16h.01M12 8h.01M12 12h.01M12 16h.01M16 8h.01M16 12h.01M16 16h.01"/></svg>
+            复制
+          </div>
+        </div>
+
+        <!-- 阅读目标 -->
+        <div class="sec-h">阅读目标</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">每日阅读目标</span>
+            <span class="value">30 分钟</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="setting-row">
+            <span class="label">每月阅读目标</span>
+            <span class="value">12 本</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">设置 · 阅读</div>
+    <div class="cap-note">
+      排版默认值收成一条四栏数据带（字号 / 行距 / 页边距 / 字体），等宽数字，扫一眼即知当前值。
+      纸色用真实纸族色块占位，选中项加陶土描边环；翻页与简繁并排两列，避免设置页变成一条长列表。
+      TXT 分章规则与阅读目标仍是普通设置行；选段菜单面板顺序用可拖动的小块表达顺序。
+      本页取值为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      serif 区块题 · mono 数据带 · clay 仅用于纸色选中环 · 行高 ≥44
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

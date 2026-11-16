@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 读完收尾</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+
+  .fin { padding-top: var(--ty-space-6); }
+  .fin .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-clay-text); text-transform: uppercase; }
+  .fin .book { margin-top: var(--ty-space-3); }
+  .fin .by { margin-top: var(--ty-space-1); font-size: var(--ty-body); color: var(--ty-ink-3); }
+
+  .sum-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-top: var(--ty-space-4); font-size: var(--ty-body); color: var(--ty-ink-2); }
+  .sum-line .big { font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 600; color: var(--ty-ink); letter-spacing: -0.5px; }
+  .sum-line .sep { color: var(--ty-ink-4); }
+
+  .blk { margin-top: var(--ty-space-6); }
+  .blk .lbl { font-size: var(--ty-caption); color: var(--ty-ink-3); margin-bottom: var(--ty-space-2); }
+  .ta {
+    display: block; width: 100%; min-height: 80px; padding: var(--ty-space-3) var(--ty-space-4);
+    background: var(--ty-surface); color: var(--ty-ink); border: 1px solid var(--ty-line-field);
+    border-radius: var(--ty-radius-field); font-family: var(--ty-font-sans); font-size: var(--ty-body);
+    line-height: 1.6; resize: none;
+  }
+  .ta::placeholder { color: var(--ty-ink-4); }
+  .blk .hint { margin-top: var(--ty-space-2); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .q-card { margin-top: var(--ty-space-5); padding: var(--ty-space-4); }
+  .q-card .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-ink-3); text-transform: uppercase; }
+  .q-card .q { margin-top: var(--ty-space-2); font-family: var(--ty-font-serif); font-size: 17px; line-height: 1.75; color: var(--ty-ink); }
+  .q-card .ops { display: flex; align-items: center; gap: var(--ty-space-4); margin-top: var(--ty-space-3); }
+
+  .next-card { margin-top: var(--ty-space-3); display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-4); }
+  .next-card .info { flex: 1; min-width: 0; }
+  .next-card .info .t { font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink); }
+  .next-card .info .s { margin-top: 2px; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .fin-foot { display: flex; gap: var(--ty-space-3); margin-top: var(--ty-space-6); }
+  .fin-foot .btn-primary, .fin-foot .btn-secondary { flex: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <div class="tb-mid"><span class="title">合上书</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content fin">
+        <!-- 纵向三段：眉题 → 宋体书名大字 → 一行小结 -->
+        <div class="k">读毕</div>
+        <div class="book t-page-title">故乡</div>
+        <div class="by">鲁迅 · 全书 12 章 · 已读完</div>
+        <div class="sum-line">
+          <span class="big">6</span><span>小时 12 分</span>
+          <span class="sep">·</span><span>本次 42 分钟</span>
+          <span class="sep">·</span><span>划线 47 条</span>
+        </div>
+
+        <!-- 读完感 -->
+        <div class="blk">
+          <div class="lbl">读完感</div>
+          <textarea class="ta" placeholder="读完以后，留一句话给自己（演示稿未填写）" aria-label="读完感"></textarea>
+          <div class="hint">存为本书笔记，与本书的摘记放在一起。</div>
+        </div>
+
+        <!-- 今日一句 -->
+        <div class="card q-card">
+          <div class="k">今日一句</div>
+          <p class="q">我所记得的故乡全不如此。我的故乡好得多了。</p>
+          <div class="ops">
+            <button class="btn-text" type="button">换一句</button>
+            <button class="btn-text" type="button">分享</button>
+          </div>
+        </div>
+
+        <!-- 下一本 -->
+        <div class="card next-card">
+          <div class="bookcover">社戏</div>
+          <div class="info">
+            <div class="t">社戏</div>
+            <div class="s">鲁迅 · 待读 · 演示书目</div>
+          </div>
+          <button class="btn-text" type="button">去读</button>
+        </div>
+
+        <div class="fin-foot">
+          <button class="btn-secondary" type="button">回到书库</button>
+          <button class="btn-primary" type="button">开始下一本</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">读完 · 收尾页</div>
+    <div class="cap-note">
+      纵向三段：眉题「读毕」→ 宋体 34 书名大字 → 一行小结（时长大数字 + 进度 + 划线数）。
+      全书读完版另加「读完感」输入框、今日一句卡片（可换一句 / 可分享）与下一本卡片；陶土只用在眉题与进行中的状态上。
+    </div>
+    <div class="cap-tokens">
+      canvas / ink / clay-text / surface / line · 宋体 34 · 数字 mono · radius-card 16 · 演示数据
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 选区面板</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .reader-body { padding-top: var(--ty-space-2); }
+  .reader-body p { margin: 0 0 var(--ty-space-5); font-size: 19px; line-height: 1.95; text-align: justify; }
+  .sel { background: var(--ty-clay-soft); color: var(--ty-ink-strong); border-radius: 2px; }
+
+  /* 选区面板 */
+  .anno {
+    position: absolute; left: var(--ty-space-4); right: var(--ty-space-4); bottom: 92px;
+    z-index: 50; padding: var(--ty-space-4);
+    background: var(--ty-surface); border: 1px solid var(--ty-line);
+    border-radius: var(--ty-radius-card); box-shadow: var(--ty-shadow-lg);
+  }
+  .anno-head { display: flex; align-items: center; justify-content: space-between; gap: var(--ty-space-2); }
+  .anno-head .state { font-size: var(--ty-caption); color: var(--ty-clay-text); }
+  .anno .quote {
+    margin: var(--ty-space-3) 0 0; padding-left: var(--ty-space-3);
+    border-left: 3px solid var(--ty-clay);
+    font-family: var(--ty-font-serif); font-size: 16px; line-height: 1.8; color: var(--ty-ink);
+  }
+  .anno-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ty-space-2); margin-top: var(--ty-space-4); }
+  .act {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: var(--ty-space-2) 0; border: 1px solid transparent; border-radius: var(--ty-radius-control);
+    background: none; color: var(--ty-ink-2); font-size: var(--ty-caption); cursor: pointer;
+  }
+  .act.is-on { color: var(--ty-clay-text); background: var(--ty-clay-soft); border-color: var(--ty-clay); }
+  .anno-foot { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ty-space-2); margin-top: var(--ty-space-3); }
+  .fbtn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: var(--ty-min-touch); border: none; border-radius: var(--ty-radius-sm);
+    background: none; color: var(--ty-ink-2); font-size: var(--ty-body); cursor: pointer;
+  }
+  .fbtn.danger { color: var(--ty-danger); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid">
+          <span class="title">故乡</span>
+          <span class="sub">第三章 · 船舱里的冬天</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="书签">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 4h11v16l-5.5-4.2L6.5 20z"></path></svg>
+        </button>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="content paper reader-body">
+        <p>阿！这不是我二十年来时时记得的故乡？</p>
+        <p><mark class="sel">我所记得的故乡全不如此。我的故乡好得多了。</mark>但要我记起他的美丽，说出他的佳处来，却又没有影像，没有言辞了。仿佛也就如此。</p>
+        <p>于是我自己解释说：故乡本也如此，——虽然没有进步，也未必有如我所感的悲凉。</p>
+      </div>
+
+      <div class="bottombar">
+        <div class="toolbar-4">
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h9"></path></svg>
+            <span>目录</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 18 7.5 6 12 18M4.9 14h5.2"></path><path d="M15 18V9.5h2.4a2.3 2.3 0 0 1 0 4.6H15"></path></svg>
+            <span>排版</span>
+          </button>
+          <button class="tool is-active" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14.4 4.2 19.8 9.6 11 18.4H5.6v-5.4z"></path><path d="M4 21h16"></path></svg>
+            <span>摘记</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h7M15 8h5M4 16h3M11 16h9"></path><circle cx="13" cy="8" r="2.2"></circle><circle cx="9" cy="16" r="2.2"></circle></svg>
+            <span>更多</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 选区面板：浮起卡面，覆盖在正文之上 -->
+    <div class="anno" role="dialog" aria-label="选区操作">
+      <div class="anno-head">
+        <span class="t-kicker">选区 · 42 字 · 演示</span>
+        <span class="state">已标注</span>
+      </div>
+
+      <p class="quote">我所记得的故乡全不如此。我的故乡好得多了。</p>
+
+      <div class="anno-actions">
+        <button class="act is-on" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14.4 4.2 19.8 9.6 11 18.4H5.6v-5.4z"></path><path d="M4 21h16"></path></svg>
+          <span>标注</span>
+        </button>
+        <button class="act" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M14 6l4 4"></path></svg>
+          <span>笔记</span>
+        </button>
+        <button class="act" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 7H5v5h4c0 3-1 4.5-3 5.5"></path><path d="M18 7h-4v5h4c0 3-1 4.5-3 5.5"></path></svg>
+          <span>引用</span>
+        </button>
+      </div>
+
+      <hr class="rule" style="margin: var(--ty-space-3) 0 0">
+
+      <div class="anno-foot">
+        <button class="fbtn" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h9"></path></svg>
+          <span>复制</span>
+        </button>
+        <button class="fbtn" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15V4M8.5 7.5 12 4l3.5 3.5"></path><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"></path></svg>
+          <span>分享</span>
+        </button>
+        <button class="fbtn danger" type="button">
+          <svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 12h9l1-12"></path></svg>
+          <span>删除</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">阅读器 · 选区面板</div>
+    <div class="cap-note">
+      长按正文按句取段，浮起一张白卡：上方是引用原文与「选区 · 42 字」，中间三枚动作「标注 / 笔记 / 引用」（当前已标注者用陶土淡底 + 陶土字），
+      底部一排「复制 / 分享 / 删除」，删除为危险色。正文选区用淡陶土铺底提示。
+    </div>
+    <div class="cap-tokens">
+      surface / line / clay / clay-soft / clay-text / danger · radius-card 16 · shadow-lg · 演示选区
+    </div>
+  </div>
+</div>
+</body>
+</html>

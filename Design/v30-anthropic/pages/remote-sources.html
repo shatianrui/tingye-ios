@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 远程书源 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：远程书源（WiFi 传书 / WebDAV / OPDS / SMB） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .card { padding: var(--ty-space-3) var(--ty-space-4); }
+  .grp { margin-bottom: var(--ty-space-2); }
+  .grp > .k {
+    font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker);
+    color: var(--ty-ink-3); margin-bottom: var(--ty-space-2);
+  }
+  .code {
+    font-family: var(--ty-font-mono); font-size: 28px; font-weight: 600; letter-spacing: 5px;
+    color: var(--ty-ink); text-align: center; line-height: 1.2;
+  }
+  .addr {
+    font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-ink-3);
+    text-align: center; margin-top: var(--ty-space-1);
+  }
+  .mini { min-height: 40px; padding: 0 var(--ty-space-4); font-size: 14px; }
+  .field { min-height: 40px; font-size: 14px; }
+  .srow { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-2) 0; border-bottom: 1px solid var(--ty-line); min-height: 44px; }
+  .srow:last-child { border-bottom: none; }
+  .srow .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .srow .st { font-size: var(--ty-caption); color: var(--ty-ink-4); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">远程书源</span>
+        <button class="btn-icon" aria-label="新增书源">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- WiFi 传书：6 位口令 -->
+        <div class="card grp">
+          <div class="hstack" style="margin-bottom: var(--ty-space-2);">
+            <span class="k fill" style="margin-bottom:0;">WIFI 传书</span>
+            <span class="t-meta">口令 10 分钟有效</span>
+            <span class="badge is-outline">演示</span>
+          </div>
+          <div class="code">482913</div>
+          <div class="addr">http://192.168.1.8:8080/8FK2QD</div>
+          <div class="hstack gap-2" style="margin-top: var(--ty-space-3);">
+            <button class="btn-secondary mini fill">复制地址</button>
+            <button class="btn-secondary mini fill">复制口令</button>
+          </div>
+        </div>
+
+        <!-- WebDAV 配置表单 -->
+        <div class="card grp">
+          <div class="k">WEBDAV</div>
+          <div class="stack gap-2">
+            <input class="field" type="text" value="https://dav.example.com/tingye" aria-label="服务器地址">
+            <div class="hstack gap-2">
+              <input class="field fill" type="text" value="reader" aria-label="用户名">
+              <input class="field fill" type="password" value="········" aria-label="密码">
+            </div>
+          </div>
+          <button class="btn-secondary mini" style="width:100%; margin-top: var(--ty-space-3);">连接</button>
+        </div>
+
+        <!-- OPDS 目录 -->
+        <div class="card grp">
+          <div class="k">OPDS</div>
+          <div class="srow">
+            <span class="nm fill">城市书库<span class="st" style="display:block;">opds.example.com</span></span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="srow">
+            <span class="nm fill" style="color: var(--ty-clay-text);">添加 OPDS 书源</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-clay-text)" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- SMB 连接与浏览 -->
+        <div class="card grp" style="margin-bottom: 0;">
+          <div class="k">SMB</div>
+          <div class="srow">
+            <span class="nm fill">192.168.1.8 · Books<span class="st" style="display:block;">已连接</span></span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <button class="btn-secondary mini" style="width:100%; margin-top: var(--ty-space-3);">浏览共享</button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">远程书源</div>
+    <div class="cap-note">
+      四种传书方式各占一张白卡：WiFi 传书给 6 位等宽口令 + 本机地址与有效期，WebDAV 给服务器 / 用户名 / 密码三字段表单，
+      OPDS 列出已连接书源与「添加 OPDS 书源」，SMB 记住连接并提供浏览共享。
+      口令、地址与账号均为设计演示数据；表单留空处不填真实凭据。
+    </div>
+    <div class="cap-tokens">
+      mono 口令 28 + 字距 5 · field 描边 0.15 · clay-text 仅用于新增入口
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

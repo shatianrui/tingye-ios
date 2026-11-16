@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 书库（列表）· v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：书库列表（题录式，无卡壳） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+  .chip { white-space: nowrap; flex: none; padding: 0 var(--ty-space-3); }
+  .lib-row { padding: 6px 0; flex: none; }
+  .chip-row { gap: var(--ty-space-2); flex: none; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <!-- 报头：眉题 → 墨线 → 宋体「书库」→ 计数行 -->
+      <div class="topbar">
+        <span class="t-kicker">TINGYE · 书库</span>
+        <span class="spacer"></span>
+        <button class="btn-icon" aria-label="网格视图">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="列表视图">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="我的">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c1.2-3.7 3.9-5.6 7.2-5.6s6 1.9 7.2 5.6"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="更多">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.2" fill="var(--ty-canvas)"/><circle cx="15" cy="12" r="2.2" fill="var(--ty-canvas)"/><circle cx="7.5" cy="17" r="2.2" fill="var(--ty-canvas)"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+        <hr class="rule-heavy" style="margin: 0 0 var(--ty-space-2); flex: none;">
+        <div class="t-page-title" style="flex:none;">书库</div>
+        <div class="hstack" style="margin-top: var(--ty-space-2); gap: var(--ty-space-2); flex:none;">
+          <span class="t-caption">24 本 · 在读 3 · 待读 12 · 读完 5</span>
+          <span class="badge is-outline">演示</span>
+        </div>
+
+        <div class="searchbar" style="margin-top: var(--ty-space-3); flex:none;">
+          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+          <span>搜索书名、作者或分组</span>
+        </div>
+
+        <div class="hstack chip-row" style="margin-top: var(--ty-space-3);">
+          <span class="chip is-selected">书籍</span>
+          <span class="chip">漫画</span>
+          <span class="chip">分组</span>
+          <span class="spacer"></span>
+          <span class="t-meta">最近阅读 ▾</span>
+        </div>
+
+        <div class="hstack chip-row" style="margin-top: var(--ty-space-2); gap: 6px;">
+          <span class="chip is-selected">全部</span>
+          <span class="chip">在读</span>
+          <span class="chip">待读</span>
+          <span class="chip">读完</span>
+          <span class="chip">已隐藏</span>
+        </div>
+
+        <!-- 题录式书目：无卡壳，行间发丝线 -->
+        <div style="margin-top: var(--ty-space-1); flex:1; min-height:0; overflow:hidden;">
+          <div class="row lib-row">
+            <div class="bookcover">百</div>
+            <div class="stack gap-2 fill">
+              <div class="hstack" style="gap: var(--ty-space-2);">
+                <span class="seal-dot"></span>
+                <span class="t-book">百年孤独</span>
+              </div>
+              <div class="t-caption">加西亚·马尔克斯 · 第 9 章 · 昨天 21:34</div>
+              <div class="progress thin" style="width:120px;"><i style="width:42%"></i></div>
+            </div>
+            <span class="t-mono-num" style="font-size:13px; color: var(--ty-ink-2);">42%</span>
+          </div>
+
+          <div class="row lib-row">
+            <div class="bookcover">小</div>
+            <div class="stack gap-2 fill">
+              <div class="hstack" style="gap: var(--ty-space-2);">
+                <span class="t-book">小王子</span>
+                <span class="badge is-outline">读完</span>
+              </div>
+              <div class="t-caption">圣埃克苏佩里 · 全书 · 3 天前</div>
+              <div class="progress thin" style="width:120px;"><i style="width:100%"></i></div>
+            </div>
+            <span class="t-mono-num" style="font-size:13px; color: var(--ty-ink-2);">100%</span>
+          </div>
+
+          <div class="row lib-row">
+            <div class="bookcover">城</div>
+            <div class="stack gap-2 fill">
+              <div class="hstack" style="gap: var(--ty-space-2);">
+                <span class="seal-dot"></span>
+                <span class="t-book">城南旧事</span>
+              </div>
+              <div class="t-caption">林海音 · 第 5 章 · 5 月 12 日</div>
+              <div class="progress thin" style="width:120px;"><i style="width:78%"></i></div>
+            </div>
+            <span class="t-mono-num" style="font-size:13px; color: var(--ty-ink-2);">78%</span>
+          </div>
+
+          <div class="row lib-row">
+            <div class="bookcover">呼</div>
+            <div class="stack gap-2 fill">
+              <span class="t-book">呼兰河传</span>
+              <div class="t-caption">萧红 · 尚未开始 · 昨天加入</div>
+            </div>
+            <span class="t-meta">待读</span>
+          </div>
+
+          <div class="row lib-row">
+            <div class="bookcover">人</div>
+            <div class="stack gap-2 fill">
+              <span class="t-book">人类简史</span>
+              <div class="t-caption">尤瓦尔·赫拉利 · 尚未开始</div>
+            </div>
+            <span class="t-meta">待读</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottombar">
+        <div class="hstack gap-3">
+          <button class="btn-primary fill">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            添书
+          </button>
+          <button class="btn-secondary" style="width:104px;">整理</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">书库 · 列表模式</div>
+    <div class="cap-note">
+      报头按「眉题 → 2pt 墨线 → 宋体「书库」→ 计数行」四段排；书目为题录式（封面 + 宋体书名 + 作者／章节／日期小字 + 行间发丝线），无卡壳。
+      在读行书名左侧加陶土印章点，读完行书名后缀「读完」小字；陶土全屏仅此一处，克制使用。类型胶囊切换书籍／漫画／分组，状态筛选一级可见（含已隐藏），底部「添书」为全 App 唯一导入入口。
+      本页书目与进度为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      canvas · ink · clay · serif 34/17 · kicker 11 +2 · chip 选中实心墨 · row 发丝线
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

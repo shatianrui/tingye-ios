@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 书库整理（多选）· v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：整理多选态（整行浅底 + 左侧陶土竖条） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+  .chip { white-space: nowrap; flex: none; padding: 0 var(--ty-space-3); }
+
+  .pick-row {
+    display: flex; align-items: center; gap: var(--ty-space-3);
+    padding: 6px var(--ty-space-3) 6px var(--ty-space-4);
+    border-bottom: 1px solid var(--ty-line); flex: none;
+  }
+  .pick-row.is-on { background: var(--ty-clay-soft); box-shadow: inset 3px 0 0 var(--ty-clay); }
+  .pick-dot {
+    width: 20px; height: 20px; border-radius: 50%; flex: none;
+    border: 1.5px solid var(--ty-ink-4);
+  }
+  .is-on .pick-dot { border-color: var(--ty-clay); background: var(--ty-clay); }
+  .is-on .pick-dot::after {
+    content: ''; display: block; width: 8px; height: 4px; margin: 5px auto 0;
+    border-left: 1.5px solid var(--ty-on-clay); border-bottom: 1.5px solid var(--ty-on-clay);
+    transform: rotate(-45deg);
+  }
+  .batch-bar { border-top: 1px solid var(--ty-line); background: var(--ty-canvas); padding: var(--ty-space-3) var(--ty-inset) var(--ty-space-4); flex: none; }
+  .batch-btn { min-height: 44px; padding: 0 var(--ty-space-2); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">整理</span>
+        <button class="btn-text" style="padding-right:0;">完成</button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+        <div class="hstack" style="flex:none; gap: var(--ty-space-2); margin-bottom: var(--ty-space-1);">
+          <span class="t-caption">轻点书目选择，可批量移动分组、隐藏或删除</span>
+          <span class="badge is-outline">演示</span>
+        </div>
+
+        <!-- 多选列表：选中行浅底 + 左侧陶土竖条 -->
+        <div style="flex:1; min-height:0; overflow:hidden; margin-top: var(--ty-space-2);">
+          <div class="pick-row is-on">
+            <span class="pick-dot"></span>
+            <div class="bookcover">百</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">百年孤独</span>
+              <span class="t-caption">加西亚·马尔克斯 · 在读 42%</span>
+            </div>
+          </div>
+
+          <div class="pick-row is-on">
+            <span class="pick-dot"></span>
+            <div class="bookcover">城</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">城南旧事</span>
+              <span class="t-caption">林海音 · 在读 78%</span>
+            </div>
+          </div>
+
+          <div class="pick-row is-on">
+            <span class="pick-dot"></span>
+            <div class="bookcover">呼</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">呼兰河传</span>
+              <span class="t-caption">萧红 · 待读</span>
+            </div>
+          </div>
+
+          <div class="pick-row">
+            <span class="pick-dot"></span>
+            <div class="bookcover">小</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">小王子</span>
+              <span class="t-caption">圣埃克苏佩里 · 读完</span>
+            </div>
+          </div>
+
+          <div class="pick-row">
+            <span class="pick-dot"></span>
+            <div class="bookcover">人</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">人类简史</span>
+              <span class="t-caption">尤瓦尔·赫拉利 · 待读</span>
+            </div>
+          </div>
+
+          <div class="pick-row">
+            <span class="pick-dot"></span>
+            <div class="bookcover">边</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">边城</span>
+              <span class="t-caption">沈从文 · 在读 61%</span>
+            </div>
+          </div>
+
+          <div class="pick-row">
+            <span class="pick-dot"></span>
+            <div class="bookcover">局</div>
+            <div class="stack fill" style="gap:2px;">
+              <span class="t-book">局外人</span>
+              <span class="t-caption">加缪 · 在读 87%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 批量操作栏 -->
+      <div class="batch-bar">
+        <div class="hstack" style="margin-bottom: var(--ty-space-3);">
+          <span class="t-caption">已选 3 本</span>
+          <span class="spacer"></span>
+          <button class="btn-text">全选</button>
+        </div>
+        <div class="hstack gap-2">
+          <button class="btn-secondary batch-btn fill">移入分组</button>
+          <button class="btn-secondary batch-btn fill">隐藏</button>
+          <button class="btn-secondary batch-btn fill" style="color: var(--ty-danger);">删除</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">书库 · 整理（多选）</div>
+    <div class="cap-note">
+      从书库底部「整理」进入的多选态：整行浅陶土底 + 左侧 3pt 陶土竖条 + 陶土实心选中点，选中状态双通道（不只靠颜色）。
+      底部为批量操作栏（移入分组 / 隐藏 / 删除），删除用语义红。选中数量与全选在同一行，减少操作步数。
+      本页书目为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      clay-soft 铺底 · clay 3px 竖条 · danger 删除 · min-touch 44
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

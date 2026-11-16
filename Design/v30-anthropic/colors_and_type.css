@@ -1,0 +1,302 @@
+/* ============================================================
+   听页 · v30「Claude · Anthropic」设计令牌
+   ------------------------------------------------------------
+   本文件是 v30 视觉的唯一 CSS 事实来源，与 Tingye/Theme.swift 一一对应。
+   代码与本文件任一改动，另一处同提交更新。
+
+   取值依据：Anthropic 官方品牌色 + Claude 设计系统（CDS）令牌。
+   对比度：全部经 Design/v30-anthropic/contrast-check.py 校验通过。
+   ============================================================ */
+
+:root {
+  /* ── 画布与面 ─────────────────────────────────────────── */
+  --ty-canvas:        #FAF9F5;   /* Anthropic 奶油画布（页面底） */
+  --ty-surface:       #FFFFFF;   /* 浮起卡面：白，只用于卡与输入 */
+  --ty-surface-subtle:#F0EFE6;   /* 沉底：分段轨道、听条底、输入框 */
+  --ty-surface-sunken:#F7F6F0;   /* 更浅的沉底：表格隔行、占位 */
+
+  /* ── 墨色梯度（全部暖中性，绝不用冷灰）──────────────── */
+  --ty-ink:           #141413;   /* 标题墨 */
+  --ty-ink-strong:    #1F1E1D;   /* 正文主色 */
+  --ty-ink-2:         #3D3D3A;   /* 正文副色 */
+  --ty-ink-3:         #6E6D66;   /* 说明文字（较官方 #73726C 加深一档，兼容沉底） */
+  --ty-ink-4:         #8E8C84;   /* 极次级：时间戳、页脚 */
+
+  /* ── 线 ───────────────────────────────────────────────── */
+  --ty-line:          #E7E6E1;   /* 发丝线，0.5–1px */
+  --ty-line-field:    rgba(31, 30, 29, 0.15); /* 输入框描边 */
+
+  /* ── 陶土（唯一品牌色，克制使用）─────────────────────── */
+  --ty-clay:          #D97757;   /* 品牌陶土：只做面与图标，不做正文 */
+  --ty-clay-emph:     #C6613F;   /* 陶土按下态 */
+  --ty-clay-text:     #A34E2B;   /* 陶土文字（≥4.5:1，深一档） */
+  --ty-clay-soft:     #F5E7DF;   /* 陶土淡底：跟读带、选中行 */
+  --ty-on-clay:       #141413;   /* 压在陶土面上的文字（5.9:1） */
+
+  /* ── 语义 ─────────────────────────────────────────────── */
+  --ty-danger:        #B53333;   /* 删除、错误 */
+  --ty-danger-soft:   #F7E9E9;
+  --ty-focus:         #2D7FD8;   /* 唯一的冷色：焦点环 */
+  --ty-on-dark:       #FFFFFF;   /* 压���墨底的主按钮文字 */
+
+  /* ── Anthropic 次级色（只做插画点缀，绝不做控件填充）──── */
+  --ty-heather:       #CBCADB;
+  --ty-plum:          #827DBD;
+  --ty-cactus:        #BCD1CA;
+  --ty-mineral:       #629987;
+  --ty-peach:         #EBC9B7;
+
+  /* ── 字体 ─────────────────────────────────────────────── */
+  --ty-font-sans: "PingFang SC", -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+  --ty-font-serif: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", Georgia, "Times New Roman", serif;
+  --ty-font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* ── 字号阶梯（Anthropic 阶梯的中文适配）───────────────── */
+  --ty-display:      40px;   /* 大数字、收尾页 */
+  --ty-page-title:   34px;   /* 页标题（宋体） */
+  --ty-title:        28px;   /* 二级标题（宋体） */
+  --ty-section:      20px;   /* 区块标题（宋体） */
+  --ty-book-title:   17px;   /* 书名（宋体） */
+  --ty-body-lg:      17px;
+  --ty-body:         15px;
+  --ty-label:        15px;   /* 按钮文字 */
+  --ty-caption:      13px;
+  --ty-kicker:       11px;   /* 眉题：medium + 字距 +2 */
+
+  --ty-leading-display: 1.15;
+  --ty-leading-body:    1.55;
+  --ty-tracking-kicker: 2px;
+
+  /* ── 间距（4 基数）───────────────────────────────────── */
+  --ty-space-1: 4px;
+  --ty-space-2: 8px;
+  --ty-space-3: 12px;
+  --ty-space-4: 16px;
+  --ty-space-5: 20px;
+  --ty-space-6: 24px;
+  --ty-space-8: 32px;
+  --ty-space-12: 48px;
+  --ty-inset: 24px;          /* 页面水平边距 */
+  --ty-inset-compact: 20px;  /* 375pt 小屏 */
+  --ty-page-width: 720px;
+
+  /* ── 圆角（Anthropic 刻度：克制、渐次放大）───────────── */
+  --ty-radius-sm:   8px;     /* 小标签、书封 */
+  --ty-radius-field:10px;    /* 输入框 */
+  --ty-radius-control:12px;  /* 按钮、图标块 */
+  --ty-radius-card: 16px;    /* 卡片 */
+  --ty-radius-lg:   24px;    /* 大卡、升起面板 */
+  --ty-radius-pill: 9999px;  /* 胶囊筛选、分段控件 */
+
+  /* ── 高度 ─────────────────────────────────────────────── */
+  --ty-button-height: 50px;
+  --ty-icon-button:   44px;
+  --ty-min-touch:     44px;
+
+  /* ── 阴影（Anthropic：极浅，靠发丝线与白/奶油对比）────── */
+  --ty-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ty-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --ty-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+
+  /* ── 动效（Anthropic：cubic-bezier(0,0,0.2,1)，无回弹）── */
+  --ty-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ty-motion-fast: 150ms;
+  --ty-motion-base: 200ms;
+}
+
+/* ============================================================
+   深色模式：画布与卡互换，暖中性保持
+   ============================================================ */
+.dark {
+  --ty-canvas:        #141413;
+  --ty-surface:       #1F1E1D;
+  --ty-surface-subtle:#2A2926;
+  --ty-surface-sunken:#232220;
+
+  --ty-ink:           #FAF9F5;
+  --ty-ink-strong:    #EFEDE6;
+  --ty-ink-2:         #C2C0B6;
+  --ty-ink-3:         #98968E;
+  --ty-ink-4:         #73726C;
+
+  --ty-line:          #2C2C33;
+  --ty-line-field:    rgba(250, 249, 245, 0.18);
+
+  --ty-clay:          #D97757;
+  --ty-clay-emph:     #E08C6E;
+  --ty-clay-text:     #F0AD88;
+  --ty-clay-soft:     #472E25;
+  --ty-on-clay:       #141413;
+
+  --ty-danger:        #FF9FAD;
+  --ty-danger-soft:   #3A1F22;
+  --ty-focus:         #5AA9F0;
+  --ty-on-dark:       #141413;
+
+  --ty-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --ty-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.28), 0 2px 4px -2px rgba(0, 0, 0, 0.22);
+  --ty-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.32), 0 4px 6px -4px rgba(0, 0, 0, 0.24);
+}
+
+/* ============================================================
+   基础重置与排版
+   ============================================================ */
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ty-canvas);
+  color: var(--ty-ink-strong);
+  font-family: var(--ty-font-sans);
+  font-size: var(--ty-body);
+  line-height: var(--ty-leading-body);
+}
+
+.serif { font-family: var(--ty-font-serif); font-weight: 400; }
+.mono  { font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; }
+
+.t-display { font-family: var(--ty-font-serif); font-size: var(--ty-display); line-height: var(--ty-leading-display); color: var(--ty-ink); }
+.t-page-title { font-family: var(--ty-font-serif); font-size: var(--ty-page-title); color: var(--ty-ink); letter-spacing: -0.01em; }
+.t-title { font-family: var(--ty-font-serif); font-size: var(--ty-title); color: var(--ty-ink); }
+.t-section { font-family: var(--ty-font-serif); font-size: var(--ty-section); color: var(--ty-ink); }
+.t-book { font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink); }
+.t-kicker {
+  font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker);
+  color: var(--ty-ink-3); text-transform: uppercase;
+}
+.t-caption { font-size: var(--ty-caption); color: var(--ty-ink-3); }
+.t-meta { font-size: var(--ty-caption); color: var(--ty-ink-4); }
+.t-accent { color: var(--ty-clay-text); }
+.t-mono-num { font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ============================================================
+   组件
+   ============================================================ */
+
+/* 主按钮：Anthropic 招牌动作色 —— 实心墨底、纸字 */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ty-space-2);
+  min-height: var(--ty-button-height); padding: 0 var(--ty-space-6);
+  background: var(--ty-ink); color: var(--ty-on-dark);
+  border: none; border-radius: var(--ty-radius-control);
+  font-family: var(--ty-font-sans); font-size: var(--ty-label); font-weight: 500;
+  cursor: pointer; transition: opacity var(--ty-motion-fast) var(--ty-ease-out);
+}
+.btn-primary:active { opacity: 0.85; }
+
+/* 次按钮：白底 + 发丝线 */
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--ty-space-2);
+  min-height: var(--ty-button-height); padding: 0 var(--ty-space-6);
+  background: var(--ty-surface); color: var(--ty-ink);
+  border: 1px solid var(--ty-line); border-radius: var(--ty-radius-control);
+  font-size: var(--ty-label); font-weight: 500; cursor: pointer;
+  transition: opacity var(--ty-motion-fast) var(--ty-ease-out);
+}
+.btn-secondary:active { opacity: 0.85; }
+
+/* 文字按钮：陶土字，无下划线 */
+.btn-text {
+  background: none; border: none; padding: 0;
+  color: var(--ty-clay-text); font-size: var(--ty-label); font-weight: 500; cursor: pointer;
+}
+.btn-text:active { opacity: 0.7; }
+
+/* 图标按钮：44pt 命中区，无底无描边 */
+.btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ty-icon-button); height: var(--ty-icon-button);
+  background: none; border: none; color: var(--ty-ink); cursor: pointer;
+  border-radius: var(--ty-radius-sm);
+}
+.btn-icon:active { background: var(--ty-surface-subtle); }
+
+/* 卡片：白底 + 发丝线 + 极淡柔影 */
+.card {
+  background: var(--ty-surface);
+  border: 1px solid var(--ty-line);
+  border-radius: var(--ty-radius-card);
+  box-shadow: var(--ty-shadow-sm);
+}
+.card-flat { background: var(--ty-surface); border: 1px solid var(--ty-line); border-radius: var(--ty-radius-card); }
+
+/* 胶囊筛选：选中实心墨，未选中沉底 */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--ty-space-1);
+  min-height: 36px; padding: 0 var(--ty-space-4);
+  border-radius: var(--ty-radius-pill);
+  background: var(--ty-surface-subtle); color: var(--ty-ink-2);
+  border: 1px solid transparent; font-size: 14px; cursor: pointer;
+  transition: all var(--ty-motion-fast) var(--ty-ease-out);
+}
+.chip.is-selected { background: var(--ty-ink); color: var(--ty-on-dark); font-weight: 500; }
+.chip.is-clay { background: var(--ty-clay); color: var(--ty-on-clay); font-weight: 500; }
+
+/* 分段控件：胶囊轨道 + 白色滑块 */
+.segmented {
+  display: inline-flex; padding: 3px; gap: 2px;
+  background: var(--ty-surface-subtle); border-radius: var(--ty-radius-pill);
+}
+.segmented .seg {
+  padding: 6px var(--ty-space-4); border-radius: var(--ty-radius-pill);
+  font-size: 14px; color: var(--ty-ink-2); cursor: pointer; border: none; background: none;
+}
+.segmented .seg.is-active { background: var(--ty-surface); color: var(--ty-ink); font-weight: 500; box-shadow: var(--ty-shadow-sm); }
+
+/* 输入框：白底 + 半透明墨色描边 */
+.field {
+  width: 100%; min-height: 44px; padding: 0 var(--ty-space-4);
+  background: var(--ty-surface); color: var(--ty-ink);
+  border: 1px solid var(--ty-line-field); border-radius: var(--ty-radius-field);
+  font-family: var(--ty-font-sans); font-size: var(--ty-body);
+}
+.field::placeholder { color: var(--ty-ink-4); }
+.field:focus { outline: none; border-color: var(--ty-focus); box-shadow: 0 0 0 3px rgba(45, 127, 216, 0.18); }
+
+/* 发丝线分隔 */
+.rule { height: 1px; background: var(--ty-line); border: 0; }
+.rule-heavy { height: 2px; background: var(--ty-ink); border: 0; }
+
+/* 列表行：行间 0.5px 发丝线，无卡壳 */
+.row {
+  display: flex; align-items: center; gap: var(--ty-space-4);
+  padding: var(--ty-space-4) 0; border-bottom: 1px solid var(--ty-line);
+  min-height: var(--ty-min-touch);
+}
+
+/* 状态标记：陶土印章点（在读 / 正在发生） */
+.seal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ty-clay); flex: none; }
+
+/* 跟读带：淡陶土铺底 + 左侧陶土竖条（双通道，不只靠颜色） */
+.marker {
+  background: var(--ty-clay-soft);
+  border-left: 3px solid var(--ty-clay);
+  padding: var(--ty-space-4) var(--ty-space-4) var(--ty-space-4) var(--ty-space-5);
+  border-radius: 0 var(--ty-radius-sm) var(--ty-radius-sm) 0;
+}
+
+/* 墨色按钮圆（播放 / 暂停） */
+.ink-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--ty-ink); color: var(--ty-on-dark);
+  display: inline-flex; align-items: center; justify-content: center; border: none; cursor: pointer;
+}
+.ink-circle.sm { width: 44px; height: 44px; }
+
+/* 角标 */
+.badge {
+  display: inline-flex; align-items: center; padding: 3px 8px;
+  border-radius: var(--ty-radius-sm); font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  background: var(--ty-surface-subtle); color: var(--ty-ink-2);
+}
+.badge.is-clay { background: var(--ty-clay); color: var(--ty-on-clay); }
+.badge.is-soft-clay { background: var(--ty-clay-soft); color: var(--ty-clay-text); }
+.badge.is-outline { background: transparent; border: 1px solid var(--ty-line); color: var(--ty-ink-3); }
+
+/* 顶部提示条：墨底纸字，直角贴边 */
+.toast {
+  background: var(--ty-ink); color: var(--ty-canvas);
+  padding: var(--ty-space-3) var(--ty-space-4); border-radius: var(--ty-radius-sm);
+  font-size: var(--ty-caption);
+}

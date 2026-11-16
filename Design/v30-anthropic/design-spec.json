@@ -1,0 +1,139 @@
+{
+  "version": "v30-anthropic",
+  "name": "听页 · Claude · Anthropic",
+  "note": "v30 视觉令牌，与 Tingye/Theme.swift 及 Design/v30-anthropic/colors_and_type.css 一一对应；代码与本文件任一改动，另一处同提交更新。信息架构沿用 v29「书房」（阅读器即首页、书库为根页面/抽屉、「我的」经书库页入口进入），本次只动视觉。",
+  "figma": null,
+  "source": "Anthropic 官方品牌色 + Claude 设计系统（CDS）令牌；对比度经 Design/v30-anthropic/contrast-check.py 校验，零漂移经 sync-check.py 校验。",
+  "icons": "Native SF Symbols；Theme.Icon 枚举为唯一映射来源，界面不直接写符号名。应用图标为 v30 重绘的「声页」三变体。",
+  "colors": {
+    "canvas":        { "light": "#FAF9F5", "dark": "#141413", "note": "Anthropic 奶油画布；全 App 唯一页面底" },
+    "surface":       { "light": "#FFFFFF", "dark": "#1F1E1D", "note": "浮起卡面；白只用于卡片与输入框" },
+    "surfaceSubtle": { "light": "#F0EFE6", "dark": "#2A2926", "note": "分段轨道 / 听条底 / 沉底" },
+    "surfaceSunken": { "light": "#F7F6F0", "dark": "#232220", "note": "隔行 / 占位块" },
+    "ink":           { "light": "#141413", "dark": "#FAF9F5" },
+    "ink2":          { "light": "#3D3D3A", "dark": "#C2C0B6", "note": "正文副色" },
+    "ink3":          { "light": "#6E6D66", "dark": "#98968E", "note": "说明文字；较官方 #73726C 加深一档以兼容沉底" },
+    "ink4":          { "light": "#8E8C84", "dark": "#73726C", "note": "极次级：时间戳、页脚" },
+    "line":          { "light": "#E7E6E1", "dark": "#2C2C33", "note": "发丝线，0.5–1pt" },
+    "lineField":     { "light": "rgba(31,30,29,0.15)", "dark": "rgba(250,249,245,0.18)", "note": "输入框描边" },
+    "clay":          { "light": "#D97757", "dark": "#D97757", "note": "陶土面；品牌色，不随深浅模式变化" },
+    "clayEmph":      { "light": "#C6613F", "dark": "#E08C6E", "note": "陶土按下态" },
+    "clayText":      { "light": "#A34E2B", "dark": "#F0AD88", "note": "陶土文字；官方 #C96442 仅 3.9:1，加深一档以达 4.5:1" },
+    "claySoft":      { "light": "#F5E7DF", "dark": "#472E25", "note": "陶土淡底：跟读带、选中行" },
+    "onClay":        { "light": "#141413", "dark": "#141413" },
+    "onInk":         { "light": "#FFFFFF", "dark": "#141413", "note": "压在墨底上的字（主按钮）" },
+    "danger":        { "light": "#B53333", "dark": "#FF9FAD" },
+    "dangerSoft":    { "light": "#F7E9E9", "dark": "#3A1F22" },
+    "focus":         { "light": "#2D7FD8", "dark": "#5AA9F0", "note": "唯一冷色，仅焦点环；官方 #3898EC 对奶油画布仅 2.90:1" }
+  },
+  "themeMapping": {
+    "canvas": "Theme.bg",
+    "surface": "Theme.surface",
+    "surfaceSubtle": "Theme.surface2",
+    "surfaceSunken": "Theme.surfaceSunken",
+    "ink": "Theme.ink",
+    "ink2": "Theme.ink2",
+    "ink3": "Theme.ink3",
+    "ink4": "Theme.ink4",
+    "line": "Theme.line",
+    "lineField": "Theme.lineField",
+    "clay": "Theme.clay",
+    "clayEmph": "Theme.clayEmph",
+    "clayText": "Theme.accent",
+    "claySoft": "Theme.claySoft / Theme.accentSoft",
+    "onClay": "Theme.onClay",
+    "onInk": "Theme.onInk",
+    "danger": "Theme.danger",
+    "dangerSoft": "Theme.dangerSoft",
+    "focus": "Theme.focus"
+  },
+  "discipline": {
+    "canvas": "页面底永远是奶油画布，不出现纯白底；白只用于卡片与输入框",
+    "clay": "陶土只标记「正在发生」（当前章、在读印章点、进度已读段、跟读竖条、眉题编号），每屏至多 1–2 处；不做按钮底、不做分段选中态、不做卡片底色",
+    "warmGray": "所有灰色都是暖中性，系统冷灰一律不用",
+    "radius": "圆角与间距一律走令牌，页面里不写死数值",
+    "motion": "只保留 150ms / 200ms ease-out；不回弹、不缩放、不按压下陷",
+    "shadow": "阴影只用 softCardShadow() / floatingPanel()，不自己写 .shadow()"
+  },
+  "layout": {
+    "inset": 24,
+    "insetCompact": 20,
+    "pageWidth": 720,
+    "buttonHeight": 50,
+    "iconButtonSize": 44,
+    "minTouch": 44,
+    "spacingScale": [4, 8, 12, 16, 20, 24, 32, 48]
+  },
+  "radii": {
+    "radiusSmall": 8,
+    "radiusField": 10,
+    "buttonRadius": 12,
+    "radius": 16,
+    "heroRadius": 24,
+    "radiusPill": 9999
+  },
+  "elevation": {
+    "card": "黑 4%，半径 20，y 4（深色减半）",
+    "float": "黑 8%，半径 16，y 4",
+    "flat": "列表行、底部面板、设置页无阴影"
+  },
+  "motion": {
+    "press": "150ms ease-out，仅透明度 0.85",
+    "transition": "200ms ease-out（cubic-bezier(0,0,0.2,1)）",
+    "reduceMotion": "ReducedMotionPolicy 为唯一闸门"
+  },
+  "typography": {
+    "display": { "font": "system semibold 等宽数字", "size": 36, "style": "largeTitle" },
+    "pageTitle": { "font": "serif", "size": 30, "style": "title" },
+    "title": { "font": "serif", "size": 28, "style": "title" },
+    "sectionTitle": { "font": "serif", "size": 20, "style": "title3" },
+    "bookTitle": { "font": "serif", "size": 17, "style": "headline" },
+    "body": { "font": "system", "size": 15, "style": "body" },
+    "label": { "font": "system medium", "size": 15, "style": "subheadline" },
+    "caption": { "font": "system", "size": 13, "style": "footnote" },
+    "kicker": { "font": "system medium，字距 1.6", "size": 12, "style": "caption" },
+    "readerBody": { "font": "正文偏好字体", "size": 19, "note": "用户 14–34，不变" },
+    "interface": "iOS system（PingFang SC / SF），真实字重",
+    "serif": "NotoSerifCJKsc-Regular（仅 Regular，无合成字重、无叠印）",
+    "mono": "SF Mono（Theme.mono）：页码、序号、时间戳"
+  },
+  "components": {
+    "primaryButton": "实心墨底 + 纸字，圆角 12，高 50，文字 15pt medium；整页至多一个",
+    "secondaryButton": "白卡 + 1px 发丝线 + 墨字，圆角 12",
+    "textButton": "clayText 字，无下划线",
+    "iconButton": "44×44 命中区，无底无描边",
+    "chip": "ChipPillStyle：胶囊；选中实心墨，未选中沉底 + 发丝线",
+    "card": "Card / .glassCard()：白底 + 发丝线 + .softCardShadow()",
+    "listRow": "RowDivider 发丝线，无卡壳",
+    "sectionTitle": "SectionTitle：宋体 20pt + 陶土编号",
+    "pageMasthead": "PageMasthead：眉题行 + 宋体 30pt 大标题",
+    "badge": "SealBadge：陶土淡底 + 陶土字，圆角 8",
+    "progress": "ProgressBar：轨道发丝线，已读段陶土"
+  },
+  "readerPapers": {
+    "note": "纸族不变（用户偏好）。每种纸日/夜成对；「浅纸常亮」开启时锁定日间值。跟读带统一陶土 #D97757，铺底透明度浅纸 14% / 深纸 26%。",
+    "paper":   { "name": "宣纸（默认）", "light": { "paper": "#FAF9F5", "ink": "#141413", "secondary": "#6E6D66" }, "dark": { "paper": "#141413", "ink": "#FAF9F5", "secondary": "#98968E" } },
+    "mist":    { "name": "雾灰", "light": { "paper": "#E6EBF1", "ink": "#14181F", "secondary": "#666666" }, "dark": { "paper": "#1D2733", "ink": "#D8E2EC", "secondary": "#93A3B5" } },
+    "ancient": { "name": "旧书", "light": { "paper": "#F3E7D6", "ink": "#2C2418", "secondary": "#6E5F4B" }, "dark": { "paper": "#2A2118", "ink": "#EAD9BE", "secondary": "#B39B78" } },
+    "eink":    { "name": "浅灰", "light": { "paper": "#F0F0F0", "ink": "#242424", "secondary": "#666666" }, "dark": { "paper": "#1E1E1E", "ink": "#E8E8E8", "secondary": "#A8A8A8" } },
+    "white":   { "name": "纯白", "light": { "paper": "#FFFFFF", "ink": "#14181F", "secondary": "#666666" }, "dark": { "paper": "#000000", "ink": "#EFEFEA", "secondary": "#A9A9A2" } },
+    "blue":    { "name": "深蓝", "light": { "paper": "#1A2C3A", "ink": "#D5E4F0", "secondary": "#8AA0B4" }, "dark": { "paper": "#1A2C3A", "ink": "#D5E4F0", "secondary": "#8AA0B4" } },
+    "night":   { "name": "夜读", "light": { "paper": "#101012", "ink": "#EFEDE6", "secondary": "#A5A296" }, "dark": { "paper": "#101012", "ink": "#EFEDE6", "secondary": "#A5A296" } }
+  },
+  "appIcon": {
+    "name": "声页",
+    "variants": ["AppIcon.png", "AppIcon-dark.png", "AppIcon-tinted.png"],
+    "spec": "1024×1024，RGB，无 alpha；奶油画布 + 墨色摊开书 + 陶土三道声波；生成器 Design/v30-anthropic/app-icon/make-icon.py"
+  },
+  "artifacts": {
+    "designDoc": "Design/v30-anthropic/DESIGN.md",
+    "tokenContract": "Design/v30-anthropic/SWIFT-TOKENS.md",
+    "cssTokens": "Design/v30-anthropic/colors_and_type.css",
+    "mockups": "Design/v30-anthropic/pages/（28 屏）",
+    "previews": "Design/v30-anthropic/previews/（PNG 渲染）",
+    "contrastCheck": "Design/v30-anthropic/contrast-check.py",
+    "syncCheck": "Design/v30-anthropic/sync-check.py",
+    "lintPages": "Design/v30-anthropic/lint-pages.py",
+    "renderPreviews": "Design/v30-anthropic/render-previews.py"
+  }
+}

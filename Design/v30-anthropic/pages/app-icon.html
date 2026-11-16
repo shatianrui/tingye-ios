@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 应用图标</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .home { padding: var(--ty-space-5) var(--ty-space-5) 0; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ty-space-5) var(--ty-space-4); }
+  .appicon { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .appicon img { width: 60px; height: 60px; border-radius: 13px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.10); }
+  .appicon .nm { font-size: 11px; color: var(--ty-ink-3); }
+
+  .big { display: flex; flex-direction: column; align-items: center; gap: var(--ty-space-4); padding: var(--ty-space-6) 0; }
+  .big img { width: 128px; height: 128px; border-radius: 28px; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
+  .variants { display: flex; gap: var(--ty-space-4); align-items: flex-end; }
+  .variants figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .variants img { border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+  .variants figcaption { font-size: 11px; color: var(--ty-ink-3); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right"><span class="sb-bars"><i></i><i></i><i></i><i></i></span><span class="sb-batt"><i></i></span></div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="home">
+        <div class="grid4">
+          <div class="appicon"><img src="../app-icon/icon-light.svg" alt="听页图标"><span class="nm">听页</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+          <div class="appicon"><span style="width:60px;height:60px;border-radius:13px;background:var(--ty-surface-subtle);"></span><span class="nm">其他</span></div>
+        </div>
+      </div>
+
+      <div class="content" style="padding:0 var(--ty-inset);">
+        <div class="rule" style="margin-top:var(--ty-space-5);"></div>
+        <div class="t-kicker" style="margin:var(--ty-space-4) 0 var(--ty-space-3);">三变体</div>
+        <div class="variants">
+          <figure>
+            <img src="../app-icon/icon-light.svg" alt="浅色变体" width="72" height="72">
+            <figcaption>浅色</figcaption>
+          </figure>
+          <figure>
+            <img src="../app-icon/icon-dark.svg" alt="深色变体" width="72" height="72">
+            <figcaption>深色</figcaption>
+          </figure>
+          <figure>
+            <img src="../app-icon/icon-tinted.svg" alt="着色变体" width="72" height="72">
+            <figcaption>着色</figcaption>
+          </figure>
+        </div>
+        <div class="rule" style="margin:var(--ty-space-4) 0;"></div>
+        <div class="t-kicker" style="margin-bottom:var(--ty-space-3);">设计要点</div>
+        <div style="font-size:var(--ty-body);color:var(--ty-ink-2);line-height:1.75;">
+          奶油画布 + 炭黑墨的摊开书页，唯一品牌色陶土只用在三道声波上。
+          扁平无渐变，构图留白充足，内容全部落在中心半径 400 的安全圆内。
+        </div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">应用图标 ·「声页」</div>
+    <div class="cap-note">
+      三个变体均为 1024×1024、RGB、<b>无 alpha</b>（iOS 资产校验会拒收带 alpha 的图标）。
+      着色变体只给灰阶，不带色相，交由系统着色。
+    </div>
+    <div class="cap-tokens">
+      clay #D97757 · ink #141413 · canvas #FAF9F5 · 生成器 app-icon/make-icon.py
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

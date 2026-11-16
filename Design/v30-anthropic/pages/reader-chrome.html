@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 阅读器 · 工具态</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .tb-mid .title { display: block; }
+  .tb-mid .sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .reader-body { padding-top: var(--ty-space-2); }
+  .reader-body p {
+    margin: 0 0 var(--ty-space-5);
+    font-size: 19px; line-height: 1.95;
+    text-align: justify; text-justify: inter-ideograph;
+  }
+  .reader-body p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <!-- 工具态顶栏：返回 / 书名·章名 / 书签 / 更多 -->
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M15 4.5 8 12l7 7.5"></path>
+          </svg>
+        </button>
+        <div class="tb-mid">
+          <span class="title">故乡</span>
+          <span class="sub">第三章 · 船舱里的冬天</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="书签">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M6.5 4h11v16l-5.5-4.2L6.5 20z"></path>
+          </svg>
+        </button>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 正文仍在中间 -->
+      <div class="content paper reader-body">
+        <p>我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。</p>
+        <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村。</p>
+        <p>阿！这不是我二十年来时时记得的故乡？</p>
+        <p>我所记得的故乡全不如此。我的故乡好得多了。但要我记起他的美丽，说出他的佳处来，却又没有影像，没有言辞了。</p>
+        <p>仿佛也就如此。我这次是专为了别他而来的。</p>
+        <p>我这次回乡，本没有什么好心绪。</p>
+      </div>
+
+      <!-- 底部四键工具栏 -->
+      <div class="bottombar">
+        <div class="toolbar-4">
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h9"></path>
+            </svg>
+            <span>目录</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M3 18 7.5 6 12 18M4.9 14h5.2"></path>
+              <path d="M15 18V9.5h2.4a2.3 2.3 0 0 1 0 4.6H15"></path>
+            </svg>
+            <span>排版</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M14.4 4.2 19.8 9.6 11 18.4H5.6v-5.4z"></path>
+              <path d="M4 21h16"></path>
+            </svg>
+            <span>摘记</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M4 8h7M15 8h5M4 16h3M11 16h9"></path>
+              <circle cx="13" cy="8" r="2.2"></circle>
+              <circle cx="9" cy="16" r="2.2"></circle>
+            </svg>
+            <span>更多</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">阅读器 · 工具态</div>
+    <div class="cap-note">
+      轻点正文唤出 chrome：顶栏为「返回 / 书名·章名 / 书签 / 更多」，底部四键「目录 排版 摘记 更多」；
+      开合不改变视口与分页位置，正文始终留在中间。图标为 1.5px 描边线条，选中键下方留 2px 陶土短线。
+    </div>
+    <div class="cap-tokens">
+      ink / ink-3 / line / clay · 顶栏高 48 · 四键等分 · 正文 19px 宋体 · 无阴影 · 章名与版式均为演示内容
+    </div>
+  </div>
+</div>
+</body>
+</html>
