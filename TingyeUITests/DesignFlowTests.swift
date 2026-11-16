@@ -944,16 +944,35 @@ extension DesignFlowTests {
         let single = app.buttons["sources.importFile"]
         XCTAssertTrue(single.waitForExistence(timeout: 15))
         single.tap()
-        // Navigate the actual Files picker; no simulated delegate or model injection here.
-        let browse = app.buttons.matching(NSPredicate(format: "label == '浏览' OR label == 'Browse'")).firstMatch
-        if browse.waitForExistence(timeout: 3) { browse.tap() }
-        let local = app.cells.matching(NSPredicate(format: "label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'")).firstMatch
-        if local.waitForExistence(timeout: 3) { local.tap() }
-        let folder = app.cells.matching(NSPredicate(format: "label == '听页' OR label == 'Tingye'")).firstMatch
-        if folder.waitForExistence(timeout: 3) { folder.tap() }
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '听页导入回归'")).firstMatch
-        XCTAssertTrue(file.waitForExistence(timeout: 10), "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
-        file.tap() // Normal entry must import on selection, without a batch Open step.
+        // 选择器内容可能在宿主里，也可能在系统文件进程里。先等它出现，再按位置点进去。
+        let cancel = app.buttons.matching(NSPredicate(format: "label == '取消' OR label == 'Cancel'")).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 12), "系统文件选择器应已打开")
+        let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
+        let surfaces = [app] + (files.state == .notRunning ? [] : [files])
+        func file(in surface: XCUIApplication) -> XCUIElement {
+            surface.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '听页导入回归'")).firstMatch
+        }
+        func tap(_ format: String, timeout: TimeInterval) {
+            for surface in surfaces {
+                let element = surface.descendants(matching: .any).matching(NSPredicate(format: format)).firstMatch
+                guard element.waitForExistence(timeout: timeout) else { continue }
+                let frame = element.frame
+                guard frame.width > 1, frame.height > 1 else { continue }
+                element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                return
+            }
+        }
+        if !surfaces.contains(where: { file(in: $0).waitForExistence(timeout: 2) }) {
+            tap("label == '浏览' OR label == 'Browse' OR identifier == 'Browse'", timeout: 4)
+            tap("identifier BEGINSWITH 'DOC.sidebar.item.On My' OR identifier BEGINSWITH 'DOC.sidebar.item.我的' OR label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'", timeout: 4)
+            tap("label == '听页' OR label == 'Tingye'", timeout: 4)
+        }
+        let found = surfaces.compactMap { surface -> XCUIElement? in
+            let match = file(in: surface)
+            return match.waitForExistence(timeout: 6) ? match : nil
+        }.first
+        XCTAssertNotNil(found, "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
+        found?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let results = app.buttons["import.results"]
         XCTAssertTrue(results.waitForExistence(timeout: 20), "选择文件后应出现明确的导入反馈")
         results.tap()

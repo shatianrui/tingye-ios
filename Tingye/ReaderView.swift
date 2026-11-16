@@ -578,7 +578,7 @@ struct ReaderView: View {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .focus: PlayerView(player: player, fromReader: true)
-                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents(value == .search ? [.large] : [.medium, .large]).presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)
         }
@@ -1834,7 +1834,8 @@ struct ContentsView: View {
             }
             .editorialList()
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, isPresented: $searchPresented, prompt: "搜索章节与全文")
+            // 半高弹层里默认搜索抽屉没有有效点击区域。书内搜索改成展开的导航栏抽屉，并只用全高弹层。
+            .searchable(text: $query, isPresented: $searchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索章节与全文")
             .task(id: query) {
                 let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !keyword.isEmpty else { hits = nil; return }

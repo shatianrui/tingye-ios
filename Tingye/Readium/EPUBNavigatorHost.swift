@@ -189,7 +189,16 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                 self.deferredLocation = nil
             }
         }
+        func deliver(_ locator: ReadiumShared.Locator, confirmedRequest: UUID?) {
+            let resource = parent.publication.readingOrder.firstIndex {
+                PublicationMap.normalized($0.href) == PublicationMap.normalized(locator.href.string)
+            }
+            parent.onLocation(resource, locator, confirmedRequest)
+        }
         func reportLocation(_ locator: ReadiumShared.Locator, confirmedRequest: UUID? = nil) {
+            // 目录跳章必须先把目标位置交出去。可见范围脚本要等新页排完，期间旧页回调会取消这次任务，
+            // 章节标题就一直停在跳转前。
+            if confirmedRequest != nil { deliver(locator, confirmedRequest: confirmedRequest) }
             reportTask?.cancel()
             guard let navigator else { return }
             reportTask = Task { @MainActor [weak self, weak navigator] in
@@ -220,11 +229,8 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                         precise = StoredLocator.readium(.object(raw)) ?? precise
                     }
                 }
-                guard !Task.isCancelled, self.navigator === navigator else { return }
-                let resource = self.parent.publication.readingOrder.firstIndex {
-                    PublicationMap.normalized($0.href) == PublicationMap.normalized(precise.href.string)
-                }
-                self.parent.onLocation(resource, precise, confirmedRequest)
+                guard confirmedRequest == nil, !Task.isCancelled, self.navigator === navigator else { return }
+                self.deliver(precise, confirmedRequest: nil)
             }
         }
         func navigator(_ navigator: Navigator, locationDidChange locator: ReadiumShared.Locator) {
