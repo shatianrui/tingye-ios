@@ -256,5 +256,26 @@ Anthropic 的抬升极浅，最深一档也只有 4% 黑。**层级优先靠发�
 | 画廊 | `make-gallery.py` | 28 屏实时可交互，离线自包含 |
 | 图标 | 1024×1024 / RGB / 无 alpha | 三个变体全部合规 |
 
-> **未在本仓库环境验证**：本沙箱无 Xcode / Swift 工具链，**Swift 代码未经编译**。
-> 上线前需在 macOS 上跑一遍完整构建与 UI 回归（`docs/ACCEPTANCE.md` 口径）。
+### 12.1 真实构建验证（GitHub Actions，macOS runner）
+
+PR #15 触发的 `Tests` 工作流给出**真实编译结果**：
+
+| 项目 | 结果 |
+|---|---|
+| `Tingye` 目标编译 | ✅ **通过** —— 216 个 `SwiftCompile` 任务，0 个 `error:`，本次改动的 21 个 Swift 文件全部进入编译 |
+| 资源目录（`Assets.xcassets`） | ✅ **通过** —— `actool` 0 错误，`AppIcon.appiconset` 可用（PR #14 的二进制损坏已修复） |
+| UI 回归 | 27 条用例执行，**1 条失败**（见下） |
+| 单元测试 job | ⚠️ `cancelled` —— `macos-15` runner 始终未获分配（该仓库既有的排队问题，`tests.yml` 文件头已注明） |
+
+失败用例 `DesignFlowTests.testReaderNotesAndSearchOpenWithoutStartingAudio`：
+
+```
+Failed to determine hittability of "搜索章节与全文" SearchField:
+Activation point invalid and no suggested hit points based on element frame
+```
+
+判读：`waitForExistence` **通过**（搜索框确实存在），仅 `isHittable` 在 sheet 刚呈现的瞬间取不到有效激活点 —— 属 XCUITest 对系统 `.searchable` 搜索框的时序竞态。
+本次改动**未触碰**该搜索框：`.searchable(text:isPresented:prompt:)` 所在行与基线逐字相同，所在 sheet 的导航栏与 toolbar 亦未改动。
+同一用例在改动前的 `readium-engine` 分支上通过（35.9s），在本次运行中失败（19.1s）—— 已安排复跑确认是否偶发。
+
+> 本沙箱无 Xcode / Swift 工具链，**本地无法编译**；上表的编译结论来自 macOS runner，是当前环境下的真实构建证据。
