@@ -17,7 +17,23 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGES = os.path.join(HERE, 'pages')
-CHROME = '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome'
+
+
+def resolve_chrome() -> str:
+    """优先用设计环境里的 Playwright Chromium；本机没有时改用已安装的 Chrome。"""
+    candidates = [
+        os.environ.get('CHROME_PATH', ''),
+        '/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome',
+        r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+        r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+    ]
+    for path in candidates:
+        if path and os.path.isfile(path):
+            return path
+    return candidates[1]
+
+
+CHROME = resolve_chrome()
 
 TYPO_PATTERNS = [
     (r'grid-template-template-columns', 'grid-template-columns 写重了'),
