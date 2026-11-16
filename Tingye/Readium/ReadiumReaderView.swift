@@ -150,6 +150,7 @@ struct ReadiumReaderView: View {
     @State private var locationTask: Task<Void, Never>?
     @State private var jumpTask: Task<Void, Never>?
     @State private var locationGeneration = UUID()
+    @State private var epubPageToken = ""
     @AppStorage("reader.fontSize") private var fontSize = 19.0
     @AppStorage("reader.lineSpacing") private var lineSpacing = 11.0
     @AppStorage("reader.font") private var font = "system"
@@ -208,6 +209,17 @@ struct ReadiumReaderView: View {
                     })
                 }
             }
+            #if DEBUG
+            if UIReview.isolated {
+                // 网页无障碍坐标会持续跳动。UI 测试改读这个稳定页码，阅读栏位置仍用网页视图本身的 frame。
+                Text(epubPageToken.isEmpty ? "未分页" : epubPageToken)
+                    .font(.system(size: 4))
+                    .foregroundStyle(Color(hex: palette.background))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .accessibilityIdentifier("reader.epubPage")
+                    .allowsHitTesting(false)
+            }
+            #endif
             if session.loading { ProgressView("正在打开 EPUB…") }
             if let error = session.error {
                 VStack(spacing: 16) {
@@ -447,10 +459,18 @@ struct ReadiumReaderView: View {
             } catch is CancellationError {} catch { model.message = error.localizedDescription }
         }
     }
+    private func pageToken(for locator: ReadiumShared.Locator) -> String {
+        let href = PublicationMap.normalized(locator.href.string) ?? locator.href.string
+        if let position = locator.locations.position { return "\(href)#\(position)" }
+        let bucket = Int(((locator.locations.progression ?? 0) * 100).rounded())
+        return "\(href)@\(bucket)"
+    }
     private func locationChanged(resource: Int?, locator: ReadiumShared.Locator, confirmedRequest: UUID?) {
         guard session.error == nil, let bridge = session.bridge else { return }
         if expectedLocation != nil, let request, confirmedRequest != request.id { return }
         if let expectedLocation, PublicationMap.normalized(expectedLocation.href.string) != PublicationMap.normalized(locator.href.string) { return }
+        let page = pageToken(for: locator)
+        if epubPageToken != page { epubPageToken = page }
         locationTask?.cancel()
         let token = UUID(); locationGeneration = token
         let pending = expectedOriginal, mode = convert

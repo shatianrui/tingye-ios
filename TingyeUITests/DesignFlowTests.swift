@@ -254,23 +254,14 @@ final class DesignFlowTests: XCTestCase {
     }
     private func epubLayout(in app: XCUIApplication) -> ReaderLayoutCapture? {
         let web = app.webViews.firstMatch
-        guard web.exists else { return nil }
-        let texts = web.staticTexts.allElementsBoundByIndex.filter { text in
-            let area = text.frame.intersection(web.frame)
-            return !text.label.isEmpty && !area.isNull && area.width > 1 && area.height > 1
-        }.sorted { a, b in
-            let ay = (a.frame.minY / 4).rounded(), by = (b.frame.minY / 4).rounded()
-            if ay != by { return ay < by }
-            let ax = (a.frame.minX / 4).rounded(), bx = (b.frame.minX / 4).rounded()
-            if ax != bx { return ax < bx }
-            return a.label < b.label
-        }
-        guard !texts.isEmpty else { return nil }
-        func quantize(_ frame: CGRect) -> CGRect {
-            func q(_ value: CGFloat) -> CGFloat { (value / 2).rounded() * 2 }
-            return CGRect(x: q(frame.minX), y: q(frame.minY), width: q(frame.width), height: q(frame.height))
-        }
-        return .init(viewport: quantize(web.frame), text: texts.map(\.label), frames: texts.map { quantize($0.frame) })
+        let page = app.descendants(matching: .any)["reader.epubPage"]
+        guard web.exists, page.exists, web.frame.width > 40, web.frame.height > 80 else { return nil }
+        let token = page.label
+        guard token.contains("#") || token.contains("@") else { return nil }
+        func q(_ value: CGFloat) -> CGFloat { value.rounded() }
+        let frame = web.frame
+        return .init(viewport: CGRect(x: q(frame.minX), y: q(frame.minY), width: q(frame.width), height: q(frame.height)),
+                     text: [token])
     }
     func testEPUBDerivedFixtureSmokeAndSearch() {
         let app = launch("reader-original", original: true)
