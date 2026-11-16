@@ -154,7 +154,12 @@ def main():
         # exactly what dirtied the worktree (e.g. a file-mode change).
         status = subprocess.run(['git', 'status', '--porcelain'],
                                 capture_output=True, text=True)
-        print('error: worktree is not clean; changed paths:\n' + status.stdout,
+        diff = subprocess.run(['git', 'diff'], capture_output=True, text=True)
+        diff_cached = subprocess.run(['git', 'diff', '--cached'],
+                                     capture_output=True, text=True)
+        print('error: worktree is not clean; changed paths:\n' + status.stdout
+              + '\n--- git diff ---\n' + diff.stdout
+              + '\n--- git diff --cached ---\n' + diff_cached.stdout,
               file=sys.stderr)
         raise
     version, build = project_version()
