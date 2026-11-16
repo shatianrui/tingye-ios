@@ -862,7 +862,16 @@ extension AppModel {
                 next[index].bookmarks = migrated.bookmarks; next[index].highlights = migrated.highlights
                 // Both calls are synchronous here: no lifecycle or edit can interleave the validation and atomic catalog write.
                 let changedReading = migrated.progress.locator != snapshot.progress.locator && migrated.progress.updatedAt > 0
-                if changedReading { next[index].progress.updatedAt = self.sync.stamp() }
+                if changedReading {
+                    // 补定位器不是一次阅读。改成当前时间会让后扫描的书变成「最近在读」，书房大卡和退出重开都会跟错书。
+                    // 只在不越过更近的书时把时钟推进 1 毫秒，同步才能把新定位器发出去，阅读顺序保持不变。
+                    let own = max(snapshot.lastReadAt ?? 0, snapshot.progress.updatedAt)
+                    let bumped = snapshot.progress.updatedAt + 0.001
+                    let passesNewerBook = next.enumerated().contains { offset, entry in
+                        offset != index && self.readingRecency(for: entry) > own && bumped >= self.readingRecency(for: entry)
+                    }
+                    if !passesNewerBook { next[index].progress.updatedAt = bumped }
+                }
                 try disk.saveCatalog(next)
                 self.entries = next
                 try? disk.saveLocatorReceipt(receipt)

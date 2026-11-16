@@ -323,6 +323,7 @@ struct ShelfView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(entry.title)
                         .accessibilityIdentifier("study.heroTitle")
+                        .accessibilityLabel(entry.title)
                         .font(Theme.serif(20))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
@@ -332,10 +333,12 @@ struct ShelfView: View {
                         .lineLimit(1)
                     heroProgress(entry)
                     if entry.started, entry.chapterCount > 0 {
-                        Text("第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
+                        let chapter = "第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")"
+                        Text(chapter)
                             .font(.caption2)
                             .foregroundStyle(Theme.ink3)
                             .accessibilityIdentifier("study.heroChapter")
+                            .accessibilityLabel(chapter)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

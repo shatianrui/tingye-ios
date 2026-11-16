@@ -272,4 +272,30 @@ final class LocatorMigrationTests: XCTestCase {
         XCTAssertEqual(decoded.books[0].highlights?[0].note, "笔记")
         XCTAssertEqual(decoded.books[0].listeningProgress?.locator, result.locator)
     }
+
+    func testLocatorMigrationKeepsRecentReadingOrder() async throws {
+        let base = try LocatorTestSupport.temporary(self)
+        let disk = try LibraryDisk(owner: "recency-" + UUID().uuidString, base: base)
+        var recent = LocatorTestSupport.book(["最近读过的一句。", "第二句。"], format: "TXT")
+        recent.fields["id"] = .string("recent-book")
+        var older = LocatorTestSupport.book(["更早的一句。"], format: "TXT")
+        older.fields["id"] = .string("older-book")
+        try disk.write(recent)
+        try disk.write(older)
+        let recentRow = ShelfEntry(book: recent, progress: .init(chapter: 1, position: 0, updatedAt: 200))
+        let olderRow = ShelfEntry(book: older, progress: .init(chapter: 0, position: 0, updatedAt: 100))
+        try disk.saveCatalog([recentRow, olderRow])
+        let model = try isolatedModel(disk: disk)
+        defer { model.cancelAllLocatorMigrations() }
+        await model.migrateLocators(recent.id)
+        await model.migrateLocators(older.id)
+        let recentEntry = try XCTUnwrap(model.entries.first { $0.id == recent.id })
+        let olderEntry = try XCTUnwrap(model.entries.first { $0.id == older.id })
+        XCTAssertNotNil(recentEntry.progress.locator)
+        XCTAssertNotNil(olderEntry.progress.locator)
+        XCTAssertEqual(model.lastReadingBook?.id, recent.id, "后迁移的书不能变成最近在读")
+        XCTAssertGreaterThan(recentEntry.progress.updatedAt, olderEntry.progress.updatedAt)
+        XCTAssertLessThan(recentEntry.progress.updatedAt - 200, 1)
+        XCTAssertLessThan(olderEntry.progress.updatedAt - 100, 1)
+    }
 }

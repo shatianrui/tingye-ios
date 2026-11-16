@@ -103,6 +103,19 @@ final class DesignFlowTests: XCTestCase {
         var text: [String] = []
         var frames: [CGRect] = []
         var pdf: NSDictionary = [:]
+
+        /// Readium 网页的无障碍坐标会在 1 点内来回跳动。工具显隐真正挪动正文栏时位移远大于这个容差。
+        func nearlyEquals(_ other: ReaderLayoutCapture, tolerance: CGFloat = 2) -> Bool {
+            text == other.text && pdf == other.pdf
+                && Self.framesMatch(viewport, other.viewport, tolerance: tolerance)
+                && frames.count == other.frames.count
+                && zip(frames, other.frames).allSatisfy { Self.framesMatch($0, $1, tolerance: tolerance) }
+        }
+
+        private static func framesMatch(_ lhs: CGRect, _ rhs: CGRect, tolerance: CGFloat) -> Bool {
+            abs(lhs.minX - rhs.minX) <= tolerance && abs(lhs.minY - rhs.minY) <= tolerance
+                && abs(lhs.width - rhs.width) <= tolerance && abs(lhs.height - rhs.height) <= tolerance
+        }
     }
 
     private func nativeLayout(in app: XCUIApplication) -> ReaderLayoutCapture? {
@@ -134,7 +147,7 @@ final class DesignFlowTests: XCTestCase {
         var stableSince = Date()
         waitForReadingCondition({
             guard let next = capture(), next.viewport.width > 40, next.viewport.height > 80 else { return false }
-            if next == last { return Date().timeIntervalSince(stableSince) >= 0.5 }
+            if let last, next.nearlyEquals(last) { return Date().timeIntervalSince(stableSince) >= 0.5 }
             last = next; stableSince = Date(); return false
         }, "真实正文布局应连续稳定", file: file, line: line)
         return try XCTUnwrap(last, file: file, line: line)
@@ -156,7 +169,12 @@ final class DesignFlowTests: XCTestCase {
             turns += 1
             // 等这一翻落地（捕获变化或落到无正文的块页）后再继续判断，避免对着过渡帧连点。
             let settle = Date().addingTimeInterval(3)
-            while Date() < settle, capture() == before { Thread.sleep(forTimeInterval: 0.2) }
+            while Date() < settle {
+                let next = capture()
+                let unchanged = (next == nil && before == nil) || (next.map { current in before?.nearlyEquals(current) ?? false } ?? false)
+                if !unchanged { break }
+                Thread.sleep(forTimeInterval: 0.2)
+            }
         }
         return nil
     }
@@ -181,10 +199,9 @@ final class DesignFlowTests: XCTestCase {
         for (index, visible) in [false, true, false, true].enumerated() {
             setReadingTools(visible, in: app, frame: baseline.viewport)
             let current = try captureReaderLayout(capture, file: file, line: line)
-            XCTAssertEqual(current.viewport, baseline.viewport, "工具显隐不能移动或收缩实际正文视口", file: file, line: line)
             XCTAssertEqual(current.text, baseline.text, "实际页文字应保持，不能仅让章节编号不变", file: file, line: line)
-            XCTAssertEqual(current.frames, baseline.frames, "实际正文元素不能重排或平移", file: file, line: line)
             XCTAssertEqual(current.pdf, baseline.pdf, "工具显隐不能改变 PDF 页码、缩放或页内位置", file: file, line: line)
+            XCTAssertTrue(current.nearlyEquals(baseline), "工具显隐不能移动或收缩实际正文视口，也不能重排正文元素", file: file, line: line)
             if index == 0 || index == 3 { screenshot(app, "\(name)-\(visible ? "显示工具" : "隐藏工具")") }
         }
         XCTAssertFalse(app.buttons["reader.toggle"].exists, "工具显隐不应启动辅助听书", file: file, line: line)
@@ -241,9 +258,19 @@ final class DesignFlowTests: XCTestCase {
         let texts = web.staticTexts.allElementsBoundByIndex.filter { text in
             let area = text.frame.intersection(web.frame)
             return !text.label.isEmpty && !area.isNull && area.width > 1 && area.height > 1
+        }.sorted { a, b in
+            let ay = (a.frame.minY / 4).rounded(), by = (b.frame.minY / 4).rounded()
+            if ay != by { return ay < by }
+            let ax = (a.frame.minX / 4).rounded(), bx = (b.frame.minX / 4).rounded()
+            if ax != bx { return ax < bx }
+            return a.label < b.label
         }
         guard !texts.isEmpty else { return nil }
-        return .init(viewport: web.frame, text: texts.map(\.label), frames: texts.map(\.frame))
+        func quantize(_ frame: CGRect) -> CGRect {
+            func q(_ value: CGFloat) -> CGFloat { (value / 2).rounded() * 2 }
+            return CGRect(x: q(frame.minX), y: q(frame.minY), width: q(frame.width), height: q(frame.height))
+        }
+        return .init(viewport: quantize(web.frame), text: texts.map(\.label), frames: texts.map { quantize($0.frame) })
     }
     func testEPUBDerivedFixtureSmokeAndSearch() {
         let app = launch("reader-original", original: true)
@@ -518,7 +545,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["study.heroContinue"].waitForExistence(timeout: 5))
         app.buttons["study.heroContinue"].tap()
         XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2", "退出重开应恢复独立阅读断点")
+        waitForReadingCondition({ app.staticTexts["reader.currentChapter"].label == "2 / 2" }, "退出重开应恢复独立阅读断点")
         app.buttons["reader.returnToSpeech"].tap()
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2")
         screenshot(app, "阅读优先-固定阅读工具与独立听书进度")
@@ -810,9 +837,8 @@ final class DesignFlowTests: XCTestCase {
         for visible in [false, true, false, true] {
             setEPUBTools(visible, in: app, web: web)
             let current = try captureReaderLayout(capture)
-            XCTAssertEqual(current.viewport, reading.viewport)
-            XCTAssertEqual(current.text, reading.text)
-            XCTAssertEqual(current.frames, reading.frames)
+            XCTAssertEqual(current.text, reading.text, "工具显隐不能换掉当前页文字")
+            XCTAssertTrue(current.nearlyEquals(reading), "工具显隐不能移动或收缩 EPUB 正文栏")
         }
         for _ in 0..<turns { web.swipeRight() }
         waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
