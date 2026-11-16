@@ -333,6 +333,7 @@ struct ShelfView: View {
                     if entry.started, entry.chapterCount > 0 {
                         Text("第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
                             .font(.caption2)
+                            .monospacedDigit()
                             .foregroundStyle(Theme.ink3)
                     }
                 }
@@ -355,7 +356,7 @@ struct ShelfView: View {
                     .accessibilityIdentifier("study.heroFocus")
             }
         }
-        .padding(16)
+        .padding(Theme.insetCompact)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line, lineWidth: 1) }
         .softCardShadow()
@@ -393,7 +394,7 @@ struct ShelfView: View {
     private var addBooksMenu: some View {
         Button { searching = false; showingSources = true } label: {
             Label("添书", systemImage: Icon.add)
-                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onInk)
+                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.onInk)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
                 .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
@@ -414,7 +415,7 @@ struct ShelfView: View {
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Theme.insetCompact)
             .frame(minHeight: 48)
             .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .contentShape(Rectangle())
@@ -430,10 +431,10 @@ struct ShelfView: View {
                 kindButton("书籍", value: "books")
                 kindButton("漫画", value: "comics")
                 Button { showingGroups.toggle() } label: {
-                    Text("分组").font(.caption).padding(.horizontal, 16).frame(minHeight: 40)
-                        .foregroundStyle(showingGroups ? Theme.onAccent : Theme.ink2)
-                        .background(showingGroups ? Theme.accent : Theme.surface2, in: Capsule())
-                }.buttonStyle(.plain).accessibilityAddTraits(showingGroups ? .isSelected : [])
+                    Text("分组")
+                }
+                .buttonStyle(ChipPillStyle(selected: showingGroups))
+                .accessibilityAddTraits(showingGroups ? .isSelected : [])
                 libraryOptions
             }
         }
@@ -446,11 +447,9 @@ struct ShelfView: View {
             Haptics.selection()
             withAnimation(Theme.pressSpring) { kind = value; category = nil; showingGroups = false }
         } label: {
-            Text(L(title)).font(.caption).padding(.horizontal, 16).frame(minHeight: 40)
-                .foregroundStyle(selected ? Theme.onAccent : Theme.ink2)
-                .background(selected ? Theme.accent : Theme.surface2, in: Capsule())
+            Text(L(title))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ChipPillStyle(selected: selected))
         .accessibilityLabel("\(title)，\(count) 本")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -459,7 +458,7 @@ struct ShelfView: View {
         if editing {
             adaptiveRow {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("已选择 \(selection.count) 本书").font(.headline).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                    Text("已选择 \(selection.count) 本书").font(Theme.serif(17)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                     Text(summary).font(.caption).foregroundStyle(Theme.ink3)
                 }
                 Spacer(minLength: 8)
@@ -632,7 +631,7 @@ struct ShelfView: View {
 
     private var shelfSearchBar: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("搜索书库").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
+            Text("搜索书库").font(Theme.serif(28)).foregroundStyle(Theme.ink)
             Text("按书名、作者或分组搜索").font(.caption).foregroundStyle(Theme.ink2)
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
@@ -699,7 +698,7 @@ struct ShelfView: View {
         VStack(alignment: .leading, spacing: 12) {
             if !savedSearches.isEmpty {
                 HStack {
-                    Text("最近搜索").font(Theme.sans(20, weight: .bold)).foregroundStyle(Theme.ink)
+                    Text("最近搜索").font(Theme.serif(20)).foregroundStyle(Theme.ink)
                     Spacer()
                     Button("清空") { savedSearches = "" }.font(.caption).frame(minHeight: 44)
                 }
@@ -715,7 +714,7 @@ struct ShelfView: View {
                 }
             }
             Text("搜索覆盖所有分组。隐藏书籍需验证后查看。")
-                .font(.caption).foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .font(.caption).foregroundStyle(Theme.ink2).padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
         }
     }
@@ -829,7 +828,7 @@ struct ShelfView: View {
             HStack(spacing: 6) {
                 if !useList {
                     Text(entry.local ? (entry.started ? entry.percentText : "待读") : "iCloud")
-                        .font(Theme.kicker).tracking(1)
+                        .font(Theme.kicker).tracking(Theme.kickerTracking)
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink2)
                     Spacer(minLength: 0)
@@ -884,6 +883,7 @@ struct ShelfView: View {
             .padding(.top, 6)
             Text("\(books.count) 本书")
                 .font(.system(size: 11.5))
+                .monospacedDigit()
                 .foregroundStyle(Theme.ink3)
                 .padding(.top, 2)
         }
@@ -1026,7 +1026,7 @@ struct ShelfView: View {
                         .frame(minHeight: 76)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressButtonStyle(scale: 0.99))
+                    .buttonStyle(PressButtonStyle())
                     .contextMenu { folderMenu(path) }
                     folderActions(path).padding(.trailing, 10)
                 }
@@ -1130,7 +1130,7 @@ struct ShelfView: View {
         }
         .padding(12)
         .floatingPanel(cornerRadius: Theme.radius)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Theme.insetCompact)
         .padding(.bottom, 8)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
@@ -1295,7 +1295,7 @@ struct ImportResultsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("导入结果").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
+                    Text("导入结果").font(Theme.serif(28)).foregroundStyle(Theme.ink)
                     Spacer()
                     CircleIconButton(systemName: Icon.close, label: "关闭导入结果") { dismiss() }
                 }
@@ -1303,12 +1303,12 @@ struct ImportResultsView: View {
                 if let report = model.importReport {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(report.finished ? (report.failures > 0 ? "\(report.successes) 本成功，\(report.failures) 本需要处理" : "\(report.successes) 本书导入成功") : "正在导入书籍")
-                            .font(Theme.sans(20, weight: .bold)).foregroundStyle(Theme.ink)
+                            .font(Theme.serif(20)).foregroundStyle(Theme.ink)
                         Text("全部 \(report.items.count) 个文件 · " + (report.finished ? "本次导入已完成" : "已处理 \(report.completed) 个"))
                             .font(.caption).foregroundStyle(Theme.ink2)
                         if !report.finished { ProgressView(value: Double(report.completed), total: Double(max(1, report.items.count))).tint(Theme.accent) }
                     }
-                    .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.inset).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
                     LazyVStack(spacing: 10) {
                         ForEach(report.items) { item in
@@ -1319,7 +1319,7 @@ struct ImportResultsView: View {
                                     resultDescription(item)
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .padding(16).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+                            .padding(Theme.insetCompact).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
                             .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                             .accessibilityElement(children: .combine)
                         }
@@ -1329,7 +1329,7 @@ struct ImportResultsView: View {
                             .buttonStyle(SecondaryButtonStyle(height: 50)).disabled(model.busy)
                         Button("前往书库") { model.tab = 0; dismiss() }.buttonStyle(PrimaryButtonStyle(height: 50))
                         Text(report.failures > 0 ? "成功与失败逐项显示；已成功的文件会保留。请检查原因后重新选择失败文件。" : "文件已保存到本机书库，可以开始阅读了。")
-                            .font(.caption).foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                            .font(.caption).foregroundStyle(Theme.ink2).padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
                             .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                     }
                 } else {

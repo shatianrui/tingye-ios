@@ -10,29 +10,47 @@ struct StorageView: View {
     var body: some View {
         Form {
             Section {
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.space3) {
+                    // 陶土只在这里出现一次：把视线引到总量上。
+                    Capsule().fill(Theme.clay).frame(width: 3, height: 26)
+                        .accessibilityHidden(true)
                     Text(StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
-                        .font(Theme.display(34, relativeTo: .largeTitle)).monospacedDigit()
+                        .font(Theme.mono(30, weight: .medium))
+                        .foregroundStyle(Theme.ink)
                     Spacer()
-                    if scanning { ProgressView() }
+                    if scanning {
+                        ProgressView().controlSize(.small).tint(Theme.ink3)
+                    }
                 }
+                .frame(minHeight: 56)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("听页共占用 " + StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
             } header: { Text("总占用") }
-            .listRowBackground(Theme.accentSoft)
+            .listRowBackground(Theme.surface)
 
             Section {
                 ForEach(usage) { item in
-                    HStack(spacing: 12) {
+                    HStack(spacing: Theme.space3) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(item.kind.title)
+                            Text(item.kind.title).foregroundStyle(Theme.ink)
                             Text(item.kind.detail).font(.caption).foregroundStyle(Theme.ink3)
                         }
-                        Spacer()
-                        Text(StorageUsage.format(item.bytes)).monospacedDigit().foregroundStyle(Theme.ink2)
+                        Spacer(minLength: Theme.space2)
+                        Text(StorageUsage.format(item.bytes))
+                            .font(Theme.mono(14))
+                            .foregroundStyle(Theme.ink2)
                         if item.kind.clearable {
                             Button("清理") { clear(item.kind) }
-                                .buttonStyle(.borderless).foregroundStyle(Theme.accent)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Theme.ink2)
+                                .padding(.horizontal, 12)
+                                .frame(minHeight: 32)
+                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadiusSmall, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: Theme.buttonRadiusSmall, style: .continuous)
+                                        .strokeBorder(Theme.line, lineWidth: 1)
+                                }
+                                .opacity(item.bytes == 0 ? 0.4 : 1)
                                 .disabled(item.bytes == 0)
                                 .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
                         }
@@ -40,18 +58,20 @@ struct StorageView: View {
                     .frame(minHeight: 44)
                 }
             } header: { Text("分项") } footer: { Text("清理缓存不会删除书籍、进度或书摘；语音缓存清理后，云语音会在下次朗读时重新合成。") }
-            .listRowBackground(Theme.surface)
+            .listRowBackground(Theme.bg)
 
             Section {
                 Button("清理全部缓存") { confirmAll = true }
+                    .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("storage.clearAll")
                 Button("修复书库索引") {
                     model.clearIndexCache()
                     model.notify("已重建封面与分类索引。")
                     rescan()
                 }
+                .buttonStyle(PrimaryButtonStyle())
             } footer: { Text("书架上的封面、分类显示不对或书籍消失时，可以修复书库索引；书籍文件本身不会改动。") }
-            .listRowBackground(Theme.surface)
+            .listRowBackground(Theme.bg)
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)

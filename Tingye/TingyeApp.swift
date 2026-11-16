@@ -221,7 +221,7 @@ struct StudyRootView: View {
                                     .frame(width: 44, height: 44)
                                     .contentShape(Rectangle())
                             }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
+                            .buttonStyle(PressButtonStyle())
                             .accessibilityLabel("我的")
                             .accessibilityIdentifier("study.openProfile")
                         }
@@ -415,7 +415,7 @@ struct MiniPlayer: View {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(Theme.serif(15))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
@@ -444,7 +444,7 @@ struct MiniPlayer: View {
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(PressButtonStyle(scale: 0.88))
+                        .buttonStyle(PressButtonStyle())
                         .accessibilityLabel("回到朗读处：第 \(player.chapter + 1) 章")
                         .accessibilityIdentifier("miniPlayer.returnToSpeech")
                     }
@@ -464,7 +464,7 @@ struct MiniPlayer: View {
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressButtonStyle(scale: 0.88))
+                    .buttonStyle(PressButtonStyle())
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
@@ -477,10 +477,10 @@ struct MiniPlayer: View {
             .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.insetCompact)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 16).padding(.vertical, 4)
+            .padding(.horizontal, Theme.insetCompact).padding(.vertical, 4)
             .background(Theme.surface)
         }
     }
@@ -512,7 +512,7 @@ private struct FeedbackOverlay: ViewModifier {
                             .accessibilityIdentifier("import.results")
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.insetCompact)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .background(Theme.surface)
                 .overlay(alignment: .bottom) { RowDivider() }
