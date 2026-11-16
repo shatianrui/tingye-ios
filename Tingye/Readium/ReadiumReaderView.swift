@@ -16,7 +16,7 @@ enum EPUBApproximateProgress {
 final class ReadiumReaderSession: ObservableObject {
     struct ContentsItem: Identifiable {
         let id: String
-        let link: Link
+        let link: ReadiumShared.Link
         let depth: Int
     }
     @Published private(set) var publication: Publication?
@@ -32,7 +32,7 @@ final class ReadiumReaderSession: ObservableObject {
     private var generation = UUID()
     private var bookID: String?
 
-    static func flatten(_ links: [Link], prefix: String = "", depth: Int = 0) -> [ContentsItem] {
+    static func flatten(_ links: [ReadiumShared.Link], prefix: String = "", depth: Int = 0) -> [ContentsItem] {
         links.enumerated().flatMap { index, link in
             let id = prefix + String(index)
             return [ContentsItem(id: id, link: link, depth: depth)] + flatten(link.children, prefix: id + ".", depth: depth + 1)
@@ -161,7 +161,7 @@ struct ReadiumReaderView: View {
                         preferences: ReadiumPreferencesBridge.preferences(
                             prefs, darkAppearance: darkAppearance, alwaysLight: alwaysLight,
                             doublePage: doublePage, viewportWidth: geometry.size.width,
-                            fixedLayout: publication.metadata.epubLayout == .fixed,
+                            fixedLayout: publication.metadata.layout == .fixed,
                             fontFamily: ReadiumFontProvider.family(for: font, files: fonts),
                             fontLineHeight: ReadiumFontProvider.lineHeight(for: font, size: fontSize, files: fonts)),
                         fonts: fonts, request: request, onLocation: locationChanged,
@@ -261,7 +261,7 @@ struct ReadiumReaderView: View {
                 ForEach(session.contents) { item in
                     Button {
                         expectedLocation = nil; expectedChapter = nil
-                        // go(to: Link) 由 Publication.locate 解释目录 fragment/type。
+                        // go(to: ReadiumShared.Link) 由 Publication.locate 解释目录 fragment/type。
                         request = .init(link: item.link)
                         sheet = nil
                     } label: {

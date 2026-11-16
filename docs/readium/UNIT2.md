@@ -2,7 +2,7 @@
 
 实施日期：2026-11-16 UTC。本轮为中断续跑，保留上一轮实现，先完整重读原任务书、PLAN 和 UNIT1，再补齐接线与边界。未执行 git 操作，未改构建号、workflow 或 PR #13 测试线。
 
-交付状态：实现、工程挂接、12 项测试源码及本报告已落盘，静态检查通过；**本轮未经 Swift 编译、XCTest、CI 或设备验证，不标记为验收通过。**
+交付状态：**已按 CI 报错修复，待重新验证**。实现、工程挂接、12 项测试源码及本报告已落盘；CI 修复仅完成静态自查，尚未重新执行 Swift 编译、XCTest、CI 或设备验证，不标记为验收通过。
 
 ## 中断恢复盘点
 
@@ -115,3 +115,24 @@
 | 资源级近似恢复，精确引用留单元 3 | **已实现、比例/原包映射测试已写，未运行。** 显式跳转失败保留请求，不静默回第一章；完整 Locator 持久化、四类引用迁移、划线/书签 Decoration 与选区创建均未做。 |
 
 未移植原生自动翻页、书内搜索/跟读等超出本任务书基础 chrome 的能力；听书当前仅按章起播，精确句级联动留单元 4。未做新性能、低存储、异常杀进程实测，也未审计完原包脚本/隐式网络资源策略；这些仍在 PLAN 后续全量验收范围。没有新增二进制夹具，没有删除或重写既有划线/书签数据。
+
+## CI 修复记录
+
+修复日期：2026-11-16 UTC。根据提供的 CI 日志，单元 2 推送（远端 e648fab）后的 Build unsigned IPA 与 Tests 均在编译阶段失败，单测执行数为 0。本次仅修改 `EPUBNavigatorHost.swift`、`ReadiumReaderView.swift` 与本报告；交付状态为 **已按 CI 报错修复，待重新验证**。
+
+| 错误 | 最小修复与依据 |
+| --- | --- |
+| 两文件共 5 处 `Link` 在 SwiftUI 与 ReadiumShared 之间歧义 | 将 Host 的 Request 属性、初始化参数、导航 delegate 参数，以及 Session 的 ContentsItem 属性、flatten 数组元素类型全部写为 `ReadiumShared.Link`。这些都是出版物资源链接，没有 SwiftUI 链接控件。依据为 3.11.1 的 [Link.swift](https://github.com/readium/swift-toolkit/blob/3.11.1/Sources/Shared/Publication/Link.swift)：`href: String`、`title: String?`、`children: [Link]` 均公开。 |
+| `publication.metadata.epubLayout` 因 internal 不可访问 | 改用公开 API `publication.metadata.layout == .fixed`。[Metadata.swift](https://github.com/readium/swift-toolkit/blob/3.11.1/Sources/Shared/Publication/Metadata.swift) 公开声明 `layout: Layout?`，[Layout.swift](https://github.com/readium/swift-toolkit/blob/3.11.1/Sources/Shared/Publication/Layout.swift) 公开定义 fixed/reflowable/scrolled。[Navigator 的 EPUBExtensions.swift](https://github.com/readium/swift-toolkit/blob/3.11.1/Sources/Navigator/EPUB/EPUBExtensions.swift) 中内部 epubLayout 的实现正是 `layout == .fixed ? .fixed : .reflowable`，因此比较结果完全等价：仅 fixed 为 true，reflowable/scrolled/nil 仍为 false；偏好桥接的两个分支均未改动。 |
+| ForEach 推断成 Binding、`init(link:)` 标签不匹配，以及 title/href/depth 的级联类型错误 | 修正 Link 后静态核对：`session.contents` 是 `[ContentsItem]`，元素遵循 Identifiable 且 `id: String`；`item.link` 与 Request 的 `init(link:)` 均为 `ReadiumShared.Link`；`title ?? href` 为 String，`depth` 为 Int。保留原值数组 ForEach 与目录 UI 结构，只同步限定注释中的类型名。现有类型链支持级联错误判断，尚未经过编译确认错误是否全部消失。 |
+
+本次直接读取并核对以上 **3.11.1 标签**的上游源码；Package.resolved 仍锁定 3.11.1（revision `9a8c094b72245fd27043c9d298005e5c78b32a01`），未引用其他版本 API，也未改用 readingOrder 的逐资源布局来改变原出版物级判断。
+
+静态自查结果：
+
+- 全量搜索 `Tingye/Readium` 的 10 个 Swift 文件，并覆盖两个 Readium 测试文件：所有指 Readium 的 Link 均已全限定，两个报错文件无未限定 Link；Readium Locator 原已全限定，无 Decoration 实现。`ReadiumReaderView.swift` 的 `Locator.resolve` 属于 `Tingye/Models.swift` 定义的本模块旧进度解析器，保留其含义与调用；Navigator 的 Color 在偏好桥接中原已全限定。未发现其他需新增限定的 SwiftUI/Readium 撞名用法。
+- ForEach 的集合、元素标识、Link 初始化参数、标题和缩进类型链静态自洽；对照修复前快照，目录实现仅变更类型名注释，未改 UI 结构。对 fixed/reflowable/scrolled/nil 四种输入的逻辑核对与内部 epubLayout 结果一致。
+- 重跑既有 `/tmp/readium-unit2/validate_sources.py` 通过：16 个相关 Swift 文件定界符/空白检查、路由顺序、语言目录与 12 个测试方法存在性检查。该脚本不执行 Swift 类型检查或 XCTest。
+- 对照本次编辑前的工作区 SHA-256 快照，变更仅限上述三个文件；工程文件、构建号 142、workflows 和 Package.resolved 均未改变。未执行任何 git 操作。
+
+本环境仍无 `swift` 与 `xcodebuild`，本次未运行 Swift 编译、XCTest、archive 或 CI；后续须重新验证 Build unsigned IPA 与 Tests，不能将静态自查视为 CI 已通过。

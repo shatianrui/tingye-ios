@@ -17,9 +17,9 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     struct Request {
         let id = UUID()
         let locator: ReadiumShared.Locator?
-        let link: Link?
+        let link: ReadiumShared.Link?
         init(locator: ReadiumShared.Locator) { self.locator = locator; link = nil }
-        init(link: Link) { self.link = link; locator = nil }
+        init(link: ReadiumShared.Link) { self.link = link; locator = nil }
     }
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIViewController(context: Context) -> Container {
@@ -136,7 +136,7 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
         func navigator(_ navigator: Navigator, presentExternalURL url: URL) {
             UIApplication.shared.open(url)
         }
-        func navigator(_ navigator: VisualNavigator, shouldNavigateToLink link: Link) -> Bool {
+        func navigator(_ navigator: VisualNavigator, shouldNavigateToLink link: ReadiumShared.Link) -> Bool {
             if let url = URL(string: link.href), let scheme = url.scheme {
                 if ["http", "https", "mailto", "tel"].contains(scheme.lowercased()) { UIApplication.shared.open(url) }
                 return false
