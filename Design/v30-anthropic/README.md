@@ -78,3 +78,23 @@ error: The stickers icon set, app icon set, or icon stack named "AppIcon" did no
 | `previews/` 渲染图 | 跑 `python3 Design/v30-anthropic/render-previews.py` 完整重建（需 playwright + Chromium） |
 
 矢量源（`app-icon/icon-{light,dark,tinted}.svg`）、生成器、渲染脚本、全部校验脚本都是文本，都在仓库里，可复现。
+
+## 验证现状（GitHub Actions 真实结果）
+
+PR #15 触发 `Tests` 工作流，macOS runner 的真实结论：
+
+| 项目 | 结果 |
+|---|---|
+| `Tingye` 目标编译 | ✅ 216 个 `SwiftCompile` 任务，0 个 `error:`，21 个改动文件全部进入编译 |
+| 资源目录 `actool` | ✅ 0 错误 |
+| 单元测试（113 条） | ✅ `Executed 113 tests, with 0 failures`（run #34、#36 连续两次） |
+| UI 回归（27 条） | 非阻断 job（`continue-on-error: true`） |
+
+书内搜索框不可命中的用例已修复：系统的 `.searchable` 收起式抽屉在模拟器上取不到有效激活点
+（三次运行失败位置不一致，属竞态而非确定性缺陷）。修法来自仓库作者的 `0a338be`，
+本分支已移植 —— `placement: .navigationBarDrawer(displayMode: .always)` + 搜索态 `.large` sheet。
+
+> 该仓库的 UI 套件整体抖动明显：改动前的 `readium-engine` 分支上，同一批 27 条用例每次失败 5–6 条，
+> 且每次挂的用例都不同。仓库本身已把 UI job 标为非阻断，与此一致。
+
+详见 [`DESIGN.md`](DESIGN.md) §12。
