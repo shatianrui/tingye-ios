@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 目录面板</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .tb-mid .title { display: block; }
+  .reader-body { padding-top: var(--ty-space-2); }
+  .reader-body p { margin: 0 0 var(--ty-space-5); font-size: 19px; line-height: 1.95; text-align: justify; }
+
+  /* 目录面板 */
+  .sheet { padding: var(--ty-space-4) var(--ty-inset) var(--ty-space-6); }
+  .sheet-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--ty-space-3); }
+  .sheet-head .meta { font-size: var(--ty-caption); color: var(--ty-ink-4); white-space: nowrap; }
+
+  .toc { list-style: none; margin: var(--ty-space-2) 0 0; padding: 0; }
+  .toc li {
+    display: flex; align-items: center; gap: var(--ty-space-3);
+    padding: var(--ty-space-3) 0 var(--ty-space-3) var(--ty-space-3);
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid var(--ty-line);
+    min-height: var(--ty-min-touch);
+  }
+  .toc li .n { flex: none; width: 22px; font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-ink-4); }
+  .toc li .t { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .toc li .m { flex: none; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+  .toc li.is-current {
+    border-left-color: var(--ty-clay);
+    background: var(--ty-clay-soft);
+    border-radius: 0 var(--ty-radius-sm) var(--ty-radius-sm) 0;
+  }
+  .toc li.is-current .t { color: var(--ty-clay-text); font-weight: 500; }
+  .toc li.is-current .n,
+  .toc li.is-current .m { color: var(--ty-clay-text); }
+  .sheet-foot { margin-top: var(--ty-space-4); }
+  .sheet-foot .btn-secondary { width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid">
+          <span class="title">故乡</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="书签">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 4h11v16l-5.5-4.2L6.5 20z"></path></svg>
+        </button>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="content paper reader-body">
+        <p>我冒了严寒，回到相隔二千余里，别了二十余年的故乡去。</p>
+        <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。</p>
+        <p>阿！这不是我二十年来时时记得的故乡？</p>
+      </div>
+    </div>
+
+    <!-- 遮罩 + 底部升起面板 -->
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-label="目录">
+      <div class="sheet-head">
+        <div>
+          <div class="t-book">故乡</div>
+          <div class="t-caption" style="margin-top:2px">鲁迅 · 演示书目</div>
+        </div>
+        <div class="meta">12 章 · 已读 42% · 演示</div>
+      </div>
+
+      <hr class="rule" style="margin: var(--ty-space-3) 0 var(--ty-space-1)">
+
+      <ul class="toc">
+        <li><span class="n">01</span><span class="t">少年闰土</span><span class="m">24 页</span></li>
+        <li><span class="n">02</span><span class="t">离乡之前</span><span class="m">18 页</span></li>
+        <li class="is-current"><span class="n">03</span><span class="t">船舱里的冬天</span><span class="m">正在读</span></li>
+        <li><span class="n">04</span><span class="t">故乡</span><span class="m">20 页</span></li>
+        <li><span class="n">05</span><span class="t">回到绍兴</span><span class="m">16 页</span></li>
+        <li><span class="n">06</span><span class="t">闰土的近况</span><span class="m">26 页</span></li>
+        <li><span class="n">07</span><span class="t">那一片银色的沙滩</span><span class="m">14 页</span></li>
+      </ul>
+
+      <div class="sheet-foot">
+        <button class="btn-secondary" type="button">收起</button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">阅读器 · 目录面板</div>
+    <div class="cap-note">
+      底部升起面板，顶部 2px 墨线代替拖拽横条。书名 + 章列表，当前章用「3px 陶土竖条 + 淡陶土铺底 + 陶土文字」三重标记；
+      底部一枚白底发丝线次按钮「收起」。面板内不出现卡片壳，章节行之间只留发丝线。
+    </div>
+    <div class="cap-tokens">
+      surface / line / clay / clay-soft / clay-text · 面板 radius-lg · 章节行高 ≥44 · 演示书目
+    </div>
+  </div>
+</div>
+</body>
+</html>

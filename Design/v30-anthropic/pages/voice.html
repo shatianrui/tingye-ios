@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 声音设置</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+
+  .grp { margin-bottom: var(--ty-space-4); }
+  .grp .k {
+    font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker);
+    color: var(--ty-ink-3); text-transform: uppercase; margin-bottom: var(--ty-space-1);
+  }
+  .grp .note { font-size: var(--ty-caption); color: var(--ty-ink-4); margin-top: var(--ty-space-2); }
+
+  .prov {
+    display: flex; align-items: center; gap: var(--ty-space-3);
+    min-height: var(--ty-min-touch); padding: var(--ty-space-2) 0;
+    border-bottom: 1px solid var(--ty-line);
+  }
+  .prov .name { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .prov .state { flex: none; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+  .prov.is-on .state { color: var(--ty-clay-text); }
+  .prov.is-on .name { font-weight: 500; color: var(--ty-ink); }
+
+  .expanded {
+    margin: var(--ty-space-2) 0 var(--ty-space-3);
+    padding: var(--ty-space-4);
+    background: var(--ty-clay-soft); border-left: 3px solid var(--ty-clay);
+    border-radius: 0 var(--ty-radius-sm) var(--ty-radius-sm) 0;
+  }
+  .expanded .flabel { font-size: var(--ty-caption); color: var(--ty-ink-2); margin-bottom: var(--ty-space-2); }
+  .expanded .field { background: var(--ty-surface); }
+  .expanded .hint { margin-top: var(--ty-space-2); font-size: var(--ty-caption); color: var(--ty-ink-3); }
+  .expanded .vrow {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--ty-space-3);
+    margin-top: var(--ty-space-2); padding-top: var(--ty-space-2); border-top: 1px solid var(--ty-line);
+    font-size: var(--ty-body); color: var(--ty-ink-strong);
+  }
+  .expanded .vrow span.v { color: var(--ty-ink-3); font-size: var(--ty-caption); }
+
+  .speed-row { display: flex; align-items: center; gap: var(--ty-space-3); }
+  .speed-row .val { width: 46px; text-align: right; font-size: var(--ty-caption); color: var(--ty-ink-2); }
+  .slider { flex: 1; min-width: 0; height: var(--ty-min-touch); -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+  .slider::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--ty-line); }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -8.5px;
+    border-radius: 50%; background: var(--ty-surface); border: 1.5px solid var(--ty-ink); box-shadow: var(--ty-shadow-sm);
+  }
+  .slider::-moz-range-track { height: 3px; border-radius: 2px; background: var(--ty-line); }
+  .slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--ty-surface); border: 1.5px solid var(--ty-ink); }
+
+  .try { width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回听书面板">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid"><span class="title">声音</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content">
+        <!-- 系统声音 -->
+        <div class="grp">
+          <div class="k">系统声音</div>
+          <div class="prov is-on">
+            <span class="seal-dot"></span>
+            <span class="name">系统声音（免费 · 离线）</span>
+            <span class="state">使用中</span>
+          </div>
+          <div class="note">设备内置音色，不联网、不计费，适合快速试读。</div>
+        </div>
+
+        <!-- 云端语音提供方 -->
+        <div class="grp">
+          <div class="k">云端语音 · 按用量计费</div>
+          <div class="prov is-on">
+            <span class="seal-dot"></span>
+            <span class="name">智谱 GLM</span>
+            <span class="state">已连接 · 演示</span>
+          </div>
+          <div class="expanded">
+            <div class="flabel">API Key</div>
+            <input class="field" type="password" placeholder="粘贴 API Key" aria-label="智谱 GLM 的 API Key">
+            <div class="hint">密钥只保存在本机。本演示稿未填入真实密钥。</div>
+            <div class="vrow">音色<span class="v">清和 · 女声（演示）</span></div>
+          </div>
+          <div class="prov">
+            <span class="name">MiniMax</span>
+            <span class="state">未配置</span>
+          </div>
+          <div class="prov">
+            <span class="name">Azure 语音</span>
+            <span class="state">未配置</span>
+          </div>
+          <div class="prov">
+            <span class="name">ElevenLabs</span>
+            <span class="state">未配置</span>
+          </div>
+          <div class="prov">
+            <span class="name">自定义（OpenAI 兼容）</span>
+            <span class="state">未配置</span>
+          </div>
+        </div>
+
+        <!-- 语速 -->
+        <div class="grp">
+          <div class="k">语速</div>
+          <div class="speed-row">
+            <svg class="ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 12h2M8 8.5v7M12 5.5v13M16 8.5v7M20 11v2"></path></svg>
+            <input class="slider" type="range" min="50" max="200" value="100" aria-label="语速，当前 1.0 倍">
+            <span class="val mono">1.0×</span>
+          </div>
+        </div>
+
+        <button class="btn-primary try" type="button">
+          <svg class="ico fill" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M4.5 9.5h3l4-3.5v12l-4-3.5h-3z"></path>
+            <path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>
+          </svg>
+          <span>试听这一句</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">听书 · 声音设置</div>
+    <div class="cap-note">
+      声音提供方分组列出：系统声音（免费离线）与云端语音（智谱 GLM / MiniMax / Azure / ElevenLabs / 自定义 OpenAI 兼容）。
+      当前提供方展开出 API Key 输入框与音色行；下方是语速滑杆与试听按钮。密钥只存本机，演示稿不填真实密钥。
+    </div>
+    <div class="cap-tokens">
+      surface / line / clay / clay-soft / ink-4 · field radius-field 10 · 行高 ≥44 · 演示配置
+    </div>
+  </div>
+</div>
+</body>
+</html>

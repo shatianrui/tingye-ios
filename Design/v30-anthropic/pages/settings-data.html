@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 设置·数据与备份 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：设置·数据与备份 */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .sec-h {
+    font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink);
+    margin: var(--ty-space-3) 0 var(--ty-space-2);
+  }
+  .setting-row .label .sub {
+    display: block; font-size: var(--ty-caption); color: var(--ty-ink-3);
+    margin-top: 2px; line-height: 1.45;
+  }
+  .note { font-size: var(--ty-caption); color: var(--ty-ink-3); line-height: 1.6; margin-top: var(--ty-space-2); }
+  .btn-sm { min-height: 44px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回设置">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">数据与备份</span>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- iCloud 手动快照 -->
+        <div class="sec-h" style="margin-top:0;">iCloud 手动快照</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">上次快照<span class="sub">2026 年 5 月 12 日 09:24</span></span>
+            <span class="value">214 MB</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="note">快照含书籍、资源、阅读位置、听书位置与书摘。</div>
+          <button class="btn-secondary btn-sm" style="width:100%; margin-top: var(--ty-space-2);">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5h9a4 4 0 0 0 .6-8 5.5 5.5 0 0 0-10.4 1.5 3.5 3.5 0 0 0 .8 6.5z"/></svg>
+            创建手动快照
+          </button>
+        </div>
+
+        <!-- 阅读进度同步 -->
+        <div class="sec-h">阅读进度同步</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">iCloud 键值同步</span>
+            <span class="toggle on"><i></i></span>
+          </div>
+          <div class="note">只同步阅读位置，不同步听书位置与书籍文件。</div>
+        </div>
+
+        <!-- 本地导出整库 -->
+        <div class="sec-h">本地导出整库</div>
+        <div style="flex:none;">
+          <div class="note">导出 BackupPacket v2 JSON，可在另一台设备恢复。</div>
+          <button class="btn-secondary btn-sm" style="width:100%; margin-top: var(--ty-space-2);">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v10"/><path d="M8 11l4 4 4-4"/><path d="M5 18.5h14"/></svg>
+            导出整库
+          </button>
+        </div>
+
+        <!-- 空间整理 -->
+        <div class="sec-h">空间整理</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">书籍与资源</span>
+            <span class="value">186 MB</span>
+          </div>
+          <button class="btn-secondary btn-sm" style="width:100%; margin-top: var(--ty-space-2);">清理缓存</button>
+        </div>
+
+        <!-- 阅读足迹导出 -->
+        <div class="sec-h">阅读足迹导出</div>
+        <div class="hstack gap-2" style="flex:none;">
+          <button class="btn-secondary btn-sm fill">导出 CSV</button>
+          <button class="btn-secondary btn-sm fill">导出 Markdown</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">设置 · 数据与备份</div>
+    <div class="cap-note">
+      iCloud 只提供手动快照，写明快照包含什么、恢复会替换什么，避免误解为自动同步。
+      阅读进度同步单独成组并说明只同步阅读位置；本地导出整库给出口径（BackupPacket v2）。
+      空间整理列出占用并给清理动作；阅读足迹导出提供 CSV 与 Markdown 两种格式。
+      快照时间与占用体积为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      btn-secondary 白底发丝线 · toggle 开关态 · note ink-3 caption · 行高 ≥44
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

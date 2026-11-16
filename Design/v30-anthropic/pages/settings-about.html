@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 设置·关于 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：设置·关于 */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .sec-h {
+    font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink);
+    margin: var(--ty-space-3) 0 var(--ty-space-2);
+  }
+  .setting-row .label .sub {
+    display: block; font-size: var(--ty-caption); color: var(--ty-ink-3);
+    margin-top: 2px; line-height: 1.45;
+  }
+  .lic { display: flex; align-items: center; gap: var(--ty-space-3); padding: 4px 0; border-bottom: 1px solid var(--ty-line); min-height: 38px; }
+  .lic:last-child { border-bottom: none; }
+  .lic .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .lic .nm span { color: var(--ty-ink-3); font-size: var(--ty-caption); }
+  .lic .v { font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-ink-3); flex: none; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回设置">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">关于</span>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- 应用信息 -->
+        <div class="hstack" style="align-items:flex-start; flex:none;">
+          <div class="fill">
+            <div class="t-title">听页</div>
+            <div class="t-caption" style="margin-top: var(--ty-space-1);">1.25.0（133）· 纯本地阅读，听书为辅</div>
+          </div>
+          <span class="badge is-outline">已是最新</span>
+        </div>
+
+        <!-- 隐私 -->
+        <div class="sec-h">隐私</div>
+        <div style="flex:none;">
+          <div class="lic">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5 6v6c0 4.2 2.9 7.4 7 8.5 4.1-1.1 7-4.3 7-8.5V6z"/></svg>
+            <span class="nm fill">隐私政策</span>
+            <span class="v">本地</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="lic">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v4.8l3 1.8"/></svg>
+            <span class="nm fill">检查更新</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+
+        <!-- 字体许可 -->
+        <div class="sec-h">字体许可</div>
+        <div style="flex:none;">
+          <div class="lic">
+            <span class="nm fill">思源宋体<span> · 正文宋体</span></span>
+            <span class="v">SIL OFL 1.1</span>
+          </div>
+          <div class="lic">
+            <span class="nm fill">霞鹜文楷<span> · 正文楷体</span></span>
+            <span class="v">SIL OFL 1.1</span>
+          </div>
+          <div class="lic">
+            <span class="nm fill">Lucide<span> · 界面图标</span></span>
+            <span class="v">ISC</span>
+          </div>
+        </div>
+
+        <!-- 开源许可 -->
+        <div class="sec-h">开源许可</div>
+        <div style="flex:none;">
+          <div class="lic">
+            <span class="nm fill">ZIPFoundation<span> · 解压导入</span></span>
+            <span class="v">MIT</span>
+          </div>
+          <div class="lic">
+            <span class="nm fill">SMBClient<span> · 局域网共享</span></span>
+            <span class="v">MIT</span>
+          </div>
+          <div class="lic">
+            <span class="nm fill">Pow<span> · 按压反馈</span></span>
+            <span class="v">MIT</span>
+          </div>
+        </div>
+
+        <!-- 致谢 -->
+        <div class="sec-h">致谢</div>
+        <div class="card" style="padding: var(--ty-space-4); flex:none;">
+          <p style="margin:0; font-family: var(--ty-font-serif); font-size: var(--ty-book-title); line-height: 1.7; color: var(--ty-ink-strong);">
+            感谢每一个提过问题、写过信的人。听页没有账号，也没有服务器——书与进度都只留在你的设备上。
+          </p>
+          <div class="t-meta" style="margin-top: var(--ty-space-3);">许可全文随 App 资源附带。</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">设置 · 关于</div>
+    <div class="cap-note">
+      顶部给应用名、版本号与一句定位；隐私一栏把「数据只在本机」写成可读的事实而不是法律条款。
+      字体许可与开源许可逐项列出名称、用途与许可协议（思源宋体 / 霞鹜文楷为 SIL OFL 1.1，Lucide 为 ISC），
+      致谢用宋体一段话收尾。版本号沿用工程当前的 1.25.0（133）。
+    </div>
+    <div class="cap-tokens">
+      t-title 28 · mono 许可名 · card 白底发丝线 · serif 致谢
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

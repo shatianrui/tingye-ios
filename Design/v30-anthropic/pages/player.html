@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 听书面板</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .reader-body { padding-top: var(--ty-space-2); }
+  .reader-body p { margin: 0 0 var(--ty-space-5); font-size: 19px; line-height: 1.95; text-align: justify; }
+
+  /* 听书面板 */
+  .sheet { padding: var(--ty-space-4) var(--ty-inset) var(--ty-space-6); }
+  .pl-head { display: flex; align-items: center; gap: var(--ty-space-4); }
+  .pl-head .cover { flex: none; }
+  .pl-head .meta { min-width: 0; }
+  .pl-head .meta .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-ink-3); text-transform: uppercase; }
+  .pl-head .meta .bk { margin-top: var(--ty-space-1); font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink); }
+  .pl-head .meta .ch { margin-top: 2px; font-size: var(--ty-caption); color: var(--ty-ink-3); }
+  .pl-head .meta .by { margin-top: 2px; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .current {
+    margin-top: var(--ty-space-4);
+    font-family: var(--ty-font-serif); font-size: 19px; line-height: 1.75; color: var(--ty-ink);
+  }
+  .pl-prog { margin-top: var(--ty-space-4); }
+  .pl-prog .bar { height: 3px; border-radius: 2px; background: var(--ty-line); overflow: hidden; }
+  .pl-prog .bar i { display: block; height: 100%; width: 33%; background: var(--ty-clay); border-radius: 2px; }
+  .pl-prog .row { display: flex; justify-content: space-between; margin-top: 6px; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .pl-ctrl { display: flex; align-items: center; justify-content: center; gap: var(--ty-space-8); margin-top: var(--ty-space-4); }
+  .skip { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 60px; border: none; background: none; color: var(--ty-ink-2); font-size: 11px; cursor: pointer; }
+  .pl-tools { margin-top: var(--ty-space-3); border-top: 1px solid var(--ty-line); padding-top: var(--ty-space-2); }
+  .pl-foot { display: flex; align-items: center; gap: var(--ty-space-3); margin-top: var(--ty-space-4); }
+  .pl-foot .btn-secondary { flex: 1; }
+  .pl-foot .end { flex: none; min-height: var(--ty-button-height); padding: 0 var(--ty-space-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid">
+          <span class="title">故乡</span>
+          <span class="sub">第三章 · 船舱里的冬天</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="content paper reader-body">
+        <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。</p>
+        <p>阿！这不是我二十年来时时记得的故乡？</p>
+      </div>
+    </div>
+
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-label="听书面板">
+      <!-- 封面 + 书名章节 -->
+      <div class="pl-head">
+        <div class="bookcover lg cover">故乡</div>
+        <div class="meta">
+          <div class="k">正在听 · 演示</div>
+          <div class="bk">故乡</div>
+          <div class="ch">第三章 · 船舱里的冬天</div>
+          <div class="by">智谱 GLM · 女声「清和」 · 1.0×</div>
+        </div>
+      </div>
+
+      <!-- 当前句 -->
+      <p class="current marker">我所记得的故乡全不如此。我的故乡好得多了。</p>
+
+      <!-- 句子进度 -->
+      <div class="pl-prog">
+        <div class="bar"><i></i></div>
+        <div class="row"><span>第 128 句 · 共 386 句</span><span class="mono">18:24 / 42:16</span></div>
+      </div>
+
+      <!-- 播放控制 -->
+      <div class="pl-ctrl">
+        <button class="skip" type="button" aria-label="上一句">
+          <svg class="ico" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M16 6l-6 6 6 6"></path><path d="M10 6l-6 6 6 6"></path></svg>
+          <span>上一句</span>
+        </button>
+        <button class="ink-circle" type="button" aria-label="暂停朗读">
+          <svg class="ico fill" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <rect x="7" y="5" width="3.6" height="14" rx="1"></rect><rect x="13.4" y="5" width="3.6" height="14" rx="1"></rect>
+          </svg>
+        </button>
+        <button class="skip" type="button" aria-label="下一句">
+          <svg class="ico" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 6l6 6-6 6"></path><path d="M14 6l6 6-6 6"></path></svg>
+          <span>下一句</span>
+        </button>
+      </div>
+
+      <!-- 工具四键 -->
+      <div class="pl-tools">
+        <div class="toolbar-4">
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h9"></path></svg>
+            <span>目录</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4.5 17a7.5 7.5 0 1 1 15 0"></path><path d="M12 17l4-5"></path></svg>
+            <span>语速</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 12h2M8 8.5v7M12 5.5v13M16 8.5v7M20 11v2"></path></svg>
+            <span>声音</span>
+          </button>
+          <button class="tool" type="button">
+            <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="13.5" r="7"></circle><path d="M12 10v3.5l2.4 1.6M10 3h4"></path></svg>
+            <span>定时</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 回到原文 / 结束听书 -->
+      <div class="pl-foot">
+        <button class="btn-secondary" type="button">回到原文</button>
+        <button class="btn-text end" type="button">结束听书</button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">听书 · 面板</div>
+    <div class="cap-note">
+      听条展开为底部面板（不跳独立页面）：封面与书名章节、当前句大字（淡陶土铺底 + 3px 陶土竖条）、句子进度、
+      64px 墨底圆形播放键与上一句 / 下一句、四键工具「目录 语速 声音 定时」，底部常驻「回到原文 / 结束听书」。
+      听书位置与阅读位置分开存，面板只呈现一个当前位置。
+    </div>
+    <div class="cap-tokens">
+      surface / ink / clay / clay-soft · ink-circle 64 · marker 双通道 · 演示朗读位置与统计数据
+    </div>
+  </div>
+</div>
+</body>
+</html>

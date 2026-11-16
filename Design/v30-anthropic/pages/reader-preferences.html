@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 排版面板</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .reader-body { padding-top: var(--ty-space-2); }
+  .reader-body p { margin: 0 0 var(--ty-space-5); font-size: 19px; line-height: 1.95; text-align: justify; }
+
+  /* 排版面板 */
+  .sheet { padding: var(--ty-space-4) var(--ty-inset) var(--ty-space-6); }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .panel-head .reset { font-size: var(--ty-caption); color: var(--ty-clay-text); }
+
+  .blk { margin-top: var(--ty-space-4); }
+  .blk .lbl { font-size: var(--ty-caption); color: var(--ty-ink-3); margin-bottom: var(--ty-space-2); }
+
+  /* 字号 */
+  .size-row { display: flex; align-items: center; gap: var(--ty-space-3); }
+  .size-row .a { color: var(--ty-ink-3); font-family: var(--ty-font-serif); }
+  .size-row .a.min { font-size: 13px; }
+  .size-row .a.max { font-size: 21px; }
+  .size-row .val { width: 34px; text-align: right; font-size: var(--ty-caption); color: var(--ty-ink-2); }
+  .slider { flex: 1; min-width: 0; height: var(--ty-min-touch); -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+  .slider::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--ty-line); }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -8.5px;
+    border-radius: 50%; background: var(--ty-surface); border: 1.5px solid var(--ty-ink); box-shadow: var(--ty-shadow-sm);
+  }
+  .slider::-moz-range-track { height: 3px; border-radius: 2px; background: var(--ty-line); }
+  .slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--ty-surface); border: 1.5px solid var(--ty-ink); }
+
+  /* 字体五选 */
+  .fonts { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--ty-space-2); }
+  .font-opt {
+    height: 46px; border: 1px solid var(--ty-line); border-radius: var(--ty-radius-field);
+    background: var(--ty-surface); color: var(--ty-ink-2); font-size: var(--ty-body); cursor: pointer;
+    padding: 0; font-family: var(--ty-font-sans);
+  }
+  .font-opt.is-active { border-color: var(--ty-ink); color: var(--ty-ink); font-weight: 500; box-shadow: var(--ty-shadow-sm); }
+  .f-serif { font-family: var(--ty-font-serif); }
+  .f-sans { font-family: var(--ty-font-sans); }
+  .f-mono { font-family: var(--ty-font-mono); }
+  .spaced { letter-spacing: 2px; }
+
+  /* 纸色圆点 */
+  .dots { display: flex; align-items: center; gap: var(--ty-space-3); }
+  .dot-sw {
+    width: 30px; height: 30px; border-radius: 50%; flex: none; cursor: pointer;
+    border: 1px solid var(--ty-line); background: var(--ty-surface);
+  }
+  .dot-sw.is-active { box-shadow: 0 0 0 2px var(--ty-surface), 0 0 0 3.5px var(--ty-ink); }
+  .sw-1 { background: var(--ty-canvas); }
+  .sw-2 { background: var(--ty-surface); }
+  .sw-3 { background: color-mix(in srgb, var(--ty-ink) 6%, var(--ty-canvas)); }
+  .sw-4 { background: color-mix(in srgb, var(--ty-ink) 13%, var(--ty-canvas)); }
+  .sw-5 { background: color-mix(in srgb, var(--ty-clay) 16%, var(--ty-canvas)); }
+  .sw-6 { background: color-mix(in srgb, var(--ty-ink) 68%, var(--ty-canvas)); }
+  .sw-7 { background: color-mix(in srgb, var(--ty-ink) 88%, var(--ty-canvas)); }
+  .dots-note { margin-top: var(--ty-space-2); font-size: var(--ty-caption); color: var(--ty-ink-3); }
+
+  /* 翻页方式 */
+  .chips { display: flex; gap: var(--ty-space-2); }
+  .chips .chip { flex: 1; justify-content: center; padding: 0 var(--ty-space-2); }
+
+  /* 两栏 */
+  .setting-row { margin-top: var(--ty-space-4); border-top: 1px solid var(--ty-line); }
+  .sheet-foot { margin-top: var(--ty-space-4); }
+  .sheet-foot .btn-secondary { width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid"><span class="title">故乡</span></div>
+        <button class="btn-icon" type="button" aria-label="书签">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6.5 4h11v16l-5.5-4.2L6.5 20z"></path></svg>
+        </button>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="content paper reader-body">
+        <p>时候既然是深冬；渐近故乡时，天气又阴晦了，冷风吹进船舱中，呜呜的响，从篷隙向外一望，苍黄的天底下，远近横着几个萧索的荒村，没有一些活气。</p>
+        <p>我所记得的故乡全不如此。我的故乡好得多了。但要我记起他的美丽，说出他的佳处来，却又没有影像，没有言辞了。</p>
+      </div>
+    </div>
+
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-label="排版">
+      <div class="panel-head">
+        <span class="t-section">排版</span>
+        <span class="reset">恢复默认</span>
+      </div>
+
+      <!-- 字号 -->
+      <div class="blk">
+        <div class="lbl">字号</div>
+        <div class="size-row">
+          <span class="a min">A</span>
+          <input class="slider" type="range" min="14" max="34" value="19" aria-label="正文字号，当前 19">
+          <span class="a max">A</span>
+          <span class="val mono">19</span>
+        </div>
+      </div>
+
+      <!-- 字体 -->
+      <div class="blk">
+        <div class="lbl">字体</div>
+        <div class="fonts">
+          <button class="font-opt is-active" type="button"><span class="f-serif">宋体</span></button>
+          <button class="font-opt" type="button"><span class="f-serif spaced">楷体</span></button>
+          <button class="font-opt" type="button"><span class="f-sans">黑体</span></button>
+          <button class="font-opt" type="button"><span class="f-sans spaced">圆体</span></button>
+          <button class="font-opt" type="button"><span class="f-sans">系统</span></button>
+        </div>
+      </div>
+
+      <!-- 纸色 -->
+      <div class="blk">
+        <div class="lbl">纸色</div>
+        <div class="dots">
+          <span class="dot-sw sw-1 is-active" title="宣纸（默认）"></span>
+          <span class="dot-sw sw-2" title="纯白"></span>
+          <span class="dot-sw sw-3" title="浅灰"></span>
+          <span class="dot-sw sw-4" title="雾灰"></span>
+          <span class="dot-sw sw-5" title="旧书"></span>
+          <span class="dot-sw sw-6" title="深蓝"></span>
+          <span class="dot-sw sw-7" title="夜读"></span>
+        </div>
+        <div class="dots-note">纸色 · 宣纸（默认）</div>
+      </div>
+
+      <!-- 行距 -->
+      <div class="blk">
+        <div class="lbl">行距</div>
+        <div class="segmented">
+          <button class="seg" type="button">紧凑</button>
+          <button class="seg is-active" type="button">适中</button>
+          <button class="seg" type="button">宽松</button>
+        </div>
+      </div>
+
+      <!-- 翻页方式 -->
+      <div class="blk">
+        <div class="lbl">翻页方式</div>
+        <div class="chips">
+          <button class="chip is-selected" type="button">滑动</button>
+          <button class="chip" type="button">淡入</button>
+          <button class="chip" type="button">模糊</button>
+          <button class="chip" type="button">无</button>
+        </div>
+      </div>
+
+      <!-- 两栏 -->
+      <div class="setting-row">
+        <span class="label">双栏排版</span>
+        <span class="toggle on"><i></i></span>
+      </div>
+
+      <div class="sheet-foot">
+        <button class="btn-secondary" type="button">收起</button>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">阅读器 · 排版面板</div>
+    <div class="cap-note">
+      排版为底部升起面板：字号滑杆、字体五选、七种纸色圆点、行距分段、翻页方式四选、双栏开关。
+      纸色圆点由令牌派生（奶油 / 白 / 灰 / 雾 / 旧书 / 深 / 夜），选中态加一圈墨环；纸色只影响正文区，面板与工具层永远用界面令牌。
+    </div>
+    <div class="cap-tokens">
+      ink / line / surface / canvas · radius-field 10 · 滑杆轨 3px line · 演示偏好
+    </div>
+  </div>
+</div>
+</body>
+</html>

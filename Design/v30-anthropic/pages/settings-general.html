@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 设置·通用 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：设置·通用 */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .sec-h {
+    font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink);
+    margin: var(--ty-space-4) 0 var(--ty-space-2);
+  }
+  .setting-row .label .sub {
+    display: block; font-size: var(--ty-caption); color: var(--ty-ink-3);
+    margin-top: 2px; line-height: 1.45;
+  }
+  .note { font-size: var(--ty-caption); color: var(--ty-ink-3); line-height: 1.6; margin-top: var(--ty-space-2); }
+  .link-row { display: flex; align-items: center; gap: var(--ty-space-2); padding: var(--ty-space-2) 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回设置">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">通用</span>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- 语言与启动 -->
+        <div class="sec-h" style="margin-top:0;">语言与启动</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">语言<span class="sub">跟随 iOS 系统语言</span></span>
+            <span class="value">简体中文</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="note">语言跟随 iOS，请在「设置 → 听页 → 语言」中切换。</div>
+          <div class="link-row">
+            <span class="btn-text">打开系统设置</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-clay-text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+          <div class="setting-row" style="border-top:1px solid var(--ty-line);">
+            <span class="label">启动时</span>
+            <span class="value">继续上次阅读</span>
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </div>
+        </div>
+
+        <!-- 提醒与反馈 -->
+        <div class="sec-h">提醒与反馈</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">每日阅读提醒<span class="sub">21:00</span></span>
+            <span class="toggle on"><i></i></span>
+          </div>
+          <div class="setting-row">
+            <span class="label">朗读时震动反馈</span>
+            <span class="toggle"><i></i></span>
+          </div>
+          <div class="setting-row">
+            <span class="label">阅读时保持屏幕常亮</span>
+            <span class="toggle on"><i></i></span>
+          </div>
+        </div>
+
+        <!-- 隐私与安全 -->
+        <div class="sec-h">隐私与安全</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">应用锁<span class="sub">开启后需通过 Face ID 或设备密码</span></span>
+            <span class="toggle"><i></i></span>
+          </div>
+        </div>
+
+        <!-- 导航 -->
+        <div class="sec-h">导航</div>
+        <div style="flex:none;">
+          <div class="setting-row">
+            <span class="label">回到旧版导航<span class="sub">恢复三页签与迷你播放器，数据完全互通</span></span>
+            <span class="toggle"><i></i></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">设置 · 通用</div>
+    <div class="cap-note">
+      语言一行说清事实：App 语言跟随 iOS 系统语言，并给出跳转到系统设置的入口，不再是假入口。
+      提醒与反馈、常亮、震动、应用锁都用标准开关行；「回到旧版导航」是过渡开关，写明它恢复什么、数据是否互通。
+      开关状态与时间均为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      toggle 48×28 · clay 开关态 · btn-text 跳转 · setting-row 发丝线
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

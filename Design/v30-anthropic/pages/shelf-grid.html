@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 书库（网格）· v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：书库网格模式（同样去卡壳） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+  .chip { white-space: nowrap; flex: none; padding: 0 var(--ty-space-3); }
+
+  .grid-cover {
+    width: 100%; height: 130px; position: relative;
+    font-size: 22px; border-radius: var(--ty-radius-sm);
+  }
+  .gc-pct {
+    position: absolute; right: 6px; bottom: 5px;
+    font-family: var(--ty-font-mono); font-size: 11px; color: var(--ty-ink-3);
+  }
+  .gc-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--ty-clay); border-radius: 0 2px 2px 0; }
+  .gc-name {
+    font-family: var(--ty-font-serif);
+    color: var(--ty-ink); font-size: 15px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <!-- 报头：眉题 → 墨线 → 宋体「书库」→ 计数行 -->
+      <div class="hstack" style="height:44px; flex:none; padding: 0 var(--ty-inset);">
+        <span class="t-kicker">TINGYE · 书库</span>
+        <span class="spacer"></span>
+        <button class="btn-icon" aria-label="搜索">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="列表视图">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="我的">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c1.2-3.7 3.9-5.6 7.2-5.6s6 1.9 7.2 5.6"/></svg>
+        </button>
+        <button class="btn-icon" aria-label="更多">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.2" fill="var(--ty-canvas)"/><circle cx="15" cy="12" r="2.2" fill="var(--ty-canvas)"/><circle cx="7.5" cy="17" r="2.2" fill="var(--ty-canvas)"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+        <hr class="rule-heavy" style="margin: 0 0 var(--ty-space-2); flex:none;">
+        <div class="hstack" style="flex:none; align-items: baseline;">
+          <span class="t-page-title fill">书库</span>
+          <span class="t-caption">24 本 · 演示</span>
+        </div>
+
+        <div class="hstack" style="margin-top: var(--ty-space-3); gap: var(--ty-space-2); flex:none;">
+          <span class="chip is-selected">书籍</span>
+          <span class="chip">漫画</span>
+          <span class="chip">分组</span>
+          <span class="spacer"></span>
+          <span class="t-meta">最近阅读 ▾</span>
+        </div>
+
+        <div class="hstack" style="margin-top: var(--ty-space-2); gap: 6px; flex:none;">
+          <span class="chip is-selected">全部</span>
+          <span class="chip">在读</span>
+          <span class="chip">待读</span>
+          <span class="chip">读完</span>
+          <span class="chip">已隐藏</span>
+        </div>
+
+        <!-- 封面网格：同样去卡壳，封面 + 书名 + 进度 -->
+        <div class="grid-3" style="gap: var(--ty-space-2); margin-top: var(--ty-space-4); flex:1; min-height:0; overflow:hidden;">
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">百<i class="gc-bar" style="width:42%"></i><span class="gc-pct">42%</span></div>
+            <div class="gc-name">百年孤独</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">小<i class="gc-bar" style="width:100%"></i><span class="gc-pct">100%</span></div>
+            <div class="gc-name">小王子</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">城<i class="gc-bar" style="width:78%"></i><span class="gc-pct">78%</span></div>
+            <div class="gc-name">城南旧事</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">呼<span class="gc-pct">待读</span></div>
+            <div class="gc-name">呼兰河传</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">人<span class="gc-pct">待读</span></div>
+            <div class="gc-name">人类简史</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">罪<i class="gc-bar" style="width:23%"></i><span class="gc-pct">23%</span></div>
+            <div class="gc-name">罪与罚</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">边<i class="gc-bar" style="width:61%"></i><span class="gc-pct">61%</span></div>
+            <div class="gc-name">边城</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">月<i class="gc-bar" style="width:12%"></i><span class="gc-pct">12%</span></div>
+            <div class="gc-name">月亮与六便士</div>
+          </div>
+          <div class="stack" style="gap:6px;">
+            <div class="bookcover grid-cover">局<i class="gc-bar" style="width:87%"></i><span class="gc-pct">87%</span></div>
+            <div class="gc-name">局外人</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottombar">
+        <div class="hstack gap-3">
+          <button class="btn-primary fill">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            添书
+          </button>
+          <button class="btn-secondary" style="width:104px;">整理</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">书库 · 网格模式</div>
+    <div class="cap-note">
+      与列表模式同一报头与同一筛选（类型胶囊 / 状态筛选一级可见），只换呈现：三列封面网格，去掉卡壳与阴影，封面为色块占位。
+      进度以封面底缘陶土细条 + 角标百分比双通道表达，不只靠颜色；待读书只留文字，不画进度条。
+      网格模式收起常驻搜索框，搜索入口在右上角图标行。本页书目为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      grid-3 gap 12 · bookcover radius-sm · clay 3px 进度条 · gc-pct mono 11
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

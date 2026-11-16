@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 阅读日历 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：阅读日历（热力格） */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal .wd { text-align: center; font-size: 11px; color: var(--ty-ink-4); padding-bottom: 2px; }
+  .cell {
+    position: relative; height: 42px; border-radius: var(--ty-radius-sm);
+    background: var(--ty-surface-sunken); overflow: hidden;
+  }
+  .cell::before { content: ''; position: absolute; inset: 0; background: var(--ty-clay); opacity: 0; }
+  .cell .d {
+    position: relative; z-index: 1; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-ink-4);
+  }
+  .cell.l1::before { opacity: 0.16; }
+  .cell.l2::before { opacity: 0.34; }
+  .cell.l3::before { opacity: 0.58; }
+  .cell.l4::before { opacity: 0.88; }
+  .cell.l1 .d { color: var(--ty-ink-3); }
+  .cell.l2 .d { color: var(--ty-ink-2); }
+  .cell.l3 .d, .cell.l4 .d { color: var(--ty-ink); }
+  .cell.blank { background: transparent; }
+  .cell.today { outline: 1.5px solid var(--ty-ink); outline-offset: -1.5px; }
+
+  .bignum {
+    font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-weight: 600;
+    font-size: 22px; color: var(--ty-ink); letter-spacing: -0.5px; line-height: 1.2;
+  }
+  .bignum small { font-family: var(--ty-font-sans); font-size: 12px; font-weight: 400; color: var(--ty-ink-3); letter-spacing: 0; }
+  .wk { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-2) 0; border-bottom: 1px solid var(--ty-line); min-height: 44px; }
+  .wk:last-child { border-bottom: none; }
+  .wk .nm { flex: 1; min-width: 0; font-size: var(--ty-body); color: var(--ty-ink-strong); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">阅读日历</span>
+        <button class="btn-icon" aria-label="今天">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v4.8l3 1.8"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+
+        <!-- 月份切换 -->
+        <div class="hstack" style="flex:none;">
+          <button class="btn-icon" aria-label="上一月" style="width:32px; height:32px;">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>
+          </button>
+          <span class="t-section fill" style="text-align:center;">2026 年 5 月</span>
+          <button class="btn-icon" aria-label="下一月" style="width:32px; height:32px;">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+          </button>
+        </div>
+
+        <!-- 星期头 -->
+        <div class="cal" style="margin-top: var(--ty-space-3); flex:none;">
+          <div class="wd">一</div><div class="wd">二</div><div class="wd">三</div><div class="wd">四</div>
+          <div class="wd">五</div><div class="wd">六</div><div class="wd">日</div>
+        </div>
+
+        <!-- 月视图热力格 -->
+        <div class="cal" style="margin-top: var(--ty-space-2); flex:none;">
+          <div class="cell blank"></div><div class="cell blank"></div><div class="cell blank"></div><div class="cell blank"></div>
+          <div class="cell l2"><span class="d">1</span></div><div class="cell l3"><span class="d">2</span></div><div class="cell l1"><span class="d">3</span></div>
+
+          <div class="cell l4"><span class="d">4</span></div><div class="cell l2"><span class="d">5</span></div><div class="cell blank"><span class="d">6</span></div>
+          <div class="cell l1"><span class="d">7</span></div><div class="cell l3"><span class="d">8</span></div><div class="cell l4"><span class="d">9</span></div><div class="cell l2"><span class="d">10</span></div>
+
+          <div class="cell l3"><span class="d">11</span></div><div class="cell l1"><span class="d">12</span></div><div class="cell l2"><span class="d">13</span></div>
+          <div class="cell l4"><span class="d">14</span></div><div class="cell l3"><span class="d">15</span></div><div class="cell l2"><span class="d">16</span></div><div class="cell l4"><span class="d">17</span></div>
+
+          <div class="cell l1"><span class="d">18</span></div><div class="cell l2"><span class="d">19</span></div><div class="cell l3"><span class="d">20</span></div>
+          <div class="cell blank"><span class="d">21</span></div><div class="cell l2"><span class="d">22</span></div><div class="cell l3"><span class="d">23</span></div><div class="cell l1"><span class="d">24</span></div>
+
+          <div class="cell l4"><span class="d">25</span></div><div class="cell l2"><span class="d">26</span></div><div class="cell l3"><span class="d">27</span></div>
+          <div class="cell l1"><span class="d">28</span></div><div class="cell l2"><span class="d">29</span></div><div class="cell l3"><span class="d">30</span></div><div class="cell today l1"><span class="d">31</span></div>
+        </div>
+
+        <!-- 图例 -->
+        <div class="hstack" style="margin-top: var(--ty-space-3); flex:none; gap: var(--ty-space-2);">
+          <span class="t-meta">少</span>
+          <span class="cell" style="width:14px; height:14px; border:1px solid var(--ty-line);"></span>
+          <span class="cell l1" style="width:14px; height:14px; border:1px solid var(--ty-line);"></span>
+          <span class="cell l2" style="width:14px; height:14px; border:1px solid var(--ty-line);"></span>
+          <span class="cell l3" style="width:14px; height:14px; border:1px solid var(--ty-line);"></span>
+          <span class="cell l4" style="width:14px; height:14px; border:1px solid var(--ty-line);"></span>
+          <span class="t-meta">多</span>
+          <span class="spacer"></span>
+          <span class="badge is-outline">演示数据</span>
+        </div>
+
+        <!-- 月度合计 -->
+        <div class="card" style="margin-top: var(--ty-space-4); padding: var(--ty-space-3) var(--ty-space-4); flex:none;">
+          <div class="hstack">
+            <span class="t-kicker fill">本月合计</span>
+            <span class="t-meta">阅读会话，不含听书</span>
+          </div>
+          <div class="grid-2" style="gap: var(--ty-space-3) var(--ty-space-4); margin-top: var(--ty-space-3);">
+            <div>
+              <div class="t-caption">总时长</div>
+              <div class="bignum">12<small> 小时 40 分</small></div>
+            </div>
+            <div>
+              <div class="t-caption">有记录天数</div>
+              <div class="bignum">18<small> 天</small></div>
+            </div>
+            <div>
+              <div class="t-caption">最长一天</div>
+              <div class="bignum">52<small> 分钟</small></div>
+            </div>
+            <div>
+              <div class="t-caption">日均</div>
+              <div class="bignum">42<small> 分钟</small></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 每周小结 -->
+        <div class="hstack" style="margin: var(--ty-space-4) 0 var(--ty-space-1); flex:none;">
+          <span class="t-kicker fill">每周小结</span>
+          <span class="t-meta">最近 3 周</span>
+        </div>
+        <div style="flex:none;">
+          <div class="wk">
+            <span class="nm fill">第 3 周 · 5 月 11 – 17 日</span>
+            <span class="t-mono-num" style="font-size:13px;">3 小时 12 分</span>
+          </div>
+          <div class="wk">
+            <span class="nm fill">第 2 周 · 5 月 4 – 10 日</span>
+            <span class="t-mono-num" style="font-size:13px;">2 小时 48 分</span>
+          </div>
+          <div class="wk">
+            <span class="nm fill">第 1 周 · 4 月 27 – 5 月 3 日</span>
+            <span class="t-mono-num" style="font-size:13px;">1 小时 05 分</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="cap-title"></div>
+  <div class="caption">
+    <div class="cap-title">阅读日历</div>
+    <div class="cap-note">
+      月视图网格：每格一天，格底沉底色为「无记录」，有阅读的日子按时长分四档陶土浓度（16% / 34% / 58% / 88%），陶土只做热力填充；
+      今日加墨色描边。图例与演示标记同在一行，解释颜色含义。
+      月度合计给总时长、有记录天数、最长一天与日均，下方每周小结逐周给时长。本页全部数值为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      clay 4 档热力 · mono 日期 · grid 7 列 gap 4 · radius-sm 8
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
