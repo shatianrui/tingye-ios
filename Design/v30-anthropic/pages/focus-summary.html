@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 专注小结</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+
+  .sum { padding-top: var(--ty-space-4); }
+  .sum .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-ink-3); text-transform: uppercase; }
+
+  .hero { display: flex; align-items: baseline; gap: var(--ty-space-2); margin-top: var(--ty-space-3); }
+  .hero .num { font-family: var(--ty-font-mono); font-variant-numeric: tabular-nums; font-size: var(--ty-display); font-weight: 600; line-height: 1; color: var(--ty-ink); letter-spacing: -1px; }
+  .hero .unit { font-size: var(--ty-body); color: var(--ty-ink-2); }
+  .sum .demo-note { margin-top: var(--ty-space-2); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .facts { margin-top: var(--ty-space-5); }
+  .fact { padding: var(--ty-space-3) var(--ty-space-4); }
+  .fact .lbl { font-size: var(--ty-caption); color: var(--ty-ink-3); }
+  .fact .val { margin-top: 4px; font-family: var(--ty-font-serif); font-size: var(--ty-book-title); color: var(--ty-ink); }
+  .fact .sub { margin-top: 2px; font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .quote-card { margin-top: var(--ty-space-4); padding: var(--ty-space-4); }
+  .quote-card .k { font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker); color: var(--ty-ink-3); text-transform: uppercase; }
+  .quote-card .q { margin-top: var(--ty-space-2); font-family: var(--ty-font-serif); font-size: 17px; line-height: 1.75; color: var(--ty-ink); }
+  .quote-card .meta { margin-top: var(--ty-space-3); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .trace { margin-top: var(--ty-space-4); padding: var(--ty-space-4); }
+  .trace .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .trace .head .t { font-size: var(--ty-body); color: var(--ty-ink-strong); }
+  .trace .head .v { font-size: var(--ty-caption); color: var(--ty-ink-4); }
+  .trace .bars { margin-top: var(--ty-space-3); height: 12px; align-items: stretch; gap: 4px; }
+  .trace .bars i { height: 100%; border-radius: 3px; }
+  .trace .legend { margin-top: var(--ty-space-3); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+
+  .sum-foot { display: flex; gap: var(--ty-space-3); margin-top: var(--ty-space-6); }
+  .sum-foot .btn-primary, .sum-foot .btn-secondary { flex: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回阅读器">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid"><span class="title">专注小结</span></div>
+        <span class="badge is-outline">演示</span>
+      </div>
+
+      <div class="content sum">
+        <!-- 本次分钟大数字 -->
+        <div class="k">专注完成</div>
+        <div class="hero">
+          <span class="num">45</span>
+          <span class="unit">分钟</span>
+        </div>
+        <div class="demo-note">以下数字为设计稿演示值，实际以阅读足迹为准。</div>
+
+        <!-- 读到第 X 章 / 新增摘记数 -->
+        <div class="grid-2 facts">
+          <div class="card fact">
+            <div class="lbl">读到</div>
+            <div class="val">第三章</div>
+            <div class="sub">船舱里的冬天</div>
+          </div>
+          <div class="card fact">
+            <div class="lbl">新增摘记</div>
+            <div class="val">3 条</div>
+            <div class="sub">2 划线 · 1 笔记</div>
+          </div>
+        </div>
+
+        <!-- 今日一句 -->
+        <div class="card quote-card">
+          <div class="k">今日一句</div>
+          <p class="q">我所记得的故乡全不如此。我的故乡好得多了。</p>
+          <div class="meta">故乡 · 第三章 · 3 月 12 日</div>
+        </div>
+
+        <!-- 本次专注足迹 -->
+        <div class="card trace">
+          <div class="head">
+            <span class="t">本次专注</span>
+            <span class="v mono">45 / 45 分钟</span>
+          </div>
+          <div class="bars">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          </div>
+          <div class="legend">每格 5 分钟 · 9 格全部读满 · 目标 45 分钟已达成</div>
+        </div>
+
+        <!-- 主操作 -->
+        <div class="sum-foot">
+          <button class="btn-primary" type="button">继续读</button>
+          <button class="btn-secondary" type="button">合上书</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">专注 · 会话结束小结</div>
+    <div class="cap-note">
+      小结页只报四件事：本次分钟大数字（等宽数字）、读到第 X 章、新增摘记数、今日一句卡片；主操作「继续读 / 合上书」。
+      数字与阅读足迹同源同数，不另算一套口径；陶土只用在足迹条上。
+    </div>
+    <div class="cap-tokens">
+      surface / ink / clay · 数字 mono + tabular-nums · 卡片 radius-card 16 + shadow-sm · 演示数据
+    </div>
+  </div>
+</div>
+</body>
+</html>

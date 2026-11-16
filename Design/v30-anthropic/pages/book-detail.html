@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>听页 · 书籍详情 · v30 Claude · Anthropic</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  /* 页面专属：书籍详情 */
+  .ico { width: 20px; height: 20px; flex: none; display: block; }
+  .ico-sm { width: 16px; height: 16px; flex: none; display: block; }
+  .fill { flex: 1; min-width: 0; }
+  .t-page-title, .t-title, .t-section { line-height: var(--ty-leading-display); }
+
+  .ring { position: relative; width: 68px; height: 68px; flex: none; }
+  .ring .pct {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--ty-font-mono); font-size: 17px; font-weight: 600; color: var(--ty-ink);
+  }
+  .sec-btn { min-height: 46px; padding: 0 var(--ty-space-2); font-size: 14px; }
+  .chapter { display: flex; align-items: center; gap: var(--ty-space-3); padding: var(--ty-space-3) 0; border-bottom: 1px solid var(--ty-line); }
+  .chapter .no { font-family: var(--ty-font-mono); font-size: 12px; color: var(--ty-ink-4); width: 26px; flex: none; }
+  .chapter .nm { flex: 1; min-width: 0; font-family: var(--ty-font-serif); font-size: var(--ty-body); color: var(--ty-ink); }
+  .chapter.is-now .nm { color: var(--ty-clay-text); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="device">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+
+      <div class="topbar">
+        <button class="btn-icon" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 8 12l7 7.5"/></svg>
+        </button>
+        <span class="title">百年孤独</span>
+        <span class="badge is-outline">演示</span>
+        <button class="btn-icon" aria-label="更多">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
+        </button>
+      </div>
+
+      <div class="content" style="display:flex; flex-direction:column;">
+        <!-- 大封面 + 书名 + 作者 + 进度环 -->
+        <div class="hstack" style="align-items:flex-start; gap: var(--ty-space-4); flex:none;">
+          <div class="bookcover xl">百</div>
+          <div class="stack fill" style="gap: var(--ty-space-2);">
+            <div class="hstack" style="gap: var(--ty-space-2);">
+              <span class="seal-dot"></span>
+              <span class="t-title" style="font-size:26px;">百年孤独</span>
+            </div>
+            <span class="t-caption">加西亚·马尔克斯 · 1967 · EPUB</span>
+            <div class="hstack" style="margin-top: var(--ty-space-2); gap: var(--ty-space-3);">
+              <div class="ring">
+                <svg viewBox="0 0 68 68" width="68" height="68" aria-hidden="true">
+                  <circle cx="34" cy="34" r="29" fill="none" stroke="var(--ty-line)" stroke-width="5"/>
+                  <circle cx="34" cy="34" r="29" fill="none" stroke="var(--ty-clay)" stroke-width="5" stroke-linecap="round"
+                          stroke-dasharray="76.5 182.2" transform="rotate(-90 34 34)"/>
+                </svg>
+                <span class="pct">42%</span>
+              </div>
+              <div class="stack" style="gap:2px;">
+                <span class="t-caption">已读 42%</span>
+                <span class="t-meta">约剩 3 小时 20 分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 最近阅读位置 -->
+        <div class="card" style="margin-top: var(--ty-space-3); padding: var(--ty-space-3) var(--ty-space-4); flex:none;">
+          <div class="hstack" style="justify-content:space-between;">
+            <span class="t-caption">上次读到</span>
+            <span class="t-meta">昨天 21:34</span>
+          </div>
+          <div class="hstack" style="margin-top: var(--ty-space-1); gap: var(--ty-space-2);">
+            <span class="t-book">第 9 章 · 多年以后，面对行刑队</span>
+          </div>
+          <div class="t-meta" style="margin-top: 2px;">本次读了 24 分钟 · 第 41 句</div>
+        </div>
+
+        <!-- 主操作 -->
+        <button class="btn-primary" style="width:100%; margin-top: var(--ty-space-3); flex:none;">
+          继续阅读
+          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5 16 12l-7 6.5"/></svg>
+        </button>
+
+        <!-- 次操作 -->
+        <div class="hstack gap-2" style="margin-top: var(--ty-space-3); flex:none;">
+          <button class="btn-secondary sec-btn fill">听书</button>
+          <button class="btn-secondary sec-btn fill">详情</button>
+          <button class="btn-secondary sec-btn fill">章节目录</button>
+        </div>
+
+        <div class="setting-row" style="margin-top: var(--ty-space-2); flex:none;">
+          <span class="label">移动分组</span>
+          <span class="value">文学</span>
+          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="var(--ty-ink-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+        </div>
+
+        <!-- 章节列表入口 -->
+        <div class="hstack" style="margin: var(--ty-space-3) 0 var(--ty-space-2); flex:none;">
+          <span class="t-book fill">最近章节</span>
+          <span class="t-meta">共 30 章</span>
+        </div>
+        <div style="flex:none;">
+          <div class="chapter">
+            <span class="no">08</span>
+            <span class="nm fill">狂风暴雨</span>
+            <span class="t-meta">22 分钟</span>
+          </div>
+          <div class="chapter is-now">
+            <span class="no">09</span>
+            <span class="nm fill">多年以后，面对行刑队</span>
+            <span class="t-meta">读到 41 句</span>
+          </div>
+          <div class="chapter">
+            <span class="no">10</span>
+            <span class="nm fill">奥雷里亚诺·布恩迪亚上校</span>
+            <span class="t-meta">未读</span>
+          </div>
+          <div class="chapter">
+            <span class="no">11</span>
+            <span class="nm fill">最后的傍晚</span>
+            <span class="t-meta">未读</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">书籍详情</div>
+    <div class="cap-note">
+      大封面（色块占位）+ 宋体书名 + 作者元信息 + 陶土进度环；「继续阅读」为实心墨底主按钮（全页唯一），听书 / 详情 / 章节目录为白底发丝线次按钮。
+      最近阅读位置用墨字给出章名、句号与时间；章节列表按序号 + 宋体章题排布，当前章用陶土文字标记。
+      本页进度、时长与章节为设计演示数据。
+    </div>
+    <div class="cap-tokens">
+      btn-primary 实心墨 · btn-secondary 白底发丝线 · clay 进度环 · serif 26 书名
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

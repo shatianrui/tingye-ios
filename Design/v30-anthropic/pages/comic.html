@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听页 v30 · 漫画阅读器</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../device.css">
+<style>
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .ico.dot { fill: currentColor; stroke: none; }
+
+  .tb-mid { flex: 1; min-width: 0; }
+  .tb-mid .title { display: block; }
+  .tb-mid .sub { display: block; }
+
+  /* 图片页：色块占位，不引用任何外部图片 */
+  .cbody { display: flex; padding-top: var(--ty-space-2); }
+  .page-art {
+    position: relative; flex: 1; min-height: 0;
+    background: var(--ty-surface-subtle);
+    border: 1px solid var(--ty-line); border-radius: var(--ty-radius-control);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .art { width: 100%; height: 100%; color: var(--ty-ink-4); opacity: 0.55; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .art-label {
+    position: absolute; left: var(--ty-space-3); bottom: var(--ty-space-3);
+    font-size: var(--ty-caption); color: var(--ty-ink-3);
+  }
+  .art-tag {
+    position: absolute; right: var(--ty-space-3); top: var(--ty-space-3);
+    font-size: var(--ty-kicker); font-weight: 500; letter-spacing: var(--ty-tracking-kicker);
+    color: var(--ty-ink-4); text-transform: uppercase;
+  }
+
+  /* 底部页码 */
+  .cm-bottom { flex: none; padding: var(--ty-space-3) var(--ty-inset) var(--ty-space-4); border-top: 1px solid var(--ty-line); }
+  .cm-line { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ty-space-3); }
+  .cm-line .page { font-size: var(--ty-body); color: var(--ty-ink); }
+  .cm-bottom .progress { margin-top: var(--ty-space-2); }
+  .cm-note { margin-top: var(--ty-space-3); font-size: var(--ty-caption); color: var(--ty-ink-4); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 深色变体：画布与卡面互换 -->
+  <div class="device dark">
+    <div class="island"></div>
+    <div class="statusbar">
+      <span class="mono">9:41</span>
+      <div class="sb-right">
+        <span class="sb-bars"><i></i><i></i><i></i><i></i></span>
+        <span class="sb-batt"><i></i></span>
+      </div>
+    </div>
+
+    <div class="app has-homebar">
+      <!-- 顶部工具条 -->
+      <div class="topbar">
+        <button class="btn-icon" type="button" aria-label="返回书库">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 4.5 8 12l7 7.5"></path></svg>
+        </button>
+        <div class="tb-mid">
+          <span class="title">山海拾遗</span>
+          <span class="sub">第 2 话 · 城市篇</span>
+        </div>
+        <button class="btn-icon" type="button" aria-label="单页 / 双页">
+          <svg class="ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4" y="5" width="7" height="14" rx="1"></rect><rect x="13" y="5" width="7" height="14" rx="1"></rect></svg>
+        </button>
+        <button class="btn-icon" type="button" aria-label="更多">
+          <svg class="ico dot" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="18.5" cy="12" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 图片页 -->
+      <div class="content cbody">
+        <div class="page-art">
+          <svg class="art" viewBox="0 0 342 616" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <!-- 大格：月亮与远屋 -->
+            <rect x="16" y="16" width="310" height="292" rx="2"></rect>
+            <circle cx="246" cy="92" r="34"></circle>
+            <path d="M16 232h310"></path>
+            <path d="M44 232v-52M78 232v-32M112 232v-66M146 232v-44"></path>
+            <path d="M16 262c52-30 104-30 156 0s104 30 154 12"></path>
+            <!-- 左下格：楼道 -->
+            <rect x="16" y="324" width="150" height="260" rx="2"></rect>
+            <path d="M16 512h150"></path>
+            <rect x="44" y="380" width="40" height="56" rx="2"></rect>
+            <rect x="100" y="380" width="40" height="56" rx="2"></rect>
+            <path d="M60 512v-32h48v32"></path>
+            <!-- 右下格：人物 -->
+            <rect x="182" y="324" width="144" height="260" rx="2"></rect>
+            <circle cx="254" cy="420" r="26"></circle>
+            <path d="M206 524c8-40 26-60 48-60s40 20 48 60"></path>
+          </svg>
+          <div class="art-tag">Demo</div>
+          <div class="art-label">第 12 页 · 演示分镜占位</div>
+        </div>
+      </div>
+
+      <!-- 底部页码 -->
+      <div class="cm-bottom">
+        <div class="cm-line">
+          <span class="t-caption">第 2 话 · 城市篇</span>
+          <span class="page mono">12 / 86</span>
+        </div>
+        <div class="progress thin"><i style="width:14%"></i></div>
+        <div class="cm-note">演示稿 · 漫画仅支持阅读，不支持划线与听书。</div>
+      </div>
+    </div>
+
+    <div class="homebar"></div>
+  </div>
+
+  <div class="caption">
+    <div class="cap-title">漫画 · 阅读器</div>
+    <div class="cap-note">
+      漫画走深色变体：画布与卡面互换、暖中性不变。顶部一条工具条（返回 / 书名·话名 / 单页双页 / 更多），
+      中部整块图片页用线稿色块占位，底部是页码 12 / 86 与细进度条。
+    </div>
+    <div class="cap-tokens">
+      dark canvas / surface-subtle / ink-4 / clay · 进度条 2px · 图片占位无外部资源 · 演示作品
+    </div>
+  </div>
+</div>
+</body>
+</html>
