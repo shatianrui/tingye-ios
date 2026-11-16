@@ -773,6 +773,13 @@ struct VoiceSettingsView: View {
                 }
             }
             .listRowBackground(Theme.surface)
+            // 底部保存栏会盖住最后一行。留出与保存栏相当的滚动余量，AirPlay 才能完整露出来。
+            Section {
+                Color.clear.frame(height: 76).accessibilityHidden(true)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
             if error != nil || !notice.isEmpty { voiceNotices }
         }
         .editorialList()

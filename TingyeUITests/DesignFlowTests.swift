@@ -694,8 +694,18 @@ final class DesignFlowTests: XCTestCase {
         for id in ids { XCTAssertTrue(app.buttons[id].isHittable) }
         app.buttons["player.voice"].tap()
         XCTAssertTrue(app.navigationBars["声音与朗读"].waitForExistence(timeout: 5))
-        reveal(app.buttons["AirPlay"], in: app)
-        XCTAssertTrue(app.buttons["AirPlay"].isHittable)
+        let airplay = app.buttons["AirPlay"]
+        XCTAssertTrue(airplay.waitForExistence(timeout: 5))
+        let save = app.buttons["voice.save"]
+        let lists = app.collectionViews.allElementsBoundByIndex.filter { $0.frame.height > 200 }
+        let list = lists.max { $0.frame.height < $1.frame.height } ?? app
+        for _ in 0..<12 {
+            let frame = airplay.frame
+            let aboveSave = !save.exists || frame.maxY <= save.frame.minY
+            if frame.width > 20, frame.height > 20, app.frame.insetBy(dx: 0, dy: 4).contains(frame), aboveSave, airplay.isHittable { break }
+            list.swipeUp()
+        }
+        XCTAssertTrue(airplay.isHittable, "音频输出应露在保存栏上方")
         screenshot(app, "功能键-声音与播放设备")
         app.buttons["取消声音设置，不保存修改"].tap()
         XCTAssertTrue(app.buttons["player.toggle"].label.contains("继续"))
