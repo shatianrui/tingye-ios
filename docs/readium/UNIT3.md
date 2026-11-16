@@ -2,7 +2,7 @@
 
 实施日期：2026-11-16 UTC。动手前完整阅读 PLAN、UNIT1、UNIT2；实现使用固定的 Readium 3.11.1 与 SwiftSoup 2.13.5 API。本轮没有任何 git 操作，没有触发 CI，没有改构建号 142、workflow、依赖版本或锁文件，没有改其他格式的导入器与排版引擎。
 
-交付状态：**实现、工程挂接及 25 个 XCTest 方法已落盘，静态检查通过；尚未编译、执行 XCTest 或做 Navigator 真机验收。不能记为单元 3 验收通过。** 本环境只有 Linux/Python/Node/GCC，没有 swift、xcodebuild 或 iOS SDK。
+交付状态：**已按 CI 报错修复，待重新验证。** 实现、工程挂接及 25 个 XCTest 方法已落盘；据本次提供的 CI 日志，Build #30 成功，Tests #14 的 unit-tests 与 ui-tests 在编译阶段失败，0 用例执行。不能记为单元 3 验收通过。本环境只有 Linux/Python/Node/GCC，没有 swift、xcodebuild 或 iOS SDK。
 
 ## 改动清单
 
@@ -88,3 +88,14 @@ API 核对使用版本化上游源码：[Locator](https://github.com/readium/swi
 | 非 EPUB 逻辑 Locator 与原生引擎 | 全格式逻辑 href/范围可双向转换，未改其他格式导入和排版；原生全量回归未执行。 |
 | 同句精细更新不被 c/p 去重吞掉、KVS 单调时钟/阅读保护 | Locator 感知更新和有界兼容字段已接，单测已写；真实 iCloud 尚未测。 |
 | 工程、测试资源、失败不破坏 catalog | 静态工程/夹具检查通过，原子提交与失败测试已写；Swift 编译、iOS 文件系统故障与 CI 尚未验证。 |
+
+## CI 修复记录
+
+2026-11-16 UTC，针对提供的 Tests #14 编译日志定向修复；交付状态为**已按 CI 报错修复，待重新验证**。
+
+- `ReadiumLocatorTests.swift:218` 的 `[JSONValue]` 与 `ReadiumShared.JSONValue` 撞名，导致编译歧义及 ui-tests 中 `.string` / `.object` / `.number` 的级联错误。逐处核对后，将该数组类型、同测试内的解码类型及编码构造共三处全部限定为 `Tingye.JSONValue`：它们承载听页模型的 Codable 枚举，不使用 `ReadiumShared.JSONValue`。
+- `LocatorMigrationTests.swift:34` 的幂等性断言第二个 `LocatorMigration.token(next)` 调用缺少 `try`，已补齐；断言两侧与预期含义保持不变。
+- 排查范围覆盖两个新文件 `ReadiumLocatorTests.swift`、`LocatorMigrationTests.swift`，以及其余全部导入 `ReadiumShared` 的测试文件 `ReadiumPublicationTests.swift`、`ReadiumPreferencesTests.swift`。逐项检查显式类型引用，包含 `JSONValue`、`Link`、`Locator`、`Location`、`Decoration` 及其他模型/偏好类型；并核对测试目录中的 ReadiumShared / SwiftUI 导入情况。
+- 防复发补齐两处限定：旧文本锚点工具调用使用 `Tingye.Locator.anchor`；装饰样式配置使用 `ReadiumNavigator.Decoration.Style.HighlightConfig`。原有 `ReadiumShared.Locator` 构造已限定并保留；排查文件没有 `Link`、`Location` 的显式类型引用，没有其他未限定的上述同名类型。其余显式引用为标准库/Foundation/XCTest 类型、听页自有模型或唯一的 Readium 类型（如 `EPUBPreferences`、`AnyURL`），未发现其他同名歧义风险。两个既有测试文件无需修改。
+- 本轮仅修改上述两个新测试文件与本文档；未改断言预期值或测试逻辑，未做 git 操作，未改 App、构建号 142、workflows、依赖或工程配置。已静态核对六处代码修改仅为五处类型限定与一处 `try`，保留全部 25 个测试方法，并对照修改前文件校验值检查改动范围。
+- 本环境无 Swift / xcodebuild / iOS SDK，未执行测试编译或 XCTest，也未触发 CI；需在 Mac/CI 重新验证 unit-tests 与 ui-tests，不能将本次静态核对记为编译或用例通过。

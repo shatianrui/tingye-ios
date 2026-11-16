@@ -31,7 +31,7 @@ final class LocatorMigrationTests: XCTestCase {
             XCTAssertEqual(next.notes[0].note, entry.notes[0].note); XCTAssertEqual(next.notes[0].text, entry.notes[0].text)
             XCTAssertEqual(next.notes[0].anchor?.quote, "山中有一页。"); XCTAssertEqual(next.notes[0].color, "green")
             let (again, _) = try await migration.convert(next, using: bridge)
-            XCTAssertEqual(try LocatorMigration.token(again), LocatorMigration.token(next))
+            XCTAssertEqual(try LocatorMigration.token(again), try LocatorMigration.token(next))
             migration.committed(receipt)
             XCTAssertEqual(migration.states[entry.id], .completed(exact: 4, relocated: 0, approximate: 0, unresolved: 0))
         }

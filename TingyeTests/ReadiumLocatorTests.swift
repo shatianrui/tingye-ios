@@ -62,7 +62,7 @@ final class ReadiumLocatorTests: XCTestCase {
         let first = String(repeating: "山", count: 160) + "。", second = String(repeating: "水", count: 140) + "。"
         let book = LocatorTestSupport.book([first + second + "终句。"])
         let sentences = Sentence.split(book.chapters[0].text)
-        let note = Highlight(chapter: 0, start: 0, end: 1, text: first + second, anchor: Locator.anchor(in: sentences, at: 0), note: "全文")
+        let note = Highlight(chapter: 0, start: 0, end: 1, text: first + second, anchor: Tingye.Locator.anchor(in: sentences, at: 0), note: "全文")
         let bridge = try await LocatorTestSupport.bridge(book, self)
         let resolved = try await bridge.resolve(.init(note))
         let locator = try XCTUnwrap(StoredLocator.readium(resolved.locator))
@@ -191,7 +191,7 @@ final class ReadiumLocatorTests: XCTestCase {
             XCTAssertEqual(batch.decorations.count, 6); XCTAssertTrue(batch.unresolved.isEmpty)
             for (decoration, mark) in zip(batch.decorations, marks) {
                 XCTAssertEqual(decoration.id, mark.id.uuidString)
-                XCTAssertEqual((decoration.style.config as? Decoration.Style.HighlightConfig)?.tint, ReaderMark.uiColor(mark.color))
+                XCTAssertEqual((decoration.style.config as? ReadiumNavigator.Decoration.Style.HighlightConfig)?.tint, ReaderMark.uiColor(mark.color))
                 XCTAssertEqual(decoration.style.id, kind == "wavy" ? ReadiumAnnotations.wavy : kind == "underline" ? .underline : .highlight)
             }
         }
@@ -215,17 +215,17 @@ final class ReadiumLocatorTests: XCTestCase {
     }
     func testInvalidLocatorIsolatedInProgressBookmarkHighlightAndBackups() throws {
         let book = LocatorTestSupport.book(format: "TXT")
-        let originals: [JSONValue] = [.number(42), .object(["href": .string("x"), "type": .string("text/plain"), "locations": .object(["progression": .number(2)])]), .object(["type": .string("text/plain")])]
+        let originals: [Tingye.JSONValue] = [.number(42), .object(["href": .string("x"), "type": .string("text/plain"), "locations": .object(["progression": .number(2)])]), .object(["type": .string("text/plain")])]
         for invalid in originals {
             var row = ShelfEntry(book: book, progress: .init(chapter: 0, position: 1, anchor: .init(quote: "重复。")))
             row.bookmarks = [.init(chapter: 0, position: 1, excerpt: "重复。")]
             row.highlights = [.init(chapter: 0, start: 1, end: 1, text: "重复。", note: "笔记")]
-            var raw = try XCTUnwrap(JSONDecoder().decode(JSONValue.self, from: Integrity.encoder().encode(row)).object)
+            var raw = try XCTUnwrap(JSONDecoder().decode(Tingye.JSONValue.self, from: Integrity.encoder().encode(row)).object)
             var progress = try XCTUnwrap(raw["progress"]?.object); progress["locator"] = invalid; raw["progress"] = .object(progress)
             for key in ["bookmarks", "highlights"] {
                 var item = try XCTUnwrap(raw[key]?.array?.first?.object); item["locator"] = invalid; raw[key] = .array([.object(item)])
             }
-            let decoded = try JSONDecoder().decode(ShelfEntry.self, from: JSONEncoder().encode(JSONValue.object(raw)))
+            let decoded = try JSONDecoder().decode(ShelfEntry.self, from: JSONEncoder().encode(Tingye.JSONValue.object(raw)))
             XCTAssertNil(decoded.progress.locator); XCTAssertNil(decoded.bookmarks[0].locator); XCTAssertNil(decoded.notes[0].locator)
             XCTAssertEqual(decoded.progress.anchor, row.progress.anchor); XCTAssertEqual(decoded.notes[0].note, "笔记")
             let packet = BackupPacket(book: book, progress: decoded.progress)
