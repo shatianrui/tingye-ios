@@ -174,6 +174,7 @@ struct FocusStartView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    EditorialIntro(title: "给这一页一点时间", detail: bookTitle, eyebrow: "专注阅读")
                     switch store.phase {
                     case .finished:
                         FocusSummaryView(store: store, entry: entry, onContinue: { dismiss() }, onCloseBook: { dismiss(); onCloseBook() })
@@ -234,10 +235,10 @@ struct FocusStartView: View {
 
     private var runningSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("正在专注").font(.caption).foregroundStyle(Theme.accent)
+            Label("正在专注", systemImage: Icon.sleepTimer).font(.headline).foregroundStyle(Theme.accent)
             TimelineView(.periodic(from: .now, by: 15)) { context in
                 Text(remainingLabel(at: context.date))
-                    .font(Theme.display(40)).monospacedDigit().foregroundStyle(Theme.ink)
+                    .scaledFont(40, weight: .semibold, relativeTo: .largeTitle).monospacedDigit().foregroundStyle(Theme.ink)
                     .onChange(of: context.date) { _, _ in store.completeIfDue(currentChapter: chapter) }
             }
             Text("目标 \(store.targetMinutes) 分钟 · 从第 \(store.chapterAtStart + 1) 章开始")
@@ -256,7 +257,7 @@ struct FocusStartView: View {
 
     private var otherBookSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("正在专注另一本书").font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
+            EditorialNotice(title: "正在专注另一本书", detail: "结束或放弃上一场专注后，就可以为这本书开始新的会话。")
             Text("一次只开一个专注会话。结束它之后，才能为这本书开始新的专注。")
                 .font(.subheadline).foregroundStyle(Theme.ink2)
             Button { store.finish(currentChapter: store.chapterAtEnd) } label: { Text("结束那次专注") }
@@ -304,9 +305,9 @@ struct FocusSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("专注完成").font(.caption).foregroundStyle(Theme.accent)
-                Text(minutesText).font(Theme.display(40)).monospacedDigit().foregroundStyle(Theme.ink)
+            VStack(alignment: .leading, spacing: 10) {
+                Label("专注完成", systemImage: Icon.checkmark).font(.headline).foregroundStyle(Theme.accent)
+                Text(minutesText).scaledFont(40, weight: .semibold, relativeTo: .largeTitle).monospacedDigit().foregroundStyle(Theme.ink)
                 Text("读到第 \(store.chapterAtEnd + 1) 章" + (newHighlights.map { " · 新增 \($0) 条摘记" } ?? ""))
                     .font(.caption).foregroundStyle(Theme.ink2)
             }

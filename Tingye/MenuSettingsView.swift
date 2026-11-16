@@ -28,6 +28,7 @@ struct MenuSettingsView: View {
 
     var body: some View {
         List {
+            EditorialIntro(title: "把常用工具放在前面", detail: "拖动调整顺序，开关控制显示，首个可见分组默认打开。")
             Section {
                 ForEach(order) { tool in
                     Toggle(isOn: Binding(get: { !hidden.contains(tool.rawValue) }, set: { show in
@@ -56,7 +57,7 @@ struct MenuSettingsView: View {
             .listRowBackground(Theme.surface)
         }
         .environment(\.editMode, .constant(.active))
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle("菜单")
         .navigationBarTitleDisplayMode(.large)

@@ -9,12 +9,13 @@ struct StorageView: View {
 
     var body: some View {
         Form {
+            EditorialIntro(title: "给书库留出空间", detail: "原书与摘记妥善保留，可重建的缓存单独整理。")
             Section {
                 HStack(alignment: .firstTextBaseline) {
                     Text(StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
-                        .font(Theme.display(34, relativeTo: .largeTitle)).monospacedDigit()
+                        .scaledFont(34, weight: .semibold, relativeTo: .largeTitle).monospacedDigit()
                     Spacer()
-                    if scanning { ProgressView() }
+                    if scanning { ProgressView("正在统计…").font(.footnote) }
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("听页共占用 " + StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
@@ -24,14 +25,11 @@ struct StorageView: View {
             Section {
                 ForEach(usage) { item in
                     HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.kind.title)
-                            Text(item.kind.detail).font(.caption).foregroundStyle(Theme.ink3)
-                        }
-                        Spacer()
-                        Text(StorageUsage.format(item.bytes)).monospacedDigit().foregroundStyle(Theme.ink2)
+                        EditorialRow(title: item.kind.title, detail: item.kind.detail,
+                            value: StorageUsage.format(item.bytes), disclosure: false)
                         if item.kind.clearable {
                             Button("清理") { clear(item.kind) }
+                                .frame(minWidth: 44, minHeight: 44)
                                 .buttonStyle(.borderless).foregroundStyle(Theme.accent)
                                 .disabled(item.bytes == 0)
                                 .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
@@ -55,7 +53,7 @@ struct StorageView: View {
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle("空间整理")
         .navigationBarTitleDisplayMode(.large)

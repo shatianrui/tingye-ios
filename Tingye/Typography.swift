@@ -104,6 +104,7 @@ struct MyFontsView: View {
     @State private var importing = false
     var body: some View {
         List {
+            EditorialIntro(title: "挑一款舒服的字体", detail: "内置字体与个人字体共用阅读偏好，原书内容不会被改写。")
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("让文字更合心意", systemImage: Icon.fonts).font(.headline).foregroundStyle(Theme.ink)
@@ -115,6 +116,9 @@ struct MyFontsView: View {
                 }.padding(.vertical, 10)
             }.listRowBackground(Theme.accentSoft)
             Section {
+                if fonts.isEmpty {
+                    EditorialNotice(title: "还没有个人字体", detail: "可以导入 TTF、OTF 或 TTC 文件；内置字体仍可在阅读排版中选择。")
+                }
                 ForEach(fonts) { item in
                     Button { font = "custom:" + item.postScript } label: {
                         HStack {
@@ -142,7 +146,7 @@ struct MyFontsView: View {
         }
         .navigationTitle("我的字体")
         .navigationBarTitleDisplayMode(.inline)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .paperBackground()
         .fileImporter(isPresented: $importing, allowedContentTypes: [.font, UTType(filenameExtension: "ttf") ?? .data, UTType(filenameExtension: "otf") ?? .data], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }

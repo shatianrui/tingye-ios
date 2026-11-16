@@ -82,9 +82,13 @@ struct NotesUnifiedView: View {
 
     var body: some View {
         List {
+            EditorialIntro(title: "留下的文字", detail: "划线、笔记与书签，按书收好，随时回到原文。")
             if !hasAnyItems {
                 ContentUnavailableView("还没有摘记", systemImage: Icon.highlight, description: Text("长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。"))
                     .listRowBackground(Color.clear)
+            }
+            if hasAnyItems && books.isEmpty {
+                ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
             }
             ForEach(books) { group in
                 Section {
@@ -105,7 +109,7 @@ struct NotesUnifiedView: View {
         }
         .navigationTitle("书摘与笔记")
         .searchable(text: $query, prompt: "搜索划线、笔记与书签")
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .confirmationDialog("删除这条标注？", isPresented: Binding(get: { removingHighlight != nil }, set: { if !$0 { removingHighlight = nil } }), titleVisibility: .visible) {
             Button("删除标注与附带笔记", role: .destructive) {

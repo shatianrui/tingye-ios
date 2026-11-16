@@ -96,9 +96,10 @@ struct SMBBrowser: View {
 
     var body: some View {
         List {
+            EditorialIntro(title: "局域网书库", detail: "选择共享文件夹，浏览后将需要的书导入本机。")
             if let error {
                 Section {
-                    Label(error, systemImage: Icon.warning).foregroundStyle(Theme.danger)
+                    EditorialNotice(title: "无法读取共享书库", detail: error, kind: .failure)
                     Button("重新加载") { Task { await load() } }.disabled(loading)
                 }
             }
@@ -127,7 +128,7 @@ struct SMBBrowser: View {
                 ContentUnavailableView(share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), systemImage: Icon.folder)
             }
         }
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle(share == nil ? source.name : (path.isEmpty ? share! : (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)
@@ -142,18 +143,10 @@ struct SMBBrowser: View {
 
     private func row(_ item: SMBEntry) -> some View {
         let importable = ImportableFile.accepts(item.name)
-        return HStack(spacing: 14) {
-            ThemeIcon(symbol: item.isFolder ? Icon.folder : importable ? Icon.read : Icon.document, size: 24)
-                .foregroundStyle(item.isFolder ? Theme.accent : importable ? Theme.ink2 : Theme.ink3)
-                .frame(width: 24, height: 44).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(item.name).font(.subheadline.weight(.medium)).foregroundStyle(item.isFolder || importable ? Theme.ink : Theme.ink3).lineLimit(2)
-                if !item.isFolder { Text(ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file)).font(.caption).foregroundStyle(Theme.ink3) }
-            }
-            Spacer()
-            if !item.isFolder && importable { Label("导入", systemImage: Icon.downloadFile).font(.caption.weight(.medium)).foregroundStyle(Theme.accent) }
-        }
-        .padding(.vertical, 6).contentShape(Rectangle())
+        return EditorialRow(title: item.name,
+            detail: item.isFolder ? "文件夹" : ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file),
+            value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
+            symbol: item.isFolder ? Icon.folder : Icon.document, disclosure: item.isFolder)
     }
 
     private func load() async {

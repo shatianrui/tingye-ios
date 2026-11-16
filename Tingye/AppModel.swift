@@ -509,19 +509,45 @@ final class AppModel: ObservableObject {
     private func checkOwner(_ captured: String) throws {
         guard owner == captured else { throw ReaderError.message("书库已变化，请重新操作。") }
     }
-    /// 文件选择器的 deferred 呈现请求：ImportHub 位于 sheet 内，其同宿主还叠着编辑 sheet、
-    /// 移除确认框与反馈 sheet，在 sheet 内直接挂 fileImporter 会出现点「打开」不回调、
-    /// 选择器也不关闭的呈现冲突。入口只登记请求并关闭面板，宿主页（书库页 / 设置页）
-    /// 在 sheet 的 onDismiss 里消费请求，改从根层视图打开选择器，全程只有一个 presentation。
+    /// PR10 的 request/consume 契约保留；所有入口最终交给 StudyRootView。
+    /// modal token 只在 onDismiss 释放，避免结果 sheet 与根选择器争抢呈现时机。
     @Published private(set) var fileImportRequested = false
-    func requestFileImport() { fileImportRequested = true }
-    /// 宿主在 sheet 完全关闭后消费请求；返回 true 表示应立即打开文件选择器。
+    private(set) var fileImportMultiple = false
+    @Published var fileImportPicker: FileImportRequest?
+    private var fileImportPresentations: Set<UUID> = []
+    func requestFileImport(multiple: Bool = false) {
+        fileImportMultiple = multiple
+        fileImportRequested = true
+    }
+    func holdFileImportPresentation(_ id: UUID) { fileImportPresentations.insert(id) }
+    func releaseFileImportPresentation(_ id: UUID) {
+        fileImportPresentations.remove(id)
+        presentRequestedFileImport()
+    }
     func consumeFileImportRequest() -> Bool {
+        guard fileImportPresentations.isEmpty else { return false }
         defer { fileImportRequested = false }
         return fileImportRequested
     }
+    func presentRequestedFileImport() {
+        guard fileImportPicker == nil else { return }
+        let multiple = fileImportMultiple
+        guard consumeFileImportRequest() else { return }
+        fileImportPicker = FileImportRequest(multiple: multiple)
+    }
+    /// nil is a real cancellation; a successful empty selection is an explicit error.
+    func completeFileImportSelection(_ urls: [URL]?) {
+        fileImportPicker = nil
+        guard let urls else { return }
+        guard !urls.isEmpty else {
+            message = "没有选中可导入的文件，请重新选择。"
+            return
+        }
+        beginImport(urls)
+    }
     func beginImport(_ urls: [URL]) {
-        guard !urls.isEmpty else { return }
+        guard !urls.isEmpty else { message = "没有选中可导入的文件，请重新选择。"; return }
+        if !busy { notice = nil; message = nil }
         run("正在导入书籍") { [self] in try await importWithFeedback(urls) }
     }
     /// 可恢复的单项失败留在结果列表，其他文件继续，不弹出一串警告。
@@ -546,7 +572,7 @@ final class AppModel: ObservableObject {
             importReport?.items[index].state = .importing
             do {
                 let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-                let imported = try await Task.detached(priority: .userInitiated) { try await BookImporter.read(url) }.value
+                let imported = try await Task.detached(priority: .userInitiated) { try await BookImporter.readCoordinated(url) }.value
                 try checkOwner(captured)
                 guard generation == libraryGeneration, !restoringLibrary else { throw CancellationError() }
                 try Task.checkCancellation()
@@ -622,7 +648,7 @@ final class AppModel: ObservableObject {
         defer { publicationWrites.remove(id) }
         guard let row = entries.first(where: { $0.id == id }) else { return }
         let secured = url.startAccessingSecurityScopedResource(); defer { if secured { url.stopAccessingSecurityScopedResource() } }
-        let imported = try await Task.detached { try await BookImporter.read(url) }.value
+        let imported = try await Task.detached { try await BookImporter.readCoordinated(url) }.value
         var value = imported.book
         try checkOwner(captured)
         guard value.format.caseInsensitiveCompare(row.format) == .orderedSame else { throw ReaderError.message("请选择与原书相同格式的文件。") }

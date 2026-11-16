@@ -101,8 +101,7 @@ struct SourcesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("把想读的书，带到身边。")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                EditorialIntro(title: "把书带到身边", detail: "从文件、电脑或远程书库，找到下一本想读的书。", eyebrow: "添书")
                 VStack(alignment: .leading, spacing: 12) {
                     ThemeIcon(symbol: Icon.folder, size: 32).foregroundStyle(Theme.accent)
                     Text("从文件导入").scaledFont(20, weight: .bold, relativeTo: .title3)
@@ -111,11 +110,16 @@ struct SourcesView: View {
                         .font(.caption).foregroundStyle(Theme.ink2)
                     // 文件选择器不在本 sheet 内呈现：同宿主还叠着编辑 sheet、移除确认框与
                     // 反馈 sheet 时，fileImporter 在 sheet 内的回调会被吞（点「打开」无反应、
-                    // 选择器不关闭）。改为登记请求并关闭面板，由宿主页在 onDismiss 后从根层打开。
+                    // 选择器不关闭）。登记请求后关闭面板，onDismiss 释放占用，再由 StudyRootView 消费。
                     Button("选择文件") { model.requestFileImport(); dismiss() }
                         .buttonStyle(PrimaryButtonStyle(height: 50))
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
+                    Button("批量导入文件") { model.requestFileImport(multiple: true); dismiss() }
+                        .buttonStyle(SecondaryButtonStyle(height: 44)).disabled(model.busy)
+                        .accessibilityIdentifier("sources.importBatch")
+                    Text("普通导入选择一本即开始；多本书请使用批量导入。")
+                        .font(.footnote).foregroundStyle(Theme.ink2)
                 }
                 .padding(24).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -243,21 +247,8 @@ private struct SourceActionRow: View {
     let icon: String
     let title: String
     let subtitle: String
-
     var body: some View {
-        HStack(spacing: 12) {
-            ThemeIcon(symbol: icon, size: 24).foregroundStyle(Theme.accent).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            ThemeIcon(symbol: Icon.disclosure, size: 18).foregroundStyle(Theme.ink).accessibilityHidden(true)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 12).frame(minHeight: 64)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .contentShape(Rectangle())
+        EditorialRow(title: title, detail: subtitle, symbol: icon).paperPanel(inset: 14)
     }
 }
 
@@ -274,13 +265,15 @@ private struct SourceEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(source.kind == .opds ? "连接远程书目服务" : "连接自己的文件书库")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                    EditorialIntro(title: "连接自己的书库", detail: source.kind == .opds ? "保存书目地址，浏览分类并下载书籍。" : "保存服务器地址，连接后选择文件夹。")
                     fieldSection("书库信息")
                     field("名称") { TextField("为书库取一个名字", text: $source.name) }
                     field(source.kind == .opds ? "书目地址" : "服务器地址") {
                         TextField(source.kind == .smb ? "smb://192.168.1.10" : "https://", text: $source.url)
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    }
+                    if !validAddress && source.url.count > 8 {
+                        EditorialNotice(title: "请检查服务器地址", detail: source.kind == .smb ? "使用 smb:// 加 NAS 或电脑地址。" : "使用完整的 http:// 或 https:// 地址。", kind: .failure)
                     }
                     fieldSection("访问凭据 · 选填")
                     field("用户名") {
@@ -320,7 +313,7 @@ private struct SourceEditor: View {
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L(title)).font(.caption).foregroundStyle(Theme.ink2)
-            content().font(.subheadline).foregroundStyle(Theme.ink).frame(minHeight: 24)
+            content().font(.subheadline).foregroundStyle(Theme.ink).frame(minHeight: 44)
         }
         .padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.surface, in: Rectangle())
@@ -365,6 +358,7 @@ struct WebDAVBrowser: View {
     private var shown: [WebDAVItem] { query.isEmpty ? items : items.filter { $0.name.localizedCaseInsensitiveContains(query) } }
     var body: some View {
         List {
+            EditorialIntro(title: "远程文件", detail: "浏览文件夹，选择书籍后下载到本机。")
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(loading ? "WebDAV · 正在连接" : error == nil ? "WebDAV · 已连接" : "WebDAV · 连接失败")
@@ -377,7 +371,7 @@ struct WebDAVBrowser: View {
             .listRowBackground(Theme.surface2)
             if let error {
                 Section {
-                    Label(error, systemImage: Icon.warning).foregroundStyle(Theme.danger)
+                    EditorialNotice(title: "连接暂时未完成", detail: error, kind: .failure)
                     Button("重新加载") { Task { await load() } }.disabled(loading)
                 }
             }
@@ -398,7 +392,7 @@ struct WebDAVBrowser: View {
             }
         }
         .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle(path.isEmpty ? source.name : (path as NSString).lastPathComponent.removingPercentEncoding ?? path)
         .navigationBarTitleDisplayMode(.large)
@@ -410,22 +404,11 @@ struct WebDAVBrowser: View {
         .task { await load() }
     }
     private func row(_ item: WebDAVItem) -> some View {
-        HStack(spacing: 14) {
-            ThemeIcon(symbol: item.isFolder ? Icon.folder : ImportableFile.accepts(item.name) ? Icon.read : Icon.document, size: 24)
-                .foregroundStyle(item.isFolder ? Theme.accent : ImportableFile.accepts(item.name) ? Theme.ink2 : Theme.ink3)
-                .frame(width: 24, height: 44)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(item.name).font(.subheadline.weight(.medium)).foregroundStyle(item.isFolder || ImportableFile.accepts(item.name) ? Theme.ink : Theme.ink3).lineLimit(2)
-                if !item.isFolder, let size = item.size {
-                    Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)).font(.caption).foregroundStyle(Theme.ink3)
-                }
-            }
-            Spacer()
-            if !item.isFolder && ImportableFile.accepts(item.name) { Label("导入", systemImage: Icon.downloadFile).font(.caption.weight(.medium)).foregroundStyle(Theme.accent) }
-        }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
+        let importable = ImportableFile.accepts(item.name)
+        return EditorialRow(title: item.name,
+            detail: item.isFolder ? "文件夹" : item.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) },
+            value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
+            symbol: item.isFolder ? Icon.folder : Icon.document, disclosure: item.isFolder)
     }
     private func load() async {
         loading = true; defer { loading = false }
@@ -530,9 +513,10 @@ struct OPDSBrowser: View {
     @State private var lastAttemptWasSearch = false
     var body: some View {
         List {
+            EditorialIntro(title: "发现下一本书", detail: "浏览远程分类，或在当前书目中搜索。")
             if let error {
                 Section {
-                    Label(error, systemImage: Icon.warning).foregroundStyle(Theme.danger)
+                    EditorialNotice(title: "连接暂时未完成", detail: error, kind: .failure)
                     Button("重试此请求") { Task { await load(lastAttemptURL ?? url, searchResults: lastAttemptWasSearch) } }.disabled(loading)
                 }
             }
@@ -541,6 +525,11 @@ struct OPDSBrowser: View {
                     .disabled(loading)
             }
             if let feed {
+                if !loading && feed.entries.isEmpty {
+                    EditorialNotice(title: "这里还没有书目", detail: "可以返回分类，或下拉重新加载。")
+                } else if !loading && remoteSearchTemplate == nil && !searchText.isEmpty && !feed.entries.contains(where: { ($0.title + $0.author).localizedCaseInsensitiveContains(searchText) }) {
+                    ContentUnavailableView.search(text: searchText)
+                }
                 ForEach(feed.entries.filter { searchText.isEmpty || remoteSearchTemplate != nil || ($0.title + $0.author).localizedCaseInsensitiveContains(searchText) }) { entry in
                     if let acquisition = entry.acquisition {
                         Button { model.importRemote(acquisition.url, name: entry.title + "." + acquisition.fileExtension, source: source) } label: { bookRow(entry, acquisition) }
@@ -560,8 +549,10 @@ struct OPDSBrowser: View {
                 }
             }
         }
-        .overlay { if loading { ProgressView() } else if feed?.entries.isEmpty == true { ContentUnavailableView("没有条目", systemImage: Icon.catalog) } }
-        .scrollContentBackground(.hidden)
+        .overlay {
+            if loading { ProgressView("正在读取书目…") }
+        }
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
@@ -717,8 +708,7 @@ struct WiFiTransferView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("连接同一 WiFi，即可开始。")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                EditorialIntro(title: "从电脑传书", detail: "手机与电脑连接同一 WiFi，保持此页开启。", eyebrow: "无线传输")
                 VStack(alignment: .leading, spacing: 16) {
                     ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.accent)
                     Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
@@ -739,7 +729,7 @@ struct WiFiTransferView: View {
                         .buttonStyle(PrimaryButtonStyle(height: 50))
                         .accessibilityHint("复制后可发送到准备传书的设备")
                     } else if let error = server.error {
-                        Label(error, systemImage: Icon.warning).font(.subheadline).foregroundStyle(Theme.danger)
+                        EditorialNotice(title: "传书服务未能启动", detail: error, kind: .failure)
                         Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
                             .buttonStyle(SecondaryButtonStyle())
                     } else {
@@ -1047,8 +1037,15 @@ private final class TransferConnection: @unchecked Sendable {
     li>div{min-width:0;overflow-wrap:anywhere}li>div:first-of-type{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,1fr);align-items:center;gap:24px}.result{flex-basis:18%;max-width:34%;text-align:right;font-size:12px;color:var(--accent)}.result span{display:block;overflow-wrap:anywhere}.result button{margin-top:8px;padding:6px 12px}#clear{margin-top:16px}.footnote{font-size:12px;margin-top:24px}
     .ok{color:var(--accent)}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0}
     @media(max-width:600px){body{padding:28px 20px}h1{font-size:28px}#drop{padding:28px 16px}#choose{min-width:0;width:100%}li{gap:12px;padding:16px 12px}li>div:first-of-type{display:block}.bar{margin-top:10px}.result{flex-basis:30%;max-width:38%}}
+    header{border-bottom:1px solid var(--line);margin-bottom:24px}body{font-size:16px;background:var(--bg)}main{max-width:1000px}h1{font-size:clamp(30px,4vw,48px);line-height:1.35}.eyebrow{font-weight:600;letter-spacing:.08em}.steps{padding:0 0 0 24px;margin:0 0 32px;color:var(--ink3)}.steps li{display:list-item;background:none;min-height:0;padding:4px 0;margin:0;font-size:15px}.steps li::before{display:none}#drop{border:1px solid var(--line);border-radius:12px;padding:40px 24px}button{border-radius:10px;background:var(--accent);border-color:var(--accent)}#list li{border:1px solid var(--line);border-radius:10px}.queue-title{border-bottom:1px solid var(--line);padding-bottom:12px}
+    :root{--bg:#F7F4ED;--card:#FFFDF8;--ink:#292724;--ink3:#625B52;--accent:#98432E;--soft:#F0E4DA;--danger:#AE3D4E;--line:#D4CCC0}
+    @media(prefers-color-scheme:dark){:root{--bg:#201F1C;--card:#292723;--ink:#F1EADF;--ink3:#C2B9AB;--accent:#E9A18A;--soft:#3B2B25;--danger:#FF9FAD;--line:#5A544C}button{background:var(--accent);border-color:var(--accent);color:#201F1C}}
+    @media(prefers-contrast:more){:root{--line:#80776B}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+    @media(max-width:600px){li>div:first-of-type{display:block}.result{max-width:45%}.steps li{padding-right:8px}}
     </style></head><body><main>
-    <div class="eyebrow">听页 · 传书</div><h1>从电脑，把书送到这一页。</h1><p class="intro">保持手机传书页面开启，两个设备连接同一 WiFi。</p>
+    <header><div class="eyebrow">听页 · 私人书库</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
+    <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
     <div id="drop"><span class="asset" aria-hidden="true"></span><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
     <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
     <script>

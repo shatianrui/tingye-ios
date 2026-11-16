@@ -126,7 +126,7 @@ struct StatsView: View {
                     .accessibilityLabel("返回")
                     .accessibilityIdentifier("study.profileBack")
                 }
-                Text("我的").scaledFont(28, weight: .bold, relativeTo: .title)
+                Text("我的").font(Theme.serif(28, relativeTo: .title))
                 Spacer()
                 Button { showingSettings = true } label: {
                     ThemeIcon(symbol: Icon.settings, size: 22).frame(width: 44, height: 44)
@@ -183,10 +183,8 @@ struct StatsView: View {
                 }
                 .font(.caption)
             }
-            .foregroundStyle(Theme.onAccent)
-            .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-            .softCardShadow()
+            .foregroundStyle(Theme.ink)
+            .paperPanel(inset: 22)
         }
         .buttonStyle(.plain)
         .accessibilityHint("查看完整阅读统计")
@@ -208,7 +206,8 @@ struct StatsView: View {
     }
 
     private var statisticsContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
+            EditorialIntro(title: "阅读足迹", detail: "每一段读与听，都算数。")
             if period != .all { periodNavigation }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -216,7 +215,7 @@ struct StatsView: View {
                         Button { period = item } label: {
                             Text(L(item.rawValue)).font(.caption.weight(.medium))
                                 .foregroundStyle(period == item ? Theme.onAccent : Theme.ink2)
-                                .padding(.horizontal, 16).frame(minHeight: 40)
+                                .padding(.horizontal, 16).frame(minHeight: 44)
                                 .background(period == item ? Theme.accent : Theme.surface2, in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -409,6 +408,7 @@ struct StatsView: View {
     private var goalEditor: some View {
         NavigationStack {
             Form {
+                EditorialIntro(title: "每天一点阅读", detail: "目标用来提醒自己，不必赶进度。")
                 Section {
                     Stepper(value: $goalDraft, in: 5...600, step: 5) {
                         HStack { Text("每日目标"); Spacer(); Text("\(goalDraft) 分钟").monospacedDigit().foregroundStyle(Theme.ink3) }
@@ -436,7 +436,7 @@ struct StatsView: View {
                 }
                 .listRowBackground(Theme.surface)
             }
-            .scrollContentBackground(.hidden)
+            .editorialList()
             .background(Theme.bg)
             .navigationTitle("阅读目标")
             .navigationBarTitleDisplayMode(.inline)
@@ -564,7 +564,7 @@ struct StatsView: View {
                     ForEach(Array(rows.enumerated()), id: \.element.key) { index, row in
                         let entry = model.entries.first { $0.id == row.key }
                         HStack(spacing: 12) {
-                            Text(String(format: "%02d", index + 1)).font(Theme.display(28)).monospacedDigit()
+                            Text(String(format: "%02d", index + 1)).scaledFont(28, weight: .semibold, relativeTo: .largeTitle).monospacedDigit()
                                 .foregroundStyle(index == 0 ? Theme.accent : Theme.ink).frame(width: 34, alignment: .leading)
                             BookCoverView(title: entry?.title ?? row.value.title, color: entry?.color ?? "gray", image: model.covers[row.key], width: 34)
                             Text(entry?.title ?? row.value.title).font(Theme.serif(15).weight(.medium)).lineLimit(1)
@@ -619,12 +619,13 @@ private struct SettingsDirectoryView: View {
     @AppStorage("app.appearance") private var appearance = "system"
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
-    @State private var importingBooks = false
+    @State private var importHubToken = UUID()
 
     private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
 
     var body: some View {
         List {
+            EditorialIntro(title: "设置", detail: "阅读、声音与数据，各有自己的位置。")
             Section {
                 settingsEntry(icon: Icon.typography, title: "阅读排版", subtitle: "字号、行距、纸色与翻页方式") { settingsRoute = .reading }
                     .accessibilityIdentifier("profile.reading")
@@ -659,7 +660,7 @@ private struct SettingsDirectoryView: View {
             } header: { Text("通用") } footer: { Text("听页 · 书籍保存在本机") }
             .listRowBackground(Theme.surface)
         }
-        .listStyle(.insetGrouped).scrollContentBackground(.hidden)
+        .listStyle(.insetGrouped).editorialList()
         .background(Theme.bg).tint(Theme.accent)
         .navigationTitle("设置").navigationBarTitleDisplayMode(.large)
         .navigationDestination(item: $settingsRoute) { route in
@@ -667,30 +668,22 @@ private struct SettingsDirectoryView: View {
                 .toolbar(.visible, for: .navigationBar)
                 .toolbar(.hidden, for: .tabBar)
         }
-        .sheet(isPresented: $showingImportHub, onDismiss: {
-            // 与书库页同口径：ImportHub 内登记的文件导入请求在面板关闭后从本层打开选择器。
-            if model.consumeFileImportRequest() { importingBooks = true }
-        }) {
-            ImportHubView().environmentObject(model).tint(Theme.accent)
+        .onChange(of: showingImportHub) { _, shown in
+            if shown { model.holdFileImportPresentation(importHubToken) }
         }
-        .bookImporter(isPresented: $importingBooks)
+        .onChange(of: model.fileImportRequested) { _, requested in
+            if requested { showingImportHub = false }
+        }
+        .sheet(isPresented: $showingImportHub, onDismiss: {
+            model.releaseFileImportPresentation(importHubToken)
+        }) { ImportHubView().environmentObject(model).tint(Theme.accent) }
+
     }
 
     private func settingsEntry(icon: String, title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                    if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
-                ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3)
-            }
-            .frame(minHeight: 56)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressButtonStyle(scale: 0.99))
+            EditorialRow(title: title, detail: subtitle, value: value, symbol: icon)
+        }.buttonStyle(PressButtonStyle(scale: 0.99))
     }
 
 }

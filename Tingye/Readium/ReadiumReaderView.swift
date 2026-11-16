@@ -116,6 +116,7 @@ struct ReadiumReaderView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var typeSize
     @StateObject private var session = ReadiumReaderSession()
     @State private var chapter = 0
     @State private var position = 0
@@ -209,10 +210,18 @@ struct ReadiumReaderView: View {
                     })
                 }
             }
-            if session.loading { ProgressView("正在打开 EPUB…") }
+            if session.loading {
+                VStack(spacing: 12) {
+                    ProgressView().controlSize(.large)
+                    Text("正在打开 EPUB…").font(.headline)
+                    Text("正在准备原书与阅读位置").font(.subheadline)
+                }.padding(24).background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityElement(children: .combine)
+            }
             if let error = session.error {
                 VStack(spacing: 16) {
-                    Text("EPUB 打开失败").font(.headline)
+                    Image(systemName: "exclamationmark.triangle").font(.title2).accessibilityHidden(true)
+                    Text("EPUB 打开失败").font(.title3.weight(.semibold))
                     Text(error).font(.callout).multilineTextAlignment(.center)
                     Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
                         .font(.footnote).foregroundStyle(Color(hex: palette.secondary))
@@ -321,7 +330,11 @@ struct ReadiumReaderView: View {
         HStack(spacing: 12) {
             Button { persist(); dismiss() } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
                 .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
-            Text(title).accessibilityIdentifier("reader.currentTitle").font(Theme.sans(14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).accessibilityIdentifier("reader.currentTitle")
+                    .font(Theme.serif(17, relativeTo: .headline)).lineLimit(1)
+                Text(book.title).font(.caption).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
+            }.frame(maxWidth: .infinity, alignment: .leading)
             Button {
                 let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
                 model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
@@ -332,45 +345,61 @@ struct ReadiumReaderView: View {
             }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
         }
         .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(Color(hex: palette.background))
+        .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: palette.secondary).opacity(0.3)).frame(height: 1) }
     }
     private var bottomBar: some View {
-        HStack(spacing: 0) {
-            chromeButton("目录", symbol: "list.bullet") { sheet = .contents }.accessibilityIdentifier("reader.contents")
-            chromeButton("听书", symbol: "headphones", enabled: mappedChapter) {
-                startSpeech()
+        Group {
+            if typeSize.isAccessibilitySize {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) { bottomActions }
+                }.frame(maxHeight: 280)
+            } else {
+                HStack(spacing: 8) { bottomActions }
             }
-            .accessibilityIdentifier("reader.listen")
-            if audioActive {
-                chromeButton(audioPlaying ? "暂停" : "继续", symbol: audioPlaying ? "pause.fill" : "play.fill") {
-                    if model.player.playing { model.player.pause() } else { model.player.resume() }
-                }.accessibilityIdentifier("reader.toggle")
-                .accessibilityLabel(audioPlaying ? "暂停朗读" : "继续朗读")
-                chromeButton(following ? "停止跟随" : "回到朗读", symbol: "text.line.first.and.arrowtriangle.forward") {
-                    if following {
-                        following = false
-                    } else if model.player.playing {
-                        following = true
-                        refreshSpeech(playing: true, chapter: model.player.chapter, position: model.player.position)
-                    } else {
-                        jumpTo(ReadiumSpeechBridge.sentence(book: book, chapter: model.player.chapter, position: model.player.position))
-                    }
-                }.accessibilityIdentifier("reader.returnToSpeech")
-                .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
-            }
-            chromeButton("设置", symbol: "textformat.size") { sheet = .preferences }.accessibilityIdentifier("reader.preferences")
         }
-        .padding(.vertical, 12)
+        .padding(12)
         .background(Color(hex: palette.background).ignoresSafeArea(edges: .bottom))
+        .overlay(alignment: .top) { Rectangle().fill(Color(hex: palette.secondary).opacity(0.3)).frame(height: 1) }
+    }
+    @ViewBuilder private var bottomActions: some View {
+        chromeButton("目录", symbol: "list.bullet") { sheet = .contents }.accessibilityIdentifier("reader.contents")
+        chromeButton("听书", symbol: "headphones", enabled: mappedChapter) {
+            startSpeech()
+        }
+        .accessibilityIdentifier("reader.listen")
+        if audioActive {
+            chromeButton(audioPlaying ? "暂停" : "继续", symbol: audioPlaying ? "pause.fill" : "play.fill") {
+                if model.player.playing { model.player.pause() } else { model.player.resume() }
+            }.accessibilityIdentifier("reader.toggle")
+            .accessibilityLabel(audioPlaying ? "暂停朗读" : "继续朗读")
+            chromeButton(following ? "停止跟随" : "回到朗读", symbol: "text.line.first.and.arrowtriangle.forward") {
+                if following {
+                    following = false
+                } else if model.player.playing {
+                    following = true
+                    refreshSpeech(playing: true, chapter: model.player.chapter, position: model.player.position)
+                } else {
+                    jumpTo(ReadiumSpeechBridge.sentence(book: book, chapter: model.player.chapter, position: model.player.position))
+                }
+            }.accessibilityIdentifier("reader.returnToSpeech")
+            .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
+        }
+        chromeButton("设置", symbol: "textformat.size") { sheet = .preferences }.accessibilityIdentifier("reader.preferences")
     }
     private func chromeButton(_ title: LocalizedStringKey, symbol: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 6) { Image(systemName: symbol); Text(title).font(.caption) }
-                .frame(maxWidth: .infinity, minHeight: 44)
+            VStack(spacing: 6) { Image(systemName: symbol).font(.body); Text(title).font(.footnote).fixedSize(horizontal: false, vertical: true) }
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .padding(.horizontal, 4)
+                .background(Color(hex: palette.foreground).opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+                .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color(hex: palette.secondary).opacity(0.25), lineWidth: 1) }
         }.buttonStyle(.plain).disabled(!enabled)
     }
     private var contentsView: some View {
         List {
+            EditorialIntro(title: "目录与摘记", detail: book.title, eyebrow: "阅读导航")
             Button("搜索书内文字") { following = false; sheet = .search }.accessibilityIdentifier("reader.search")
             if !session.contents.isEmpty {
                 ForEach(session.contents) { item in
@@ -378,7 +407,11 @@ struct ReadiumReaderView: View {
                         navigateLink(item.link)
                         sheet = nil
                     } label: {
-                        Text(item.link.title ?? item.link.href).padding(.leading, CGFloat(item.depth * 16))
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Rectangle().fill(Theme.accent).frame(width: 2, height: 14).accessibilityHidden(true)
+                            Text(item.link.title ?? item.link.href).font(item.depth == 0 ? .body.weight(.medium) : .body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }.padding(.leading, CGFloat(min(item.depth, 8) * 12)).padding(.vertical, 6).frame(minHeight: 44)
                     }
                 }
             } else {
@@ -388,16 +421,22 @@ struct ReadiumReaderView: View {
                 }
             }
             Section("书签") {
+                if entry?.bookmarks.isEmpty != false {
+                    EditorialNotice(title: "还没有书签", detail: "轻点阅读页右上角的书签，记住当前的位置。")
+                }
                 ForEach(entry?.bookmarks ?? []) { mark in
                     Button(mark.excerpt) { jumpTo(.init(mark)); sheet = nil }
                         .swipeActions { Button("删除", role: .destructive) { model.removeBookmark(book.id, id: mark.id) } }
                 }
             }
             Section("摘记") {
-                if !unresolvedAnnotations.isEmpty { Text("有 \(unresolvedAnnotations.count) 条标注尚未定位，原文与笔记已保留。").font(.caption) }
+                if !unresolvedAnnotations.isEmpty {
+                    EditorialNotice(title: "部分标注尚未定位", detail: "有 \(unresolvedAnnotations.count) 条原文与笔记已保留。可稍后重试定位。")
+                }
                 NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) { note in jumpTo(.init(note)); sheet = nil }
             }
         }
+        .editorialList()
         .accessibilityIdentifier("reader.epubContents")
         .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }

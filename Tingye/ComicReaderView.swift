@@ -9,6 +9,7 @@ struct ComicReaderView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.scenePhase) var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 每部漫画单独记住阅读方式；没设置过的用「漫画默认阅读方式」。
     @State private var mode: String
@@ -72,9 +73,9 @@ struct ComicReaderView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("返回")
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(book.title).font(Theme.sans(20, weight: .bold)).lineLimit(2)
+                        Text(book.title).font(Theme.serif(20, relativeTo: .headline)).lineLimit(2)
                         Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                            .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -103,46 +104,50 @@ struct ComicReaderView: View {
                 }
                 .padding(12)
                 .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                Spacer()
-                VStack(spacing: 4) {
-                    HStack {
-                        Text("页码进度")
-                        Spacer()
-                        Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
+                Spacer(minLength: 8)
+                ScrollView {
+                    VStack(spacing: 4) {
+                        HStack {
+                            Label("页码进度", systemImage: Icon.read)
+                            Spacer()
+                            Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
+                        }
+                        .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
+                        .padding(.horizontal, 8).padding(.top, 10)
+                        HStack(spacing: 10) {
+                            pageStep(-1, "上一页", Icon.back)
+                            if count > 1 {
+                                Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
+                                    if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
+                                }
+                                .tint(Theme.accent)
+                                .environment(\.layoutDirection, mode == "rtl" ? .rightToLeft : .leftToRight)
+                                .accessibilityLabel("页码").accessibilityValue("第 \(page + 1) 页，共 \(count) 页")
+                            } else { Spacer() }
+                            pageStep(1, "下一页", Icon.disclosure)
+                        }
+                        HStack(spacing: 8) {
+                            Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
+                                .accessibilityIdentifier("comic.contents")
+                            Menu {
+                                Picker("阅读方向", selection: $mode) {
+                                    Label("从左往右", systemImage: Icon.nextDirection).tag("ltr")
+                                    Label("从右往左（日漫）", systemImage: Icon.prevDirection).tag("rtl")
+                                    Label("上下滚动（条漫）", systemImage: Icon.downDirection).tag("vertical")
+                                }
+                            } label: { comicAction(Icon.readingDirection, modeLabel, selected: true) }
+                            .accessibilityLabel("翻页方式，当前\(modeLabel)")
+                            Button { onlyBookmarks = true; showingPages = true } label: { comicAction(Icon.bookmark(false), "书签") }
+                        }
+                        .buttonStyle(.plain)
+                        Text("双指缩放 · 双击适应屏幕")
+                            .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, 8)
                     }
-                    .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
-                    .padding(.horizontal, 8).padding(.top, 10)
-                    HStack(spacing: 10) {
-                        pageStep(-1, "上一页", Icon.back)
-                        if count > 1 {
-                            Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
-                                if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
-                            }
-                            .tint(Theme.accent)
-                            .environment(\.layoutDirection, mode == "rtl" ? .rightToLeft : .leftToRight)
-                            .accessibilityLabel("页码").accessibilityValue("第 \(page + 1) 页，共 \(count) 页")
-                        } else { Spacer() }
-                        pageStep(1, "下一页", Icon.disclosure)
-                    }
-                    HStack(spacing: 8) {
-                        Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
-                            .accessibilityIdentifier("comic.contents")
-                        Menu {
-                            Picker("阅读方向", selection: $mode) {
-                                Label("从左往右", systemImage: Icon.nextDirection).tag("ltr")
-                                Label("从右往左（日漫）", systemImage: Icon.prevDirection).tag("rtl")
-                                Label("上下滚动（条漫）", systemImage: Icon.downDirection).tag("vertical")
-                            }
-                        } label: { comicAction(Icon.readingDirection, modeLabel, selected: true) }
-                        .accessibilityLabel("翻页方式，当前\(modeLabel)")
-                        Button { onlyBookmarks = true; showingPages = true } label: { comicAction(Icon.bookmark(false), "书签") }
-                    }
-                    .buttonStyle(.plain)
-                    Text("双指缩放 · 双击适应屏幕")
-                        .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, 8)
+                    .padding(.horizontal, 12).padding(.bottom, 8)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .padding(.horizontal, 12).padding(.bottom, 8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
             }
             .frame(maxWidth: 760)
             .padding(.horizontal, 24)
@@ -174,7 +179,7 @@ struct ComicReaderView: View {
     private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 6) {
             ThemeIcon(symbol: icon, size: 24)
-            Text(L(title)).font(.caption).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.footnote).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(selected ? Theme.onAccent : Theme.ink3)
         .frame(maxWidth: .infinity, minHeight: 58)
@@ -200,6 +205,7 @@ struct ComicReaderView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
+                    EditorialIntro(title: "翻到想看的那一页", detail: book.title, eyebrow: "漫画目录")
                     Picker("页面类型", selection: $onlyBookmarks) {
                         Text("全部页面").tag(false)
                         Text("书签 \(bookmarks.count)").tag(true)
@@ -226,7 +232,7 @@ struct ComicReaderView: View {
                         .buttonStyle(.plain).listRowBackground(index == page ? Theme.accentSoft : Theme.surface).id(index)
                     }
                 }
-                .scrollContentBackground(.hidden).background(Theme.bg)
+                .editorialList()
                 .navigationTitle("页面目录").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { showingPages = false } } }
                 .onAppear { proxy.scrollTo(page, anchor: .center) }
@@ -257,6 +263,7 @@ private struct ComicPage: View {
     let fit: Fit
     var onTap: (() -> Void)? = nil
     @State private var image: UIImage?
+    @State private var attempted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Group {
@@ -269,13 +276,20 @@ private struct ComicPage: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 10))
                 }
+            } else if attempted {
+                VStack(spacing: 12) {
+                    Image(systemName: Icon.warning).font(.title2).accessibilityHidden(true)
+                    Text("这一页暂时无法显示").font(.subheadline)
+                    Text("可以返回书库，通过修复原书补齐图片。").font(.footnote)
+                }.foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
             } else {
-                ProgressView().tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
+                ProgressView("正在加载图片…").tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
             }
         }
         .animation(.easeOut(duration: 0.3), value: image != nil)
         .accessibilityLabel("第 \(index + 1) 页")
         .task(id: index) {
+            defer { if !Task.isCancelled { attempted = true } }
             guard image == nil else { return }
             let cacheKey = "\(book.id)-\(index)-\(fit)" as NSString
             if let cached = Self.cache.object(forKey: cacheKey) {

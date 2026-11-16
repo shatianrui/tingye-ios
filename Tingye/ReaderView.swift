@@ -718,9 +718,9 @@ struct ReaderView: View {
             Button { dismiss() } label: { barIcon(Icon.back) }
                 .accessibilityLabel("返回书架")
                 .accessibilityIdentifier("reader.back")
-            VStack(spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(chapterHeading)
-                    .font(Theme.serif(15))
+                    .font(Theme.serif(17, relativeTo: .headline))
                     .foregroundStyle(prefs.foreground)
                     .lineLimit(1)
                 Text(chapterSubheading)
@@ -728,7 +728,7 @@ struct ReaderView: View {
                     .foregroundStyle(prefs.secondary)
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
             // 专注入口上台面：与「更多」菜单里的开始专注共用同一面板（focusPresented）。
             if focusEnabled { focusQuickButton }
             // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
@@ -751,6 +751,7 @@ struct ReaderView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(document.isPDF ? Theme.bg : prefs.background, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(prefs.secondary.opacity(0.3), lineWidth: 1) }
         .padding(.horizontal, 12)
         .frame(maxWidth: 760)
         .padding(.top, 4)
@@ -777,7 +778,7 @@ struct ReaderView: View {
         VStack(spacing: 0) {
             VStack(spacing: 2) {
                 HStack {
-                    Text(document.isPDF ? "页码进度" : "章节进度")
+                    Label(document.isPDF ? "页码进度" : "章节进度", systemImage: document.isPDF ? Icon.document : Icon.contents)
                     Spacer()
                     Text("\(chapter + 1) / \(chapters.count)").monospacedDigit()
                         .accessibilityIdentifier("reader.currentChapter")
@@ -849,6 +850,10 @@ struct ReaderView: View {
     private var morePanel: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Text(moreShowsAutoTurn ? "自动翻页" : "阅读工具")
+                    .font(.headline).foregroundStyle(prefs.foreground)
+                    .padding(.horizontal, 16).padding(.vertical, 12).accessibilityAddTraits(.isHeader)
+                Divider().overlay(prefs.secondary.opacity(0.3))
                 if moreShowsAutoTurn { autoTurnPanelRows } else { morePanelRows }
             }
             .padding(.vertical, 8)
@@ -896,7 +901,7 @@ struct ReaderView: View {
                 Text("自动翻页").font(.subheadline.weight(.medium))
             }
             .foregroundStyle(prefs.foreground)
-            .padding(.horizontal, 16).frame(minHeight: 44).contentShape(Rectangle())
+            .padding(.horizontal, 16).padding(.vertical, 6).frame(minHeight: 48).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("返回更多面板")
@@ -907,9 +912,9 @@ struct ReaderView: View {
 
     private func moreSectionHeader(_ title: String) -> some View {
         Text(L(title))
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(Theme.ink2)
-            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(prefs.secondary)
+            .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 6)
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -943,11 +948,12 @@ struct ReaderView: View {
     private func readerActionLabel(_ icon: String, _ title: String, selected: Bool = false) -> some View {
         VStack(spacing: 5) {
             ThemeIcon(symbol: icon, size: 21)
-            Text(L(title)).font(.system(size: 10, weight: selected ? .semibold : .regular)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Text(L(title)).font(.footnote.weight(selected ? .semibold : .medium)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(selected ? Theme.accent : prefs.foreground)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .background(selected ? Theme.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+        .background(selected ? readerAccent.opacity(0.10) : prefs.foreground.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(prefs.secondary.opacity(0.25), lineWidth: 1) }
         .contentShape(Rectangle())
     }
 
@@ -1755,14 +1761,7 @@ struct ContentsView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(book.title).font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
-                    Text("共 \(chapters.count) 章 · 阅读到第 \(currentChapter + 1) 章")
-                        .font(.system(size: 12)).foregroundStyle(Theme.ink3)
-                }
-                .padding(.vertical, 8)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
+                EditorialIntro(title: book.title, detail: "共 \(chapters.count) 章 · 阅读到第 \(currentChapter + 1) 章", eyebrow: "目录与摘记")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         contentsTab("章节", value: 0)
@@ -1790,6 +1789,10 @@ struct ContentsView: View {
                                 chapterRow(index: hit.index, chapter: chapters[hit.index], snippet: hit.snippet, matchOffset: hit.offset)
                             }
                         }
+                    }
+                    if hits == nil && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        EditorialNotice(title: "正在搜索原文…", kind: .working)
+                            .accessibilityIdentifier("reader.searchLoading")
                     }
                     if hits?.isEmpty == true && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
@@ -1829,8 +1832,7 @@ struct ContentsView: View {
                     ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref) }
                 }
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden).background(Theme.bg)
+            .editorialList()
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, isPresented: $searchPresented, prompt: "搜索章节与全文")
             .task(id: query) {
@@ -2066,8 +2068,7 @@ struct ReadingPreferencesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("设置即时应用到正文。")
-                    .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                EditorialIntro(title: "让这一页更舒服", detail: "设置即时应用。排版与纸色始终由你的阅读偏好决定。", eyebrow: "阅读排版")
                 if showsPreview {
                     Text("清晨，湖面还没有醒来。\n让光缓缓移过纸面。")
                         .font(Font(ReaderPreferences(fontSize: size, font: font).uiFont))
@@ -2081,10 +2082,10 @@ struct ReadingPreferencesView: View {
 
                 VStack(spacing: 0) {
                     HStack(spacing: 8) {
-                        Text("字号").font(Theme.sans(15, weight: .medium))
+                        Text("字号").font(.body.weight(.medium))
                         stepButton("A−", label: "减小字号") { size = max(14, size - 1) }
                         Spacer(minLength: 0)
-                        Text("\(Int(size))").font(Theme.sans(15, weight: .medium)).monospacedDigit()
+                        Text("\(Int(size))").font(.body.weight(.medium)).monospacedDigit()
                         stepButton("A+", label: "增大字号") { size = min(34, size + 1) }
                     }
                     Slider(value: $size, in: 14...34, step: 1)
@@ -2095,11 +2096,11 @@ struct ReadingPreferencesView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("字体").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                        Text("字体").font(.caption).foregroundStyle(Theme.ink3)
                         Spacer()
                         NavigationLink { MyFontsView() } label: {
                             Text(font.hasPrefix("custom:") ? (FontLibrary.fonts.first { "custom:" + $0.postScript == font }?.name ?? "我的字体") : "我的字体")
-                                .font(Theme.sans(12)).lineLimit(2).frame(minHeight: 44)
+                                .font(.caption).lineLimit(2).frame(minHeight: 44)
                         }
                     }
                     if dynamicTypeSize.isAccessibilitySize {
@@ -2111,7 +2112,7 @@ struct ReadingPreferencesView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("纸色").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                        Text("纸色").font(.caption).foregroundStyle(Theme.ink3)
                         Spacer()
                         Menu {
                             Picker("全部纸色", selection: $paper) {
@@ -2122,7 +2123,7 @@ struct ReadingPreferencesView: View {
                                 Text(ReaderPaper(rawValue: paper)?.name ?? "暖纸")
                                 Image(systemName: Icon.collapse).font(.caption2)
                             }
-                            .font(Theme.sans(12)).frame(minHeight: 44)
+                            .font(.caption).frame(minHeight: 44)
                         }
                         .accessibilityLabel("全部纸色")
                     }
@@ -2156,9 +2157,9 @@ struct ReadingPreferencesView: View {
 
                 Toggle(isOn: $paperAlwaysLight) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("浅纸常亮").font(Theme.sans(15, weight: .medium))
+                        Text("浅纸常亮").font(.body.weight(.medium))
                         Text("深色外观下，纸色也保持日间值")
-                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                            .font(.caption).foregroundStyle(Theme.ink3)
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
@@ -2185,9 +2186,9 @@ struct ReadingPreferencesView: View {
                     HStack(spacing: 12) {
                         ThemeIcon(symbol: Icon.moreTypography, size: 24)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("更多排版").font(Theme.sans(15, weight: .medium))
+                            Text("更多排版").font(.body.weight(.medium))
                             Text("行距、段距、页边距与简繁转换")
-                                .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                                .font(.caption).foregroundStyle(Theme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         ThemeIcon(symbol: Icon.disclosure, size: 18)
@@ -2225,7 +2226,7 @@ struct ReadingPreferencesView: View {
 
     private func fontChip(_ key: String, _ title: String) -> some View {
         Button { Haptics.selection(); font = key } label: {
-            Text(L(title)).font(Theme.sans(12))
+            Text(L(title)).font(.caption)
                 .foregroundStyle(font == key ? Theme.onAccent : Theme.ink3)
                 .padding(.horizontal, 6)
                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -2237,7 +2238,7 @@ struct ReadingPreferencesView: View {
 
     private func stepButton(_ text: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(text).font(Theme.sans(15, weight: .medium))
+            Text(text).font(.body.weight(.medium))
                 .foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityLabel(label)
@@ -2260,6 +2261,7 @@ private struct MoreTypographyView: View {
     @AppStorage("reader.convert") private var convert = "none"
     var body: some View {
         Form {
+            EditorialIntro(title: "细调阅读的节奏", detail: "字与字、段与段之间，留出适合自己的距离。")
             Section("版式") {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -2302,7 +2304,7 @@ private struct MoreTypographyView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle("更多排版").navigationBarTitleDisplayMode(.inline)
     }

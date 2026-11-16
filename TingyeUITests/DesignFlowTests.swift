@@ -930,3 +930,58 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "功能键-横屏固定播放控制", wholeScreen: true)
     }
 }
+
+
+extension DesignFlowTests {
+    private func cancelSystemBookPicker(_ app: XCUIApplication) {
+        let cancel = app.buttons.matching(NSPredicate(format: "label == '取消' OR label == 'Cancel'")).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10))
+        cancel.tap()
+    }
+
+    func testSystemFilePickerSingleImportFromSourcesDeliversAndShowsResult() {
+        let app = launch("sources-file-import")
+        let single = app.buttons["sources.importFile"]
+        XCTAssertTrue(single.waitForExistence(timeout: 15))
+        single.tap()
+        // Navigate the actual Files picker; no simulated delegate or model injection here.
+        let browse = app.buttons.matching(NSPredicate(format: "label == '浏览' OR label == 'Browse'")).firstMatch
+        if browse.waitForExistence(timeout: 3) { browse.tap() }
+        let local = app.cells.matching(NSPredicate(format: "label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'")).firstMatch
+        if local.waitForExistence(timeout: 3) { local.tap() }
+        let folder = app.cells.matching(NSPredicate(format: "label == '听页' OR label == 'Tingye'")).firstMatch
+        if folder.waitForExistence(timeout: 3) { folder.tap() }
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '听页导入回归'")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
+        file.tap() // Normal entry must import on selection, without a batch Open step.
+        let results = app.buttons["import.results"]
+        XCTAssertTrue(results.waitForExistence(timeout: 20), "选择文件后应出现明确的导入反馈")
+        results.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '听页导入回归.txt'")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '已加入书库'")).firstMatch.exists)
+        screenshot(app, "系统单选导入-逐项结果")
+    }
+
+    func testBatchCancelThenSingleAndResultsRetryUseOneRootPicker() {
+        let app = launch("sources-file-import")
+        let batch = app.buttons["sources.importBatch"]
+        XCTAssertTrue(batch.waitForExistence(timeout: 15))
+        reveal(batch, in: app); batch.tap()
+        cancelSystemBookPicker(app)
+        let add = app.buttons["import.book"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10)); reveal(add, in: app); add.tap()
+        let single = app.buttons["sources.importFile"]
+        XCTAssertTrue(single.waitForExistence(timeout: 10)); single.tap()
+        cancelSystemBookPicker(app)
+        XCTAssertTrue(app.buttons["study.openProfile"].waitForExistence(timeout: 10))
+        app.terminate()
+        let resultApp = launch("import-results")
+        let results = resultApp.buttons["import.results"]
+        XCTAssertTrue(results.waitForExistence(timeout: 20)); results.tap()
+        let retry = resultApp.buttons["import.retrySelection"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 10)); reveal(retry, in: resultApp); retry.tap()
+        cancelSystemBookPicker(resultApp)
+        XCTAssertTrue(resultApp.buttons["study.openProfile"].waitForExistence(timeout: 10), "结果 sheet 应先关闭，再由根选择器接管")
+        screenshot(resultApp, "结果重选-取消回书库")
+    }
+}

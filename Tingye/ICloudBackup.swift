@@ -869,12 +869,17 @@ struct ICloudBackupView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                PageMasthead(title: "安心保管。", subtitle: "你的书，始终属于你。", kicker: "ARCHIVE · 备份", issue: "ICLOUD")
-                    .padding(.bottom, 16)
+                EditorialIntro(title: "安心保管你的书", detail: "原书、进度与摘记一起备份；阅读进度可独立同步。", eyebrow: "备份与同步")
+                if localBookCount == 0 {
+                    EditorialNotice(title: "还没有本机书籍可备份", detail: "先导入书籍，或从已有备份恢复。")
+                }
+                if model.restoringLibrary {
+                    EditorialNotice(title: "正在恢复书库", detail: "恢复完成前暂时不能修改书库，请保持应用开启。", kind: .working)
+                }
                 if let transfer = model.icloud {
                     sectionTitle("当前操作")
                     ICloudTransferCard(transfer: transfer)
-                        .padding(16).background(Theme.surface, in: Rectangle())
+                        .paperPanel(inset: 16)
                 }
 
                 sectionTitle("保存当前书库")
@@ -885,8 +890,7 @@ struct ICloudBackupView: View {
                     Text("\(localBookCount) 本").font(.subheadline).monospacedDigit().foregroundStyle(Theme.accent)
                 }
                 .foregroundStyle(Theme.ink)
-                .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 52)
-                .background(Theme.surface, in: Rectangle())
+                .paperPanel(inset: 16)
                 Button("导出整库到文件") {
                     Task {
                         do { export = ExportedBook(url: try await model.makeLibraryExportFile()) }
@@ -906,7 +910,7 @@ struct ICloudBackupView: View {
                                 .frame(minHeight: 44)
                         }
                     }
-                    .padding(16).background(Theme.surface, in: Rectangle())
+                    .paperPanel(inset: 16)
                 }
 
                 sectionTitle("恢复书库")
@@ -929,8 +933,7 @@ struct ICloudBackupView: View {
                             .font(.caption).foregroundStyle(Theme.ink2)
                     }
                 }
-                .tint(Theme.accent).padding(16)
-                .background(Theme.surface, in: Rectangle())
+                .tint(Theme.accent).paperPanel(inset: 16)
                 ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
                 if syncProgress {
                     Button("立即检查进度同步") { model.refreshProgressSync() }
@@ -980,7 +983,7 @@ struct ICloudBackupView: View {
         }
     }
     private func sectionTitle(_ title: String) -> some View {
-        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
+        SectionTitle(text: title).padding(.top, 16)
     }
 
 }
@@ -994,7 +997,7 @@ private struct ICloudTransferCard: View {
             HStack(spacing: 10) {
                 if transfer.running { ProgressView() }
                 else { Image(systemName: symbol).foregroundStyle(tint).font(.system(size: 18, weight: .semibold)) }
-                Text(transfer.title).font(.headline)
+                Text(transfer.title).font(.headline).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 if let count = transfer.countText { Text(count).font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
             }
@@ -1030,6 +1033,7 @@ private struct ICloudTransferCard: View {
             .buttonStyle(.borderless).font(.subheadline.weight(.medium))
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("icloud.transfer")
     }
     private var symbol: String {
@@ -1103,8 +1107,7 @@ private struct ProgressSyncStatusRows: View {
                 .font(.caption).tint(Theme.ink2)
             }
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: Rectangle())
+        .paperPanel(inset: 16)
     }
     private func received(_ date: Date) -> String {
         var text = "\(time(date)) · \(sync.lastReceivedCount) 条变化"

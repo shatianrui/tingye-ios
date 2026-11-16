@@ -146,7 +146,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("选段与标注").font(Theme.sans(18, weight: .medium))
+                Text("选段与标注").font(.headline).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -165,7 +165,7 @@ struct SelectionPanel: View {
             }
             .buttonStyle(.plain)
             Text(text)
-                .font(Theme.serif(18, relativeTo: .body)).lineLimit(3).lineSpacing(7)
+                .font(Theme.serif(18, relativeTo: .body)).lineLimit(4).lineSpacing(7)
                 .padding(16).frame(maxWidth: .infinity, alignment: .leading)
                 .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radius))
             ScrollView(.horizontal, showsIndicators: false) {
@@ -273,7 +273,7 @@ struct SelectionPanel: View {
                 ThemeIcon(symbol: icon, size: 20)
                 Text(L(title))
             }
-                .font(Theme.sans(15, weight: .medium))
+                .font(.body.weight(.medium))
                 .foregroundStyle(prominent ? paper : tint)
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .background(prominent ? accent : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
@@ -295,11 +295,12 @@ struct NoteEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("选中的原文").font(.caption).foregroundStyle(Theme.ink3)
+                    EditorialIntro(title: "把想法留在这里", detail: "原文与笔记分别保存，随时可以修改笔记。")
+                    Text("选中的原文").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink2)
                     Text(quote)
                         .font(Theme.serif(19, relativeTo: .body))
                         .foregroundStyle(Theme.ink).lineSpacing(8)
-                        .lineLimit(6).padding(20)
+                        .fixedSize(horizontal: false, vertical: true).padding(20)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
                     Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
@@ -346,6 +347,7 @@ struct NotesList: View {
     var unresolvedIDs: Set<UUID> = []
     let onJump: (Highlight) -> Void
     @EnvironmentObject var model: AppModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var editing: Highlight?
     @State private var removing: Highlight?
     private var bookTitle: String { model.entries.first { $0.id == entryID }?.title ?? "" }
@@ -358,8 +360,7 @@ struct NotesList: View {
     var body: some View {
         Group {
             if notes.isEmpty {
-                Text("长按正文，在「标注」中选择颜色与样式，再点「添加标注」；也可以切换到「笔记」记录想法。")
-                    .font(.subheadline).foregroundStyle(Theme.ink3)
+                EditorialNotice(title: "还没有摘记", detail: "长按正文添加标注或写笔记。你的原文与想法会一起收在这里。")
                     .listRowBackground(Color.clear)
             }
             ForEach(notes) { note in
@@ -367,7 +368,7 @@ struct NotesList: View {
                     Button { onJump(note) } label: { NoteRow(note: note, chapter: chapterTitle(note.chapter)) }
                         .buttonStyle(.plain)
                     if unresolvedIDs.contains(note.id) { Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(Theme.ink3) }
-                    HStack(spacing: 14) {
+                    (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 14))) {
                         Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read).frame(minHeight: 44) }
                         Button { editing = note } label: { Label(note.note == nil ? "写笔记" : "编辑笔记", systemImage: Icon.note).frame(minHeight: 44) }
                         Spacer(minLength: 0)
@@ -389,6 +390,7 @@ struct NotesList: View {
                     .frame(minHeight: 44)
                     .buttonStyle(.borderless)
                 }
+                .padding(.vertical, 10)
                 .listRowBackground(Theme.surface)
                 .swipeActions(allowsFullSwipe: false) {
                     Button(role: .destructive) { removing = note } label: { Label("删除", systemImage: Icon.delete) }

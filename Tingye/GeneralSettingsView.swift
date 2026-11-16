@@ -45,6 +45,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
+            EditorialIntro(title: "按你的习惯阅读", detail: "启动、语言与交互，只影响这台设备的使用习惯。")
             Section {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
@@ -78,7 +79,7 @@ struct GeneralSettingsView: View {
             .listRowBackground(Theme.surface)
         }
         .tint(Theme.accent)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle("通用设置")
         .navigationBarTitleDisplayMode(.large)

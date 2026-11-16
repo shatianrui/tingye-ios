@@ -22,7 +22,7 @@ struct DailyQuoteCard: View {
     var body: some View {
         if let entry = pick {
             VStack(alignment: .leading, spacing: 14) {
-                Text("今日摘句").font(.caption2.weight(.medium)).foregroundStyle(Theme.onWarm)
+                Label("今日摘句", systemImage: Icon.quote).font(.caption.weight(.semibold)).foregroundStyle(Theme.onWarm)
                 Group {
                     if let quote, quote.entryID == entry.id {
                         Text(quote.text)
@@ -30,7 +30,7 @@ struct DailyQuoteCard: View {
                         Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
                     }
                 }
-                .font(Theme.serifSemibold(23, relativeTo: .title2))
+                .font(Theme.serifSemibold(24, relativeTo: .title2))
                 .lineSpacing(8)
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.onWarm)
@@ -132,35 +132,34 @@ struct QuoteShareCard: View {
     var author = ""
     var chapter = ""
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("TINGYE · 听页")
+        VStack(alignment: .leading, spacing: 28) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("听页 · 阅读摘句").font(.system(size: 18, weight: .medium))
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
-            }
-            .font(.system(size: 13, weight: .bold).width(.expanded)).tracking(1.4)
-            .foregroundStyle(Color(hex: 0x17233A))
-            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6).padding(.top, 20)
-            Spacer(minLength: 48)
-            Text("“").font(.system(size: 120, weight: .bold, design: .serif)).foregroundStyle(Theme.clay)
-                .frame(height: 80, alignment: .top).offset(x: -6)
+                    .font(.system(size: 16))
+            }.foregroundStyle(Color(hex: 0x696158))
+            Rectangle().fill(Color(hex: 0x98432E)).frame(height: 2)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x17233A))
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 48)
-            Capsule().fill(Color(hex: 0x315BEE)).frame(width: 72, height: 6)
-            Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x17233A)).padding(.top, 20)
-            let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
-            if !byline.isEmpty {
-                Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x647084)).padding(.top, 6)
+                .foregroundStyle(Color(hex: 0x292724))
+                .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x292724))
+                let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
+                if !byline.isEmpty {
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x696158))
+                }
             }
-            Rectangle().fill(Color(hex: 0x17233A)).frame(height: 1).padding(.top, 28)
+            Spacer(minLength: 48)
+            Rectangle().fill(Color(hex: 0xD4CCC0)).frame(height: 1)
+            Text("留一点时间，给喜欢的文字。")
+                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x696158))
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFAF9F6))
+        .background(Color(hex: 0xF7F4ED))
         .environment(\.colorScheme, .light)
     }
 

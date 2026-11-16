@@ -270,3 +270,22 @@ private final class ReadiumMemoryKeyValueStore: ProgressKeyValueStore {
     var dictionaryRepresentation: [String: Any] { values }
     func synchronize() -> Bool { true }
 }
+
+
+extension ReadiumPublicationTests {
+    func testCoordinatedEPUBImportRetainsIndependentOriginalForReadiumAfterProviderDisappears() async throws {
+        let external = try fixture("original.epub")
+        let digest = try PublicationDigest.file(external)
+        let imported = try await BookImporter.readCoordinated(external)
+        let source = try XCTUnwrap(imported.source)
+        defer { withExtendedLifetime(source) {} }
+        try FileManager.default.removeItem(at: external)
+        XCTAssertEqual(source.sha256, digest)
+        XCTAssertEqual(try PublicationDigest.file(source.url), digest)
+        XCTAssertEqual(imported.book.chapters.map(\.title), ["第一章 原包", "第二章 原包"])
+        let publication = try await ReadiumService().open(source.url)
+        XCTAssertEqual(publication.readingOrder.count, 2)
+        let contents = try await publication.tableOfContents().get()
+        XCTAssertFalse(contents.isEmpty)
+    }
+}

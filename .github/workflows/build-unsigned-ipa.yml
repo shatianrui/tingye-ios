@@ -24,6 +24,15 @@ name: Build unsigned IPA
 on:
   workflow_dispatch:
     inputs:
+      release_stage:
+        description: "先untested预发布，完成同SHA全量Tests后再verified重建发布"
+        type: choice
+        options: [untested, verified]
+        default: untested
+      expected_sha:
+        description: "必填：完整40位源码提交SHA；必须与所选ref一致"
+        type: string
+        required: true
       slim_fonts:
         description: "瘦身字体（移除 LXGW 文楷 / 新晰黑，默认开启）"
         type: boolean
@@ -42,6 +51,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: unsigned-ipa-${{ github.ref }}
@@ -54,6 +64,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact source and release stage
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          REQUESTED_STAGE: ${{ inputs.release_stage }}
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            test -n "$EXPECTED_SHA" || { echo "expected_sha is required" >&2; exit 1; }
+          else
+            EXPECTED_SHA="$GITHUB_SHA"
+          fi
+          RELEASE_STAGE="${REQUESTED_STAGE:-untested}"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then RELEASE_STAGE=untested; fi
+          case "$RELEASE_STAGE" in untested|verified) ;; *) echo "Invalid stage" >&2; exit 1 ;; esac
+          GUARDS=(--expected-sha "$EXPECTED_SHA" --release-stage "$RELEASE_STAGE")
+          LABEL="UNTESTED / 测试未完成"
+          if [ "$RELEASE_STAGE" = "verified" ]; then
+            GUARDS+=(--require-tests)
+            LABEL="VERIFIED / 同提交单元与UI测试通过"
+          fi
+          python3 scripts/verify-unsigned-source.py "${GUARDS[@]}"
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "stage=$RELEASE_STAGE" >> "$GITHUB_OUTPUT"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
 
       - name: Show Xcode / Swift versions
         run: |
@@ -71,6 +111,9 @@ jobs:
           echo "Version: ${MARKETING_VERSION} (${BUILD_NUMBER})"
 
       - name: Build unsigned IPA
+        env:
+          TINGYE_EXPECTED_SOURCE: ${{ steps.source.outputs.sha }}
+          TINGYE_RELEASE_STAGE: ${{ steps.source.outputs.stage }}
         run: |
           chmod +x scripts/build-unsigned-ipa.sh
           ARGS=""
@@ -96,29 +139,39 @@ jobs:
           path: |
             build/Tingye-unsigned.ipa
             build/Tingye-unsigned.ipa.sha256
+            build/Tingye-build-provenance.json
           if-no-files-found: error
           retention-days: 30
 
       - name: Resolve release tag and name
         id: release
+        env:
+          REQUESTED_TAG: ${{ inputs.tag_name }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAG="${{ github.ref_name }}"
-          elif [ -n "${{ inputs.tag_name }}" ]; then
-            TAG="${{ inputs.tag_name }}"
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            TAG="$GITHUB_REF_NAME"
+          elif [ -n "$REQUESTED_TAG" ]; then
+            TAG="$REQUESTED_TAG"
           else
             DATE="$(date -u +%Y%m%d)"
             TAG="unsigned-${{ steps.version.outputs.marketing_version }}-${DATE}.${{ github.run_number }}"
           fi
+          python3 scripts/verify-unsigned-source.py --expected-sha "$SOURCE_SHA" --tag "$TAG" --ipa build/Tingye-unsigned.ipa
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "name=听页 ${{ steps.version.outputs.marketing_version }} (${{ steps.version.outputs.build_number }}) 无签名版" >> "$GITHUB_OUTPUT"
+          echo "name=听页 ${{ steps.version.outputs.marketing_version }} (${{ steps.version.outputs.build_number }}) 无签名版 · ${{ steps.source.outputs.label }}" >> "$GITHUB_OUTPUT"
           echo "Release tag: ${TAG}"
 
       - name: Write release notes
         run: |
           cat > release-notes.md <<EOF
+          **${{ steps.source.outputs.label }}**
+
           听页 ${{ steps.version.outputs.marketing_version }} (${{ steps.version.outputs.build_number }}) 无签名版。
 
+          - 源码提交：\`${{ steps.source.outputs.sha }}\`；构建运行：https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} 。tag、checkout 与 IPA 内 source SHA 必须一致。
+          - 发布阶段：${{ steps.source.outputs.stage }}。untested 为首轮测试未完成预发布；verified 仅在同一提交的完整单元与 UI 两项实际成功后重建发布。真机/provider/视觉验收仍须单独核实，构建成功不等于测试完成。
           - 由 GitHub Actions 在 macOS runner 上构建：\`scripts/build-unsigned-ipa.sh\`（Release、仅 arm64、strip、不带 .dSYM）。
           - 瘦身：默认移除 LXGW 文楷 / 新晰黑两个可选阅读字体（未压缩约 20.3 MB），思源宋体 / 黑体保留；选了这两个字体的用户会在此版看到回退字体。
           - 无签名：普通 iPhone 安装前仍需自行签名（AltStore / Sideloadly 等）或用 TrollStore / 越狱设备安装。
@@ -133,13 +186,24 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.release.outputs.tag }}
           NAME: ${{ steps.release.outputs.name }}
+          RELEASE_STAGE: ${{ steps.source.outputs.stage }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists, uploading assets (clobber)…"
-            gh release upload "$TAG" build/Tingye-unsigned.ipa build/Tingye-unsigned.ipa.sha256 --clobber
+          set -euo pipefail
+          GUARDS=(--expected-sha "$SOURCE_SHA" --release-stage "$RELEASE_STAGE" --tag "$TAG" --ipa build/Tingye-unsigned.ipa)
+          RELEASE_FLAGS=(--latest=false)
+          if [ "$RELEASE_STAGE" = "verified" ]; then
+            GUARDS+=(--require-tests)
           else
-            gh release create "$TAG" build/Tingye-unsigned.ipa build/Tingye-unsigned.ipa.sha256 \
-              --title "$NAME" \
-              --notes-file release-notes.md
+            RELEASE_FLAGS+=(--prerelease)
           fi
+          python3 scripts/verify-unsigned-source.py "${GUARDS[@]}"
+          EXISTING_RELEASES="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq '.[].tag_name')"
+          if printf '%s\n' "$EXISTING_RELEASES" | grep -Fxq -- "$TAG"; then
+            echo "Refusing to overwrite an existing release or its assets: $TAG" >&2; exit 1
+          fi
+          gh release create "$TAG" build/Tingye-unsigned.ipa build/Tingye-unsigned.ipa.sha256 build/Tingye-build-provenance.json \
+            --target "$SOURCE_SHA" "${RELEASE_FLAGS[@]}" \
+            --title "$NAME" --notes-file release-notes.md
+          python3 scripts/verify-unsigned-source.py --expected-sha "$SOURCE_SHA" --tag "$TAG"
           echo "Release: https://github.com/${{ github.repository }}/releases/tag/${TAG}"

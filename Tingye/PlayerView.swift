@@ -122,9 +122,8 @@ struct PlayerView: View {
                 readingStatus
                 sentenceStream
             }
-            .padding(20)
             .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .paperPanel()
             if let error = player.error { errorNotice(error).id("player.error") }
         }
         .padding(.horizontal, Theme.inset).padding(.vertical, 8)
@@ -174,7 +173,7 @@ struct PlayerView: View {
             HStack {
                 Button { dismiss() } label: {
                     HStack(spacing: 8) {
-                        Text("正在听").scaledFont(28, weight: .bold, relativeTo: .title)
+                        Text("正在听").font(Theme.serif(28, relativeTo: .title))
                         ThemeIcon(symbol: Icon.collapse, size: 20)
                     }
                     .frame(minHeight: 44).contentShape(Rectangle())
@@ -199,22 +198,26 @@ struct PlayerView: View {
                 .accessibilityIdentifier("player.more")
             }
             .buttonStyle(.plain)
-            Text(player.voiceLabel)
-                .font(.caption).foregroundStyle(Theme.ink2)
-            VStack(spacing: 12) {
+            HStack {
+                Label(player.voiceLabel, systemImage: Icon.voice)
+                Spacer(minLength: 8)
+                Text("辅助朗读").font(.caption)
+            }.font(.subheadline).foregroundStyle(Theme.ink2)
+            RowDivider().padding(.vertical, 4)
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 14)) : AnyLayout(HStackLayout(alignment: .center, spacing: 20))) {
                 if !typeSize.isAccessibilitySize {
                     Button { showingCover = true } label: {
-                        BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 112)
+                        BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 76)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("查看《\(book.title)》封面")
                     .accessibilityIdentifier("player.cover")
                 }
-                VStack(spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text(book.title)
                         .font(Theme.serifSemibold(23, relativeTo: .title2))
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                     Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
                         .font(.caption).foregroundStyle(Theme.ink2)
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
@@ -222,7 +225,7 @@ struct PlayerView: View {
                         .accessibilityIdentifier("player.currentChapter")
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .foregroundStyle(content)
         .padding(.horizontal, Theme.inset).padding(.top, 10).padding(.bottom, 8)
@@ -376,8 +379,8 @@ struct PlayerView: View {
             Button { Haptics.light(); player.toggle() } label: {
                 ZStack {
                     Circle().fill(Theme.accent)
-                    if player.buffering { ProgressView().tint(Theme.onClay) }
-                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 28).foregroundStyle(Theme.onClay) }
+                    if player.buffering { ProgressView().tint(Theme.onAccent) }
+                    else { ThemeIcon(symbol: Icon.playback(player.playing), size: 28).foregroundStyle(Theme.onAccent) }
                 }
                 .frame(width: 72, height: 72)
                 .contentShape(Circle())
@@ -423,17 +426,16 @@ struct PlayerView: View {
             }
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .paperPanel(inset: 10)
     }
 
     /// 播放工具：线性图标在上、小字在下，无边框；开启状态转刊红加粗并加下划线。
     private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
         VStack(spacing: 4) {
             ThemeIcon(symbol: symbol, size: 21)
-            Text(L(title)).font(.caption2.weight(highlighted ? .bold : .medium))
+            Text(L(title)).font(.footnote.weight(highlighted ? .bold : .medium))
                 .foregroundStyle(highlighted ? Theme.accent : Theme.ink2)
-                .lineLimit(1).minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(content)
         .frame(maxWidth: .infinity, minHeight: 50)
@@ -441,8 +443,8 @@ struct PlayerView: View {
     }
 
     private func errorNotice(_ error: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(error).font(.footnote).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            EditorialNotice(title: "朗读暂时中断", detail: error, kind: .failure)
             ViewThatFits(in: .horizontal) {
                 HStack { recoveryButtons }
                 VStack(alignment: .leading) { recoveryButtons }
@@ -612,19 +614,8 @@ struct ChapterListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(book.title).font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
-                    HStack(spacing: 7) {
-                        Image(systemName: Icon.listening)
-                        Text("共 \(book.chapters.count) 章 · 正在听第 \(player.chapter + 1) 章")
-                    }
-                    .font(.caption).foregroundStyle(Theme.accent)
-                    Text("\(player.timingLabel) · \(player.rate.rateText)×")
-                        .font(.caption).foregroundStyle(Theme.ink3)
-                }
-                .padding(.vertical, 8)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 0))
+                EditorialIntro(title: book.title,
+                    detail: "共 \(book.chapters.count) 章 · 正在听第 \(player.chapter + 1) 章 · \(player.timingLabel) · \(player.rate.rateText)×", eyebrow: "听书目录")
                 VStack(spacing: 8) {
                     HStack {
                         Button { player.skipChapter(-1) } label: { Label("上一章", systemImage: Icon.back) }
@@ -638,6 +629,7 @@ struct ChapterListView: View {
                     ChapterProgressSlider(player: player)
                 }
                 .listRowBackground(Theme.surface)
+                if filtered.isEmpty { ContentUnavailableView.search(text: query) }
                 ForEach(filtered, id: \.index) { item in
                     let current = item.index == player.chapter
                     Button {
@@ -674,7 +666,7 @@ struct ChapterListView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
+            .editorialList()
             .background(Theme.bg)
             .searchable(text: $query, prompt: "搜索章节")
             .navigationTitle("听书目录")
@@ -736,6 +728,7 @@ struct VoiceSettingsView: View {
 
     var body: some View {
         Form {
+            EditorialIntro(title: "让文字有自己的声音", detail: "先试听，再保存。声音设置与阅读进度分开保留。")
             Section {
                 voiceHero
                     .listRowInsets(EdgeInsets()).listRowSeparator(.hidden)
@@ -782,7 +775,7 @@ struct VoiceSettingsView: View {
             .listRowBackground(Theme.surface)
             if error != nil || !notice.isEmpty { voiceNotices }
         }
-        .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
+        .editorialList()
         .navigationTitle("声音与朗读")
         .navigationBarBackButtonHidden().navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -828,28 +821,27 @@ struct VoiceSettingsView: View {
     }
 
     private func voiceSettingLabel(_ title: String, value: String) -> some View {
-        HStack(spacing: 12) {
-            Text(title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-            Spacer(minLength: 8)
-            Text(value).font(.caption).foregroundStyle(Theme.ink2)
-                .lineLimit(2).multilineTextAlignment(.trailing)
-        }.frame(minHeight: 36)
+        EditorialRow(title: title, value: value, disclosure: false)
     }
 
     private func voiceDetail<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        Form { content().listRowBackground(Theme.surface) }
-            .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
-            .navigationTitle(title).navigationBarTitleDisplayMode(.large)
+        Form {
+            EditorialIntro(title: title, detail: "调整后可返回试听，保存并应用后用于听书。")
+            content().listRowBackground(Theme.surface)
+        }
+        .editorialList()
+        .navigationTitle(title).navigationBarTitleDisplayMode(.large)
     }
 
     private var cloudConfiguration: some View {
         Form {
+            EditorialIntro(title: "连接云语音", detail: "使用你自己的服务。密钥仅保存在本机钥匙串，试听也会连接服务商。")
             providerSection.listRowBackground(Theme.surface)
             connectionSection.listRowBackground(Theme.surface)
             voiceSection.listRowBackground(Theme.surface)
             voiceNotices
         }
-        .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
+        .editorialList()
         .navigationTitle("连接云语音").navigationBarTitleDisplayMode(.large)
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: 12) {
@@ -869,9 +861,9 @@ struct VoiceSettingsView: View {
 
     private var voiceNotices: some View {
         Section {
-            Text(auditionHint).font(.caption).foregroundStyle(Theme.ink2)
-            if let error { Text(error).font(.caption).foregroundStyle(Theme.danger) }
-            if !notice.isEmpty { Text(L(notice)).font(.caption).foregroundStyle(Theme.ink2) }
+            Text(auditionHint).font(.footnote).foregroundStyle(Theme.ink2)
+            if let error { EditorialNotice(title: "声音设置需要检查", detail: error, kind: .failure) }
+            if !notice.isEmpty { EditorialNotice(title: notice) }
         }
         .listRowBackground(Theme.accentSoft)
     }

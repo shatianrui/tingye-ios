@@ -15,9 +15,8 @@
 #     the signed App Store flow is unchanged. All unsigned overrides are
 #     passed on the xcodebuild command line only.
 #   - No version is hardcoded: MARKETING_VERSION / CURRENT_PROJECT_VERSION
-#     are read from project.pbxproj. (Note: pbxproj currently says
-#     1.24.0 (128) while README says 1.24.0 (123); the script trusts
-#     pbxproj, which is what Xcode actually builds.)
+#     are read from project.pbxproj and verified against the packaged Info.plist.
+#     The exact source SHA is embedded in the unsigned app and provenance sidecar.
 #
 # Requirements: macOS + Xcode (xcodebuild, ditto/zip, lipo, codesign).
 # The resulting IPA is UNSIGNED. It cannot be installed on stock iOS
@@ -61,7 +60,12 @@ cd "$ROOT"
 
 MARKETING_VERSION="$(grep -m1 'MARKETING_VERSION =' Tingye.xcodeproj/project.pbxproj | sed -E 's/.*= *([^;]+);.*/\1/' | tr -d ' ')"
 BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION =' Tingye.xcodeproj/project.pbxproj | sed -E 's/.*= *([^;]+);.*/\1/' | tr -d ' ')"
-echo "Tingye ${MARKETING_VERSION:-?} (${BUILD_NUMBER:-?}) — unsigned IPA build"
+SOURCE_SHA="$(git rev-parse HEAD)"
+if [ -n "${TINGYE_EXPECTED_SOURCE:-}" ] && [ "$SOURCE_SHA" != "$TINGYE_EXPECTED_SOURCE" ]; then
+  echo "error: checked-out source differs from expected workflow source" >&2; exit 1
+fi
+python3 -c 'import importlib.util; s=importlib.util.spec_from_file_location("provenance", "scripts/verify-unsigned-source.py"); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.project_version()'
+echo "Tingye ${MARKETING_VERSION:-?} (${BUILD_NUMBER:-?}) — source $SOURCE_SHA — unsigned IPA build"
 
 if [ "$OPT_SIZE" -eq 1 ]; then
   SWIFT_OPT="-Osize"
@@ -145,6 +149,25 @@ print("UIAppFonts now:", plist.get("UIAppFonts"))
 PYEOF
 fi
 
+# Stamp and verify the actual packaged app, not the archive's earlier copy.
+python3 - "$SOURCE_SHA" "$MARKETING_VERSION" "$BUILD_NUMBER" <<'PYPROVENANCE'
+import json, os, pathlib, plistlib, sys
+source, version, build = sys.argv[1:]
+apps = list(pathlib.Path('build/Payload').glob('*.app'))
+if len(apps) != 1: raise SystemExit('error: expected one packaged app')
+path = apps[0] / 'Info.plist'
+info = plistlib.loads(path.read_bytes())
+if info.get('CFBundleShortVersionString') != version or info.get('CFBundleVersion') != build:
+    raise SystemExit('error: packaged version/build differs from project')
+info['TingyeSourceCommit'] = source
+path.write_bytes(plistlib.dumps(info))
+pathlib.Path('build/Tingye-build-provenance.json').write_text(json.dumps({
+    'source_sha': source, 'version': version, 'build': build, 'unsigned': True,
+    'release_stage': os.environ.get('TINGYE_RELEASE_STAGE', 'untested'),
+    'runtime_acceptance': 'See release notes; build success does not imply device validation'
+}, indent=2) + '\n')
+PYPROVENANCE
+
 echo "==> Creating IPA…"
 (cd build && ditto -c -k --keepParent --zlibCompressionLevel 9 Payload Tingye-unsigned.ipa) \
   || (cd build && zip -r -y -9 Tingye-unsigned.ipa Payload >/dev/null)
@@ -161,8 +184,8 @@ unzip -l "$IPA" | grep -E 'dSYM|_CodeSignature|mobileprovision' && echo "WARNING
 if [ "$SLIM_FONTS" -eq 1 ]; then
   unzip -l "$IPA" | grep -E 'LXGW' && echo "WARNING: LXGW fonts still in IPA" || echo "OK: LXGW fonts removed from IPA"
 fi
-echo "--- version in packaged Info.plist:"
-plutil -p "$ARCHIVE/Products/Applications/Tingye.app/Info.plist" | grep -E 'CFBundleShortVersionString|CFBundleVersion' || true
+echo "--- verifying source and version in the IPA:"
+python3 scripts/verify-unsigned-source.py --expected-sha "$SOURCE_SHA" --ipa "$IPA"
 
 echo ""
 echo "Done: $IPA"

@@ -2,13 +2,24 @@
 
 纯 Swift / SwiftUI 本地阅读应用，听书作为辅助能力，最低 iOS 17。
 
-当前开发版本为 **1.25.0（129）**；版本号以 `Tingye.xcodeproj/project.pbxproj` 的 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` 为准，本文件其他版本数字均为各历史版本的发布记录。
+当前开发版本为 **1.26.0（143）· Anthropic-inspired 全界面重设计（未发布、未完成 iOS 验收）**；版本号以 `Tingye.xcodeproj/project.pbxproj` 的 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` 为准，本文件其他版本数字均为各历史版本的发布记录。
 
-最新上传版本为 **1.24.0（123）· 悬浮阅读菜单**。iOS / iPadOS 与 Mac Catalyst 均已收到 `Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0。iOS TestFlight 已显示 **1.24.0 Build 123** 与「安装」（54.2 MB），确认当前测试账号可安装；Mac TestFlight 已显示 **1.24.0 Build 123** 与「更新」（60.6 MB），确认当前测试账号可更新。详见[123 发布证据](docs/testflight-123.json)和[发布历史](docs/RELEASE_HISTORY.md)。
+以下为历史签名上传记录（不是本次重设计的构建或验证结果）：**1.24.0（123）· 悬浮阅读菜单**。iOS / iPadOS 与 Mac Catalyst 均已收到 `Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0。iOS TestFlight 已显示 **1.24.0 Build 123** 与「安装」（54.2 MB），确认当前测试账号可安装；Mac TestFlight 已显示 **1.24.0 Build 123** 与「更新」（60.6 MB），确认当前测试账号可更新。详见[123 发布证据](docs/testflight-123.json)和[发布历史](docs/RELEASE_HISTORY.md)。
 
 阅读页顶部导航、底部菜单现在覆盖正文显示，开合菜单时保留正文视口、分页与阅读位置；原书图文和 PDF 同步，PDF 缩放保持。首页始终以阅读为主操作，正文固定「目录 / 排版 / 摘记 / 更多」，读听位置独立保存，延续[阅读优先改动与兼容说明](docs/READING-FIRST.md)。
 
 123 发布前 **112 项核心 + 12 项相关 UI 回归最终通过**，iPhone SE 3 另补 3 个重叠场景；这次没有重跑完整 UI 套件，也不沿用 122 的 135 项总数作为本轮结果。Mac Catalyst Debug 编译通过，双端 Release 归档成功，iOS 28 项 / Mac 29 项包检查通过，149 个构建输入前后哈希一致。相关回归后仅将构建号 122 递增为 123，业务代码、UI 与资源未变。测试范围与打包事实见 [123 验收记录](docs/VALIDATION-123.md)。
+
+## 当前重设计与导入回归
+
+本次基于良好 IPA 的实际构建提交 `readium-engine@18481af8008b27266af661b03bf16cf5b10e07a0`，全新设计，不使用废弃 v30/PR15 UI 或资源。新界面是暖纸、炭字与克制陶土的非官方 Anthropic-inspired 方向，保留 Readium 正文 CSS、格式路由、Locator、进度、迁移及依赖。
+
+- [147 项全界面覆盖与真实状态](docs/ANTHROPIC-REDESIGN-COVERAGE.md)
+- [设计系统与逐模块实现说明](docs/ANTHROPIC-INTERFACE.md)
+- [本地导入回归、源码失败模式、测试与 provider 待验收矩阵](docs/LOCAL-IMPORT-REGRESSION.md)
+- [无签名构建、来源 SHA 和发布门槛](docs/UNSIGNED-IPA.md)
+
+**当前仅本地实现与 Linux 静态检查；未编译、未运行 iOS 测试、未 build IPA、未发布。** 原有 174 单元/28 UI 回归均保留，新增 8 单元/2 UI；不能把新增测试源码或语法检查当成运行通过。导入修改缓解源码中识别的失败模式，真机回归仍待完成。
 
 ## 历史发布摘录
 
@@ -38,7 +49,7 @@
 
 ## 当前实现与设计基线
 
-当前 UI 延续 121 的 Figma **暖白与钴蓝**方案：背景 `#FAF9F6`（深色 `#101725`）、正文 `#17233A`（深色 `#F3F5FA`）、强调色 `#315BEE`（深色 `#8DA7FF`），白色内容表面、浅蓝选中态与独立暖纸阅读区。界面使用思源黑体，书名与文学内容使用思源宋体；阅读正文继续遵循用户保存的字体偏好。卡片与按钮圆角 16pt，主按钮高 50pt。**应用图标为展开书页与三道声波**，日间采用蓝底暖白书页，包含深色与着色三种 1024px 无 alpha 资源。[可编辑 Figma](https://www.figma.com/design/dYtodq4gYGkOJw1EPODDMY?node-id=16-22)包含 43 个界面与状态；[交互原型](https://www.figma.com/proto/dYtodq4gYGkOJw1EPODDMY?node-id=17-1342&starting-point-node-id=17%3A1342)用于浏览主要流程。v26「微信读书风格」及此前方案均为历史。
+当前本地 UI 使用全新纸面组件、中文编辑式标题、自适应操作行与语义状态，详见[本次设计实现](docs/ANTHROPIC-INTERFACE.md)。下述 v29 及更早段落保留为历史结构背景，不代表本次外观或验收结果。图标与营销资产按本阶段指令保留，未生成新资产。
 
 **v29「书房」（1.25.0（133））**：取消底栏三页签，改为单一导航；打开 App 直接回到上次在读的书与阅读位置（阅读器即首页），书库作为根页面（书库抽屉的内容本体），「我的」的统计、书摘与设置经书库页的工具栏入口进入。专注会话、读完收尾、摘记统一、设置单目录五组与本地导出整库亦已落地；旧三页签结构（RootView / NowView）与编译开关回退已于构建 133 删除，如需回退请回到构建 132 及更早的提交。数据层与既有功能行为不变。详见 [v29「书房」设计文档](Design/v29-study/DESIGN.md)。
 

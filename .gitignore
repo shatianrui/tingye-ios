@@ -5,3 +5,6 @@ DerivedData/
 xcuserdata/
 .DS_Store
 .trae-html-share-packages/
+
+# Local source-validation scripts
+__pycache__/

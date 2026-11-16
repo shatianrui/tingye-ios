@@ -17,6 +17,7 @@ struct TxtRulesView: View {
 
     var body: some View {
         Form {
+            EditorialIntro(title: "让章节各就其位", detail: "先用一段原文预览，再将规则用于导入或重新分章。")
             Section {
                 Stepper(value: $maxLength, in: 5_000...200_000, step: 5_000) {
                     HStack { Text("章节最大字数"); Spacer(); Text("\(maxLength)").monospacedDigit().foregroundStyle(Theme.ink3) }
@@ -69,7 +70,7 @@ struct TxtRulesView: View {
         }
         .tint(Theme.accent)
         .foregroundStyle(Theme.ink)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle("TXT 分章规则")
         .navigationBarTitleDisplayMode(.large)

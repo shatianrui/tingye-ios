@@ -2517,3 +2517,121 @@ extension NativeCoreTests {
         withExtendedLifetime(delegate) {}
     }
 }
+
+
+// Import regressions: actual UIKit configuration, dismissal gate and coordinated file lifetime.
+import UIKit
+extension NativeCoreTests {
+    @MainActor func testDocumentPickerCopiesSingleByDefaultAndBatchIsExplicit() {
+        let single = LocalBookPicker { _ in }
+        let controller = single.makeDocumentPicker(delegate: single.makeCoordinator())
+        XCTAssertFalse(controller.allowsMultipleSelection)
+        XCTAssertEqual(controller.documentPickerMode, .import)
+        let batch = LocalBookPicker(multiple: true) { _ in }
+        let batchController = batch.makeDocumentPicker(delegate: batch.makeCoordinator())
+        XCTAssertTrue(batchController.allowsMultipleSelection)
+        XCTAssertEqual(batchController.documentPickerMode, .import)
+    }
+
+    @MainActor func testPickerDelegateDeliversSelectionImmediatelyAndOnlyOnce() {
+        let url = URL(fileURLWithPath: "/tmp/selection.txt")
+        var deliveries: [[URL]?] = []
+        let picker = LocalBookPicker { deliveries.append($0) }
+        let coordinator = picker.makeCoordinator()
+        let controller = picker.makeDocumentPicker(delegate: coordinator)
+        coordinator.documentPicker(controller, didPickDocumentsAt: [url])
+        XCTAssertEqual(deliveries.count, 1, "交付不能等待 sheet onDismiss")
+        XCTAssertEqual(deliveries.first!, [url])
+        coordinator.documentPicker(controller, didPickDocumentsAt: [])
+        coordinator.documentPickerWasCancelled(controller)
+        XCTAssertEqual(deliveries.count, 1)
+    }
+
+    @MainActor func testPickerCancelIsDistinctFromEmptyAndRejectsLateSelection() {
+        var deliveries: [[URL]?] = []
+        let picker = LocalBookPicker { deliveries.append($0) }
+        let coordinator = picker.makeCoordinator()
+        let controller = picker.makeDocumentPicker(delegate: coordinator)
+        coordinator.documentPickerWasCancelled(controller)
+        coordinator.documentPicker(controller, didPickDocumentsAt: [URL(fileURLWithPath: "/tmp/late.txt")])
+        XCTAssertEqual(deliveries.count, 1)
+        XCTAssertNil(deliveries[0])
+        let empty = LocalBookPicker { deliveries.append($0) }
+        empty.makeCoordinator().deliver([])
+        XCTAssertEqual(deliveries.count, 2)
+        XCTAssertEqual(deliveries[1], [])
+    }
+
+    @MainActor func testFileImportWaitsForAllModalDismissalsAndConsumesOneMode() async throws {
+        try await withDesignModel { model, _, _ in
+            let hub = UUID(), result = UUID()
+            model.holdFileImportPresentation(hub)
+            model.holdFileImportPresentation(result)
+            model.requestFileImport(multiple: true)
+            model.presentRequestedFileImport()
+            XCTAssertNil(model.fileImportPicker)
+            XCTAssertFalse(model.consumeFileImportRequest())
+            model.releaseFileImportPresentation(result)
+            XCTAssertTrue(model.fileImportRequested)
+            XCTAssertNil(model.fileImportPicker, "结果 sheet 关闭时，ImportHub 仍占用呈现")
+            model.releaseFileImportPresentation(hub)
+            let request = try XCTUnwrap(model.fileImportPicker)
+            XCTAssertTrue(request.multiple)
+            XCTAssertFalse(model.fileImportRequested)
+            model.releaseFileImportPresentation(hub)
+            XCTAssertEqual(model.fileImportPicker?.id, request.id, "重复释放不能创建第二个选择器")
+            model.completeFileImportSelection(nil)
+            model.requestFileImport()
+            model.presentRequestedFileImport()
+            XCTAssertFalse(try XCTUnwrap(model.fileImportPicker).multiple, "批量取消后普通入口恢复单选")
+            model.completeFileImportSelection(nil)
+        }
+    }
+
+    @MainActor func testEmptySelectionReportsErrorButCancelDoesNotStartImport() async throws {
+        try await withDesignModel { model, _, _ in
+            model.completeFileImportSelection(nil)
+            XCTAssertNil(model.message); XCTAssertNil(model.importReport); XCTAssertFalse(model.busy)
+            model.completeFileImportSelection([])
+            XCTAssertTrue(model.message?.contains("没有选中") == true)
+            XCTAssertNil(model.importReport); XCTAssertFalse(model.busy)
+        }
+    }
+
+    func testCoordinatedSnapshotSurvivesProviderReplacementAndRemovesPrivateCopy() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("原始标题.txt")
+        try Data("原来的文字。".utf8).write(to: source)
+        let snapshot = try CoordinatedBookFile(copying: source)
+        defer { snapshot.remove() }
+        try Data("文件提供方已经替换了内容。".utf8).write(to: source, options: .atomic)
+        let imported = try await BookImporter.read(snapshot.url)
+        XCTAssertEqual(imported.book.title, "原始标题")
+        XCTAssertTrue(imported.book.chapters[0].text.contains("原来的文字"))
+        snapshot.remove()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: snapshot.directory.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
+        XCTAssertThrowsError(try CoordinatedBookFile(copying: root.appendingPathComponent("missing.txt")))
+    }
+
+    @MainActor func testDelegateBeginsVisibleImportAndCoordinatedMissingFileKeepsSuccess() async throws {
+        try await withDesignModel { model, disk, base in
+            let good = base.appendingPathComponent("选择后立即响应.txt")
+            try Data("真正导入并保存的文字。".utf8).write(to: good)
+            let picker = LocalBookPicker { model.completeFileImportSelection($0) }
+            picker.makeCoordinator().deliver([good, base.appendingPathComponent("不存在.txt")])
+            XCTAssertTrue(model.busy, "delegate 当场进入 beginImport 并设置进度")
+            XCTAssertEqual(model.activity, "正在导入书籍")
+            for _ in 0..<200 where model.busy { try await Task.sleep(for: .milliseconds(25)) }
+            XCTAssertFalse(model.busy)
+            XCTAssertEqual(model.importReport?.successes, 1)
+            XCTAssertEqual(model.importReport?.failures, 1)
+            XCTAssertTrue(model.importReport?.finished == true)
+            let row = try XCTUnwrap(model.entries.first)
+            XCTAssertTrue(try disk.read(row.id).chapters[0].text.contains("真正导入"))
+            XCTAssertEqual(model.notice?.importResults, true)
+        }
+    }
+}

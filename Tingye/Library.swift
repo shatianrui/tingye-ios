@@ -209,17 +209,19 @@ struct AppLockGate: ViewModifier {
     @State private var locked = true
     @State private var checking = false
     func body(content: Content) -> some View {
-        content
-            .overlay {
+        ZStack {
+            content.accessibilityHidden(enabled && locked)
                 if enabled && locked {
                     ZStack {
                         Rectangle().fill(.ultraThickMaterial).ignoresSafeArea()
                         VStack(spacing: 18) {
                             Image(systemName: Icon.lock(true)).font(.system(size: 40, weight: .medium)).foregroundStyle(Theme.accent)
-                            Text("听页已上锁").font(.title2.weight(.bold))
+                            Text("听页已上锁").font(Theme.serif(28, relativeTo: .title))
+                            Text("验证身份，回到你的私人书房。").font(.subheadline).foregroundStyle(Theme.ink2)
                             Button("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
                                 .buttonStyle(PrimaryButtonStyle())
-                                .frame(width: 220)
+                                .frame(maxWidth: 300).disabled(checking)
+                            if checking { ProgressView("正在验证…") }
                         }
                     }
                     .transition(.opacity)

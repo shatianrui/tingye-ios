@@ -135,3 +135,18 @@ IPA 直接小 20 MB，以 Mac 上实测的 `ls -lh` 为准。
 本机（Linux）无法运行 Xcode，所以这份脚本**尚未在 Mac 上实测构建**。
 第一次在 Mac 上跑时请把完整输出贴回来，失败时先看归档日志，
 常见原因是 entitlements 或团队设置没被命令行覆盖。
+
+## 1.26.0 重设计：精确来源与发布门槛
+
+本地源基线是 `readium-engine@18481af8008b27266af661b03bf16cf5b10e07a0`，不是旧 release tag 所指 main，也不是废弃 v30 线。当前版本已递增为 `1.26.0 (143)`；2026-11-17 查询 39 个已发布 release 及远端 main/readium-engine，最高已发布/两分支配置 build 都为 142。后续正式安排前仍需复查是否有新版本占用。
+
+本阶段没有 IPA 构建、工作流执行或发布。未来由协调者先推送自审提交，以 `release_stage=untested` 构建并发布测试未完成预发布；然后运行同 SHA 的完整 `Tests`；两项实际成功后，以 `release_stage=verified` 对相同源码重建第二次发布。两次提供相同完整 `expected_sha`，使用不同新 tag。工作流检查：
+
+1. checkout HEAD、显式 expected_sha、workflow event SHA 必须相符，且正确 Readium baseline 为祖先，tracked source 不得有未提交变动。
+2. 仅 verified 要求同 SHA 的 Tests workflow 与单元/UI两个必需 job 实际成功；untested 不预先要求测试成功，标题/notes明确 UNTESTED/测试未完成。tag触发默认untested。
+3. 项目各配置、版本生成器及最终 IPA Info.plist 的版本/build 一致；禁止再用 `1.25.0 (142)`；untested 查询已发布最大 build，要求新号码；verified 允许同一源码/version/build的第二次发布，但逐一核对先前同build资产的来源manifest，拒绝不同源码或缺失来源证明。
+4. 打包时在实际 Payload Info.plist 写入 `TingyeSourceCommit`，另出 `Tingye-build-provenance.json`；ZIP 内 SHA、版本、build 与 checkout/sidecar 再校验。
+5. 新 tag 显式 `--target "$SOURCE_SHA"`。如 tag 已存在，remote/local（含 annotated peeled commit）都必须等于 checkout；不覆盖已存在的 release 或资产，不使用 `--clobber`。
+6. untested 作为 prerelease、`--latest=false` 创建；verified 通过测试与来源校验后可发布非prerelease（仍不自动替换Latest）；notes 写明完整 SHA 与 Actions run。测试/真机/视觉未完成的范围应明确记录，构建成功不能当成全部验收完成。保留无签名、必须重签及 iCloud/旧钥匙串能力限制。
+
+协调者可以预先在已测提交上创建精确 tag；如果发现 tag/head/source 不一致，修正流程后重新安排唯一 tag，不能强推旧 tag 或覆盖旧资产。`scripts/verify-unsigned-source.py` 是失败关闭的来源守卫，不是 iOS 构建或设备测试。

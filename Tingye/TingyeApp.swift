@@ -92,6 +92,13 @@ enum UIReview {
         let defaults = UserDefaults(suiteName: "ui-review.offline")!
         defaults.set(false, forKey: ProgressSync.enabledKey)
         let model = AppModel(disk: disk, progressSync: ProgressSync(defaults: defaults, account: { false }))
+        if screen == "sources-file-import" {
+            // A real Files-provider fixture, not a bypass of the system picker delegate.
+            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+            try Data("从系统文件选择器导入成功。第二句。".utf8)
+                .write(to: documents.appendingPathComponent("听页导入回归.txt"), options: .atomic)
+        }
         if showcase {
             // 仅用于截图的演示记录；正常书库与发布构建不会生成这些数据。
             for offset in 0..<7 {
@@ -191,6 +198,8 @@ struct StudyRootView: View {
     @State private var navigationHidden = false
     @State private var didAutoOpenOnLaunch = false
     @State private var path: [StudyRoute] = []
+    @State private var readerImportToken = UUID()
+    @State private var playerImportToken = UUID()
 
     /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径，根页面需停在书库。
     private var autoOpenAllowed: Bool {
@@ -216,9 +225,10 @@ struct StudyRootView: View {
                         HStack {
                             Spacer()
                             NavigationLink(value: StudyRoute.me) {
-                                ThemeIcon(symbol: Icon.stats, size: 20, weight: .medium)
-                                    .foregroundStyle(Theme.ink)
-                                    .frame(width: 44, height: 44)
+                                Label("我的", systemImage: Icon.profile)
+                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                                    .padding(.horizontal, 12).frame(minHeight: 44)
+                                    .background(Theme.surface, in: Capsule())
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(PressButtonStyle(scale: 0.92))
@@ -275,14 +285,36 @@ struct StudyRootView: View {
             }
         }
         #endif
-        .fullScreenCover(item: $model.selectedBook) { book in
+        .onChange(of: model.selectedBook?.id) { _, id in
+            if id != nil { model.holdFileImportPresentation(readerImportToken) }
+        }
+        .onChange(of: model.showingPlayer) { _, shown in
+            if shown { model.holdFileImportPresentation(playerImportToken) }
+        }
+        .onChange(of: model.fileImportRequested) { _, requested in
+            guard requested else { return }
+            // Close outer reading/listening surfaces as well; their onDismiss releases the gate.
+            model.selectedBook = nil
+            model.showingPlayer = false
+            model.presentRequestedFileImport()
+        }
+        .sheet(item: $model.fileImportPicker, onDismiss: { model.presentRequestedFileImport() }) { request in
+            LocalBookPicker(multiple: request.multiple) { urls in
+                model.completeFileImportSelection(urls)
+            }
+        }
+        .fullScreenCover(item: $model.selectedBook, onDismiss: {
+            model.releaseFileImportPresentation(readerImportToken)
+        }) { book in
             NavigationStack {
                 RoutedReaderView(book: book)
             }
                 .environmentObject(model)
                 .tint(Theme.accent)
         }
-        .sheet(isPresented: $model.showingPlayer) {
+        .sheet(isPresented: $model.showingPlayer, onDismiss: {
+            model.releaseFileImportPresentation(playerImportToken)
+        }) {
             PlayerView(player: model.player)
                 .environmentObject(model)
         }
@@ -473,7 +505,7 @@ struct MiniPlayer: View {
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+            .paperPanel(inset: 8)
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
                     .padding(.horizontal, 16)
@@ -494,6 +526,7 @@ struct MiniPlayer: View {
 private struct FeedbackOverlay: ViewModifier {
     @EnvironmentObject private var model: AppModel
     @State private var showingResults = false
+    @State private var importResultsToken = UUID()
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .top, spacing: 0) {
             if let notice = model.notice {
@@ -517,14 +550,22 @@ private struct FeedbackOverlay: ViewModifier {
                 .overlay(alignment: .bottom) { RowDivider() }
             } else if model.busy {
                 HStack(spacing: 10) {
-                    ProgressView()
-                    Text(model.activity).font(.footnote).fixedSize(horizontal: false, vertical: true)
+                    ProgressView().tint(Theme.accent)
+                    Text(model.activity).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(12).frame(maxWidth: .infinity).background(Theme.surface)
                 .accessibilityElement(children: .combine)
             }
         }
-        .sheet(isPresented: $showingResults) {
+        .onChange(of: showingResults) { _, shown in
+            if shown { model.holdFileImportPresentation(importResultsToken) }
+        }
+        .onChange(of: model.fileImportRequested) { _, requested in
+            if requested { showingResults = false }
+        }
+        .sheet(isPresented: $showingResults, onDismiss: {
+            model.releaseFileImportPresentation(importResultsToken)
+        }) {
             NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent)
         }
     }

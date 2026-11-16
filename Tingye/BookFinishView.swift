@@ -10,6 +10,7 @@ import SwiftUI
 struct BookFinishView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     let entry: ShelfEntry
     /// 打开下一本（由阅读器提供：先关收尾页与本书，再开下一本）。
@@ -52,6 +53,7 @@ struct BookFinishView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    EditorialIntro(title: "一本读完，留一点回响", detail: "回顾这段阅读，也可以把感想写下来。")
                     header
                     quoteCard
                     finishNoteSection
@@ -69,7 +71,7 @@ struct BookFinishView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 16) {
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 16))) {
             BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
@@ -98,7 +100,7 @@ struct BookFinishView: View {
             }
             Text(quoteText).font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 16) {
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 16))) {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
                     .font(.caption)
                 Spacer()
@@ -124,6 +126,7 @@ struct BookFinishView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(title: "读完感")
             TextEditor(text: $finishNote)
+                .font(.body).scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
                 .padding(8)
                 .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
@@ -161,7 +164,7 @@ struct BookFinishView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                Text("书库里还没有待读的书。").font(.subheadline).foregroundStyle(Theme.ink2)
+                EditorialNotice(title: "这一段阅读告一段落", detail: "书库里还没有待读的书，可以回去挑选或导入下一本。")
                 Button { dismiss(); onCloseBook() } label: { Text("回到书库") }
                     .buttonStyle(SecondaryButtonStyle(height: 50))
             }

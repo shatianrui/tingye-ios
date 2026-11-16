@@ -26,12 +26,11 @@ struct BookDetailView: View {
             if let entry {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack {
-                        Text("书籍详情").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
+                        EditorialIntro(title: "书籍详情", detail: entry.group.map { "收于「\($0)」" } ?? "你的私人书库")
                         Spacer()
                         CircleIconButton(systemName: Icon.close, label: "返回书库") { dismiss() }
                     }
-                    Text(entry.group.map { "属于「\($0)」" } ?? "你的私人书库")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+
                     hero(entry)
                     actionButtons(entry)
                     contentSection(entry)
@@ -71,7 +70,10 @@ struct BookDetailView: View {
         .sheet(isPresented: $showingIntro) {
             NavigationStack {
                 ScrollView {
-                    if let entry { introSection(entry).padding(Theme.inset) }
+                    VStack(alignment: .leading, spacing: 20) {
+                        EditorialIntro(title: "关于这本书", detail: entry?.title)
+                        if let entry { introSection(entry) }
+                    }.padding(Theme.inset)
                 }
                 .background(Theme.bg)
                 .navigationTitle("关于这本书")
@@ -90,7 +92,7 @@ struct BookDetailView: View {
 
     /// 封面与元数据由书库提供，保留导入出版物的真实封面。
     private func hero(_ entry: ShelfEntry) -> some View {
-        HStack(alignment: .center, spacing: 24) {
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 18)) : AnyLayout(HStackLayout(alignment: .center, spacing: 24))) {
             if !typeSize.isAccessibilitySize {
                 BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
                     .accessibilityHidden(true)
@@ -229,8 +231,9 @@ struct BookDetailView: View {
                     Text("正在载入目录预览…").font(.caption).foregroundStyle(Theme.ink2)
                 }
                 NavigationLink {
-                    List { NotesList(entryID: entryID) { note in model.open(entry, target: .init(note)) } }
-                        .scrollContentBackground(.hidden)
+                    List { EditorialIntro(title: "书摘与笔记", detail: "保留原文，也留住当时的想法。")
+                        NotesList(entryID: entryID) { note in model.open(entry, target: .init(note)) } }
+                        .editorialList()
                         .background(Theme.bg)
                         .navigationTitle("书摘与笔记")
                         .navigationBarTitleDisplayMode(.inline)
@@ -244,6 +247,7 @@ struct BookDetailView: View {
                 .accessibilityIdentifier("detail.notes")
                 NavigationLink {
                     List {
+                        EditorialIntro(title: "阅读书签", detail: "从留下的位置继续读。")
                         if entry.bookmarks.isEmpty {
                             ContentUnavailableView("还没有书签", systemImage: Icon.bookmark(false), description: Text("阅读时点按顶部书签，留下想回来的位置。"))
                                 .listRowBackground(Color.clear)
@@ -260,7 +264,7 @@ struct BookDetailView: View {
                             .buttonStyle(.plain).listRowBackground(Theme.surface)
                         }
                     }
-                    .scrollContentBackground(.hidden).background(Theme.bg)
+                    .editorialList().background(Theme.bg)
                     .navigationTitle("阅读书签").navigationBarTitleDisplayMode(.inline)
                     .toolbar(.visible, for: .navigationBar).toolbar(.hidden, for: .tabBar)
                     .preference(key: LibraryNavigationHiddenKey.self, value: true)
@@ -294,15 +298,8 @@ struct BookDetailView: View {
     }
 
     private func detailRow(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
-            Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-            Spacer(minLength: 8)
-            Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink2).multilineTextAlignment(.trailing)
-            ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink2)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14).frame(minHeight: 56)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .contentShape(Rectangle())
+        EditorialRow(title: title, value: subtitle, symbol: icon)
+            .padding(.horizontal, 16).paperPanel(inset: 4)
     }
 
     /// 简介先显示轻量缓存；目录标题在后台读书后提取，预览不在主线程解析整书。
@@ -350,6 +347,7 @@ struct ChapterManagerView: View {
 
     var body: some View {
         List {
+            EditorialIntro(title: "目录与阅读状态", detail: "轻点章节阅读或听此章；选择后可批量标记已读。")
             Section {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(book.title).font(Theme.serifBold(23, relativeTo: .title2)).serifEmbolden(23).foregroundStyle(Theme.ink)
@@ -372,7 +370,7 @@ struct ChapterManagerView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+        .editorialList()
         .background(Theme.bg)
         .navigationTitle(selecting ? "选择章节" : "目录")
         .toolbar(.visible, for: .navigationBar)
@@ -521,7 +519,7 @@ struct ProfileView: View {
         settingsList
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
-            .scrollContentBackground(.hidden)
+            .editorialList()
             .paperBackground()
             .listStyle(.insetGrouped)
             .listSectionSpacing(4)
@@ -687,14 +685,14 @@ struct AppearanceView: View {
                         .scaledFont(23, weight: .semibold, relativeTo: .title2)
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("温柔的纸色，顺应每一刻的光。")
+                    Text("纸面的温度，墨色的清晰。选择适合此刻的界面。")
                         .font(.subheadline)
                         .foregroundStyle(Theme.ink3)
                 }
                 VStack(spacing: 12) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "暖白底色，深蓝文字与清晰标记")
-                    appearanceOption("dark", title: "夜间", subtitle: "深蓝夜色，安静地读入夜里")
+                    appearanceOption("light", title: "日间", subtitle: "暖象牙纸面、炭色文字与陶土标记")
+                    appearanceOption("dark", title: "夜间", subtitle: "柔和炭色背景，安静地读入夜里")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)
@@ -744,16 +742,16 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x101725) : Color(hex: 0xFAF9F6)
-        let foreground = dark ? Color(hex: 0xF3F5FA) : Color(hex: 0x17233A)
+        let background = dark ? Color(hex: 0x201F1C) : Color(hex: 0xF7F4ED)
+        let foreground = dark ? Color(hex: 0xF1EADF) : Color(hex: 0x292724)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 4, height: 4)
+                Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 4, height: 4)
                 Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            Rectangle().fill(Color(hex: dark ? 0x192236 : 0xFFFFFF)).frame(height: 25)
+            Rectangle().fill(Color(hex: dark ? 0x34312C : 0xFFFFFF)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0xF0AD88 : 0xA84A28)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
@@ -764,7 +762,7 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x101725)).frame(width: 30)
+                Rectangle().fill(Color(hex: 0x201F1C)).frame(width: 30)
                     .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF0F0F0)) }
             }
         }
@@ -803,6 +801,7 @@ struct FontLicenseView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                EditorialIntro(title: "每一份创作，皆有出处", detail: "听页使用的开源组件、图标与字体及其许可。")
                 SectionTitle(text: "开源组件")
                 ForEach(components, id: \.name) { component in
                     VStack(alignment: .leading, spacing: 4) {
@@ -861,6 +860,7 @@ struct PrivacyPolicyView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                EditorialIntro(title: "你的阅读，属于你", detail: "了解书籍、语音服务、备份与本机隐私保护。")
                 policy("数据存储", "听页是纯本地应用,没有账号,也不连接听页服务器。书籍、阅读进度与阅读时长保存在本设备。iCloud Drive 备份由你手动触发,包含当前书架的书籍、资源、进度与书签,由 Apple 账号管理。开启「自动同步阅读进度」时,每本书读到的章节与句子序号(及更新时间、由书名、作者、格式与章数生成的匹配摘要)会通过 iCloud 在你的设备间同步,不含书籍内容,可随时关闭;同步时间由系统决定。")
                 policy("阅读统计", "阅读时长按日记录在本设备,仅用于统计图表展示,不会自动上传。")
                 policy("第三方服务", "系统声音完全离线朗读。启用云端朗读(智谱 GLM / MiniMax)时,应用使用你自己的 API Key 直接连接对应服务商,当前句子的文本会发送给服务商以合成语音;API Key 仅保存在本机钥匙串。")

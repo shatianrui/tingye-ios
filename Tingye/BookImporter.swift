@@ -5,6 +5,14 @@ import ReadiumZIPFoundation
 
 enum BookImporter {
     struct Imported: Sendable { let book: Book; var progress = ReadingProgress(); var source: EPUBSourceStaging? = nil }
+    /// Snapshot the provider's coordinated readable URL before async parsing. The caller
+    /// retains its security scope for this entire async operation, including Readium work.
+    static func readCoordinated(_ url: URL) async throws -> Imported {
+        let snapshot = try CoordinatedBookFile(copying: url)
+        defer { snapshot.remove() }
+        try Task.checkCancellation()
+        return try await read(snapshot.url)
+    }
     static func read(_ url: URL) async throws -> Imported {
         let title = url.deletingPathExtension().lastPathComponent
         let ext = url.pathExtension.lowercased()
@@ -393,4 +401,32 @@ enum TxtChapterRules {
         guard let pattern = UserDefaults.standard.string(forKey: activeKey) else { return nil }
         return compile(pattern)
     }
+}
+
+
+/// A private immutable file. Never retain the external provider URL for a retry.
+/// Coordination is synchronous only for copying; async parsing cannot outlive its snapshot.
+struct CoordinatedBookFile: Sendable {
+    let directory: URL
+    let url: URL
+    init(copying source: URL) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("tingye-provider-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let destination = folder.appendingPathComponent(source.lastPathComponent)
+        var coordinationError: NSError?
+        var copied: Swift.Result<Void, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: source, options: [], error: &coordinationError) { readableURL in
+            copied = Swift.Result { try FileManager.default.copyItem(at: readableURL, to: destination) }
+        }
+        do {
+            if let coordinationError { throw coordinationError }
+            guard let copied else { throw ReaderError.message("文件提供方未能交付文件，请下载到本机后重新选择。") }
+            try copied.get()
+            directory = folder; url = destination
+        } catch {
+            try? FileManager.default.removeItem(at: folder)
+            throw error
+        }
+    }
+    func remove() { try? FileManager.default.removeItem(at: directory) }
 }

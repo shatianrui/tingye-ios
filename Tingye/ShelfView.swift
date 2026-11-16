@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 /// 书库：清晰的书目、柔和的封面网格与可跨分组的搜索和整理。
 struct ShelfView: View {
@@ -10,8 +11,9 @@ struct ShelfView: View {
     @State private var query = ""
     @State private var filter = "全部"
     @State private var category: String?
-    @State private var importing = false
     @State private var showingSources = false
+    @State private var importHubToken = UUID()
+    @State private var importResultsToken = UUID()
     @State private var showingImportResults = false
     @State private var searching = false
     @State private var showingGroups = false
@@ -145,13 +147,22 @@ struct ShelfView: View {
         .toolbar(.hidden, for: .tabBar)
         .preference(key: LibraryNavigationHiddenKey.self, value: editing || searching)
         .animation(Theme.smoothSpring, value: editing)
-        .bookImporter(isPresented: $importing)
+        .onChange(of: showingSources) { _, shown in
+            if shown { model.holdFileImportPresentation(importHubToken) }
+        }
+        .onChange(of: showingImportResults) { _, shown in
+            if shown { model.holdFileImportPresentation(importResultsToken) }
+        }
+        .onChange(of: model.fileImportRequested) { _, requested in
+            if requested { showingSources = false; showingImportResults = false }
+        }
         .sheet(isPresented: $showingSources, onDismiss: {
-            // ImportHub 内点「选择文件」只登记请求并关闭面板；面板完全关闭后才从本根层打开
-            // 文件选择器，避免选择器在 sheet 内部呈现时回调被吞（点「打开」无反应）。
-            if model.consumeFileImportRequest() { importing = true }
+            model.releaseFileImportPresentation(importHubToken)
         }) { ImportHubView().environmentObject(model).tint(Theme.accent) }
-        .sheet(isPresented: $showingImportResults) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
+        .sheet(isPresented: $showingImportResults, onDismiss: {
+            model.releaseFileImportPresentation(importResultsToken)
+        }) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
+
     }
 
     private var shelfWithMoveSheet: some View {
@@ -257,11 +268,11 @@ struct ShelfView: View {
     private var shelfHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("书房").font(Theme.serif(28)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                EditorialIntro(title: "书房", detail: studySubtitle, eyebrow: "听页 · 留一点时间给阅读")
                 Spacer()
                 CircleIconButton(systemName: Icon.search, label: "搜索书库", action: startSearch)
             }
-            Text(studySubtitle).font(.caption).foregroundStyle(Theme.ink2)
+
         }
     }
 
@@ -317,8 +328,9 @@ struct ShelfView: View {
     }
 
     private func heroCard(_ entry: ShelfEntry) -> some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .top, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("正在读", systemImage: Icon.read).font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+            HStack(alignment: .top, spacing: 18) {
                 BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(entry.title)
@@ -360,10 +372,7 @@ struct ShelfView: View {
                     .accessibilityIdentifier("study.heroFocus")
             }
         }
-        .padding(16)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.line, lineWidth: 1) }
-        .softCardShadow()
+        .paperPanel(inset: 18)
     }
 
     @ViewBuilder
@@ -387,7 +396,7 @@ struct ShelfView: View {
         HStack(alignment: .top, spacing: 10) {
             Rectangle().fill(Theme.clay).frame(width: 2)
             Text(highlight.text)
-                .font(Theme.serif(14)).italic()
+                .font(Theme.serif(16, relativeTo: .callout))
                 .foregroundStyle(Theme.ink2)
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -514,7 +523,7 @@ struct ShelfView: View {
     /// 浏览工具各司其职：筛选改变范围，排序改变顺序，显示改变呈现方式。
     private var viewOptions: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 2) {
+            HStack(spacing: 6) {
                 Text(searching ? "找到 \(sorted.count) 本书" : "全部 \(sorted.count)").font(.caption).foregroundStyle(Theme.ink2)
                 Spacer(minLength: 4)
                 if !searching { filterMenu; sortMenu; layoutMenu; organizeButton }
@@ -587,8 +596,15 @@ struct ShelfView: View {
     }
 
     private func optionLabel(_ icon: String, _ text: String) -> some View {
-        Text(L(text)).font(.caption).foregroundStyle(Theme.accent)
-            .padding(.horizontal, 4).frame(minWidth: 40, minHeight: 44).contentShape(Rectangle())
+        HStack(spacing: 5) {
+            Image(systemName: icon).accessibilityHidden(true)
+            Text(L(text))
+        }
+        .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+        .padding(.horizontal, 10).frame(minWidth: 44, minHeight: 44)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.line, lineWidth: 1) }
+        .contentShape(Rectangle())
     }
 
     private var libraryOptions: some View {
@@ -637,8 +653,7 @@ struct ShelfView: View {
 
     private var shelfSearchBar: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("搜索书库").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
-            Text("按书名、作者或分组搜索").font(.caption).foregroundStyle(Theme.ink2)
+            EditorialIntro(title: "搜索书库", detail: "在所有分组中查找书名、作者与分类", eyebrow: "查找")
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
                     ThemeIcon(symbol: Icon.search, size: 22)
@@ -704,7 +719,7 @@ struct ShelfView: View {
         VStack(alignment: .leading, spacing: 12) {
             if !savedSearches.isEmpty {
                 HStack {
-                    Text("最近搜索").font(Theme.sans(20, weight: .bold)).foregroundStyle(Theme.ink)
+                    Text("最近搜索").scaledFont(20, weight: .bold, relativeTo: .body).foregroundStyle(Theme.ink)
                     Spacer()
                     Button("清空") { savedSearches = "" }.font(.caption).frame(minHeight: 44)
                 }
@@ -737,7 +752,7 @@ struct ShelfView: View {
     @ViewBuilder
     private var emptyState: some View {
         if !searchText.isEmpty {
-            ContentUnavailableView.search(text: searchText).padding(.vertical, 40)
+            ContentUnavailableView.search(text: searchText).paperPanel(inset: 20).padding(.vertical, 24)
         } else if kind == "comics" && isRoot && visibleKindEntries.isEmpty {
             ContentUnavailableView {
                 Label("还没有漫画", systemImage: Icon.comics)
@@ -746,7 +761,7 @@ struct ShelfView: View {
             } actions: {
                 Button("导入漫画") { showingSources = true }.buttonStyle(PrimaryButtonStyle(height: 44)).frame(width: 160)
             }
-            .padding(.vertical, 40)
+            .paperPanel(inset: 20).padding(.vertical, 24)
         } else if model.entries.isEmpty {
             ContentUnavailableView {
                 Label("从第一本书开始", systemImage: Icon.shelf)
@@ -757,21 +772,21 @@ struct ShelfView: View {
                     .buttonStyle(PrimaryButtonStyle(height: 44))
                     .frame(width: 160)
             }
-            .padding(.vertical, 40)
+            .paperPanel(inset: 20).padding(.vertical, 24)
         } else {
             ContentUnavailableView {
                 Label(isRoot ? "没有符合条件的书" : "这个分组是空的", systemImage: isRoot ? Icon.search : Icon.folder)
             } description: {
                 Text(isRoot ? "换个关键词，或调整筛选。" : "回到书库点右上角「整理」，选择书籍后通过「移动分组」移入这里。")
             }
-            .padding(.vertical, 40)
+            .paperPanel(inset: 20).padding(.vertical, 24)
         }
     }
 
     // MARK: 网格（书阁陈列）
 
     private var bookGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], alignment: .leading, spacing: 12) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], alignment: .leading, spacing: 22) {
             ForEach(folders, id: \.self) { path in
                 VStack(alignment: .leading, spacing: 0) {
                     NavigationLink { ShelfView(group: path) } label: { folderTile(path) }
@@ -808,9 +823,11 @@ struct ShelfView: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 readingButton(entry, label: label)
+                RowDivider().padding(.top, 8)
                 detailLink(entry)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .paperPanel(inset: 12)
         }
     }
 
@@ -1009,7 +1026,7 @@ struct ShelfView: View {
     // MARK: 列表（书目长卷）
 
     private var bookList: some View {
-        LazyVStack(spacing: 0) {
+        LazyVStack(spacing: 12) {
             ForEach(folders, id: \.self) { path in
                 HStack(spacing: 0) {
                     NavigationLink { ShelfView(group: path) } label: {
@@ -1066,8 +1083,10 @@ struct ShelfView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.trailing, 0)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 14)
+                    .padding(.leading, 12)
                     .frame(minHeight: 104)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
                     .contentShape(Rectangle())
                 }
             }
@@ -1222,6 +1241,7 @@ struct GroupPickerView: View {
     var body: some View {
         NavigationStack {
             List {
+                EditorialIntro(title: "给书找个位置", detail: "已选择 \(count) 本书。选择已有分组，或新建一个。")
                 Section {
                     TextField("分组名称，可用 / 创建多级分组", text: $name)
                         .submitLabel(.done)
@@ -1250,7 +1270,7 @@ struct GroupPickerView: View {
                 }
                 .listRowBackground(Theme.surface)
             }
-            .scrollContentBackground(.hidden)
+            .editorialList()
             .background(Theme.bg)
             .navigationTitle("移动 \(count) 本书")
             .navigationBarTitleDisplayMode(.inline)
@@ -1270,45 +1290,62 @@ struct GroupPickerView: View {
 
 // MARK: - 导入（书库与书源共用）
 
-private struct BookImportModifier: ViewModifier {
-    @EnvironmentObject var model: AppModel
-    @Binding var isPresented: Bool
-    func body(content: Content) -> some View {
-        content.fileImporter(isPresented: $isPresented, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
-            switch result {
-            case .success(let urls):
-                // 空结果不能静默吞掉：要么导入，要么明确报错。
-                if urls.isEmpty { model.message = "没有选中可导入的文件，请重新选择。" }
-                else { model.beginImport(urls) }
-            case .failure(let error):
-                model.message = error.localizedDescription
-            }
-        }
-    }
+struct FileImportRequest: Identifiable {
+    let id = UUID()
+    let multiple: Bool
 }
 
-extension View {
-    func bookImporter(isPresented: Binding<Bool>) -> some View { modifier(BookImportModifier(isPresented: isPresented)) }
+/// UIKit's delegate delivers the selected copy immediately; sheet dismissal is not a URL mailbox.
+@MainActor
+struct LocalBookPicker: UIViewControllerRepresentable {
+    var multiple = false
+    let completion: ([URL]?) -> Void
+    func makeCoordinator() -> Coordinator { Coordinator(completion: completion) }
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        makeDocumentPicker(delegate: context.coordinator)
+    }
+    func makeDocumentPicker(delegate: Coordinator) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: true)
+        picker.allowsMultipleSelection = multiple
+        picker.delegate = delegate
+        picker.view.accessibilityIdentifier = "import.documentPicker"
+        return picker
+    }
+    func updateUIViewController(_ controller: UIDocumentPickerViewController, context: Context) {}
+    @MainActor final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        private let completion: ([URL]?) -> Void
+        private(set) var completed = false
+        init(completion: @escaping ([URL]?) -> Void) { self.completion = completion }
+        func deliver(_ urls: [URL]?) {
+            guard !completed else { return }
+            completed = true
+            completion(urls)
+        }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { deliver(urls) }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { deliver(nil) }
+    }
 }
 
 /// 最近一批导入的逐项结果。失败文件重新选择，避免复用已经失效的安全作用域 URL。
 struct ImportResultsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @State private var importing = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("导入结果").font(Theme.sans(28, weight: .bold)).foregroundStyle(Theme.ink)
+                    EditorialIntro(title: "导入结果", detail: "每个文件的状态，清楚记在这里。")
                     Spacer()
                     CircleIconButton(systemName: Icon.close, label: "关闭导入结果") { dismiss() }
                 }
-                Text("成功的书籍已加入书库。").font(.caption).foregroundStyle(Theme.ink2).padding(.bottom, 4)
                 if let report = model.importReport {
+                    EditorialNotice(
+                        title: !report.finished ? "正在导入书籍" : (report.successes == 0 ? "这批文件未能导入" : "成功的书籍已加入书库"),
+                        detail: report.failures > 0 ? "请查看逐项原因，再重新选择需要处理的文件。成功项会保留。" : "每个文件的状态会在下方更新。",
+                        kind: !report.finished ? .working : (report.successes == 0 ? .failure : .success))
                     VStack(alignment: .leading, spacing: 10) {
                         Text(report.finished ? (report.failures > 0 ? "\(report.successes) 本成功，\(report.failures) 本需要处理" : "\(report.successes) 本书导入成功") : "正在导入书籍")
-                            .font(Theme.sans(20, weight: .bold)).foregroundStyle(Theme.ink)
+                            .scaledFont(20, weight: .bold, relativeTo: .body).foregroundStyle(Theme.ink)
                         Text("全部 \(report.items.count) 个文件 · " + (report.finished ? "本次导入已完成" : "已处理 \(report.completed) 个"))
                             .font(.caption).foregroundStyle(Theme.ink2)
                         if !report.finished { ProgressView(value: Double(report.completed), total: Double(max(1, report.items.count))).tint(Theme.accent) }
@@ -1324,14 +1361,15 @@ struct ImportResultsView: View {
                                     resultDescription(item)
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .padding(16).frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                            .paperPanel(inset: 16)
                             .accessibilityElement(children: .combine)
                         }
                     }
                     if report.finished {
-                        Button(report.failures > 0 ? "重新选择失败文件" : "继续导入文件") { importing = true }
+                        Button(report.failures > 0 ? "重新选择失败文件" : "继续导入文件") { model.requestFileImport(); dismiss() }
                             .buttonStyle(SecondaryButtonStyle(height: 50)).disabled(model.busy)
+                            .accessibilityIdentifier("import.retrySelection")
                         Button("前往书库") { model.tab = 0; dismiss() }.buttonStyle(PrimaryButtonStyle(height: 50))
                         Text(report.failures > 0 ? "成功与失败逐项显示；已成功的文件会保留。请检查原因后重新选择失败文件。" : "文件已保存到本机书库，可以开始阅读了。")
                             .font(.caption).foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
@@ -1339,14 +1377,13 @@ struct ImportResultsView: View {
                     }
                 } else {
                     ContentUnavailableView("暂无导入记录", systemImage: Icon.importFile, description: Text("导入书籍后，可以在这里查看每个文件的状态。"))
-                    Button("选择文件") { importing = true }.buttonStyle(PrimaryButtonStyle(height: 50))
+                    Button("选择文件") { model.requestFileImport(); dismiss() }.buttonStyle(PrimaryButtonStyle(height: 50))
                 }
             }
             .padding(.horizontal, Theme.inset).padding(.top, 10).padding(.bottom, 24)
             .frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
         .paperBackground().toolbar(.hidden, for: .navigationBar)
-        .bookImporter(isPresented: $importing)
     }
     @ViewBuilder private func resultIcon(_ item: ImportItem) -> some View {
         switch item.state {

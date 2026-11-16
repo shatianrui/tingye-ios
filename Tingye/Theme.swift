@@ -3,26 +3,24 @@ import UIKit
 import CoreImage
 import Pow
 
-/// 听页 · 书房。与 Figma 共用语义色；阅读纸色独立于界面表面。
+/// 听页新界面：纸面、墨色与克制陶土。ReaderPaper 和出版物排版独立保留。
 enum Theme {
-    static let bg = dynamic(0xFAF9F5, 0x141413)
-    static let surface = dynamic(0xFFFFFF, 0x1F1E1D)
-    static let surface2 = dynamic(0xF0EEE6, 0x2A2926)
-    static let ink = dynamic(0x1C1B18, 0xEFEDE6)
-    // 次级文字：对纸对比度日间 5.3:1、深色 7.4:1，保证小字可读。
-    static let ink2 = dynamic(0x6B6759, 0xA5A296)
-    // 三级文字（v29 起独立取值，不再与 ink2 坍缩）：仅页脚、时间戳等非关键元信息。
-    // 对比度：浅色在宣纸/次级面上原为 3.70/3.36，深色在次级面上原为 4.26，均未达 4.5；
-    // 沿原暖灰色相成比例加深/提亮后，浅色三面 5.15/4.67/5.42、深色三面 6.22/4.91/5.61。
-    static let ink3 = dynamic(0x6E6A5A, 0x99968A)
-    static let line = dynamic(0xE6E0D0, 0x2C2C33)
+    static let bg = dynamic(0xF7F4ED, 0x201F1C)
+    static let surface = dynamic(0xFFFDF8, 0x292723)
+    static let surface2 = dynamic(0xEEE9DF, 0x34312C)
+    static let ink = dynamic(0x292724, 0xF1EADF)
+    // UI 小字使用独立的暖灰层级；对比度由静态色值检查与既有 XCTest 共同约束。
+    static let ink2 = dynamic(0x625B52, 0xC2B9AB)
+    // 元数据也保持可读，不用低对比灰来制造层级。
+    static let ink3 = dynamic(0x696158, 0xBEB5A7)
+    static let line = dynamic(0xD4CCC0, 0x5A544C, highLight: 0x80776B, highDark: 0xA3998B)
     static let rulePaint = line
-    static let onInk = dynamic(0xFFFFFF, 0x101725)
+    static let onInk = dynamic(0xFFFDF8, 0x201F1C)
     static let cardEdge = line
     // 陶土小字（clayText）：链接式强调、当前章标记、眉题编号，对纸 ≥4.5:1。
-    static let accent = dynamic(0xA84A28, 0xF0AD88)
-    static let accentSoft = dynamic(0xF5E6DE, 0x3A2620)
-    static let onAccent = dynamic(0xFFFFFF, 0x101725)
+    static let accent = dynamic(0x98432E, 0xE9A18A)
+    static let accentSoft = dynamic(0xF0E4DA, 0x3B2B25)
+    static let onAccent = dynamic(0xFFFDF8, 0x201F1C)
     // 陶土块面：主按钮面、选中下划线、进度已读段；只标记「正在发生」，不承载小字。
     static let clay = dynamic(0xD97757, 0xD97757)
     static let onClay = dynamic(0x141413, 0x141413)
@@ -36,8 +34,8 @@ enum Theme {
     static let onForest = onAccent
     static let wash = clay.opacity(0.08)
     static let danger = dynamic(0xAE3D4E, 0xFF9FAD)
-    static let warm = dynamic(0xF9E4AC, 0x4A3C25)
-    static let onWarm = dynamic(0x644B1E, 0xF9E4AC)
+    static let warm = dynamic(0xEEE7DB, 0x322E27)
+    static let onWarm = dynamic(0x514A3F, 0xE0D5C4)
     static let gold = onWarm
     static let goldSoft = warm
     // 玉绿已退役（v29 全局只留陶土一个彩色强调）：jade 坍缩为 accent，兼容既有调用点。
@@ -121,8 +119,13 @@ enum Theme {
         return LinearGradient(colors: [c, c], startPoint: .top, endPoint: .bottom)
     }
 
-    private static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
-        Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
+    private static func dynamic(_ light: UInt32, _ dark: UInt32, highLight: UInt32? = nil, highDark: UInt32? = nil) -> Color {
+        Color(UIColor { traits in
+            let night = traits.userInterfaceStyle == .dark
+            let value = traits.accessibilityContrast == .high
+                ? (night ? highDark ?? dark : highLight ?? light) : (night ? dark : light)
+            return UIColor(hex: value)
+        })
     }
 }
 
@@ -233,7 +236,10 @@ extension Color {
         self.init(.sRGB, red: Double((hex >> 16) & 255)/255, green: Double((hex >> 8) & 255)/255, blue: Double(hex & 255)/255, opacity: 1)
     }
     static func dynamicLight(_ light: UInt32, _ dark: UInt32) -> Color {
-        Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
+        Color(UIColor { traits in
+            let color = UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+                return color
+        })
     }
 }
 
@@ -435,7 +441,7 @@ struct SealBadge: View {
     var filled: Bool = false
     var body: some View {
         Text(L(text))
-            .font(.system(size: 10, weight: .bold)).tracking(0.8)
+            .font(.caption.weight(.medium))
             .foregroundStyle(filled ? Theme.onClay : color)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
@@ -483,7 +489,8 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 18).padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(Theme.accent)
-            .background(Theme.accentSoft.opacity(configuration.isPressed ? 0.75 : 1), in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: 1) }
             .animation(Theme.pressSpring, value: configuration.isPressed)
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : 0.4)
@@ -608,11 +615,12 @@ struct SettingsRow: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(destructive ? Theme.danger : Theme.ink)
-                if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3).fixedSize(horizontal: false, vertical: true) }
+                if let subtitle { Text(L(subtitle)).font(.subheadline).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true) }
             }
             Spacer(minLength: 8)
-            if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+            if let value { Text(L(value)).font(.subheadline).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true) }
         }
+        .frame(minHeight: 52)
         .contentShape(Rectangle())
     }
 }
@@ -647,8 +655,10 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             if let number { Text(number).font(Theme.masthead).foregroundStyle(Theme.accent) }
-            Text(L(text)).font(Theme.sans(20, weight: .semibold)).foregroundStyle(Theme.ink)
+            Text(L(text)).font(.headline).foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
             if let badge { SealBadge(text: badge) }
+            if rule { Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true) }
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
@@ -677,7 +687,7 @@ struct PageMasthead: View {
                 .accessibilityHidden(true)
             }
             Text(L(title))
-                .font(Theme.sans(28, weight: .semibold))
+                .font(Theme.serif(30, relativeTo: .largeTitle))
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -961,5 +971,109 @@ struct ThemeIcon: View {
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+
+// MARK: - Editorial interface components (never applied to publication DOM or text layout)
+
+/// Shared introduction inside the scroll content: large text can scroll out of the way.
+struct EditorialIntro: View {
+    let title: String
+    var detail: String? = nil
+    var eyebrow: String? = nil
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let eyebrow {
+                Text(L(eyebrow)).font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+            }
+            Text(L(title)).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
+            if let detail {
+                Text(L(detail)).font(.subheadline).foregroundStyle(Theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Rectangle().fill(Theme.line).frame(height: 1).padding(.top, 6).accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 12)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+}
+
+/// An adaptive navigation/action row; content stays readable rather than truncating values.
+struct EditorialRow: View {
+    let title: String
+    var detail: String? = nil
+    var value: String? = nil
+    var symbol: String? = nil
+    var disclosure = true
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            if let symbol {
+                ThemeIcon(symbol: symbol, size: 20).foregroundStyle(Theme.accent)
+                    .frame(width: 28).accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(L(title)).font(.body.weight(.medium)).foregroundStyle(Theme.ink)
+                if let detail { Text(L(detail)).font(.subheadline).foregroundStyle(Theme.ink2) }
+                if typeSize.isAccessibilitySize, let value {
+                    Text(L(value)).font(.subheadline).foregroundStyle(Theme.accent)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if !typeSize.isAccessibilitySize, let value {
+                Text(L(value)).font(.subheadline).foregroundStyle(Theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true).multilineTextAlignment(.trailing)
+            }
+            if disclosure { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink2).accessibilityHidden(true) }
+        }
+        .padding(.vertical, 8).frame(minHeight: 52).contentShape(Rectangle())
+    }
+}
+
+struct PaperPanel: ViewModifier {
+    var inset: CGFloat = 18
+    @Environment(\.colorSchemeContrast) private var contrast
+    func body(content: Content) -> some View {
+        content.padding(inset).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.line, lineWidth: contrast == .increased ? 2 : 1) }
+    }
+}
+
+/// Status is conveyed with symbol + title + explanation, never color alone.
+struct EditorialNotice: View {
+    enum Kind: Equatable { case information, working, success, failure }
+    let title: String
+    var detail: String? = nil
+    var kind: Kind = .information
+    private var symbol: String {
+        switch kind { case .information: "info.circle"; case .working: "clock"; case .success: "checkmark.circle"; case .failure: "exclamationmark.triangle" }
+    }
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            if kind == .working { ProgressView().padding(.top, 2) }
+            else { Image(systemName: symbol).foregroundStyle(kind == .failure ? Theme.danger : Theme.accent).accessibilityHidden(true) }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L(title)).font(.subheadline.weight(.semibold))
+                if let detail { Text(L(detail)).font(.subheadline).foregroundStyle(Theme.ink2).textSelection(.enabled) }
+            }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .foregroundStyle(Theme.ink).modifier(PaperPanel())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+extension View {
+    func paperPanel(inset: CGFloat = 18) -> some View { modifier(PaperPanel(inset: inset)) }
+    /// Consistent native list rhythm used by deeper settings and source browsers.
+    func editorialList() -> some View {
+        self.listStyle(.insetGrouped).listSectionSpacing(22)
+            .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
+            .environment(\.defaultMinListRowHeight, 52)
     }
 }
