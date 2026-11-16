@@ -90,7 +90,7 @@ struct NotesUnifiedView: View {
                     HStack(spacing: 8) {
                         BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 24)
                         Text(group.entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
-                        SealBadge(text: "\(group.items.count) 条", color: Theme.gold, background: Theme.goldSoft)
+                        SealBadge(text: "\(group.items.count) 条", color: Theme.ink2, background: Theme.surface2)
                         Spacer()
                         ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }
                             .accessibilityLabel("导出《\(group.entry.title)》摘记")
@@ -127,11 +127,7 @@ struct NotesUnifiedView: View {
             Button { model.open(entry, chapter: item.chapter, position: item.position) } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
-                        Text(item.kind.rawValue)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Theme.accentSoft, in: Capsule())
+                        SealBadge(text: item.kind.rawValue)
                         Text("第 \(item.chapter + 1) 章").lineLimit(1)
                         Spacer()
                         Text(item.date.formatted(date: .abbreviated, time: .omitted))

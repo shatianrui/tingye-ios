@@ -146,7 +146,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("选段与标注").font(Theme.sans(18, weight: .medium))
+                Text("选段与标注").font(Theme.serif(18))
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -166,7 +166,7 @@ struct SelectionPanel: View {
             .buttonStyle(.plain)
             Text(text)
                 .font(Theme.serif(18, relativeTo: .body)).lineLimit(3).lineSpacing(7)
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Theme.insetCompact).frame(maxWidth: .infinity, alignment: .leading)
                 .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radius))
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -174,7 +174,7 @@ struct SelectionPanel: View {
                         Button { tool = item } label: {
                             Text(item.rawValue).font(.caption.weight(.medium))
                                 .foregroundStyle(tool == item ? paper : tint)
-                                .padding(.horizontal, 16).frame(minHeight: 44)
+                                .padding(.horizontal, Theme.insetCompact).frame(minHeight: 44)
                                 .background(tool == item ? accent : tint.opacity(0.06), in: Capsule())
                         }
                         .buttonStyle(.plain).accessibilityAddTraits(tool == item ? .isSelected : [])
@@ -212,7 +212,7 @@ struct SelectionPanel: View {
             }
         }
         .foregroundStyle(tint)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Theme.insetCompact)
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(maxWidth: 520)
@@ -299,9 +299,10 @@ struct NoteEditor: View {
                     Text(quote)
                         .font(Theme.serif(19, relativeTo: .body))
                         .foregroundStyle(Theme.ink).lineSpacing(8)
-                        .lineLimit(6).padding(20)
+                        .lineLimit(6).padding(Theme.insetCompact)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
                     Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
                     TextEditor(text: $text)
                         .font(.body).foregroundStyle(Theme.ink)
@@ -316,7 +317,7 @@ struct NoteEditor: View {
                     Button("保存笔记", action: save).buttonStyle(PrimaryButtonStyle(height: 50))
                     Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle(height: 50))
                 }
-                .padding(24)
+                .padding(Theme.inset)
                 .frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -474,7 +475,7 @@ struct AllNotesView: View {
                         HStack(spacing: 8) {
                             BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 24)
                             Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
-                            SealBadge(text: "\(notes.count) 条", color: Theme.gold, background: Theme.goldSoft)
+                            SealBadge(text: "\(notes.count) 条", color: Theme.ink2, background: Theme.surface2)
                             Spacer()
                             ShareLink(item: Self.markdown(entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }
                                 .accessibilityLabel("导出《\(entry.title)》书摘")
