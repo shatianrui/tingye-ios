@@ -12,8 +12,7 @@
 | [`colors_and_type.css`](colors_and_type.css) | CSS 令牌与组件样式（与 `Tingye/Theme.swift` 一一对应） |
 | [`design-spec.json`](design-spec.json) | 机器可读规格（仓库顶层 `Design/design-spec.json` 与本文件同源） |
 | [`pages/`](pages/) | 高保真视觉稿，28 屏，自包含 HTML，离线可开 |
-| [`previews/`](previews/) | 上述页面的渲染图：34 张单屏 PNG（@2x，256 色调色板）+ 2 张分组接触表 JPG |
-| [`app-icon/`](app-icon/) | 应用图标「声页」：生成器、SVG、三变体 PNG、设计说明 |
+| [`app-icon/`](app-icon/) | 应用图标「声页」：生成器、矢量源、三变体 PNG、安装脚本、设计说明 |
 | [`gallery.html`](gallery.html) | 全屏画廊：28 屏实时可交互（离线可开） |
 | `contrast-check.py` | 配色对比度逐对计算（WCAG） |
 | `sync-check.py` | 令牌三处同值校验（Swift ↔ CSS ↔ 文档） |
@@ -61,3 +60,21 @@ python3 make-gallery.py      # 重建画廊
 
 > **构建验证边界**：本设计包在 Linux 环境完成，**没有 Xcode / Swift 工具链，Swift 代码未经编译**。
 > 上线前请在 macOS 上跑一遍完整构建与 UI 回归（口径见 `docs/ACCEPTANCE.md`）。
+
+## 两处「不在仓库里」的东西（已知限制）
+
+本仓库的写入通道（GitHub 连接器）**只能逐字写入文本**：二进制文件经该通道落库会变成 base64 文本，
+Xcode 资产编译器会直接报错：
+
+```
+error: The stickers icon set, app icon set, or icon stack named "AppIcon" did not have any applicable content.
+```
+
+因此有两类产物不在仓库里，改由本地生成或从交付包取：
+
+| 产物 | 怎么拿到 |
+|---|---|
+| 应用图标三变体 PNG | 交付压缩包里直接取；或跑 `python3 Design/v30-anthropic/app-icon/make-icon.py` 重新生成；装进工程跑 `bash Design/v30-anthropic/app-icon/install-icon.sh` |
+| `previews/` 渲染图 | 跑 `python3 Design/v30-anthropic/render-previews.py` 完整重建（需 playwright + Chromium） |
+
+矢量源（`app-icon/icon-{light,dark,tinted}.svg`）、生成器、渲染脚本、全部校验脚本都是文本，都在仓库里，可复现。
