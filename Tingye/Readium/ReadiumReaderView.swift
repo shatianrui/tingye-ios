@@ -1,5 +1,7 @@
 import SwiftUI
+import UIKit
 import ReadiumShared
+import ReadiumNavigator
 
 /// 资源内比例与旧章句之间的近似转换。绝不使用 Readium locations.position 作为句序号。
 enum EPUBApproximateProgress {
@@ -26,6 +28,8 @@ final class ReadiumReaderSession: ObservableObject {
     private(set) var map: PublicationMap?
     private(set) var initialLocation: ReadiumShared.Locator?
     private(set) var initialChapter = 0
+    private(set) var bridge: LocatorBridge?
+    private(set) var initialOriginal: JSONValue?
     private var store: PublicationStore?
     private var pin: PublicationStore.SessionFile?
     private let service = ReadiumService()
@@ -38,7 +42,7 @@ final class ReadiumReaderSession: ObservableObject {
             return [ContentsItem(id: id, link: link, depth: depth)] + flatten(link.children, prefix: id + ".", depth: depth + 1)
         }
     }
-    func open(book: Book, store: PublicationStore, progress: ReadingProgress, counts: [Int]) async {
+    func open(book: Book, store: PublicationStore, progress: ReadingProgress, counts: [Int], target: LocatorTarget? = nil, displayMode: String = "none") async {
         // SwiftUI 重复求值/同书再打开复用当前会话；有错误时重试才重新 prepare/pin。
         guard bookID != book.id || error != nil || (!loading && publication == nil) else { return }
         close()
@@ -62,16 +66,22 @@ final class ReadiumReaderSession: ObservableObject {
                    titles[href] == nil { titles[href] = row.link.title }
             }
             let map = prepared.map ?? PublicationMap(book: book, readingOrder: publication.readingOrder.map(\.href), titles: titles, revision: prepared.revision)
-            let chapter = min(max(0, progress.chapter), max(0, book.chapters.count - 1))
-            guard let initial = Self.location(chapter: chapter, position: progress.position, counts: counts, map: map, publication: publication) else {
+            let bridge = try LocatorBridge(book: book, map: map, publication: publication)
+            let resolved = try await bridge.resolve(target ?? .init(progress))
+            guard let initial = try await bridge.displayLocator(resolved.locator, mode: displayMode) else {
                 throw ReaderError.message(String(localized: "无法将当前章节映射到 EPUB 资源。阅读位置已保留，请用修书补齐原文件后重试。"))
             }
+            let displayed: Publication
+            if EPUBTextTransform.enabled(displayMode) { displayed = try await service.open(file.url, displayMode: displayMode) }
+            else { displayed = publication }
+            let chapter = resolved.target.chapter
             try Task.checkCancellation()
             guard generation == token else { throw CancellationError() }
             self.store = store; pin = file; acquired = nil
             self.map = map; initialLocation = initial; initialChapter = chapter
+            self.bridge = bridge; initialOriginal = resolved.locator
             contents = rows
-            self.publication = publication
+            self.publication = displayed
             loading = false
         } catch {
             if let acquired { await store.release(acquired) }
@@ -90,7 +100,7 @@ final class ReadiumReaderSession: ObservableObject {
     func close() {
         generation = UUID()
         bookID = nil; loading = false
-        publication = nil; initialLocation = nil; map = nil; contents = []
+        publication = nil; initialLocation = nil; map = nil; contents = []; bridge = nil; initialOriginal = nil
         if let pin, let store { Task { await store.release(pin) } }
         pin = nil; store = nil
     }
@@ -120,6 +130,15 @@ struct ReadiumReaderView: View {
     @State private var expectedChapter: Int?
     @State private var pendingJump: (chapter: Int, position: Int)?
     @State private var fonts = ReadiumFontProvider.files()
+    @State private var sessionEpoch: UUID?
+    @State private var originalLocation: JSONValue?
+    @State private var expectedOriginal: JSONValue?
+    @State private var decorations: [Decoration] = []
+    @State private var unresolvedAnnotations: [UUID] = []
+    @State private var draft: Highlight?
+    @State private var locationTask: Task<Void, Never>?
+    @State private var jumpTask: Task<Void, Never>?
+    @State private var locationGeneration = UUID()
     @AppStorage("reader.fontSize") private var fontSize = 19.0
     @AppStorage("reader.lineSpacing") private var lineSpacing = 11.0
     @AppStorage("reader.font") private var font = "system"
@@ -134,7 +153,7 @@ struct ReadiumReaderView: View {
     @AppStorage("reader.convert") private var convert = "none"
     @AppStorage("study.paperAlwaysLight") private var alwaysLight = false
     @AppStorage("app.appearance") private var appearance = "system"
-    private enum Sheet: String, Identifiable { case contents, preferences, player; var id: String { rawValue } }
+    private enum Sheet: String, Identifiable { case contents, preferences, player, annotation, note, search; var id: String { rawValue } }
     private var entry: ShelfEntry? { model.entries.first { $0.id == book.id } }
     private var prefs: ReaderPreferences {
         .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling,
@@ -164,7 +183,9 @@ struct ReadiumReaderView: View {
                             fixedLayout: publication.metadata.layout == .fixed,
                             fontFamily: ReadiumFontProvider.family(for: font, files: fonts),
                             fontLineHeight: ReadiumFontProvider.lineHeight(for: font, size: fontSize, files: fonts)),
-                        fonts: fonts, request: request, onLocation: locationChanged,
+                        fonts: fonts, request: request, decorations: decorations,
+                        onSelection: selection, onDecoration: activateDecoration,
+                        onLocation: locationChanged,
                         onTap: { withAnimation(.snappy(duration: 0.25)) { chrome.toggle() } },
                         onError: { session.error = $0; updateVisibility() }
                     )
@@ -195,14 +216,27 @@ struct ReadiumReaderView: View {
         .task(id: retry) { await open() }
         .onDisappear {
             visible = false; updateVisibility(); persist(); model.readerClosed(book.id)
+            locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
             session.close()
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { persist() } }
         .onChange(of: sheet) { _, _ in updateVisibility() }
+        .task(id: annotationKey) { await refreshAnnotations() }
+        .onChange(of: model.publicationGeneration[book.id]) { _, _ in
+            locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
+            ready = false; sheet = nil; draft = nil; session.close(); retry = UUID()
+        }
+        .onChange(of: convert) { _, _ in
+            persist(); ready = false; session.close(); retry = UUID()
+        }
+        .onChange(of: model.readerJump) { _, jump in
+            guard let jump, jump.id == book.id, session.bridge != nil else { return }
+            jumpTo(jump.target, explicit: true)
+        }
         .onChange(of: font) { _, _ in fonts = ReadiumFontProvider.files() }
         .onReceive(model.$selectedBook) { selected in
             guard selected?.id == book.id, session.publication != nil, let jump = model.readerJump, jump.id == book.id else { return }
-            jumpTo(chapter: jump.chapter, position: jump.position, explicit: true)
+            jumpTo(jump.target, explicit: true)
         }
         .sheet(item: $sheet, onDismiss: {
             fonts = ReadiumFontProvider.files()
@@ -214,12 +248,28 @@ struct ReadiumReaderView: View {
                     NavigationStack {
                         ReadingPreferencesView(showsPreview: false)
                             .safeAreaInset(edge: .bottom) {
-                                Text("EPUB 使用标准翻页；简繁转换尚未支持，设置值会保留。")
+                                Text("EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。")
                                     .font(.footnote).foregroundStyle(Theme.ink3).padding(12).frame(maxWidth: .infinity).background(Theme.bg)
                             }
                     }
                 case .contents: NavigationStack { contentsView }
                 case .player: PlayerView(player: model.player, fromReader: true)
+                case .search:
+                    NavigationStack {
+                        ContentsView(book: book, chapters: book.chapters, currentChapter: chapter,
+                                     bookmarks: entry?.bookmarks ?? [], startsSearching: true,
+                                     onTarget: { target in jumpTo(target); sheet = nil }) { c, p in
+                            jumpTo(chapter: c, position: p); sheet = nil
+                        }
+                    }
+                case .annotation: annotationPanel
+                case .note:
+                    if let draft {
+                        NoteEditor(quote: draft.text, text: draft.note ?? "") { note in
+                            var changed = draft; changed.note = note.isEmpty ? nil : note
+                            saveAnnotation(changed)
+                        }
+                    }
                 }
             }
             .environmentObject(model).tint(Theme.accent)
@@ -231,8 +281,14 @@ struct ReadiumReaderView: View {
             Button { persist(); dismiss() } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
                 .accessibilityLabel("返回")
             Text(title).font(Theme.sans(14, weight: .medium)).lineLimit(1).frame(maxWidth: .infinity)
-            // 对称留白使章节标题始终居中。
-            Color.clear.frame(width: 44, height: 44)
+            Button {
+                let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
+                model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
+                               locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
+            } label: {
+                Image(systemName: entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true ? "bookmark.fill" : "bookmark")
+                    .frame(width: 44, height: 44)
+            }.disabled(!ready || !mappedChapter).accessibilityLabel("书签")
         }
         .padding(.horizontal, 12)
         .background(Color(hex: palette.background))
@@ -241,7 +297,7 @@ struct ReadiumReaderView: View {
         HStack(spacing: 0) {
             chromeButton("目录", symbol: "list.bullet") { sheet = .contents }
             chromeButton("听书", symbol: "headphones", enabled: mappedChapter) {
-                model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: 0))
+                model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: position))
                 sheet = .player
             }
             chromeButton("设置", symbol: "textformat.size") { sheet = .preferences }
@@ -257,12 +313,11 @@ struct ReadiumReaderView: View {
     }
     private var contentsView: some View {
         List {
+            Button("搜索书内文字") { sheet = .search }
             if !session.contents.isEmpty {
                 ForEach(session.contents) { item in
                     Button {
-                        expectedLocation = nil; expectedChapter = nil
-                        // go(to: ReadiumShared.Link) 由 Publication.locate 解释目录 fragment/type。
-                        request = .init(link: item.link)
+                        navigateLink(item.link)
                         sheet = nil
                     } label: {
                         Text(item.link.title ?? item.link.href).padding(.leading, CGFloat(item.depth * 16))
@@ -274,84 +329,159 @@ struct ReadiumReaderView: View {
                         .disabled(session.map?.href(for: index) == nil)
                 }
             }
+            Section("书签") {
+                ForEach(entry?.bookmarks ?? []) { mark in
+                    Button(mark.excerpt) { jumpTo(.init(mark)); sheet = nil }
+                        .swipeActions { Button("删除", role: .destructive) { model.removeBookmark(book.id, id: mark.id) } }
+                }
+            }
+            Section("摘记") {
+                if !unresolvedAnnotations.isEmpty { Text("有 \(unresolvedAnnotations.count) 条标注尚未定位，原文与笔记已保留。").font(.caption) }
+                NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) { note in jumpTo(.init(note)); sheet = nil }
+            }
         }
         .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }
     }
     @MainActor private func open() async {
         ready = false; mappedChapter = false
-        request = nil; expectedLocation = nil; expectedChapter = nil
+        locationTask?.cancel(); jumpTask?.cancel(); locationGeneration = UUID()
+        request = nil; expectedLocation = nil; expectedChapter = nil; expectedOriginal = nil
         updateVisibility()
         do {
+            sessionEpoch = model.publicationGeneration[book.id]
             let stored = entry?.progress ?? .init()
             let jump = model.readerJump.flatMap { $0.id == book.id ? $0 : nil }
-            if let jump, !book.chapters.indices.contains(jump.chapter) {
-                session.close()
-                session.error = String(localized: "无法将当前章节映射到 EPUB 资源。阅读位置已保留，请用修书补齐原文件后重试。")
-                return
-            }
-            let c = min(max(0, jump?.chapter ?? stored.chapter), max(0, book.chapters.count - 1))
-            let sentences = book.chapters.indices.contains(c) ? Sentence.split(book.chapters[c].text) : []
-            let p = jump?.position ?? Locator.resolve(position: stored.position, anchor: stored.anchor, in: sentences)
             pendingJump = jump.map { ($0.chapter, $0.position) }
-            chapter = c; position = max(0, p)
-            await session.open(book: book, store: try model.publicationStore(), progress: .init(chapter: c, position: position), counts: counts)
+            chapter = stored.chapter; position = stored.position
+            await session.open(book: book, store: try model.publicationStore(), progress: stored, counts: counts,
+                               target: jump?.target, displayMode: convert)
             guard !Task.isCancelled, session.publication != nil else { return }
             expectedLocation = session.initialLocation; expectedChapter = session.initialChapter
-            // prepare/open 等待期间 selectedBook 可收到同书的新「从这里读」。以最新目标为准。
-            if let latest = model.readerJump, latest.id == book.id,
-               latest.chapter != jump?.chapter || latest.position != jump?.position {
-                jumpTo(chapter: latest.chapter, position: latest.position, explicit: true)
-            }
+            expectedOriginal = session.initialOriginal; originalLocation = session.initialOriginal
+            if let latest = model.readerJump, latest.id == book.id, latest != jump { jumpTo(latest.target, explicit: true) }
+            await refreshAnnotations()
         } catch { session.error = error.localizedDescription }
     }
-    private func jumpTo(chapter: Int, position: Int, explicit: Bool = false) {
-        guard let map = session.map, let publication = session.publication,
-              let locator = ReadiumReaderSession.location(chapter: chapter, position: position, counts: counts, map: map, publication: publication) else {
-            session.error = String(localized: "无法将当前章节映射到 EPUB 资源。阅读位置已保留，请用修书补齐原文件后重试。")
-            updateVisibility(); return
+    private func navigateLink(_ link: ReadiumShared.Link) {
+        guard let bridge = session.bridge else { return }
+        jumpTask?.cancel()
+        jumpTask = Task { @MainActor in
+            guard let result = await bridge.resolve(link: link), let locator = try? await bridge.displayLocator(result.locator, mode: convert), !Task.isCancelled, session.bridge === bridge else { return }
+            expectedLocation = locator; expectedOriginal = result.locator
+            expectedChapter = bridge.map?.chapter(for: locator.href.string)
+            request = .init(locator: locator)
         }
-        expectedLocation = locator; expectedChapter = chapter
-        if explicit { pendingJump = (chapter, position) }
-        request = .init(locator: locator)
+    }
+    private func jumpTo(chapter: Int, position: Int, explicit: Bool = false) {
+        jumpTo(.init(chapter: chapter, position: position), explicit: explicit)
+    }
+    private func jumpTo(_ target: LocatorTarget, explicit: Bool = false) {
+        guard let bridge = session.bridge else { return }
+        jumpTask?.cancel()
+        jumpTask = Task { @MainActor in
+            do {
+                let resolved = try await bridge.resolve(target)
+                let locator = try await bridge.displayLocator(resolved.locator, mode: convert)
+                try Task.checkCancellation()
+                guard session.bridge === bridge else { return }
+                guard let locator else { throw ReaderError.message("无法定位所选原文，标注已保留。") }
+                expectedOriginal = resolved.locator; expectedLocation = locator; expectedChapter = resolved.target.chapter
+                if explicit { pendingJump = (target.chapter, target.position) }
+                request = .init(locator: locator)
+            } catch is CancellationError {} catch { model.message = error.localizedDescription }
+        }
     }
     private func locationChanged(resource: Int?, locator: ReadiumShared.Locator, confirmedRequest: UUID?) {
-        guard session.error == nil, let resource, let publication = session.publication,
-              publication.readingOrder.indices.contains(resource), let map = session.map else { return }
-        // 防止初始化默认页回调抢先覆盖恢复/显式跳转；确认目标资源后才落盘和消费 readerJump。
-        // UUID 同时隔离同一资源内连续两次跳转，旧 go 完成不能消费新请求。
+        guard session.error == nil, let bridge = session.bridge else { return }
         if expectedLocation != nil, let request, confirmedRequest != request.id { return }
-        if let expectedLocation,
-           PublicationMap.normalized(expectedLocation.href.string) != PublicationMap.normalized(locator.href.string) { return }
-        let href = publication.readingOrder[resource].href
-        let candidates = map.chapters.filter { PublicationMap.normalized($0.href) == PublicationMap.normalized(href) }
-        let target = expectedChapter.flatMap { c in candidates.first { $0.chapterIndex == c } }
-            ?? candidates.first { $0.chapterIndex == chapter } ?? candidates.first
-        guard let target else {
-            // 原包额外的非线性章/脚注没有旧文本章，不回写错误坐标。
-            mappedChapter = false
-            currentTitle = locator.title ?? publication.readingOrder[resource].title
-            ready = true; updateVisibility(); return
+        if let expectedLocation, PublicationMap.normalized(expectedLocation.href.string) != PublicationMap.normalized(locator.href.string) { return }
+        locationTask?.cancel()
+        let token = UUID(); locationGeneration = token
+        let pending = expectedOriginal, mode = convert
+        locationTask = Task { @MainActor in
+            do {
+                let input = StoredLocator.readium(pending) ?? locator
+                let result = try await bridge.reverse(input, chapterHint: expectedChapter ?? chapter,
+                                                      displayMode: pending == nil ? mode : "none")
+                try Task.checkCancellation()
+                guard locationGeneration == token, session.bridge === bridge else { return }
+                mappedChapter = result.status != .unresolved
+                currentTitle = locator.title
+                guard mappedChapter else { ready = true; updateVisibility(); return }
+                chapter = result.target.chapter; position = result.target.position
+                originalLocation = result.locator
+                expectedLocation = nil; expectedChapter = nil; expectedOriginal = nil
+                if let pendingJump, let jump = model.readerJump, jump.id == book.id,
+                   jump.chapter == pendingJump.chapter, jump.position == pendingJump.position { model.readerJump = nil }
+                pendingJump = nil
+                if !ready { model.recordActivity(.reading, for: book.id) }
+                ready = true; updateVisibility(); persist()
+            } catch is CancellationError {} catch { model.message = error.localizedDescription }
         }
-        mappedChapter = true
-        chapter = target.chapterIndex
-        let count = counts.indices.contains(chapter) ? counts[chapter] : 0
-        position = EPUBApproximateProgress.position(progression: locator.locations.progression ?? 0, sentenceCount: count)
-        currentTitle = locator.title
-        expectedLocation = nil; expectedChapter = nil
-        if let pendingJump, let jump = model.readerJump, jump.id == book.id,
-           chapter == pendingJump.chapter,
-           jump.chapter == pendingJump.chapter, jump.position == pendingJump.position {
-            model.readerJump = nil
-        }
-        pendingJump = nil
-        if !ready { model.recordActivity(.reading, for: book.id) }
-        ready = true; updateVisibility(); persist()
     }
     private func persist() {
         guard ready, mappedChapter, expectedLocation == nil, session.error == nil else { return }
         // 与 ReaderView.persist 共用 sync.update / TextAnchor / KVS / 1200ms catalog 防抖。
-        model.saveProgress(book.id, chapter: chapter, position: position)
+        model.saveProgress(book.id, chapter: chapter, position: position, locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
+    }
+    private var annotationKey: String {
+        let data = (try? Integrity.encoder().encode(entry?.notes ?? [])) ?? Data()
+        return PublicationDigest.data(data) + convert + String(session.publication != nil)
+    }
+    @MainActor private func refreshAnnotations() async {
+        guard let bridge = session.bridge else { return }
+        let key = annotationKey
+        do {
+            let batch = try await ReadiumAnnotations.decorations(entry?.notes ?? [], bridge: bridge, mode: convert)
+            try Task.checkCancellation()
+            guard key == annotationKey, session.bridge === bridge else { return }
+            decorations = batch.decorations; unresolvedAnnotations = batch.unresolved
+        } catch is CancellationError {} catch { model.message = error.localizedDescription }
+    }
+    private func selection(_ locator: ReadiumShared.Locator, action: ReadiumAnnotations.SelectionAction) {
+        guard let bridge = session.bridge else { return }
+        Task { @MainActor in
+            do {
+                let result = try await bridge.reverse(locator, chapterHint: chapter, displayMode: convert)
+                guard visible, session.bridge === bridge, sessionEpoch == model.publicationGeneration[book.id] else { return }
+                guard result.precise, let raw = result.locator else { throw ReaderError.message("选区无法与原文精确对齐，请重新选择。") }
+                let target = result.target
+                if action == .bookmark {
+                    model.bookmark(book.id, chapter: target.chapter, position: target.position, excerpt: target.text ?? "",
+                                   locator: raw, revision: bridge.revision, generation: sessionEpoch)
+                } else {
+                    draft = Highlight(chapter: target.chapter, start: target.position, end: target.end ?? target.position,
+                                      text: target.text ?? "", anchor: target.anchor, locator: raw,
+                                      locatorVersion: LocatorBridge.version, publicationRevision: bridge.revision,
+                                      color: ReaderMark.newColor(UserDefaults.standard.string(forKey: "highlight.lastColor")),
+                                      style: UserDefaults.standard.string(forKey: "highlight.lastStyle") ?? "background")
+                    sheet = action == .note ? .note : .annotation
+                }
+            } catch { model.message = error.localizedDescription }
+        }
+    }
+    private func activateDecoration(_ id: String) {
+        guard let item = entry?.notes.first(where: { $0.id.uuidString == id }) else { return }
+        draft = item; sheet = .annotation
+    }
+    @ViewBuilder private var annotationPanel: some View {
+        if let draft {
+            SelectionPanel(text: draft.text, existing: entry?.notes.first { $0.id == draft.id },
+                           canExtendBack: false, canExtendForward: false, tint: Color(hex: palette.foreground),
+                           paper: Color(hex: palette.background), accent: Theme.accent,
+                           onMark: { color, style in var changed = draft; changed.color = color; changed.style = style; saveAnnotation(changed) },
+                           onRemove: { model.removeHighlight(book.id, id: draft.id); sheet = nil },
+                           onNote: { sheet = .note },
+                           onListen: { model.startListening(book, showPlayer: false, from: .init(chapter: draft.chapter, position: draft.start)); sheet = .player },
+                           onCopy: { UIPasteboard.general.string = draft.text }, onExtend: { _ in }, onClose: { sheet = nil })
+        }
+    }
+    private func saveAnnotation(_ highlight: Highlight) {
+        guard sessionEpoch == model.publicationGeneration[book.id] else { return }
+        if entry?.notes.contains(where: { $0.id == highlight.id }) == true { model.updateHighlight(book.id, highlight) }
+        else { model.addHighlight(book.id, highlight) }
+        sheet = nil
     }
     private func updateVisibility() {
         model.setReadingSurface(book.id, visible: visible && ready && session.error == nil && sheet != .player)

@@ -518,6 +518,12 @@ struct ReaderView: View {
                 else { model.addHighlight(book.id, next) }
             }
         }
+        .onChange(of: model.readerJump) { _, jumpTarget in
+            guard let jumpTarget, jumpTarget.id == book.id else { return }
+            let target = LocatorBridge.textTarget(jumpTarget.target, in: book).0
+            model.readerJump = nil; following = false
+            jump(chapter: target.chapter, position: target.position)
+        }
         .feedbackOverlay()
         .respectReducedMotion()
         .onAppear {
@@ -536,7 +542,8 @@ struct ReaderView: View {
                 // 今日一句「从这句读」：一次性定位，不打断正在进行的朗读跟随之外的东西。
                 model.readerJump = nil
                 following = false
-                chapter = jump.chapter; sentencePosition = max(0, jump.position)
+                let target = LocatorBridge.textTarget(jump.target, in: book).0
+                chapter = target.chapter; sentencePosition = max(0, target.position)
             }
             persist()
             // 书房大卡「开始专注」直达：暂存键与本书 id 相符时消费一次并打开专注面板。
@@ -1728,6 +1735,7 @@ struct ContentsView: View {
     let bookmarks: [Bookmark]
     var initialMode: Int = 0
     var startsSearching: Bool = false
+    var onTarget: ((LocatorTarget) -> Void)? = nil
     let jump: (Int, Int) -> Void
     @Environment(\.dismiss) var dismiss
     @State private var query = ""
@@ -1780,14 +1788,13 @@ struct ContentsView: View {
                         ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
                     }
                 } else if mode == 3 {
-                    NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in jump(note.chapter, note.start) }
+                    NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in openTarget(.init(note)) }
                 } else if mode == 1 {
                     if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
                     ForEach(bookmarks.sorted { ($0.chapter, $0.position) < ($1.chapter, $1.position) }) { bookmark in
                         // 构建 142：跳转用锚点解析后的目标；下方移除仍用存储原坐标匹配切换。
-                        let target = resolvedTarget(bookmark)
                         HStack(spacing: 10) {
-                            Button { jump(target.chapter, target.position) } label: {
+                            Button { openTarget(.init(bookmark)) } label: {
                                 VStack(alignment: .leading, spacing: 7) {
                                     Text(chapters.indices.contains(bookmark.chapter) ? chapters[bookmark.chapter].title : "第 \(bookmark.chapter + 1) 章")
                                         .font(.body).foregroundStyle(Theme.ink)
@@ -1800,7 +1807,7 @@ struct ContentsView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("打开书签，\(bookmark.excerpt)")
                             Menu {
-                                Button { jump(target.chapter, target.position) } label: { Label("回到此处", systemImage: Icon.read) }
+                                Button { openTarget(.init(bookmark)) } label: { Label("回到此处", systemImage: Icon.read) }
                                 Button(role: .destructive) { bookmarkToRemove = bookmark } label: { Label("移除书签", systemImage: Icon.removeBookmark) }
                             } label: {
                                 Image(systemName: Icon.more).frame(width: 44, height: 44).contentShape(Rectangle())
@@ -1884,15 +1891,15 @@ struct ContentsView: View {
         .id(matchOffset.map { "\(index):\($0)" } ?? "chapter:\(index)")
     }
     private func open(_ index: Int, _ chapter: Chapter, matchOffset: Int?) {
-        guard let matchOffset else { jump(index, 0); return }
-        jump(index, Sentence.index(at: matchOffset, in: Sentence.split(chapter.text)))
+        guard let matchOffset else { openTarget(.init(chapter: index, position: 0)); return }
+        let sentences = Sentence.split(chapter.text)
+        let position = Sentence.index(at: matchOffset, in: sentences)
+        openTarget(.init(chapter: index, position: position, textRange: NSRange(location: matchOffset, length: max(1, min(query.utf16.count, chapter.text.utf16.count - matchOffset))), anchor: Locator.anchor(in: sentences, at: position)))
     }
-    /// 书签跳转目标（构建 142）：带锚点的书签先按新内容重定位（仅内存，不写回）；
-    /// 无锚点或章已不存在时回落存储坐标。移除书签不走这里，仍按存储坐标匹配。
-    private func resolvedTarget(_ bookmark: Bookmark) -> (chapter: Int, position: Int) {
-        guard bookmark.anchor != nil, chapters.indices.contains(bookmark.chapter) else { return (bookmark.chapter, bookmark.position) }
-        let resolved = Locator.resolve(bookmark, in: book)
-        return (resolved.chapter, resolved.position)
+    private func openTarget(_ target: LocatorTarget) {
+        if let onTarget { onTarget(target); return }
+        let resolved = LocatorBridge.textTarget(target, in: book).0
+        jump(resolved.chapter, resolved.position)
     }
     /// 只取引用；图片由每一行在后台按需解码，多图章节打开目录不再卡顿。
     private var imageRefs: [String] {

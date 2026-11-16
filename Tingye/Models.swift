@@ -180,6 +180,9 @@ struct ReadingProgress: Codable, Equatable, Sendable {
     var updatedAt: Double = 0
     /// 文本锚点（构建 142）：旧目录 / 旧备份无此字段，解码为 nil。
     var anchor: TextAnchor? = nil
+    @StoredLocator var locator: JSONValue? = nil
+    var locatorVersion: Int? = nil
+    var publicationRevision: String? = nil
     static var now: Double { Date().timeIntervalSince1970 * 1000 }
 }
 struct Bookmark: Codable, Identifiable, Sendable {
@@ -189,6 +192,9 @@ struct Bookmark: Codable, Identifiable, Sendable {
     var excerpt: String
     /// 文本锚点（构建 142）：旧数据为 nil。
     var anchor: TextAnchor? = nil
+    @StoredLocator var locator: JSONValue? = nil
+    var locatorVersion: Int? = nil
+    var publicationRevision: String? = nil
     var date = Date()
 }
 struct ShelfEntry: Codable, Identifiable, Sendable {
@@ -294,7 +300,10 @@ struct Highlight: Codable, Identifiable, Equatable, Sendable {
     var text: String
     /// 起始句的文本锚点（构建 142）：旧数据为 nil。
     var anchor: TextAnchor? = nil
-    /// yellow / green / blue / pink / purple
+    @StoredLocator var locator: JSONValue? = nil
+    var locatorVersion: Int? = nil
+    var publicationRevision: String? = nil
+    /// yellow / clay / blue / pink / purple；旧 green 保留兼容。
     var color: String = "yellow"
     /// background（浅底）/ underline（直线）/ wavy（波浪线）
     var style: String = "background"

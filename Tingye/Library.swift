@@ -12,7 +12,7 @@ extension AppModel {
         guard !restoringLibrary else { message = "正在还原书库，请完成后再修改。"; return }
         var next = entries
         for i in next.indices where ids.contains(next[i].id) { change(&next[i]) }
-        do { try disk?.saveCatalog(next); entries = next }
+        do { try disk?.saveCatalog(next); entries = next; for id in ids { scheduleLocatorMigration(id) } }
         catch { message = "书库保存失败：" + error.localizedDescription }
     }
 
@@ -90,6 +90,10 @@ extension AppModel {
     /// 打开隐藏模式：面容 ID / 触控 ID / 设备密码验证通过后，本次运行期间显示隐藏的书
     func unlockHidden() async {
         if await PrivacyLock.authenticate(reason: "显示隐藏的书籍") { hiddenUnlocked = true }
+    }
+
+    func removeBookmark(_ bookID: String, id: UUID) {
+        updateEntries([bookID]) { $0.bookmarks.removeAll { $0.id == id } }
     }
 
     // MARK: 划线与笔记

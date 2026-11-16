@@ -1,18 +1,55 @@
 import Foundation
+import ReadiumShared
+import SwiftSoup
 
-/// 单元 3/4 的显示资源转换接口；本单元不执行简繁转换。
-///
-/// 合同：只包装 Publication 的按需 XHTML Resource，遍历 DOM 文本节点，禁止替换 innerHTML。
-/// 不修改 source.epub、派生缓存、Book.chapter.text、marks 或已保存的引用。
-/// 必须同时产出原文 UTF-16 ↔ 显示 UTF-16 ↔ DOM range 映射（包括长度变化、实体、ruby、空白）。
-/// 进度/选区/Locator 持久化永远使用原文坐标，显示选区通过 TextDOMIndex 双向往返。
-/// mode 切换应重新供应资源并恢复原文 Locator；通过往返验收前不能宣称支持 EPUB 简繁。
-protocol EPUBDisplayTransform {
-    func transform(xhtml: Data, href: String, mode: String) async throws -> EPUBDisplayResource
-}
-
-struct EPUBDisplayResource {
-    let xhtml: Data
-    /// 双向映射必须覆盖所有可选文本；不能仅假定简繁转换等长。
-    let originalToDisplay: [NSRange: NSRange]
+/// Display-only transform. The disabled path returns the upstream container and bytes unchanged.
+/// Never transforms markup, attributes, source.epub, or Book.text.
+enum EPUBTextTransform {
+    static func enabled(_ mode: String) -> Bool { mode == "s2t" || mode == "t2s" }
+    static func mapping(_ text: String, mode: String) -> TextOffsetMap {
+        guard enabled(mode) else { return TextOffsetMap(text) }
+        let transform = StringTransform(mode == "s2t" ? "Hans-Hant" : "Hant-Hans")
+        let display = text.applyingTransform(transform, reverse: false) ?? text
+        let template = TextOffsetMap(text, transform: { $0.applyingTransform(transform, reverse: false) ?? $0 })
+        if template.sourceRanges.count == display.utf16.count {
+            return TextOffsetMap(text: display, sourceRanges: template.sourceRanges)
+        }
+        return TextOffsetMap.aligning(text, display: display)
+    }
+    static func transform(xhtml: Data, mode: String, isXHTML: Bool = true) throws -> Data {
+        guard enabled(mode) else { return xhtml }
+        guard xhtml.count <= 4 * 1024 * 1024, let source = String(data: xhtml, encoding: .utf8) else {
+            throw ReaderError.message("EPUB 显示转换资源过大或编码无效。")
+        }
+        let document: SwiftSoup.Document
+        if isXHTML { document = try SwiftSoup.parseXML(source) }
+        else { document = try SwiftSoup.parse(source) }
+        func visit(_ element: Element) throws {
+            if ["head", "script", "style", "noscript", "nav"].contains(element.tagName().lowercased()) { return }
+            for child in element.getChildNodes() {
+                if let text = child as? TextNode { _ = text.text(mapping(text.getWholeText(), mode: mode).text) }
+                else if let element = child as? Element { try visit(element) }
+            }
+        }
+        if let body = document.body() { try visit(body) }
+        _ = document.outputSettings().syntax(syntax: .xml).escapeMode(.xhtml).prettyPrint(pretty: false)
+        return Data(try document.outerHtml().utf8)
+    }
+    static func container(_ upstream: ReadiumShared.Container, mode: String, mediaTypes: [String: String] = [:]) -> ReadiumShared.Container {
+        guard enabled(mode) else { return upstream }
+        return TransformingContainer(container: upstream) { href, resource in
+            let path = href.string.lowercased().components(separatedBy: "?")[0]
+            let mime = mediaTypes[PublicationMap.normalized(href.string) ?? href.string]
+            guard mime == "application/xhtml+xml" || mime == "text/html" || path.hasSuffix(".xhtml") || path.hasSuffix(".html") || path.hasSuffix(".htm") else { return resource }
+            let isXHTML = mime.map { $0 != "text/html" } ?? path.hasSuffix(".xhtml")
+            return TransformingResource(resource) { result in
+                switch result {
+                case .failure(let error): return .failure(error)
+                case .success(let data):
+                    do { return .success(try transform(xhtml: data, mode: mode, isXHTML: isXHTML)) }
+                    catch { return .failure(.decoding(error)) }
+                }
+            }
+        }
+    }
 }

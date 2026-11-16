@@ -43,7 +43,7 @@ struct DailyQuoteCard: View {
                     HStack(spacing: 10) {
                         Button {
                             Haptics.light()
-                            if let quote, quote.entryID == entry.id { model.open(entry, chapter: quote.chapter, position: quote.position) }
+                            if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
                             else { model.open(entry) }
                         } label: { Text(quote?.entryID == entry.id ? "从这句读" : "开始阅读") }
                         .buttonStyle(PrimaryButtonStyle(height: 44))
@@ -74,7 +74,7 @@ struct DailyQuoteCard: View {
                 }
             }
             .accessibilityAction(named: "从这句读") {
-                if let quote, quote.entryID == entry.id { model.open(entry, chapter: quote.chapter, position: quote.position) }
+                if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
                 else { model.open(entry) }
             }
             .task(id: entry.id + AppModel.dayKey(Date())) { await loadQuote(entry) }

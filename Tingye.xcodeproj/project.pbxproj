@@ -80,6 +80,13 @@
 		18EBF78813181429518CF154 /* EPUBDisplayTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */; };
 		6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */; };
 		B82DC5D75AE11EFED3BBA8E0 /* ReadiumNavigator in Frameworks */ = {isa = PBXBuildFile; productRef = 95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */; };
+		08A1B74D92C790BAD66BF546 /* StoredLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A735B2AADC54FC0B741BED1 /* StoredLocator.swift */; };
+		141319D3A2B725303C14562A /* TextDOMIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B8861EAE4A1D1250FE469F /* TextDOMIndex.swift */; };
+		DCB49D60F047D6CE132EB16D /* LocatorBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30634F5EB23E72E8C422A7BA /* LocatorBridge.swift */; };
+		E7C9A09C86DF09F3108DC15C /* LocatorMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50734DCF7783BDF4ED5A9B7C /* LocatorMigration.swift */; };
+		B3CB68FBB99C371259E8E71E /* ReadiumAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */; };
+		9BE3FE4B5B56E0721276A16E /* ReadiumLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */; };
+		3451B1CE75B99F39FF4823B3 /* LocatorMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -159,6 +166,13 @@
 		CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumFontProvider.swift; sourceTree = "<group>"; };
 		001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBDisplayTransform.swift; sourceTree = "<group>"; };
 		E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumPreferencesTests.swift; sourceTree = "<group>"; };
+		1A735B2AADC54FC0B741BED1 /* StoredLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredLocator.swift; sourceTree = "<group>"; };
+		B9B8861EAE4A1D1250FE469F /* TextDOMIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextDOMIndex.swift; sourceTree = "<group>"; };
+		30634F5EB23E72E8C422A7BA /* LocatorBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorBridge.swift; sourceTree = "<group>"; };
+		50734DCF7783BDF4ED5A9B7C /* LocatorMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorMigration.swift; sourceTree = "<group>"; };
+		9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumAnnotations.swift; sourceTree = "<group>"; };
+		DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadiumLocatorTests.swift; sourceTree = "<group>"; };
+		3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocatorMigrationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -265,6 +279,8 @@
 		5D763E0B084300393DBF327E /* TingyeTests */ = {
 			isa = PBXGroup;
 			children = (
+				DC9C76CE191545F82B61BB71 /* ReadiumLocatorTests.swift */,
+				3D669EB0E8B9BE47B8B07D87 /* LocatorMigrationTests.swift */,
 				E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */,
 				00FFF9AECE6193CFC6B548C4 /* ReadiumPublicationTests.swift */,
 				7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */,
@@ -302,7 +318,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */, CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */, BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */, 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */, 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */, FB5969E135A8DFD835C08187 /* ReaderRouter.swift */, A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
+		BA2117B8ACBB2BBC70538C6F /* Readium */ = {isa = PBXGroup; children = (1A735B2AADC54FC0B741BED1 /* StoredLocator.swift */, B9B8861EAE4A1D1250FE469F /* TextDOMIndex.swift */, 30634F5EB23E72E8C422A7BA /* LocatorBridge.swift */, 50734DCF7783BDF4ED5A9B7C /* LocatorMigration.swift */, 9941A7B6AFA7E98BDEB35DFB /* ReadiumAnnotations.swift */, 001AE40C2B3DC45E94BA4761 /* EPUBDisplayTransform.swift */, CF22F0F30E62E347ACAF3CEA /* ReadiumFontProvider.swift */, BC74ACA5C81E19C8E0DD0721 /* ReadiumPreferencesBridge.swift */, 38535B2252C98B7AC1A84232 /* ReadiumReaderView.swift */, 72D6D93D3C4FA3C31867D466 /* EPUBNavigatorHost.swift */, FB5969E135A8DFD835C08187 /* ReaderRouter.swift */, A477030EF5C296DB3CA5D7A4 /* ReadiumService.swift */, AE149761829B7071AAD434DF /* PublicationStore.swift */, BE3F69C29B0A95321AFE176D /* PublicationMap.swift */, 8427F4B464B173E93B5F4C90 /* LegacyEPUBBuilder.swift */,); path = Readium; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -444,6 +460,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9BE3FE4B5B56E0721276A16E /* ReadiumLocatorTests.swift in Sources */,
+				3451B1CE75B99F39FF4823B3 /* LocatorMigrationTests.swift in Sources */,
 				6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */,
 				80EE7426B420AD1363C1B66C /* ReadiumPublicationTests.swift in Sources */,
 				B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */,
@@ -454,6 +472,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08A1B74D92C790BAD66BF546 /* StoredLocator.swift in Sources */,
+				141319D3A2B725303C14562A /* TextDOMIndex.swift in Sources */,
+				DCB49D60F047D6CE132EB16D /* LocatorBridge.swift in Sources */,
+				E7C9A09C86DF09F3108DC15C /* LocatorMigration.swift in Sources */,
+				B3CB68FBB99C371259E8E71E /* ReadiumAnnotations.swift in Sources */,
 				E6E4B64C306147286FD85246 /* LegacyEPUBBuilder.swift in Sources */,
 				7DAD836D7B68BD52205F2226 /* PublicationMap.swift in Sources */,
 				7AB789C76E9D9022F2BD0A16 /* PublicationStore.swift in Sources */,

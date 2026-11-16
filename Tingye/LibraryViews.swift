@@ -229,7 +229,7 @@ struct BookDetailView: View {
                     Text("正在载入目录预览…").font(.caption).foregroundStyle(Theme.ink2)
                 }
                 NavigationLink {
-                    List { NotesList(entryID: entryID) { note in model.open(entry, chapter: note.chapter, position: note.start) } }
+                    List { NotesList(entryID: entryID) { note in model.open(entry, target: .init(note)) } }
                         .scrollContentBackground(.hidden)
                         .background(Theme.bg)
                         .navigationTitle("书摘与笔记")
@@ -249,7 +249,7 @@ struct BookDetailView: View {
                                 .listRowBackground(Color.clear)
                         }
                         ForEach(entry.bookmarks.sorted { $0.date > $1.date }) { bookmark in
-                            Button { model.open(entry, chapter: bookmark.chapter, position: bookmark.position) } label: {
+                            Button { model.open(entry, target: .init(bookmark)) } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text("第 \(bookmark.chapter + 1) \(chapterUnit(entry))").font(.caption).foregroundStyle(Theme.accent)
                                     Text(bookmark.excerpt.isEmpty ? "回到这个阅读位置" : bookmark.excerpt)

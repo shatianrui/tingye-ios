@@ -10,6 +10,9 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     let preferences: EPUBPreferences
     let fonts: [ReadiumFontProvider.FontFile]
     let request: Request?
+    var decorations: [Decoration] = []
+    var onSelection: (ReadiumShared.Locator, ReadiumAnnotations.SelectionAction) -> Void = { _, _ in }
+    var onDecoration: (String) -> Void = { _ in }
     let onLocation: (Int?, ReadiumShared.Locator, UUID?) -> Void
     let onTap: () -> Void
     let onError: (String) -> Void
@@ -37,15 +40,47 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
             // Toolkit 在重新排版时持有当前 Locator。不能在此重新 go(initialLocation)。
             controller.navigator?.submitPreferences(preferences)
         }
+        coordinator.applyDecorations()
         coordinator.navigateIfNeeded()
     }
     static func dismantleUIViewController(_ controller: Container, coordinator: Coordinator) {
         coordinator.navigationTask?.cancel()
+        coordinator.reportTask?.cancel()
         coordinator.navigator = nil
         controller.navigator?.delegate = nil
     }
     final class Container: UIViewController {
         var navigator: EPUBNavigatorViewController?
+        var onSelection: ((ReadiumShared.Locator, ReadiumAnnotations.SelectionAction) -> Void)?
+        @objc func highlightSelection() { capture(.highlight) }
+        @objc func bookmarkSelection() { capture(.bookmark) }
+        @objc func noteSelection() { capture(.note) }
+        private func capture(_ action: ReadiumAnnotations.SelectionAction) {
+            guard let navigator, let selection = navigator.currentSelection else { return }
+            Task { @MainActor [weak self, weak navigator] in
+                guard let navigator, let self else { return }
+                var locator = selection.locator
+                // Selection inherits the page locator. Only a freshly captured range belongs to the selection.
+                if var raw = StoredLocator.json(locator)?.object {
+                    var locations = raw["locations"]?.object ?? [:]
+                    locations.removeValue(forKey: "domRange"); locations.removeValue(forKey: "tingyeRange")
+                    raw["locations"] = .object(locations)
+                    locator = StoredLocator.readium(.object(raw)) ?? locator
+                }
+                if case .success(let value) = await navigator.evaluateJavaScript(ReadiumAnnotations.selectionRangeScript),
+                   JSONSerialization.isValidJSONObject(value),
+                   let data = try? JSONSerialization.data(withJSONObject: value),
+                   let span = try? JSONDecoder().decode(JSONValue.self, from: data),
+                   var raw = StoredLocator.json(locator)?.object {
+                    var locations = raw["locations"]?.object ?? [:]; locations["domRange"] = span
+                    raw["locations"] = .object(locations)
+                    locator = StoredLocator.readium(.object(raw)) ?? locator
+                }
+                guard self.navigator === navigator else { return }
+                self.onSelection?(locator, action)
+                navigator.clearSelection()
+            }
+        }
         func set(_ next: EPUBNavigatorViewController) {
             navigator?.willMove(toParent: nil)
             navigator?.view.removeFromSuperview()
@@ -69,18 +104,25 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
         var preferences: EPUBPreferences?
         var requestID: UUID?
         var navigationTask: Task<Void, Never>?
+        var reportTask: Task<Void, Never>?
         weak var navigator: EPUBNavigatorViewController?
         var navigatorReady = false
         var deferredLocation: ReadiumShared.Locator?
+        var appliedDecorations: [Decoration]?
         init(_ parent: EPUBNavigatorHost) { self.parent = parent }
         func install(in controller: Container, location: ReadiumShared.Locator) {
             if navigationTask != nil { requestID = nil }
             navigationTask?.cancel(); navigationTask = nil
-            navigatorReady = false; deferredLocation = nil
+            navigatorReady = false; deferredLocation = nil; reportTask?.cancel()
             do {
                 let next = try EPUBNavigatorViewController(
                     publication: parent.publication, initialLocation: location,
                     config: .init(preferences: parent.preferences,
+                                  editingActions: EditingAction.defaultActions + [
+                                    EditingAction(title: "划线", action: #selector(Container.highlightSelection)),
+                                    EditingAction(title: "书签", action: #selector(Container.bookmarkSelection)),
+                                    EditingAction(title: "写笔记", action: #selector(Container.noteSelection))
+                                  ], decorationTemplates: ReadiumAnnotations.templates(),
                                   fontFamilyDeclarations: ReadiumFontProvider.declarations(files: parent.fonts),
                                   readiumCSSRSProperties: .init(pageGutter: CSSPxLength(ReadiumPreferencesBridge.basePageGutter)))
                 )
@@ -88,6 +130,12 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                 controller.navigator?.delegate = nil
                 navigator = next
                 controller.set(next)
+                controller.onSelection = { [weak self] locator, action in self?.parent.onSelection(locator, action) }
+                next.observeDecorationInteractions(inGroup: ReadiumAnnotations.userGroup) { [weak self] event in
+                    self?.parent.onDecoration(event.decoration.id)
+                }
+                appliedDecorations = nil
+                applyDecorations()
                 fonts = parent.fonts
                 preferences = parent.preferences
             } catch {
@@ -95,10 +143,16 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
                 Task { @MainActor [weak self] in self?.parent.onError(error.localizedDescription) }
             }
         }
+        func applyDecorations() {
+            guard let navigator, appliedDecorations != parent.decorations else { return }
+            navigator.apply(decorations: parent.decorations, in: ReadiumAnnotations.userGroup)
+            appliedDecorations = parent.decorations
+        }
         func navigateIfNeeded() {
             // go() 在 Navigator 初始化前会返回 false；收到首个位置回调后再发请求。
             guard navigatorReady, let navigator, let request = parent.request, requestID != request.id else { return }
             requestID = request.id
+            reportTask?.cancel()
             navigationTask?.cancel()
             deferredLocation = nil
             navigationTask = Task { @MainActor [weak self, weak navigator] in
@@ -120,10 +174,35 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
             }
         }
         func reportLocation(_ locator: ReadiumShared.Locator, confirmedRequest: UUID? = nil) {
-            let resource = parent.publication.readingOrder.firstIndex {
-                PublicationMap.normalized($0.href) == PublicationMap.normalized(locator.href.string)
+            reportTask?.cancel()
+            guard let navigator else { return }
+            reportTask = Task { @MainActor [weak self, weak navigator] in
+                guard let self, let navigator else { return }
+                var precise = locator
+                if confirmedRequest == nil, let visible = await navigator.firstVisibleElementLocator(),
+                   PublicationMap.normalized(visible.href.string) == PublicationMap.normalized(locator.href.string) {
+                    precise = visible.copy(locations: { locations in
+                        locations.progression = locator.locations.progression
+                        locations.totalProgression = locator.locations.totalProgression
+                        locations.position = locator.locations.position
+                    })
+                }
+                if confirmedRequest == nil,
+                   case .success(let value) = await navigator.evaluateJavaScript(ReadiumAnnotations.visibleRangeScript),
+                   JSONSerialization.isValidJSONObject(value),
+                   let data = try? JSONSerialization.data(withJSONObject: value),
+                   let span = try? JSONDecoder().decode(JSONValue.self, from: data),
+                   var raw = StoredLocator.json(precise)?.object {
+                    var locations = raw["locations"]?.object ?? [:]; locations["domRange"] = span
+                    raw["locations"] = .object(locations)
+                    precise = StoredLocator.readium(.object(raw)) ?? precise
+                }
+                guard !Task.isCancelled, self.navigator === navigator else { return }
+                let resource = self.parent.publication.readingOrder.firstIndex {
+                    PublicationMap.normalized($0.href) == PublicationMap.normalized(precise.href.string)
+                }
+                self.parent.onLocation(resource, precise, confirmedRequest)
             }
-            parent.onLocation(resource, locator, confirmedRequest)
         }
         func navigator(_ navigator: Navigator, locationDidChange locator: ReadiumShared.Locator) {
             guard self.navigator === navigator else { return }

@@ -337,8 +337,20 @@ struct PlayerView: View {
     @ViewBuilder private var returnToReader: some View {
         if let book = player.book {
             Button {
-                if fromReader { dismiss() }
-                else { dismiss(); model.showingPlayer = false; model.selectedBook = book }
+                if book.format.uppercased() != "EPUB" {
+                    if fromReader { dismiss() }
+                    else { dismiss(); model.showingPlayer = false; model.selectedBook = book }
+                    return
+                }
+                if let entry = model.entries.first(where: { $0.id == book.id }) {
+                    let stored = entry.listeningProgress
+                    let target = LocatorTarget(chapter: player.chapter, position: player.position,
+                                               anchor: model.locatorAnchor(bookID: book.id, chapter: player.chapter, position: player.position),
+                                               locator: stored?.chapter == player.chapter && stored?.position == player.position ? stored?.locator : nil,
+                                               publicationRevision: stored?.publicationRevision)
+                    model.open(entry, target: target)
+                }
+                dismiss(); model.showingPlayer = false
             } label: { Text("回到原文") }
                 .buttonStyle(SecondaryButtonStyle(height: 50))
                 .accessibilityLabel("看原文")

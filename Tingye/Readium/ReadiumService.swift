@@ -2,7 +2,7 @@ import Foundation
 import ReadiumShared
 import ReadiumStreamer
 
-/// Unit 1 exposes parsing for tests only. The app's reading router remains unchanged.
+/// EPUB parsing and optional display-resource wrapping. Source bytes remain immutable.
 @MainActor
 final class ReadiumService {
     enum OpenError: LocalizedError {
@@ -22,7 +22,7 @@ final class ReadiumService {
     private let retriever = AssetRetriever(httpClient: DefaultHTTPClient())
     private let opener = PublicationOpener(parser: EPUBParser())
 
-    func open(_ url: URL) async throws -> Publication {
+    func open(_ url: URL, displayMode: String = "none") async throws -> Publication {
         try Task.checkCancellation()
         guard url.isFileURL, FileManager.default.isReadableFile(atPath: url.path), let file = FileURL(url: url) else {
             throw OpenError.invalidFile
@@ -35,7 +35,14 @@ final class ReadiumService {
         guard asset.format.conformsTo(.epub) else { throw OpenError.notEPUB }
         try Task.checkCancellation()
         let publication: Publication
-        switch await opener.open(asset: asset, allowUserInteraction: false) {
+        switch await opener.open(asset: asset, allowUserInteraction: false, onCreatePublication: { manifest, container, _ in
+            guard EPUBTextTransform.enabled(displayMode) else { return }
+            var types: [String: String] = [:]
+            for link in manifest.readingOrder + manifest.resources {
+                if let path = PublicationMap.normalized(link.href) { types[path] = link.mediaType?.string }
+            }
+            container = EPUBTextTransform.container(container, mode: displayMode, mediaTypes: types)
+        }) {
         case .success(let value): publication = value
         case .failure(let error): throw OpenError.parse(String(describing: error))
         }

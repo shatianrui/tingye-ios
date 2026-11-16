@@ -227,6 +227,7 @@ extension LibraryDisk {
             row.group = item.group; row.hidden = item.hidden; row.highlights = item.highlights
             row.listeningProgress = item.listeningProgress; row.lastReadAt = item.lastReadAt
             row.hasListened = item.listeningProgress != nil
+            row = LocatorMigration.invalidated(row)
             if let i = next.firstIndex(where: { $0.id == book.id }) { row.addedAt = next[i].addedAt }
             if let i = next.firstIndex(where: { $0.id == book.id }) {
                 row.cloudRevision = next[i].cloudRevision; row.backupAt = next[i].backupAt
@@ -702,14 +703,14 @@ final class ProgressSync: ObservableObject {
     @discardableResult func push(_ entry: ShelfEntry) -> Bool {
         guard enabled, entry.local, entry.progress.updatedAt > 0 else { return false }
         if let old = remote(entry), old.updatedAt >= entry.progress.updatedAt { return false }
-        let value: [String: Any] = ["c": entry.progress.chapter, "p": entry.progress.position, "t": entry.progress.updatedAt]
+        let value = Self.payload(entry.progress)
         // 新键供本版本匹配，旧键让仍在用旧版本的设备继续收到进度。
         store.set(value, forKey: Self.key(entry))
         store.set(value, forKey: Self.legacyKey(entry))
         observe(entry.progress.updatedAt)
         // 朗读时每句都会推送进度；清理要遍历整个键值存储，每 50 次推送做一次即可（上限 1024 键，余量充足）。
         pushes += 1
-        if pushes % 50 == 1 { prune() }
+        if pushes % 10 == 1 { prune() }
         return true
     }
     func recordCommit(_ count: Int) {
@@ -736,7 +737,7 @@ final class ProgressSync: ObservableObject {
     func newer(than entry: ShelfEntry) -> ReadingProgress? {
         guard enabled, entry.local, let value = remote(entry), value.updatedAt > entry.progress.updatedAt,
               value.chapter >= 0, value.chapter < max(1, entry.chapterCount), value.position >= 0,
-              value.chapter != entry.progress.chapter || value.position != entry.progress.position else { return nil }
+              Self.differs(value, entry.progress) else { return nil }
         return value
     }
     func summary(enabled: Bool) -> Summary {
@@ -750,13 +751,27 @@ final class ProgressSync: ObservableObject {
     private func remote(_ entry: ShelfEntry) -> ReadingProgress? {
         let values = [Self.key(entry), Self.legacyKey(entry)].compactMap(remote(key:))
         values.forEach { observe($0.updatedAt) }
-        return values.max { $0.updatedAt < $1.updatedAt }
+        return values.max { a, b in
+            if a.updatedAt == b.updatedAt { return a.locator == nil && b.locator != nil }
+            return a.updatedAt < b.updatedAt
+        }
     }
     private func remote(key: String) -> ReadingProgress? {
         guard let value = store.dictionary(forKey: key),
               let chapter = (value["c"] as? NSNumber)?.intValue, let position = (value["p"] as? NSNumber)?.intValue,
               let time = (value["t"] as? NSNumber)?.doubleValue, time.isFinite else { return nil }
-        return ReadingProgress(chapter: chapter, position: position, updatedAt: time)
+        var progress = ReadingProgress(chapter: chapter, position: position, updatedAt: time)
+        if let string = value["locator"] as? String, string.utf8.count <= Self.locatorByteLimit,
+           let data = string.data(using: .utf8), let raw = try? JSONDecoder().decode(JSONValue.self, from: data) {
+            progress.locator = StoredLocator.validated(raw)
+        }
+        if let string = value["anchor"] as? String, string.utf8.count <= 2048,
+           let data = string.data(using: .utf8), let anchor = try? JSONDecoder().decode(TextAnchor.self, from: data),
+           anchor.quote.count <= TextAnchor.quoteLimit, (anchor.before?.count ?? 0) <= TextAnchor.contextLimit,
+           (anchor.after?.count ?? 0) <= TextAnchor.contextLimit { progress.anchor = anchor }
+        if let revision = value["revision"] as? String, revision.utf8.count <= 256 { progress.publicationRevision = revision }
+        progress.locatorVersion = (value["locatorVersion"] as? NSNumber)?.intValue
+        return progress
     }
     /// 合并远端阅读进度。`protected` 中正在阅读的书保留本机位置，稍后再合并。
     func merge(_ entries: [ShelfEntry], protected: Set<String>) -> (entries: [ShelfEntry], applied: [String], kept: Int) {
@@ -769,19 +784,47 @@ final class ProgressSync: ObservableObject {
         return (next, applied, kept)
     }
     /// 本机新位置；与已保存位置相同时返回 nil，避免仅凭新时间戳覆盖其他设备的进度。
-    func update(_ entry: ShelfEntry, chapter: Int, position: Int, now: Double = ReadingProgress.now) -> ReadingProgress? {
+    func update(_ entry: ShelfEntry, chapter: Int, position: Int, locator: JSONValue? = nil, revision: String? = nil, now: Double = ReadingProgress.now) -> ReadingProgress? {
         let chapter = max(0, chapter), position = max(0, position)
-        if entry.progress.updatedAt > 0, entry.progress.chapter == chapter, entry.progress.position == position { return nil }
-        return ReadingProgress(chapter: chapter, position: position, updatedAt: stamp(now: now))
+        if entry.progress.updatedAt > 0, entry.progress.chapter == chapter, entry.progress.position == position,
+           locator == nil || (entry.progress.locator == locator && entry.progress.publicationRevision == revision) { return nil }
+        return ReadingProgress(chapter: chapter, position: position, updatedAt: stamp(now: now), locator: locator, locatorVersion: locator == nil ? nil : LocatorBridge.version, publicationRevision: revision)
+    }
+    static let locatorByteLimit = 8 * 1024
+    static func payload(_ progress: ReadingProgress) -> [String: Any] {
+        var value: [String: Any] = ["c": progress.chapter, "p": progress.position, "t": progress.updatedAt]
+        func string<T: Encodable>(_ object: T, limit: Int) -> String? {
+            guard let data = try? Integrity.encoder().encode(object), data.count <= limit else { return nil }
+            return String(data: data, encoding: .utf8)
+        }
+        if let locator = StoredLocator.validated(progress.locator), let encoded = string(locator, limit: locatorByteLimit) {
+            value["locator"] = encoded
+            if let version = progress.locatorVersion { value["locatorVersion"] = version }
+            if let revision = progress.publicationRevision, revision.utf8.count <= 256 { value["revision"] = revision }
+        }
+        if let anchor = progress.anchor, let encoded = string(anchor, limit: 2048) { value["anchor"] = encoded }
+        return value
+    }
+    static func differs(_ incoming: ReadingProgress, _ local: ReadingProgress) -> Bool {
+        incoming.chapter != local.chapter || incoming.position != local.position
+            || (incoming.locator != nil && (incoming.locator != local.locator || incoming.publicationRevision != local.publicationRevision))
+            || (incoming.anchor != nil && incoming.anchor != local.anchor)
     }
     /// 键值存储最多 1024 个键，超出时丢弃最久未读的书。
     private func prune() {
-        let rows = store.dictionaryRepresentation.compactMap { key, value -> (String, Double)? in
+        let values = store.dictionaryRepresentation
+        var total = 0
+        let rows = values.compactMap { key, value -> (String, Double, Int)? in
+            let size = key.utf8.count + ((try? PropertyListSerialization.data(fromPropertyList: value, format: .binary, options: 0).count) ?? 64)
+            total += size
             guard key.hasPrefix(Self.prefix) else { return nil }
-            return (key, ((value as? [String: Any])?["t"] as? NSNumber)?.doubleValue ?? 0)
+            return (key, ((value as? [String: Any])?["t"] as? NSNumber)?.doubleValue ?? 0, size)
         }
-        guard rows.count > Self.limit else { return }
-        for (key, _) in rows.sorted(by: { $0.1 < $1.1 }).prefix(rows.count - Self.limit) { store.removeObject(forKey: key) }
+        var count = rows.count
+        for (key, _, size) in rows.sorted(by: { $0.1 < $1.1 }) {
+            guard count > Self.limit || total > 768 * 1024 else { break }
+            store.removeObject(forKey: key); total -= size; count -= 1
+        }
     }
 }
 

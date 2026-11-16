@@ -343,6 +343,7 @@ struct NotesList: View {
     let entryID: String
     var chapterTitle: (Int) -> String = { "第 \($0 + 1) 章" }
     var query = ""
+    var unresolvedIDs: Set<UUID> = []
     let onJump: (Highlight) -> Void
     @EnvironmentObject var model: AppModel
     @State private var editing: Highlight?
@@ -365,6 +366,7 @@ struct NotesList: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Button { onJump(note) } label: { NoteRow(note: note, chapter: chapterTitle(note.chapter)) }
                         .buttonStyle(.plain)
+                    if unresolvedIDs.contains(note.id) { Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(Theme.ink3) }
                     HStack(spacing: 14) {
                         Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read).frame(minHeight: 44) }
                         Button { editing = note } label: { Label(note.note == nil ? "写笔记" : "编辑笔记", systemImage: Icon.note).frame(minHeight: 44) }
@@ -468,7 +470,7 @@ struct AllNotesView: View {
                 if !notes.isEmpty {
                     Section {
                         NotesList(entryID: entry.id, query: query) { note in
-                            model.open(entry, chapter: note.chapter, position: note.start)
+                            model.open(entry, target: .init(note))
                         }
                     } header: {
                         HStack(spacing: 8) {

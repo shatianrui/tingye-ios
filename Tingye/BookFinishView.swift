@@ -102,6 +102,12 @@ struct BookFinishView: View {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
                     .font(.caption)
                 Spacer()
+                if let quote = currentQuote, let chapter = quote.chapter, let position = quote.position {
+                    Button("回到原文") {
+                        model.open(entry, target: .init(chapter: chapter, position: position, anchor: .init(quote: quote.text)))
+                        dismiss()
+                    }
+                }
                 QuoteShareLink(text: quoteText, title: entry.title, author: entry.author, chapter: quoteChapterLabel) {
                     HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享").underline() }
                         .font(.footnote.weight(.medium)).frame(minHeight: 44).contentShape(Rectangle())

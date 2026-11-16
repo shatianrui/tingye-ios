@@ -37,7 +37,13 @@ final class AppModel: ObservableObject {
     /// 当前真正显示正文的书；展开全屏听书页时暂时清空。
     @Published private(set) var visibleReadingBookID: String?
     /// 一次性跳转目标：阅读页打开时消费（今日一句「从这句读」），不改动书架上的进度，直到读者在那里翻页或关闭。
-    var readerJump: (id: String, chapter: Int, position: Int)?
+    struct ReaderJump: Equatable {
+        let id: String
+        let target: LocatorTarget
+        var chapter: Int { target.chapter }
+        var position: Int { target.position }
+    }
+    @Published var readerJump: ReaderJump?
     @Published var readingSeconds: [String: Double] = [:]
     /// 逐次阅读 / 听书记录（统计页的时段与排行），按书库保存在本机
     @Published var sessions: [ReadingSession] = []
@@ -88,6 +94,11 @@ final class AppModel: ObservableObject {
     private var indexTasks: [UUID: Task<Void, Never>] = [:]
     private var playbackObserver: AnyCancellable?
     private(set) var disk: LibraryDisk?
+    @Published private(set) var publicationGeneration: [String: UUID] = [:]
+    let locatorMigration = LocatorMigration()
+    private var locatorTasks: [String: Task<Void, Never>] = [:]
+    private var idleLocatorTask: Task<Void, Never>?
+    private var locatorTaskTokens: [String: UUID] = [:]
     private var readiumPublicationStore: PublicationStore?
     /// 一个书库共享一个 Store；阅读会话持有自己的 pin，不受清缓存/换库影响。
     func publicationStore() throws -> PublicationStore {
@@ -116,7 +127,7 @@ final class AppModel: ObservableObject {
         sync = progressSync ?? ProgressSync()
         do {
             if let suppliedDisk {
-                disk = suppliedDisk; entries = try suppliedDisk.catalog(); indexLibrary()
+                disk = suppliedDisk; entries = try suppliedDisk.catalog(); indexLibrary(); scheduleIdleLocatorMigration()
             } else { try loadLibrary() }
         } catch { message = error.localizedDescription }
         player.onProgress = { [weak self] id, chapter, position in self?.saveListeningProgress(id, chapter: chapter, position: position) }
@@ -167,6 +178,7 @@ final class AppModel: ObservableObject {
         readingSeconds = UserDefaults.standard.dictionary(forKey: "reading.seconds." + owner) as? [String: Double] ?? [:]
         loadSessions()
         indexLibrary()
+        scheduleIdleLocatorMigration()
     }
     func notify(_ text: String, importResults: Bool = false) {
         noticeTask?.cancel()
@@ -213,10 +225,14 @@ final class AppModel: ObservableObject {
     }
     /// 打开到指定的章与句。
     func open(_ entry: ShelfEntry, chapter: Int, position: Int) {
-        readerJump = (entry.id, chapter, position)
+        open(entry, target: .init(chapter: chapter, position: position))
+    }
+    func open(_ entry: ShelfEntry, target: LocatorTarget) {
+        readerJump = ReaderJump(id: entry.id, target: target)
         openBook(entry)
     }
     private func openBook(_ entry: ShelfEntry) {
+        scheduleLocatorMigration(entry.id)
         guard !restoringLibrary else { return }
         openTask?.cancel()
         if let cached = cache[entry.id] {
@@ -267,6 +283,9 @@ final class AppModel: ObservableObject {
     }
     private func invalidateLibraryCache() {
         libraryGeneration = UUID()
+        idleLocatorTask?.cancel(); idleLocatorTask = nil
+        for task in locatorTasks.values { task.cancel() }; locatorTasks = [:]; locatorTaskTokens = [:]
+        locatorMigration.reset()
         for task in indexTasks.values { task.cancel() }
         cache = [:]; cacheOrder = []; covers = [:]; categories = [:]; indexed = []
     }
@@ -282,7 +301,7 @@ final class AppModel: ObservableObject {
         flushSessionsSave()
         restoringLibrary = true
         openTask?.cancel(); openTask = nil; selectedBook = nil
-        let tasks = Array(indexTasks.values)
+        let tasks = Array(indexTasks.values) + Array(locatorTasks.values)
         invalidateLibraryCache()
         for task in tasks { await task.value }
         return entries
@@ -293,8 +312,9 @@ final class AppModel: ObservableObject {
         restoringLibrary = false
         indexLibrary()
         if restored != nil { refreshProgressSync() }
+        scheduleIdleLocatorMigration()
     }
-    private func forget(_ id: String) { cache[id] = nil; cacheOrder.removeAll { $0 == id }; covers[id] = nil; categories[id] = nil; indexed.remove(id); disk?.removeIndex(id) }
+    private func forget(_ id: String) { anchorSentenceCache = nil; cache[id] = nil; cacheOrder.removeAll { $0 == id }; covers[id] = nil; categories[id] = nil; indexed.remove(id); disk?.removeIndex(id) }
     /// 在后台为尚未索引的本机书籍读取分类与封面缩略图。
     func indexLibrary() {
         guard !restoringLibrary, let disk else { return }
@@ -366,21 +386,25 @@ final class AppModel: ObservableObject {
         // 现在带锚点的标注按新书内容重定位后保留；导入自带进度（备份 JSON，updatedAt > 0）
         // 优先，否则沿用旧阅读进度（同样重定位）；无锚点旧标注原样保留，不钳制写入。
         if let replaced = entries.first(where: { $0.id == book.id }) {
-            entry.bookmarks = Locator.relocated(replaced.bookmarks, in: book)
-            if let highlights = replaced.highlights { entry.highlights = Locator.relocated(highlights, in: book) }
-            if let listening = replaced.listeningProgress { entry.listeningProgress = Locator.resolve(listening, in: book) }
-            if progress.updatedAt <= 0, replaced.progress.updatedAt > 0 {
-                entry.progress = Locator.resolve(replaced.progress, in: book)
+            if book.format.uppercased() == "EPUB" {
+                entry.bookmarks = replaced.bookmarks; entry.highlights = replaced.highlights
+                entry.listeningProgress = replaced.listeningProgress
+                if progress.updatedAt <= 0 { entry.progress = replaced.progress }
             } else {
-                entry.progress = Locator.resolve(entry.progress, in: book)
+                entry.bookmarks = Locator.relocated(replaced.bookmarks, in: book)
+                if let highlights = replaced.highlights { entry.highlights = Locator.relocated(highlights, in: book) }
+                if let listening = replaced.listeningProgress { entry.listeningProgress = Locator.resolve(listening, in: book) }
+                entry.progress = Locator.resolve(progress.updatedAt > 0 ? progress : replaced.progress, in: book)
             }
-        } else if entry.progress.updatedAt > 0 {
-            entry.progress = Locator.resolve(entry.progress, in: book)
         }
+        entry = LocatorMigration.invalidated(entry)
         var updated = entries.filter { $0.id != book.id }
         updated.insert(entry, at: 0)
         catalogSaveTask?.cancel(); catalogDirty = false
-        try disk.commitImport(prepared, catalog: updated); entries = updated; forget(book.id); remember(book); indexLibrary()
+        try disk.commitImport(prepared, catalog: updated); entries = updated; forget(book.id); remember(book)
+        publicationGeneration[book.id] = UUID()
+        if selectedBook?.id == book.id { selectedBook = book }
+        indexLibrary(); scheduleLocatorMigration(book.id)
     }
     func scheduleCatalogSave() {
         guard !restoringLibrary else { return }
@@ -420,14 +444,17 @@ final class AppModel: ObservableObject {
         }
         return Locator.anchor(in: sentences, at: position)
     }
-    func saveProgress(_ id: String, chapter: Int, position: Int) {
+    func saveProgress(_ id: String, chapter: Int, position: Int, locator: JSONValue? = nil, revision: String? = nil, generation: UUID? = nil) {
+        if locator != nil, publicationGeneration[id] != generation { return }
         guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].local,
-              var progress = sync.update(entries[i], chapter: chapter, position: position) else { return }
+              var progress = sync.update(entries[i], chapter: chapter, position: position, locator: locator, revision: revision) else { return }
         progress.anchor = locatorAnchor(bookID: id, chapter: chapter, position: position)
+        if let locator { progress.locator = locator; progress.locatorVersion = LocatorBridge.version; progress.publicationRevision = revision }
         entries[i].progress = progress
         if sync.push(entries[i]) { sync.recordCommit(1) }
         scheduleCatalogSave()
+        if locator == nil { scheduleLocatorMigration(id) }
     }
     /// 听书进度独立存盘，不推送到 iCloud 的阅读位置，也不改变最近阅读排序。
     func saveListeningProgress(_ id: String, chapter: Int, position: Int) {
@@ -441,16 +468,19 @@ final class AppModel: ObservableObject {
                                                   anchor: locatorAnchor(bookID: id, chapter: chapter, position: position))
         entries[index].hasListened = true
         scheduleCatalogSave()
+        scheduleLocatorMigration(id)
     }
-    func bookmark(_ id: String, chapter: Int, position: Int, excerpt: String) {
+    func bookmark(_ id: String, chapter: Int, position: Int, excerpt: String, locator: JSONValue? = nil, revision: String? = nil, generation: UUID? = nil) {
+        if locator != nil, publicationGeneration[id] != generation { return }
         guard !restoringLibrary else { return }
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
         var next = entries
         if let index = next[i].bookmarks.firstIndex(where: { $0.chapter == chapter && $0.position == position }) { next[i].bookmarks.remove(at: index) }
         else { next[i].bookmarks.append(Bookmark(chapter: chapter, position: position, excerpt: String(excerpt.prefix(80)),
-                                                  anchor: locatorAnchor(bookID: id, chapter: chapter, position: position))) }
+                                                  anchor: locatorAnchor(bookID: id, chapter: chapter, position: position),
+                                                  locator: locator, locatorVersion: locator == nil ? nil : LocatorBridge.version, publicationRevision: revision)) }
         catalogSaveTask?.cancel(); catalogDirty = false
-        do { try disk?.saveCatalog(next); entries = next } catch { message = error.localizedDescription }
+        do { try disk?.saveCatalog(next); entries = next; scheduleLocatorMigration(id) } catch { message = error.localizedDescription }
     }
     func removeLocal(_ id: String) throws {
         try requireWritableLibrary()
@@ -536,7 +566,8 @@ final class AppModel: ObservableObject {
         let stored = position ?? entry?.listeningProgress ?? entry?.progress ?? .init()
         // 构建 142：从存储位置开播前先按锚点校验/重定位（无锚点时只钳制，与旧行为一致），
         // 显式指定位置（position 参数）是用户当下意图，同样只做范围钳制。
-        let progress = Locator.resolve(stored, in: book)
+        let target = LocatorBridge.textTarget(.init(stored), in: book).0
+        let progress = ReadingProgress(chapter: target.chapter, position: target.position, anchor: target.anchor)
         recordActivity(.listening, for: book.id)
         player.start(book: book, chapter: progress.chapter, position: progress.position)
         showingPlayer = showPlayer
@@ -612,27 +643,33 @@ final class AppModel: ObservableObject {
             next[index].intro = [value.fields["description"]?.string, value.fields["intro"]?.string]
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .first { !$0.isEmpty }
-            next[index].progress.chapter = max(0, min(row.progress.chapter, value.chapters.count - 1))
-            if var listening = row.listeningProgress {
-                listening.chapter = min(max(0, listening.chapter), max(0, counts.count - 1))
-                listening.position = min(max(0, listening.position), max(0, counts[listening.chapter] - 1))
-                next[index].listeningProgress = listening
+            if value.format.uppercased() != "EPUB" {
+                next[index].progress.chapter = max(0, min(row.progress.chapter, value.chapters.count - 1))
+                if var listening = row.listeningProgress {
+                    listening.chapter = min(max(0, listening.chapter), max(0, counts.count - 1))
+                    listening.position = min(max(0, listening.position), max(0, counts[listening.chapter] - 1))
+                    next[index].listeningProgress = listening
+                }
+                // 构建 142：修书是锚点的主战场——旧坐标在新内容上逐条校验/重定位后回写。
+                // 进度与听书位置走 resolve（章钳制是旧行为，句号无锚点时同样只钳制）；
+                // 书签与划线只重定位带锚点的条目，无锚点旧条目原样保留（同旧行为）。
+                // 分句只发生在进度所在章与带锚点标注所在章，量级与标注数成正比。
+                next[index].progress = Locator.resolve(next[index].progress, in: value)
+                if let listening = next[index].listeningProgress {
+                    next[index].listeningProgress = Locator.resolve(listening, in: value)
+                }
+                next[index].bookmarks = Locator.relocated(next[index].bookmarks, in: value)
+                if let highlights = next[index].highlights {
+                    next[index].highlights = Locator.relocated(highlights, in: value)
+                }
             }
-            // 构建 142：修书是锚点的主战场——旧坐标在新内容上逐条校验/重定位后回写。
-            // 进度与听书位置走 resolve（章钳制是旧行为，句号无锚点时同样只钳制）；
-            // 书签与划线只重定位带锚点的条目，无锚点旧条目原样保留（同旧行为）。
-            // 分句只发生在进度所在章与带锚点标注所在章，量级与标注数成正比。
-            next[index].progress = Locator.resolve(next[index].progress, in: value)
-            if let listening = next[index].listeningProgress {
-                next[index].listeningProgress = Locator.resolve(listening, in: value)
-            }
-            next[index].bookmarks = Locator.relocated(next[index].bookmarks, in: value)
-            if let highlights = next[index].highlights {
-                next[index].highlights = Locator.relocated(highlights, in: value)
-            }
+            next[index] = LocatorMigration.invalidated(next[index])
             catalogSaveTask?.cancel(); catalogDirty = false
             try disk.commitImport(prepared, catalog: next); entries = next
-            forget(id); remember(value); indexLibrary()
+            forget(id); remember(value)
+            publicationGeneration[id] = UUID()
+            if selectedBook?.id == id { selectedBook = value }
+            indexLibrary(); scheduleLocatorMigration(id)
         }
         if player.book?.id == id { player.stop() }
         notify("书籍内容与封面已修复，书籍标识、书签和阅读进度已保留。")
@@ -684,6 +721,7 @@ final class AppModel: ObservableObject {
     /// 阅读页关闭（已保存最终位置）后，合并阅读期间被搁置的远端进度。
     func readerClosed(_ id: String) {
         flushPendingSaves()
+        scheduleLocatorMigration(id)
         guard selectedBook?.id != id else { return }
         pullProgress()
     }
@@ -729,5 +767,116 @@ enum LocalOwner {
         try? Keychain.remove("session")
         for service in ["app:no-auth", "app"] { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: legacyAccount] as CFDictionary) }
         return owner
+    }
+}
+
+extension AppModel {
+    /// Cancelling never writes a partial book; invoking again retries every unresolved reference.
+    func locatorMigrationReceipt(_ id: String) -> LocatorMigrationReceipt? {
+        if let receipt = locatorMigration.receipts[id] { return receipt }
+        guard let disk else { return nil }
+        return try? disk.locatorReceipt(id)
+    }
+    func migrateLocators(_ id: String) async {
+        scheduleLocatorMigration(id)
+        await locatorTasks[id]?.value
+    }
+    func cancelAllLocatorMigrations() {
+        idleLocatorTask?.cancel(); idleLocatorTask = nil
+        for id in locatorTasks.keys { cancelLocatorMigration(id) }
+    }
+    func cancelLocatorMigration(_ id: String) {
+        locatorTasks[id]?.cancel()
+        locatorMigration.set(.cancelled, for: id)
+    }
+    func scheduleIdleLocatorMigration() {
+        idleLocatorTask?.cancel()
+        idleLocatorTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            guard let self else { return }
+            let ids = self.entries.filter(\.local).map(\.id)
+            for id in ids {
+                if Task.isCancelled { return }
+                // Foreground opening has its own priority path; idle scanning yields to reading/audio.
+                while self.selectedBook != nil || self.player.playing || self.restoringLibrary {
+                    do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                }
+                self.scheduleLocatorMigration(id)
+                await self.locatorTasks[id]?.value
+                await Task.yield()
+            }
+        }
+    }
+    func scheduleLocatorMigration(_ id: String) {
+        guard !restoringLibrary, let disk, entries.contains(where: { $0.id == id && $0.local }) else { return }
+        locatorTasks[id]?.cancel()
+        let generation = libraryGeneration, captured = owner, token = UUID()
+        locatorTaskTokens[id] = token
+        locatorMigration.set(.waiting, for: id)
+        locatorTasks[id] = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if self.locatorTaskTokens[id] == token { self.locatorTasks[id] = nil; self.locatorTaskTokens[id] = nil }
+            }
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+                guard !self.publicationWrites.contains(id), !self.restoringLibrary,
+                      let snapshot = self.entries.first(where: { $0.id == id }) else { throw CancellationError() }
+                self.locatorMigration.set(.running, for: id)
+                try await Task.detached(priority: .utility) { try disk.snapshotForLocatorMigration(snapshot) }.value
+                let book = try await Task.detached(priority: .utility) { try disk.read(id) }.value
+                let bridge: LocatorBridge
+                var sessionFile: PublicationStore.SessionFile?
+                var store: PublicationStore?
+                defer { if let sessionFile, let store { Task { await store.release(sessionFile) } } }
+                if book.format.uppercased() == "EPUB" {
+                    let publications = try self.publicationStore(); store = publications
+                    let prepared = try await publications.prepare(book)
+                    let pin = try await publications.pin(prepared); sessionFile = pin
+                    let publication = try await ReadiumService().open(pin.url)
+                    let toc = (try? await publication.tableOfContents().get()) ?? []
+                    var titles: [String: String] = [:]
+                    for link in publication.readingOrder { titles[link.href] = link.title }
+                    for row in ReadiumReaderSession.flatten(toc) {
+                        if let href = PublicationMap.normalized(row.link.href), titles[href] == nil { titles[href] = row.link.title }
+                    }
+                    let map = prepared.map ?? PublicationMap(book: book, readingOrder: publication.readingOrder.map(\.href), titles: titles, revision: prepared.revision)
+                    bridge = try LocatorBridge(book: book, map: map, publication: publication)
+                } else {
+                    let revision = try await Task.detached(priority: .utility) { try LocatorBridge.logicalRevision(for: book) }.value
+                    bridge = try LocatorBridge(book: book, publicationRevision: revision)
+                }
+                let (migrated, receipt) = try await self.locatorMigration.convert(snapshot, using: bridge)
+                try Task.checkCancellation()
+                guard self.libraryGeneration == generation, self.owner == captured, !self.restoringLibrary,
+                      !self.publicationWrites.contains(id), self.locatorTaskTokens[id] == token,
+                      let index = self.entries.firstIndex(where: { $0.id == id }),
+                      try LocatorMigration.token(self.entries[index]) == LocatorMigration.token(snapshot) else { throw CancellationError() }
+                var next = self.entries
+                next[index].progress = migrated.progress; next[index].listeningProgress = migrated.listeningProgress
+                next[index].bookmarks = migrated.bookmarks; next[index].highlights = migrated.highlights
+                // Both calls are synchronous here: no lifecycle or edit can interleave the validation and atomic catalog write.
+                let changedReading = migrated.progress.locator != snapshot.progress.locator && migrated.progress.updatedAt > 0
+                if changedReading { next[index].progress.updatedAt = self.sync.stamp() }
+                try disk.saveCatalog(next)
+                self.entries = next
+                try? disk.saveLocatorReceipt(receipt)
+                self.locatorMigration.committed(receipt)
+                if changedReading, self.sync.push(self.entries[index]) { self.sync.recordCommit(1) }
+            } catch is CancellationError {
+                if self.locatorTaskTokens[id] == token {
+                    self.locatorMigration.set(.cancelled, for: id)
+                    if !Task.isCancelled, self.libraryGeneration == generation, !self.restoringLibrary {
+                        Task { @MainActor [weak self] in
+                            await Task.yield()
+                            guard let self, self.libraryGeneration == generation, self.locatorTasks[id] == nil else { return }
+                            self.scheduleLocatorMigration(id)
+                        }
+                    }
+                }
+            } catch {
+                if self.locatorTaskTokens[id] == token { self.locatorMigration.set(.failed(error.localizedDescription), for: id) }
+            }
+        }
     }
 }

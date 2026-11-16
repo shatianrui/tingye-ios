@@ -27,6 +27,11 @@ struct NotesUnifiedView: View {
         let date: Date
         let highlight: Highlight?
         let bookmark: Bookmark?
+        var target: LocatorTarget {
+            if let bookmark { return .init(bookmark) }
+            if let highlight { return .init(highlight) }
+            return .init(chapter: chapter, position: position)
+        }
         var id: String {
             if let bookmark { return "bookmark-" + bookmark.id.uuidString }
             return "highlight-" + (highlight?.id.uuidString ?? "")
@@ -124,7 +129,7 @@ struct NotesUnifiedView: View {
 
     private func row(_ item: Item, entry: ShelfEntry) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { model.open(entry, chapter: item.chapter, position: item.position) } label: {
+            Button { model.open(entry, target: item.target) } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Text(item.kind.rawValue)
@@ -165,7 +170,7 @@ struct NotesUnifiedView: View {
             }
             .buttonStyle(.plain)
             HStack(spacing: 14) {
-                Button { model.open(entry, chapter: item.chapter, position: item.position) } label: {
+                Button { model.open(entry, target: item.target) } label: {
                     Label("回到原文", systemImage: Icon.read).frame(minHeight: 44)
                 }
                 Spacer(minLength: 0)
