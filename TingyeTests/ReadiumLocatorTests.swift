@@ -237,7 +237,7 @@ final class ReadiumLocatorTests: XCTestCase {
         let native = "甲乙丙丁。"
         let index = try TextDOMIndex(native: native, xhtml: "<html><body><p>\(native)</p></body></html>")
         let node = try XCTUnwrap(index.nodes.first { $0.text.contains("甲") })
-        let point: JSONValue = .object([
+        let point: Tingye.JSONValue = .object([
             "cssSelector": .string(node.selector),
             "textNodeIndex": .number(Double(node.index)),
             "charOffset": .number(2)
@@ -251,7 +251,8 @@ final class ReadiumLocatorTests: XCTestCase {
         let book = LocatorTestSupport.book([text])
         let bridge = try await LocatorTestSupport.bridge(book, self)
         let offset = (text as NSString).range(of: "第二").location
-        let page = try XCTUnwrap(try await ReadiumSpeechBridge.pageLocator(chapter: 0, offset: offset, bridge: bridge, mode: "none"))
+        let located = try await ReadiumSpeechBridge.pageLocator(chapter: 0, offset: offset, bridge: bridge, mode: "none")
+        let page = try XCTUnwrap(located)
         XCTAssertEqual(page.display.text.highlight, "第")
         let restored = try await bridge.reverse(page.display, chapterHint: 0)
         XCTAssertEqual(restored.target.chapter, 0)
