@@ -5,6 +5,52 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
+    /// v31 §1 的动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
+    @MainActor func testV31PaletteResolvesToSpecifiedColors() {
+        let tokens: [(String, Color, UInt32, UInt32)] = [
+            ("bg", Theme.bg, 0xFAF9F5, 0x131211),
+            ("surface", Theme.surface, 0xFFFFFF, 0x1E1C1A),
+            ("surface2", Theme.surface2, 0xF1EFE7, 0x292724),
+            ("surfaceSunken", Theme.surfaceSunken, 0xF6F4EC, 0x191715),
+            ("ink", Theme.ink, 0x191817, 0xF5F3EC),
+            ("ink2", Theme.ink2, 0x4A4741, 0xC9C5BA),
+            ("ink3", Theme.ink3, 0x6B6960, 0x9C988E),
+            ("ink4", Theme.ink4, 0xA3A099, 0x6E6B64),
+            ("line", Theme.line, 0xE6E3D9, 0x2E2C29),
+            ("clay", Theme.clay, 0xD97757, 0xD97757),
+            ("accent", Theme.accent, 0xAC4A26, 0xF0AD88),
+            ("clayDeep", Theme.clayDeep, 0xAC4A26, 0xF0AD88),
+            ("accentSoft", Theme.accentSoft, 0xF7EAE3, 0x3E2A21),
+            ("claySoft", Theme.claySoft, 0xF7EAE3, 0x3E2A21),
+            ("onClay", Theme.onClay, 0x16130F, 0x16130F),
+            ("danger", Theme.danger, 0xB23A3A, 0xFF9FAD),
+            ("dangerSoft", Theme.dangerSoft, 0xF9ECEC, 0x382122),
+            ("focus", Theme.focus, 0xD97757, 0xD97757),
+            ("onInk", Theme.onInk, 0xFAF9F5, 0x131211)
+        ]
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            for contrast in [UIAccessibilityContrast.normal, .high] {
+                let traits = UITraitCollection(traitsFrom: [
+                    UITraitCollection(userInterfaceStyle: style),
+                    UITraitCollection(accessibilityContrast: contrast)
+                ])
+                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x191817, 0xF5F3EC)
+                for (name, color, light, dark) in tokens + [field] {
+                    let hex = style == .dark ? dark : light
+                    let expected = [CGFloat((hex >> 16) & 255) / 255,
+                                    CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255]
+                    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+                    XCTAssertTrue(UIColor(color).resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a), name)
+                    for (actual, expected) in zip([r, g, b], expected) {
+                        XCTAssertEqual(actual, expected, accuracy: 0.0001, "\(name), \(style), \(contrast)")
+                    }
+                    let alpha: CGFloat = name == "lineField" ? (style == .dark ? 0.16 : 0.14) : 1
+                    XCTAssertEqual(a, alpha, accuracy: 0.0001, name)
+                }
+            }
+        }
+    }
+
     @MainActor func testFocusTextContrastInBothAppearances() {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let traits = UITraitCollection(userInterfaceStyle: style)
@@ -13,7 +59,8 @@ final class NativeCoreTests: XCTestCase {
                 (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
                 (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
             for (text, background) in pairs {
-                XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5)
+                XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5,
+                    "Text \(UIColor(text).resolvedColor(with: traits)) on \(UIColor(background).resolvedColor(with: traits)), appearance \(style)")
             }
         }
     }
