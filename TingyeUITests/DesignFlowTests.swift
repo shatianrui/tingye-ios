@@ -207,11 +207,31 @@ final class DesignFlowTests: XCTestCase {
             .withOffset(CGVector(dx: app.frame.width / 2, dy: frame.midY - app.frame.minY)).tap()
     }
 
-    private func setReadingTools(_ visible: Bool, in app: XCUIApplication, frame: CGRect) {
+    private func setReadingTools(_ visible: Bool, in app: XCUIApplication, frame: CGRect,
+                                 file: StaticString = #filePath, line: UInt = #line) {
         let more = app.buttons["reader.more"]
-        if more.exists != visible { tapReadingCenter(in: app, frame: frame) }
-        if visible { XCTAssertTrue(more.waitForExistence(timeout: 5)); XCTAssertTrue(more.isHittable) }
-        else { XCTAssertTrue(more.waitForNonExistence(timeout: 5)) }
+        if more.exists != visible {
+            // 正文视口延伸在 chrome 覆盖层下方；辅助听书会增高底面板，
+            // 原视口中心可能已落在面板内。只点实际露出的正文中央，不能穿透面板控件。
+            let viewport = frame.intersection(app.frame)
+            let back = app.buttons["reader.back"]
+            let tools = app.scrollViews["reader.tools"]
+            let top = back.exists ? max(viewport.minY, back.frame.maxY) : viewport.minY
+            let bottom = tools.exists ? min(viewport.maxY, tools.frame.minY) : viewport.maxY
+            guard !viewport.isNull, bottom - top > 1 else {
+                XCTFail("阅读工具覆盖层之间应有可点按的正文区域", file: file, line: line)
+                return
+            }
+            let exposed = CGRect(x: viewport.minX, y: top, width: viewport.width, height: bottom - top)
+            tapReadingCenter(in: app, frame: exposed)
+        }
+        // 与 openReaderMorePanel / waitForReadingCondition 使用同一 15 秒口径。
+        // 显示必须同时存在且可点；隐藏仍要求从可访问性树移除，不能只验不可点。
+        if visible {
+            waitForReadingCondition({ more.exists && more.isHittable }, "阅读工具应显示且可点按", file: file, line: line)
+        } else {
+            XCTAssertTrue(more.waitForNonExistence(timeout: 15), "阅读工具应已隐藏", file: file, line: line)
+        }
     }
 
     /// 打开阅读页「更多」面板并找到面板里的某个条目。
