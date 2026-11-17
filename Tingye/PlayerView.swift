@@ -46,6 +46,7 @@ struct PlayerView: View {
                                 }
                             }
                             .accessibilityIdentifier("player.tools")
+                            .accessibilityValue(typeSize.isAccessibilitySize ? "辅助功能字号" : "紧凑高度")
                             // 只固定最重要的播放 / 跳句，其他控件随内容滚动，不挤压正文。
                             transportRow
                                 .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space2)

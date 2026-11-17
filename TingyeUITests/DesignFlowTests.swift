@@ -442,10 +442,15 @@ final class DesignFlowTests: XCTestCase {
         app.buttons["book.detail.ui-long"].tap()
         let reading = app.buttons["detail.reading"]
         XCTAssertTrue(reading.waitForExistence(timeout: 5))
-        XCTAssertTrue(reading.label.contains("继续阅读"))
+        XCTAssertEqual(reading.label, "打开", "v31 详情主动作应明确打开书籍")
+        XCTAssertEqual(app.staticTexts["detail.readingProgress"].label, "读至第 1 章", "已读书籍仍须明确显示续读位置")
+        XCTAssertTrue(reading.isHittable)
         XCTAssertTrue(app.buttons["detail.listen"].isHittable)
         XCTAssertLessThan(reading.frame.minY, app.buttons["detail.listen"].frame.minY)
         XCTAssertGreaterThanOrEqual(reading.frame.height, 44)
+        reading.tap()
+        XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2", "打开应恢复本书阅读进度")
     }
 
     func testPlayerCanScrubSentencesAndKeepPaused() {
@@ -488,13 +493,14 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("player", largeType: true)
         let toggle = app.buttons["player.toggle"]
         XCTAssertTrue(app.buttons["player.more"].waitForExistence(timeout: 15))
-        XCTAssertFalse(app.buttons["player.cover"].exists, "必须实际进入辅助功能字号布局，而不是仅传了测试参数")
+        let tools = app.scrollViews["player.tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 5))
+        XCTAssertEqual(tools.value as? String, "辅助功能字号", "必须实际进入辅助功能字号布局，紧凑高度分支不能代替")
         screenshot(app, "播放器-最大字号长书名")
         XCTAssertTrue(toggle.isHittable, "最大字号下播放控制也应固定可见")
         XCTAssertEqual(toggle.frame.midX, app.frame.midX, accuracy: 2, "跳句文字放大后不能把播放键挤偏")
         screenshot(app, "播放器-最大字号播放控制")
         // Scroll within the content area: swiping the sheet itself can dismiss the player.
-        let tools = app.scrollViews["player.tools"]
         XCTAssertTrue(tools.exists)
         let contents = app.buttons["player.contents"]
         for _ in 0..<10 {
@@ -539,8 +545,12 @@ final class DesignFlowTests: XCTestCase {
         let ids = ["reader.contents", "reader.preferences", "reader.notes", "reader.more"]
         let positions = ids.map { app.buttons[$0].frame.midX }
         XCTAssertFalse(app.buttons["reader.listen"].exists, "常驻工具应优先目录、排版与摘记")
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "从当前阅读位置听")).count, 0,
+                       "辅助听书只应收在更多面板，不能在底面板重复暴露")
         openReaderMorePanel(app, expect: "从当前阅读位置听")
         let start = app.buttons["从当前阅读位置听"]
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "从当前阅读位置听")).count, 1,
+                       "打开更多后全界面也只能有一个同名动作")
         start.tap()
         XCTAssertTrue(app.buttons["reader.toggle"].waitForExistence(timeout: 5))
         setReadingTools(false, in: app, frame: nativeLayout(in: app)?.viewport ?? app.frame)

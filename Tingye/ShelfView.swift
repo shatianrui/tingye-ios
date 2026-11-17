@@ -550,11 +550,12 @@ struct ShelfView: View {
     private var sortMenu: some View {
         Menu {
             Picker("排序", selection: $model.sortOrder) {
-                Label { Text("最近阅读") } icon: { ThemeIcon(symbol: Icon.sortRecent) }.tag("recent")
-                Label { Text("书名") } icon: { ThemeIcon(symbol: Icon.sortTitle) }.tag("title")
-                Label { Text("作者") } icon: { ThemeIcon(symbol: Icon.sortAuthor) }.tag("author")
-                Label { Text("添加时间") } icon: { ThemeIcon(symbol: Icon.sortAdded) }.tag("added")
-                Label { Text("手动排序") } icon: { ThemeIcon(symbol: Icon.list) }.tag("manual")
+                // 原生菜单的选项使用 Text，避免自定义图标视图使系统菜单丢失标题。
+                Text("最近阅读").tag("recent")
+                Text("书名").tag("title")
+                Text("作者").tag("author")
+                Text("添加时间").tag("added")
+                Text("手动排序").tag("manual")
             }
         } label: { optionLabel(Icon.sort, "排序") }
         .foregroundStyle(Theme.ink2)
@@ -568,8 +569,8 @@ struct ShelfView: View {
                 Text("大字号下使用列表，原有显示偏好保持不变。")
             } else {
                 Picker("显示方式", selection: $layout) {
-                    Label { Text("封面网格") } icon: { ThemeIcon(symbol: Icon.grid) }.tag("grid")
-                    Label { Text("书目列表") } icon: { ThemeIcon(symbol: Icon.list) }.tag("list")
+                    Text("封面网格").tag("grid")
+                    Text("书目列表").tag("list")
                 }
             }
         } label: { optionLabel(useList ? Icon.list : Icon.grid, "视图") }

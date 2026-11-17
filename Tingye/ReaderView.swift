@@ -307,6 +307,7 @@ struct ReaderView: View {
     /// 最近一次翻页方向，决定滑动动画进出场边。
     @State private var turnDelta = 1
     @State private var pages: [ReaderPage] = []
+    @State private var paginationKey: RebuildKey?
     /// 当前章的块（构建 141）：含图片/表格块时分页走块级分页、滚动走附件增强串；空 = 纯文本章。
     @State private var displayBlocks: [ChapterBlock] = []
     /// 滚动模式的附件增强串与坐标换算表（仅滚动 + 有块时非 nil）；attributed 始终保持纯正文串。
@@ -416,20 +417,19 @@ struct ReaderView: View {
                 // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
-                ZStack(alignment: .bottom) {
-                    Group {
-                        if let pdf = document.pdf {
-                            PDFReader(data: pdf, page: $chapter)
-                                .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
-                                .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
-                        } else {
-                            textContent
-                        }
+                Group {
+                    if let pdf = document.pdf {
+                        PDFReader(data: pdf, page: $chapter)
+                            .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
+                            .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
+                    } else {
+                        textContent
                     }
-                    .padding(.bottom, active ? max(66, measuredStripHeight + 12) : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-
+                }
+                .padding(.bottom, active ? max(66, measuredStripHeight + 12) : 0)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+                .overlay(alignment: .bottom) {
                     VStack(spacing: 10) {
                         if let selection { selectionPanel(selection).transition(.move(edge: .bottom).combined(with: .opacity)) }
                         if autoTurn > 0 && selection == nil && !active && !chrome {
@@ -449,7 +449,8 @@ struct ReaderView: View {
                     .frame(maxWidth: 760)
                     .padding(.horizontal, 24)
                     .padding(.bottom, chrome || active || selection != nil || autoTurn > 0 ? 12 : 0)
-
+                }
+                .overlay(alignment: .bottom) {
                     // 底部菜单栏独立成贴边全宽面板（构建 136）：不再与上面的浮层共用居中限宽容器，
                     // chapterBar 的实心背景由此连续覆盖到屏幕底边，卡间缝与悬浮边距不再透出正文。
                     if chrome && selection == nil {
@@ -464,7 +465,8 @@ struct ReaderView: View {
                         .accessibilityIdentifier("reader.tools")
                         .frame(height: toolsHeight)
                     }
-
+                }
+                .overlay(alignment: .bottom) {
                     // 阅读状态小字（时间 · 电量）：只在沉浸阅读时常驻底部；选区面板浮现或底部
                     // 工具面板打开时整行隐藏（构建 139：面板打开时它压在面板上沿的正文上看不清），
                     // 听书条 / 自动翻页浮排出现时上移到其上方，不重叠、不拦截手势。
@@ -476,7 +478,6 @@ struct ReaderView: View {
                             .accessibilityIdentifier("reader.statusLine")
                     }
                 }
-                .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay(alignment: .top) {
                     if chrome {
                         topBar
@@ -489,7 +490,8 @@ struct ReaderView: View {
         .toolbar(.hidden, for: .navigationBar)
         // 状态栏显隐同样会改变部分设备的安全区，阅读时保持一致。
         .statusBarHidden(true)
-        .persistentSystemOverlays(!chrome && hideHomeIndicator ? .hidden : .automatic)
+        // 工具显隐只改变覆盖层，不改变系统安全区策略。
+        .persistentSystemOverlays(hideHomeIndicator ? .hidden : .automatic)
         .keepScreenAwake()
         .background(WindowAppearance(style: prefs.kind.dark ? .dark : UIUserInterfaceStyle(appearance: appearance), restore: UIUserInterfaceStyle(appearance: appearance)))
         .animation(.snappy(duration: 0.25), value: chrome)
@@ -649,7 +651,9 @@ struct ReaderView: View {
             .padding(.top, 20).padding(.bottom, 8)
 
             GeometryReader { geometry in
-                Group {
+                // task 挂在稳定容器上，不能经透明 Group 传给带 pageIndex 身份的页视图。
+                // 否则翻页重建子视图时会再次分页，并按跨页长句的句首退回上一页。
+                ZStack {
                     if !ready { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else if current.text.isEmpty && displayBlocks.isEmpty { ContentUnavailableView("本章为插图", systemImage: Icon.illustration, description: Text("本章图片可在目录的「插图」中查看。")).contentShape(Rectangle()).onTapGesture { toggleChrome() } }
                     else if scrolling {
@@ -786,14 +790,13 @@ struct ReaderView: View {
                     Text(pageLabel).font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3).frame(minHeight: Theme.iconButtonSize)
                 }
                 RowDivider()
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1), count: typeSize.isAccessibilitySize ? 2 : 5), spacing: Theme.space2) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: Theme.space2) {
                     readerAction(Icon.contents, "目录", selected: sheet == .contents) { sheet = .contents }
                         .accessibilityIdentifier("reader.contents")
                     readerAction(Icon.typography, "排版", selected: sheet == .preferences) { sheet = .preferences }
                         .accessibilityIdentifier("reader.preferences")
                     readerAction(Icon.note, "摘记", selected: sheet == .notes) { sheet = .notes }
                         .accessibilityLabel("查看本书摘记").accessibilityIdentifier("reader.notes")
-                    readerAction(Icon.listen, "从当前阅读位置听", selected: active) { startReadingAloud() }
                     moreMenu
                 }
                 if active {
@@ -1134,6 +1137,12 @@ struct ReaderView: View {
     }
     private func scrollRestoredOffset(_ offset: Int) -> Int { scrollMap?.textOffset(offset) ?? offset }
     private func rebuild(size: CGSize) async {
+        let key = RebuildKey(chapter: chapter, size: size, prefs: prefs, automaticDouble: automaticDouble)
+        // 覆盖层刷新或 task 重新挂载不应让当前页按句首重新定位。
+        guard !ready || paginationKey != key else { return }
+        // 真正改变字号/窗口时，以眼前页首字符重排；跨页长句的句首可能还在上一页。
+        let preservesPageStart = ready && paginationKey?.chapter == chapter
+            && paginationKey?.prefs.scrolling == false && !scrolling
         let double = automaticDouble && paper != "eink" && size.width > 650 && !scrolling
         let string = NativeTypesetter.attributed(current, preferences: prefs)
         let blocks = document.blocks(chapter)
@@ -1147,7 +1156,8 @@ struct ReaderView: View {
             guard !Task.isCancelled else { return }
             doublePage = double; attributed = string; displayBlocks = blocks ?? []
             pages = [.text(NSRange(location: 0, length: string.length))]
-            locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset); ready = true
+            locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset)
+            paginationKey = key; ready = true
             return
         }
         scrollAttributed = nil; scrollMap = nil
@@ -1161,8 +1171,11 @@ struct ReaderView: View {
             result = ranges.map(ReaderPage.text)
         }
         guard !Task.isCancelled else { return }
+        let offset = active && following && player.chapter == chapter
+            ? (highlightRange?.location ?? currentOffset)
+            : (preservesPageStart ? pageStart(pageIndex) : currentOffset)
         doublePage = double; attributed = string; displayBlocks = blocks ?? []; pages = result
-        locate(active && following && player.chapter == chapter ? (highlightRange?.location ?? currentOffset) : currentOffset); ready = true
+        locate(offset); paginationKey = key; ready = true
     }
     private func locate(_ offset: Int) {
         var index = pages.firstIndex { page in if case .text(let range) = page { return NSLocationInRange(offset, range) }; return false }
