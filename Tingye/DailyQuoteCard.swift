@@ -1,11 +1,9 @@
 import SwiftUI
-import Pow
 
 /// 今日一句：每天从书库轮换一本，摘出其中一句；「从这句读」一次性定位到原文（`AppModel.readerJump`）。
 /// 显示在统计页的「日」视图。
 struct DailyQuoteCard: View {
     @EnvironmentObject var model: AppModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 兼容历史调用；专注版不显示装饰编号。
     var number: String? = nil
     var compact = false
@@ -21,55 +19,45 @@ struct DailyQuoteCard: View {
 
     var body: some View {
         if let entry = pick {
-            VStack(alignment: .leading, spacing: 14) {
-                Label("今日摘句", systemImage: Icon.quote).font(.caption.weight(.semibold)).foregroundStyle(Theme.onWarm)
-                Group {
-                    if let quote, quote.entryID == entry.id {
-                        Text(quote.text)
-                    } else {
-                        Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : [])
+            VStack(alignment: .leading, spacing: Theme.space4) {
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    Text("今日摘句").mastheadStyle()
+                    Group {
+                        if let quote, quote.entryID == entry.id { Text(quote.text) }
+                        else { Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : []) }
                     }
+                    .font(Theme.serif(20, relativeTo: .title3))
+                    .lineSpacing(Theme.space2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(Theme.ink)
+                    Text("—— " + sourceLine(entry))
+                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        .lineLimit(2)
                 }
-                .font(Theme.serifSemibold(24, relativeTo: .title2))
-                .lineSpacing(8)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(Theme.onWarm)
-                .changeEffect(.shine(duration: 1.0), value: quote == nil, isEnabled: !reduceMotion)
-                Text("—— " + sourceLine(entry))
-                    .font(Theme.serif(13, relativeTo: .caption))
-                    .foregroundStyle(Theme.onWarm)
-                    .lineLimit(2)
+                .padding(.leading, Theme.space4)
+                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
                 if !compact {
-                    HStack(spacing: 10) {
-                        Button {
-                            Haptics.light()
-                            if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
-                            else { model.open(entry) }
-                        } label: { Text(quote?.entryID == entry.id ? "从这句读" : "开始阅读") }
-                        .buttonStyle(PrimaryButtonStyle(height: 44))
-                        Button { model.listen(entry.id) } label: { Text("听这本书") }
-                        .buttonStyle(SecondaryButtonStyle(height: 44))
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: Theme.space3) { quoteActions(entry) }
+                        VStack(spacing: Theme.space3) { quoteActions(entry) }
                     }
-                    .padding(.top, 2)
                     if let quote, quote.entryID == entry.id {
                         QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
-                            HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享摘句卡片").underline() }
-                                .font(.footnote.weight(.medium)).foregroundStyle(Theme.onWarm)
-                                .frame(minHeight: 44)
+                            Label { Text("分享摘句卡片") } icon: { ThemeIcon(symbol: Icon.share, size: 16) }
+                                .font(Theme.sans(15)).foregroundStyle(Theme.clayDeep)
+                                .frame(minHeight: Theme.iconButtonSize)
                         }
                         .accessibilityIdentifier("quote.share")
                     }
                 }
             }
-            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.warm, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contextMenu {
-                Button { model.open(entry) } label: { Label(entry.started ? "继续阅读" : "开始阅读", systemImage: Icon.read) }
-                Button { model.listen(entry.id) } label: { Label("听书", systemImage: Icon.listen) }
+                Button { model.open(entry) } label: { Label { Text(entry.started ? "继续阅读" : "开始阅读") } icon: { ThemeIcon(symbol: Icon.read) } }
+                Button { model.listen(entry.id) } label: { Label { Text("听书") } icon: { ThemeIcon(symbol: Icon.listen) } }
                 if let quote, quote.entryID == entry.id {
                     QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
-                        Label("分享摘句卡片", systemImage: Icon.share)
+                        Label { Text("分享摘句卡片") } icon: { ThemeIcon(symbol: Icon.share) }
                     }
                 }
             }
@@ -79,6 +67,15 @@ struct DailyQuoteCard: View {
             }
             .task(id: entry.id + AppModel.dayKey(Date())) { await loadQuote(entry) }
         }
+    }
+
+    @ViewBuilder private func quoteActions(_ entry: ShelfEntry) -> some View {
+        PrimaryButton(quote?.entryID == entry.id ? "从这句读" : "开始阅读") {
+            Haptics.light()
+            if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
+            else { model.open(entry) }
+        }
+        SecondaryButton("听这本书") { model.listen(entry.id) }
     }
 
     private func sourceLine(_ entry: ShelfEntry) -> String {

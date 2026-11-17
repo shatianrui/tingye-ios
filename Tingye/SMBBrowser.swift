@@ -96,7 +96,8 @@ struct SMBBrowser: View {
 
     var body: some View {
         List {
-            EditorialIntro(title: "局域网书库", detail: "选择共享文件夹，浏览后将需要的书导入本机。")
+            Masthead(title: "局域网书库", subtitle: "选择共享文件夹，浏览后将需要的书导入本机。", titleSize: 28)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             if let error {
                 Section {
                     EditorialNotice(title: "无法读取共享书库", detail: error, kind: .failure)
@@ -106,10 +107,10 @@ struct SMBBrowser: View {
             if share == nil {
                 ForEach(shares, id: \.self) { name in
                     NavigationLink { SMBBrowser(source: source, share: name, path: "", connection: connection) } label: {
-                        Label(name, systemImage: Icon.folderFill).foregroundStyle(Theme.ink)
+                        HairlineRow(title: name, symbol: Icon.folder)
                     }
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             } else {
                 ForEach(shownFiles) { item in
                     if item.isFolder {
@@ -119,16 +120,19 @@ struct SMBBrowser: View {
                             .disabled(!ImportableFile.accepts(item.name) || model.busy)
                     }
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
         }
         .overlay {
-            if loading { ProgressView() }
+            if loading { EmptyState(title: "局域网书库", detail: "选择共享文件夹，浏览后将需要的书导入本机。", state: .loading) }
             else if error == nil && (share == nil ? shares.isEmpty : shownFiles.isEmpty) {
-                ContentUnavailableView(share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), systemImage: Icon.folder)
+                EmptyState(title: share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), detail: "")
             }
         }
-        .editorialList()
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .tint(Theme.clayDeep)
+        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
         .background(Theme.bg)
         .navigationTitle(share == nil ? source.name : (path.isEmpty ? share! : (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)
@@ -143,10 +147,10 @@ struct SMBBrowser: View {
 
     private func row(_ item: SMBEntry) -> some View {
         let importable = ImportableFile.accepts(item.name)
-        return EditorialRow(title: item.name,
+        return HairlineRow(title: item.name,
             detail: item.isFolder ? "文件夹" : ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file),
             value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
-            symbol: item.isFolder ? Icon.folder : Icon.document, disclosure: item.isFolder)
+            symbol: item.isFolder ? Icon.folder : Icon.document)
     }
 
     private func load() async {

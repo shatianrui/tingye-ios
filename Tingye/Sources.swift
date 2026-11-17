@@ -100,72 +100,75 @@ struct SourcesView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                EditorialIntro(title: "把书带到身边", detail: "从文件、电脑或远程书库，找到下一本想读的书。", eyebrow: "添书")
-                VStack(alignment: .leading, spacing: 12) {
-                    ThemeIcon(symbol: Icon.folder, size: 32).foregroundStyle(Theme.accent)
-                    Text("从文件导入").scaledFont(20, weight: .bold, relativeTo: .title3)
-                        .foregroundStyle(Theme.ink)
-                    Text("本机、iCloud 云盘或已连接的网盘")
-                        .font(.caption).foregroundStyle(Theme.ink2)
-                    // 文件选择器不在本 sheet 内呈现：同宿主还叠着编辑 sheet、移除确认框与
-                    // 反馈 sheet 时，fileImporter 在 sheet 内的回调会被吞（点「打开」无反应、
-                    // 选择器不关闭）。登记请求后关闭面板，onDismiss 释放占用，再由 StudyRootView 消费。
-                    Button("选择文件") { model.requestFileImport(); dismiss() }
-                        .buttonStyle(PrimaryButtonStyle(height: 50))
+            VStack(alignment: .leading, spacing: Theme.space4) {
+                Masthead(title: "把书带到身边", subtitle: "从文件、电脑或远程书库，找到下一本想读的书。", kicker: "添书", titleSize: 28)
+                PaperCard {
+                    VStack(alignment: .leading, spacing: Theme.space3) {
+                        SourceActionRow(icon: Icon.folder, title: "从文件导入", subtitle: "本机、iCloud 云盘或已连接的网盘", isCard: false)
+                        // 文件选择器不在本 sheet 内呈现：同宿主还叠着编辑 sheet、移除确认框与
+                        // 反馈 sheet 时，fileImporter 在 sheet 内的回调会被吞（点「打开」无反应、
+                        // 选择器不关闭）。登记请求后关闭面板，onDismiss 释放占用，再由 StudyRootView 消费。
+                        Button("选择文件") { model.requestFileImport(); dismiss() }
+                        .buttonStyle(PrimaryButtonStyle())
                         .disabled(model.busy)
                         .accessibilityIdentifier("sources.importFile")
-                    Button("批量导入文件") { model.requestFileImport(multiple: true); dismiss() }
-                        .buttonStyle(SecondaryButtonStyle(height: 44)).disabled(model.busy)
+                        Button("批量导入文件") { model.requestFileImport(multiple: true); dismiss() }
+                        .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
                         .accessibilityIdentifier("sources.importBatch")
-                    Text("普通导入选择一本即开始；多本书请使用批量导入。")
+                        Text("普通导入选择一本即开始；多本书请使用批量导入。")
                         .font(.footnote).foregroundStyle(Theme.ink2)
+                    }
                 }
-                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
                 NavigationLink(value: "wifi-transfer") {
                     SourceActionRow(icon: Icon.wifi, title: "从电脑传书", subtitle: "同一 WiFi 下，用浏览器发送文件")
                 }
                 .buttonStyle(.plain)
                 sourceSectionTitle(sources.isEmpty ? "连接远程书库" : "远程书库 · \(sources.count) 个连接")
-                VStack(spacing: 12) {
+                VStack(spacing: Theme.space3) {
                     ForEach(sources) { source in
-                        HStack(spacing: 0) {
-                            NavigationLink {
-                                switch source.kind {
-                                case .webdav: WebDAVBrowser(source: source, path: "")
-                                case .smb: SMBBrowser(source: source, share: nil, path: "")
-                                case .opds: OPDSBrowser(source: source, url: source.baseURL, title: source.name)
+                        PaperCard {
+                            HStack(spacing: 0) {
+                                NavigationLink {
+                                    switch source.kind {
+                                        case .webdav: WebDAVBrowser(source: source, path: "")
+                                        case .smb: SMBBrowser(source: source, share: nil, path: "")
+                                        case .opds: OPDSBrowser(source: source, url: source.baseURL, title: source.name)
+                                    }
+                                } label: {
+                                    SourceActionRow(icon: source.kind == .opds ? Icon.catalog : Icon.server,
+                                                title: source.name, subtitle: source.baseURL?.host() ?? source.url, isCard: false)
                                 }
-                            } label: {
-                                SourceActionRow(icon: source.kind == .opds ? Icon.catalog : Icon.server,
-                                                title: source.name, subtitle: source.baseURL?.host() ?? source.url)
+                                Menu {
+                                    Button { editing = source } label: { Label { Text("编辑连接") } icon: { ThemeIcon(symbol: Icon.edit) } }
+                                    Button(role: .destructive) { removing = source } label: { Label { Text("移除连接") } icon: { ThemeIcon(symbol: Icon.delete) } }
+                                } label: {
+                                    ThemeIcon(symbol: Icon.more, size: 20).foregroundStyle(Theme.ink2)
+                                    .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize).contentShape(Rectangle())
+                                }
+                                .accessibilityLabel("管理书库：\(source.name)")
+                                .padding(.trailing, Theme.space1)
                             }
-                            Menu {
-                                Button { editing = source } label: { Label("编辑连接", systemImage: Icon.edit) }
-                                Button(role: .destructive) { removing = source } label: { Label("移除连接", systemImage: Icon.delete) }
-                            } label: {
-                                ThemeIcon(symbol: Icon.more, size: 20).foregroundStyle(Theme.ink2)
-                                    .frame(width: 44, height: 44).contentShape(Rectangle())
-                            }
-                            .accessibilityLabel("管理书库：\(source.name)")
-                            .padding(.trailing, 4)
                         }
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
                         .contextMenu {
-                            Button { editing = source } label: { Label("编辑连接", systemImage: Icon.edit) }
-                            Button(role: .destructive) { removing = source } label: { Label("移除连接", systemImage: Icon.delete) }
+                            Button { editing = source } label: { Label { Text("编辑连接") } icon: { ThemeIcon(symbol: Icon.edit) } }
+                            Button(role: .destructive) { removing = source } label: { Label { Text("移除连接") } icon: { ThemeIcon(symbol: Icon.delete) } }
                         }
                     }
-                    Button { editing = RemoteSource(kind: .webdav, name: "", url: "https://") } label: {
-                        SourceActionRow(icon: Icon.server, title: "WebDAV", subtitle: "坚果云、群晖、Nextcloud 等文件服务器")
-                    }
-                    Button { editing = RemoteSource(kind: .smb, name: "", url: "smb://") } label: {
-                        SourceActionRow(icon: Icon.server, title: "SMB", subtitle: "局域网 NAS、电脑共享文件夹")
-                    }
-                    .accessibilityIdentifier("sources.addSMB")
-                    Button { editing = RemoteSource(kind: .opds, name: "", url: "https://") } label: {
-                        SourceActionRow(icon: Icon.catalog, title: "OPDS", subtitle: "Calibre-Web、Talebook 等书目服务")
+                    PaperCard {
+                        VStack(spacing: Theme.space3) {
+                            Button { editing = RemoteSource(kind: .webdav, name: "", url: "https://") } label: {
+                                SourceActionRow(icon: Icon.server, title: "WebDAV", subtitle: "坚果云、群晖、Nextcloud 等文件服务器", isCard: false)
+                            }
+                            RowDivider()
+                            Button { editing = RemoteSource(kind: .smb, name: "", url: "smb://") } label: {
+                                SourceActionRow(icon: Icon.server, title: "SMB", subtitle: "局域网 NAS、电脑共享文件夹", isCard: false)
+                            }
+                            .accessibilityIdentifier("sources.addSMB")
+                            RowDivider()
+                            Button { editing = RemoteSource(kind: .opds, name: "", url: "https://") } label: {
+                                SourceActionRow(icon: Icon.catalog, title: "OPDS", subtitle: "Calibre-Web、Talebook 等书目服务", isCard: false)
+                            }
+                        }
                     }
                 }
                 .buttonStyle(.plain)
@@ -181,7 +184,7 @@ struct SourcesView: View {
                         .font(.caption).foregroundStyle(Theme.ink2)
                 }
             }
-            .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 28)
+            .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space6)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -213,7 +216,7 @@ struct SourcesView: View {
         } message: { Text("将移除「\(removing?.name ?? "")」的地址和本机登录凭据。服务器文件及已导入书籍会保留。") }
     }
     private func sourceSectionTitle(_ title: String) -> some View {
-        Text(L(title)).scaledFont(20, weight: .bold, relativeTo: .title3).foregroundStyle(Theme.ink)
+        SectionHeader(title: title)
     }
 
     private func remove(_ source: RemoteSource) {
@@ -230,12 +233,12 @@ struct ImportHubView: View {
         NavigationStack {
             SourcesView()
                 .navigationTitle("添加书籍")
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("完成") { dismiss() }.fontWeight(.semibold)
-                    }
+                        Button("完成") { dismiss() }.font(Theme.sans(15, weight: .medium))
                 }
+            }
         }
         .tint(Theme.accent)
         .feedbackOverlay()
@@ -247,8 +250,24 @@ private struct SourceActionRow: View {
     let icon: String
     let title: String
     let subtitle: String
+    var isCard = true
+    var disclosure = true
     var body: some View {
-        EditorialRow(title: title, detail: subtitle, symbol: icon).paperPanel(inset: 14)
+        if isCard { PaperCard { content } }
+        else { content }
+    }
+    private var content: some View {
+        HStack(spacing: Theme.space4) {
+            ThemeIcon(symbol: icon).foregroundStyle(Theme.ink2)
+            VStack(alignment: .leading, spacing: Theme.space1) {
+                Text(L(title)).font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                Text(L(subtitle)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if disclosure { ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4) }
+        }
+        .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
     }
 }
 
@@ -264,36 +283,44 @@ private struct SourceEditor: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    EditorialIntro(title: "连接自己的书库", detail: source.kind == .opds ? "保存书目地址，浏览分类并下载书籍。" : "保存服务器地址，连接后选择文件夹。")
-                    fieldSection("书库信息")
-                    field("名称") { TextField("为书库取一个名字", text: $source.name) }
-                    field(source.kind == .opds ? "书目地址" : "服务器地址") {
-                        TextField(source.kind == .smb ? "smb://192.168.1.10" : "https://", text: $source.url)
-                            .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                VStack(alignment: .leading, spacing: Theme.space4) {
+                    Masthead(title: "连接自己的书库", subtitle: source.kind == .opds ? "保存书目地址，浏览分类并下载书籍。" : "保存服务器地址，连接后选择文件夹。", titleSize: 28)
+                    PaperCard {
+                        VStack(alignment: .leading, spacing: Theme.space4) {
+                            fieldSection("书库信息")
+                            field("名称") { TextField("为书库取一个名字", text: $source.name) }
+                            field(source.kind == .opds ? "书目地址" : "服务器地址") {
+                                TextField(source.kind == .smb ? "smb://192.168.1.10" : "https://", text: $source.url)
+                                .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                            }
+                            if !validAddress && source.url.count > 8 {
+                                EditorialNotice(title: "请检查服务器地址", detail: source.kind == .smb ? "使用 smb:// 加 NAS 或电脑地址。" : "使用完整的 http:// 或 https:// 地址。", kind: .failure)
+                            }
+                        }
                     }
-                    if !validAddress && source.url.count > 8 {
-                        EditorialNotice(title: "请检查服务器地址", detail: source.kind == .smb ? "使用 smb:// 加 NAS 或电脑地址。" : "使用完整的 http:// 或 https:// 地址。", kind: .failure)
+                    PaperCard {
+                        VStack(alignment: .leading, spacing: Theme.space4) {
+                            fieldSection("访问凭据 · 选填")
+                            field("用户名") {
+                                TextField("选填", text: $source.username).textInputAutocapitalization(.never).autocorrectionDisabled()
+                            }
+                            field("密码 / 应用密码") { SecureField("选填", text: $password) }
+                        }
                     }
-                    fieldSection("访问凭据 · 选填")
-                    field("用户名") {
-                        TextField("选填", text: $source.username).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    }
-                    field("密码 / 应用密码") { SecureField("选填", text: $password) }
                     Text(source.kind == .smb ? "填写 smb:// 加 NAS 或电脑的局域网地址，共享文件夹在连接后选择。不填用户名则以访客登录。" : source.kind == .webdav ? "填写完整的 http:// 或 https:// 地址。坚果云请使用第三方应用管理中生成的应用密码。" : "填写完整的 http:// 或 https:// 书目地址。多数 OPDS 服务无需登录，开启登录的书库请填写账号。")
                         .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 24)
+                .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
             }
             .background(Theme.bg)
             .navigationTitle(["webdav": "连接 WebDAV", "smb": "连接 SMB", "opds": "连接 OPDS"][source.kind.rawValue] ?? "连接书库")
             .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
+            .toolbar(.hidden, for: .tabBar)
             .toolbar(.visible, for: .navigationBar)
-        .toolbar(.hidden, for: .tabBar)
+            .toolbar(.hidden, for: .tabBar)
             .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 12) {
+                HStack(spacing: Theme.space3) {
                     Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle())
                     Button("保存连接") {
                         if source.name.trimmingCharacters(in: .whitespaces).isEmpty { source.name = SMBAccess.target(source.url)?.host ?? source.baseURL?.host() ?? source.kind.rawValue.uppercased() }
@@ -301,23 +328,24 @@ private struct SourceEditor: View {
                     }
                     .buttonStyle(PrimaryButtonStyle()).disabled(!validAddress)
                 }
-                .padding(.horizontal, Theme.inset).padding(.vertical, 12)
+                .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
             }
             .onAppear { password = source.password }
         }
     }
     private func fieldSection(_ title: String) -> some View {
-        Text(L(title)).font(.caption2.weight(.medium)).foregroundStyle(Theme.ink2).padding(.top, 4)
+        SectionHeader(title: title)
     }
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(L(title)).font(.caption).foregroundStyle(Theme.ink2)
-            content().font(.subheadline).foregroundStyle(Theme.ink).frame(minHeight: 44)
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            Text(L(title)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+            content().font(Theme.sans(16)).foregroundStyle(Theme.ink)
+                .padding(.horizontal, Theme.space3).frame(minHeight: Theme.rowMinHeight)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField))
+                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField).strokeBorder(Theme.lineField, lineWidth: Theme.rule) }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: Rectangle())
-        .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: 1) }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -358,15 +386,16 @@ struct WebDAVBrowser: View {
     private var shown: [WebDAVItem] { query.isEmpty ? items : items.filter { $0.name.localizedCaseInsensitiveContains(query) } }
     var body: some View {
         List {
-            EditorialIntro(title: "远程文件", detail: "浏览文件夹，选择书籍后下载到本机。")
+            Masthead(title: "远程文件", subtitle: "浏览文件夹，选择书籍后下载到本机。", titleSize: 28)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             Section {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Theme.space2) {
                     Text(loading ? "WebDAV · 正在连接" : error == nil ? "WebDAV · 已连接" : "WebDAV · 连接失败")
                         .font(.caption).foregroundStyle(Theme.ink2)
                     Text(path.isEmpty ? source.name : path.removingPercentEncoding ?? path)
                         .font(.subheadline).foregroundStyle(Theme.ink)
                         .lineLimit(2)
-                }.padding(.vertical, 4)
+                }.padding(.vertical, Theme.space1)
             }
             .listRowBackground(Theme.surface2)
             if let error {
@@ -383,16 +412,18 @@ struct WebDAVBrowser: View {
                         .disabled(!ImportableFile.accepts(item.name) || model.busy)
                 }
             }
-            .listRowBackground(Theme.surface)
+            .listRowBackground(Color.clear).listRowSeparator(.hidden)
         }
         .overlay {
-            if loading { ProgressView() }
+            if loading { EmptyState(title: "远程文件", detail: "浏览文件夹，选择书籍后下载到本机。", state: .loading) }
             else if error == nil && shown.isEmpty {
-                ContentUnavailableView(query.isEmpty ? "空文件夹" : "未找到匹配文件", systemImage: query.isEmpty ? Icon.folder : Icon.search)
+                EmptyState(title: query.isEmpty ? "空文件夹" : "未找到匹配文件", detail: "")
             }
         }
-        .listStyle(.insetGrouped)
-        .editorialList()
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .tint(Theme.clayDeep)
+        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
         .background(Theme.bg)
         .navigationTitle(path.isEmpty ? source.name : (path as NSString).lastPathComponent.removingPercentEncoding ?? path)
         .navigationBarTitleDisplayMode(.large)
@@ -405,10 +436,10 @@ struct WebDAVBrowser: View {
     }
     private func row(_ item: WebDAVItem) -> some View {
         let importable = ImportableFile.accepts(item.name)
-        return EditorialRow(title: item.name,
+        return HairlineRow(title: item.name,
             detail: item.isFolder ? "文件夹" : item.size.map { ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file) },
             value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
-            symbol: item.isFolder ? Icon.folder : Icon.document, disclosure: item.isFolder)
+            symbol: item.isFolder ? Icon.folder : Icon.document)
     }
     private func load() async {
         loading = true; defer { loading = false }
@@ -513,7 +544,8 @@ struct OPDSBrowser: View {
     @State private var lastAttemptWasSearch = false
     var body: some View {
         List {
-            EditorialIntro(title: "发现下一本书", detail: "浏览远程分类，或在当前书目中搜索。")
+            Masthead(title: "发现下一本书", subtitle: "浏览远程分类，或在当前书目中搜索。", titleSize: 28)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             if let error {
                 Section {
                     EditorialNotice(title: "连接暂时未完成", detail: error, kind: .failure)
@@ -528,7 +560,7 @@ struct OPDSBrowser: View {
                 if !loading && feed.entries.isEmpty {
                     EditorialNotice(title: "这里还没有书目", detail: "可以返回分类，或下拉重新加载。")
                 } else if !loading && remoteSearchTemplate == nil && !searchText.isEmpty && !feed.entries.contains(where: { ($0.title + $0.author).localizedCaseInsensitiveContains(searchText) }) {
-                    ContentUnavailableView.search(text: searchText)
+                    EmptyState(title: "这里还没有书目", detail: "可以返回分类，或下拉重新加载。")
                 }
                 ForEach(feed.entries.filter { searchText.isEmpty || remoteSearchTemplate != nil || ($0.title + $0.author).localizedCaseInsensitiveContains(searchText) }) { entry in
                     if let acquisition = entry.acquisition {
@@ -537,22 +569,27 @@ struct OPDSBrowser: View {
                             .disabled(model.busy)
                     } else if let next = entry.navigation {
                         NavigationLink { OPDSBrowser(source: source, url: next, title: entry.title) } label: {
-                            SourceActionRow(icon: Icon.folder, title: entry.title,
-                                            subtitle: entry.summary.isEmpty ? "浏览书目" : entry.summary)
+                            HairlineRow {
+                                SourceActionRow(icon: Icon.folder, title: entry.title,
+                                                subtitle: entry.summary.isEmpty ? "浏览书目" : entry.summary, isCard: false, disclosure: false)
+                            }
                         }
                     }
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 if let next = feed.next {
-                    NavigationLink { OPDSBrowser(source: source, url: next, title: title) } label: { Label("下一页", systemImage: Icon.nextDirection).foregroundStyle(Theme.accent) }
-                        .listRowBackground(Theme.surface)
+                    NavigationLink { OPDSBrowser(source: source, url: next, title: title) } label: { Label { Text("下一页") } icon: { ThemeIcon(symbol: Icon.nextDirection) }.foregroundStyle(Theme.accent) }
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 }
             }
         }
         .overlay {
-            if loading { ProgressView("正在读取书目…") }
+            if loading { EmptyState(title: "正在读取书目…", detail: "浏览远程分类，或在当前书目中搜索。", state: .loading) }
         }
-        .editorialList()
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .tint(Theme.clayDeep)
+        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
         .background(Theme.bg)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
@@ -570,24 +607,26 @@ struct OPDSBrowser: View {
         .task { await load(url) }
     }
     private func bookRow(_ entry: OPDSEntry, _ acquisition: OPDSEntry.Link) -> some View {
-        HStack(spacing: 16) {
-            AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { BookCoverView(title: entry.title, color: "gray", width: 44) }
+        HairlineRow {
+            HStack(spacing: Theme.space4) {
+                // 缩略书封沿用 44×63pt 排版尺寸，不用于间距或圆角。
+                AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { CoverView(title: entry.title, color: "gray", width: 44) }
                 .frame(width: 44, height: 63)
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-            VStack(alignment: .leading, spacing: 6) {
-                Text(entry.title).font(Theme.serifSemibold(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
-                if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
-                Text(acquisition.fileExtension.uppercased()).font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.accent)
-                    .padding(.horizontal, 6).padding(.vertical, 2).background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            }
-            Spacer()
-            Label("导入", systemImage: Icon.downloadFile)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.coverRadius(44), style: .continuous))
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    Text(entry.title).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
+                    if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+                    SealBadge(text: acquisition.fileExtension.uppercased())
+                }
+                Spacer()
+                Label { Text("导入") } icon: { ThemeIcon(symbol: Icon.downloadFile) }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.accent)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+            }
+            .padding(.vertical, Theme.space2)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
     }
     private func load(_ target: URL?, searchResults: Bool = false) async {
         guard let target else { error = "OPDS 地址无效。"; loading = false; return }
@@ -707,70 +746,70 @@ struct WiFiTransferView: View {
     @State private var copiedAddress = false
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                EditorialIntro(title: "从电脑传书", detail: "手机与电脑连接同一 WiFi，保持此页开启。", eyebrow: "无线传输")
-                VStack(alignment: .leading, spacing: 16) {
-                    ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.accent)
-                    Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
-                        .scaledFont(20, weight: .bold, relativeTo: .title3).foregroundStyle(Theme.ink)
-                    if let address = server.address {
-                        Text("在电脑浏览器打开").font(.caption).foregroundStyle(Theme.ink2)
-                        Text(address).font(.subheadline.weight(.medium)).monospacedDigit()
+            VStack(alignment: .leading, spacing: Theme.space4) {
+                Masthead(title: "从电脑传书", subtitle: "手机与电脑连接同一 WiFi，保持此页开启。", kicker: "无线传输", titleSize: 28)
+                PaperCard {
+                    VStack(alignment: .leading, spacing: Theme.space4) {
+                        ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.ink2)
+                        Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
+                        .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                        if let address = server.address {
+                            Text("在电脑浏览器打开").font(.caption).foregroundStyle(Theme.ink2)
+                            Text(address).font(.subheadline.weight(.medium)).monospacedDigit()
                             .lineLimit(2).truncationMode(.middle).textSelection(.enabled)
                             .foregroundStyle(Theme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text("完整链接包含本次传书凭证")
+                            Text("完整链接包含本次传书凭证")
                             .font(.caption).foregroundStyle(Theme.ink2)
-                        Button {
-                            UIPasteboard.general.string = address
-                            copiedAddress = true
-                            Haptics.light()
-                        } label: { Text(copiedAddress ? "地址已复制" : "复制完整地址") }
-                        .buttonStyle(PrimaryButtonStyle(height: 50))
-                        .accessibilityHint("复制后可发送到准备传书的设备")
-                    } else if let error = server.error {
-                        EditorialNotice(title: "传书服务未能启动", detail: error, kind: .failure)
-                        Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
+                            Button {
+                                UIPasteboard.general.string = address
+                                copiedAddress = true
+                                Haptics.light()
+                            } label: { Text(copiedAddress ? "地址已复制" : "复制完整地址") }
+                            .buttonStyle(PrimaryButtonStyle())
+                            .accessibilityHint("复制后可发送到准备传书的设备")
+                        } else if let error = server.error {
+                            EditorialNotice(title: "传书服务未能启动", detail: error, kind: .failure)
+                            Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
                             .buttonStyle(SecondaryButtonStyle())
-                    } else {
-                        ProgressView("正在启动传书服务…").font(.subheadline)
+                        } else {
+                            ProgressView("正在启动传书服务…").font(.subheadline)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 }
-                .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
-                HStack(spacing: 12) {
+                HStack(spacing: Theme.space3) {
                     ThemeIcon(symbol: Icon.downloadFile, size: 24).foregroundStyle(Theme.ink).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Theme.space1) {
                         Text("本次接收").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
                         Text("文件会自动加入书架").font(.caption).foregroundStyle(Theme.ink2)
                     }
-                    Spacer(minLength: 8)
+                    Spacer(minLength: Theme.space2)
                     Text("\(server.received.filter { $0.hasPrefix("✓") }.count) 本")
                         .font(.caption).foregroundStyle(Theme.accent).monospacedDigit()
                 }
-                .padding(16).frame(minHeight: 64)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.vertical, Theme.space3)
+                .overlay(alignment: .bottom) { RowDivider() }
                 if server.received.isEmpty {
                     Text("还没有收到文件。\n从电脑选择文件，接收后会自动加入书库。")
                         .font(.caption).foregroundStyle(Theme.ink2)
-                        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.vertical, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
                         ForEach(Array(server.received.reversed().enumerated()), id: \.offset) { _, line in
-                            Text(line).font(.caption)
+                            HairlineRow {
+                                Text(line).font(Theme.sans(13))
                                 .foregroundStyle(line.hasPrefix("✗") ? Theme.danger : Theme.ink2)
-                                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .padding(.vertical, Theme.space3).frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
                 }
                 Text("传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；文件大小不限。")
                     .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 24)
+            .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
         .navigationTitle("从电脑传书")
@@ -779,11 +818,11 @@ struct WiFiTransferView: View {
         .toolbar(.visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 12) {
+            VStack(spacing: Theme.space3) {
                 Button("返回书库") { finishTransfer(goToShelf: true) }.buttonStyle(PrimaryButtonStyle())
                 Button("结束传书") { finishTransfer(goToShelf: false) }.buttonStyle(SecondaryButtonStyle())
             }
-            .padding(.horizontal, Theme.inset).padding(.vertical, 12)
+            .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
         }
         .background(Theme.bg)

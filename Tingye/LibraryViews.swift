@@ -24,14 +24,15 @@ struct BookDetailView: View {
     var body: some View {
         ScrollView {
             if let entry {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
                     HStack {
-                        EditorialIntro(title: "书籍详情", detail: entry.group.map { "收于「\($0)」" } ?? "你的私人书库")
+                        Masthead(title: "书籍详情", subtitle: entry.group.map { "收于「\($0)」" } ?? "你的私人书库", titleSize: 28)
                         Spacer()
                         CircleIconButton(systemName: Icon.close, label: "返回书库") { dismiss() }
                     }
 
                     hero(entry)
+                    readingStats(entry)
                     actionButtons(entry)
                     contentSection(entry)
                     briefSection(entry)
@@ -41,13 +42,13 @@ struct BookDetailView: View {
                     manageSection(entry)
                 }
                 .padding(.horizontal, Theme.inset)
-                .padding(.top, 10)
-                .padding(.bottom, 44)
-                .frame(maxWidth: 640)
+                .padding(.top, Theme.space3)
+                .padding(.bottom, Theme.space7)
+                .frame(maxWidth: Theme.pageWidth)
                 .frame(maxWidth: .infinity)
             } else {
-                ContentUnavailableView("这本书已不在书架上", systemImage: Icon.emptyBook)
-                    .padding(.top, 120)
+                EmptyState(title: "这本书已不在书架上", detail: "")
+                    .padding(.top, Theme.space7)
             }
         }
         .paperBackground()
@@ -70,9 +71,9 @@ struct BookDetailView: View {
         .sheet(isPresented: $showingIntro) {
             NavigationStack {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        EditorialIntro(title: "关于这本书", detail: entry?.title)
-                        if let entry { introSection(entry) }
+                    VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
+                        Masthead(title: "关于这本书", subtitle: entry?.title, titleSize: 28)
+                        if let entry { PaperCard { introSection(entry) } }
                     }.padding(Theme.inset)
                 }
                 .background(Theme.bg)
@@ -90,30 +91,50 @@ struct BookDetailView: View {
 
     // MARK: 书籍信息
 
-    /// 封面与元数据由书库提供，保留导入出版物的真实封面。
+    /// 封面宽 104pt 是既有书封排版尺寸；大字号时改为纵排，仍保留封面。
     private func hero(_ entry: ShelfEntry) -> some View {
-        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 18)) : AnyLayout(HStackLayout(alignment: .center, spacing: 24))) {
-            if !typeSize.isAccessibilitySize {
-                BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
-                    .accessibilityHidden(true)
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
+        (typeSize.isAccessibilitySize
+         ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
+         : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space5))) {
+            CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                Text(entry.title).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(entry.author.isEmpty ? "佚名" : entry.author).font(.subheadline).foregroundStyle(Theme.ink2)
-                Text(entry.format + " · \(max(1, entry.chapterCount)) " + chapterUnit(entry))
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                Text("\(entry.author.isEmpty ? "佚名" : entry.author) · \(entry.format) · \(max(1, entry.chapterCount)) \(chapterUnit(entry))")
+                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
                 Text(entry.local ? (entry.started ? (entry.readFraction >= 0.995 ? "已读完" : "阅读中 · " + entry.percentText) : "待读") : "iCloud 藏书")
-                    .font(.caption).foregroundStyle(Theme.accent)
+                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.clayDeep)
                 if entry.local && entry.started {
                     Text("读至第 \(entry.progress.chapter + 1) \(chapterUnit(entry))")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
                         .accessibilityIdentifier("detail.readingProgress")
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 逐书累计时长使用既有会话记录；不把按日总时长误当作该书时长。
+    private func readingStats(_ entry: ShelfEntry) -> some View {
+        let seconds = model.visibleSessions.filter { $0.bookID == entry.id }.reduce(0) { $0 + $1.seconds }
+        let minutes = Int(seconds / 60)
+        let duration = minutes >= 60 ? "\(minutes / 60)小时\(minutes % 60)分" : "\(minutes)分"
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: Theme.space5) {
+                StatBlock(value: entry.percentText, label: "进度").frame(maxWidth: .infinity, alignment: .leading)
+                StatBlock(value: duration, label: "累计时长").frame(maxWidth: .infinity, alignment: .leading)
+                StatBlock(value: "\(entry.notes.count)", label: "摘记数").frame(maxWidth: .infinity, alignment: .leading)
+            }
+            VStack(alignment: .leading, spacing: Theme.space5) {
+                StatBlock(value: entry.percentText, label: "进度")
+                StatBlock(value: duration, label: "累计时长")
+                StatBlock(value: "\(entry.notes.count)", label: "摘记数")
+            }
+        }
+        .padding(.vertical, Theme.space4)
+        .overlay(alignment: .top) { RowDivider() }
+        .overlay(alignment: .bottom) { RowDivider() }
     }
 
     private func chapterUnit(_ entry: ShelfEntry) -> String {
@@ -124,22 +145,19 @@ struct BookDetailView: View {
     private func actionButtons(_ entry: ShelfEntry) -> some View {
         if !entry.local {
             NavigationLink { ICloudBackupView() } label: { Text("从备份恢复书籍") }
-                .buttonStyle(PrimaryButtonStyle(height: 50))
+                .buttonStyle(PrimaryButtonStyle())
         } else {
-            VStack(spacing: 8) {
-                Button { Haptics.light(); model.open(entry) } label: {
-                    Text(entry.started ? "继续阅读" : "开始阅读")
-                }
-                .buttonStyle(PrimaryButtonStyle(height: 50))
+            VStack(spacing: Theme.space2) {
+                PrimaryButton("打开") { Haptics.light(); model.open(entry) }
                 .accessibilityIdentifier("detail.reading")
                 if !entry.isComic {
                     Button { Haptics.light(); model.listen(entryID) } label: {
-                        Label(model.player.book?.id == entryID && model.player.playing ? "打开听书" : "听这本书", systemImage: Icon.listen)
-                            .font(.caption).foregroundStyle(Theme.ink2)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .trailing)
+                        Label { Text(model.player.book?.id == entryID && model.player.playing ? "打开听书" : "听这本书") } icon: { ThemeIcon(symbol: Icon.listen) }
+                            .font(Theme.sans(15)).foregroundStyle(Theme.ink)
+                            .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(SecondaryButtonStyle())
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("detail.listen")
                     .accessibilityHint("辅助朗读，保留当前阅读位置")
@@ -150,10 +168,10 @@ struct BookDetailView: View {
 
     /// 01 简介：三行摘要，轻点看全文。
     private func briefSection(_ entry: ShelfEntry) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(text: "关于这本书", rule: false)
+        VStack(alignment: .leading, spacing: Theme.space3) {
+            SectionHeader(title: "关于这本书")
             Button { showingIntro = true } label: {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Theme.space2) {
                     Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
                         .font(.subheadline)
                         .lineSpacing(6)
@@ -171,21 +189,20 @@ struct BookDetailView: View {
     }
 
     private func introSection(_ entry: ShelfEntry) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionTitle(text: "关于这本书", rule: false)
+        VStack(alignment: .leading, spacing: Theme.space4) {
             Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
                 .font(.body)
                 .lineSpacing(7)
                 .foregroundStyle(Theme.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, Theme.space1)
     }
 
     @ViewBuilder private func contentSection(_ entry: ShelfEntry) -> some View {
         if entry.local {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle(text: "目录与书摘", rule: false)
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                SectionHeader(title: "目录与书摘")
                 Button {
                     Task {
                         do { chapterBook = try await model.loadBook(entryID) }
@@ -194,7 +211,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.contents, title: "全部目录", subtitle: "\(entry.chapterCount) \(chapterUnit(entry))")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.contents")
                 if !chapterTitles.isEmpty {
                     VStack(spacing: 0) {
@@ -204,29 +221,34 @@ struct BookDetailView: View {
                                 let position = index == entry.progress.chapter ? entry.progress.position : 0
                                 model.open(entry, chapter: index, position: position)
                             } label: {
-                                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                                    Text(String(format: "%02d", index + 1))
-                                        .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(chapterTitles[index]).font(.subheadline)
-                                            .foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
-                                            .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                                HairlineRow {
+                                    HStack(alignment: .center, spacing: Theme.space3) {
                                         if entry.started && index == entry.progress.chapter {
-                                            Text("读到这里").font(.caption2).foregroundStyle(Theme.accent)
+                                            Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: Theme.space3)
+                                            .accessibilityHidden(true)
                                         }
+                                        Text(String(format: "%02d", index + 1))
+                                        .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
+                                        VStack(alignment: .leading, spacing: Theme.space1) {
+                                            Text(chapterTitles[index]).font(Theme.serif(17))
+                                            .foregroundStyle(entry.started && index == entry.progress.chapter ? Theme.clayDeep : Theme.ink).multilineTextAlignment(.leading)
+                                            .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                                            if entry.started && index == entry.progress.chapter {
+                                                Text("读到这里").font(.caption2).foregroundStyle(Theme.accent)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, Theme.space3)
+                                    .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight, alignment: .leading)
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 12)
-                                .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("detail.chapter.\(index)")
                             .accessibilityLabel("\(entry.started && index == entry.progress.chapter ? "继续阅读" : "阅读")，\(chapterTitles[index])")
                         }
                     }
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 } else if loadingPreview {
                     Text("正在载入目录预览…").font(.caption).foregroundStyle(Theme.ink2)
                 }
@@ -243,7 +265,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.highlight, title: "书摘与笔记", subtitle: "\(entry.notes.count) 条")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.notes")
                 NavigationLink {
                     List {
@@ -271,7 +293,7 @@ struct BookDetailView: View {
                 } label: {
                     detailRow(icon: Icon.bookmark(false), title: "阅读书签", subtitle: "\(entry.bookmarks.count) 个")
                 }
-                .buttonStyle(PressButtonStyle(scale: 0.99))
+                .buttonStyle(PressButtonStyle())
                 .accessibilityIdentifier("detail.bookmarks")
             }
         }
@@ -279,17 +301,17 @@ struct BookDetailView: View {
 
     private func manageSection(_ entry: ShelfEntry) -> some View {
         Menu {
-            Button { showingIntro = true } label: { Label("查看书籍简介", systemImage: Icon.info) }
+            Button { showingIntro = true } label: { Label { Text("查看书籍简介") } icon: { ThemeIcon(symbol: Icon.info) } }
             if entry.local {
-                Button { exportBook(entry) } label: { Label("导出书籍备份", systemImage: Icon.share) }
+                Button { exportBook(entry) } label: { Label { Text("导出书籍备份") } icon: { ThemeIcon(symbol: Icon.share) } }
             }
             if !entry.sample {
-                if entry.local { Button { repair = true } label: { Label("修复图文与封面", systemImage: Icon.repair) } }
+                if entry.local { Button { repair = true } label: { Label { Text("修复图文与封面") } icon: { ThemeIcon(symbol: Icon.repair) } } }
                 if entry.local && entry.format.uppercased() == "TXT" {
-                    Button { model.run("正在重新分章") { try await model.resplit(entryID) } } label: { Label("按分章规则重新分章", systemImage: Icon.contents) }
+                    Button { model.run("正在重新分章") { try await model.resplit(entryID) } } label: { Label { Text("按分章规则重新分章") } icon: { ThemeIcon(symbol: Icon.contents) } }
                 }
                 Divider()
-                Button(role: .destructive) { removal = true } label: { Label("移除书籍…", systemImage: Icon.delete) }
+                Button(role: .destructive) { removal = true } label: { Label { Text("移除书籍…") } icon: { ThemeIcon(symbol: Icon.delete) } }
             }
         } label: {
             detailRow(icon: Icon.more, title: "更多操作", subtitle: "导出 · 修复 · 移除")
@@ -298,8 +320,7 @@ struct BookDetailView: View {
     }
 
     private func detailRow(icon: String, title: String, subtitle: String) -> some View {
-        EditorialRow(title: title, value: subtitle, symbol: icon)
-            .padding(.horizontal, 16).paperPanel(inset: 4)
+        HairlineRow(title: title, value: subtitle, symbol: icon, disclosure: true)
     }
 
     /// 简介先显示轻量缓存；目录标题在后台读书后提取，预览不在主线程解析整书。
@@ -336,6 +357,7 @@ extension Book: Hashable { func hash(into hasher: inout Hasher) { hasher.combine
 struct ChapterManagerView: View {
     let book: Book
     @EnvironmentObject var model: AppModel
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var selected: Set<Int> = []
     @State private var selecting = false
     @State private var marking = false
@@ -347,30 +369,34 @@ struct ChapterManagerView: View {
 
     var body: some View {
         List {
-            EditorialIntro(title: "目录与阅读状态", detail: "轻点章节阅读或听此章；选择后可批量标记已读。")
+            Masthead(title: "目录与阅读状态", subtitle: "轻点章节阅读或听此章；选择后可批量标记已读。", titleSize: 28)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(book.title).font(Theme.serifBold(23, relativeTo: .title2)).serifEmbolden(23).foregroundStyle(Theme.ink)
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    Text(book.title).font(Theme.serif(20, relativeTo: .title2)).foregroundStyle(Theme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
                         .font(.caption).foregroundStyle(Theme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")
                         .font(.subheadline).foregroundStyle(Theme.ink2)
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, Theme.space3)
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 10, trailing: 0))
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: Theme.space3, trailing: 0))
             }
             Section {
                 ForEach(visibleIndices, id: \.self) { index in
-                    chapterRow(index: index, chapter: chapters[index]).listRowBackground(Theme.surface)
+                    HairlineRow { chapterRow(index: index, chapter: chapters[index]) }
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 }
                 if visibleIndices.isEmpty {
-                    ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
+                    EmptyState(title: "没有符合条件的章节", detail: "搜索章节").listRowBackground(Color.clear).listRowSeparator(.hidden)
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .editorialList()
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .tint(Theme.clayDeep)
+        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
         .background(Theme.bg)
         .navigationTitle(selecting ? "选择章节" : "目录")
         .toolbar(.visible, for: .navigationBar)
@@ -388,34 +414,34 @@ struct ChapterManagerView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if selecting {
-                VStack(spacing: 10) {
+                VStack(spacing: Theme.space3) {
                     HStack {
                         Text("已选 \(selected.count) 章").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
                         Spacer()
                         Button(allVisibleSelected ? "取消当前全选" : query.isEmpty ? "全选章节" : "全选搜索结果") {
                             if allVisibleSelected { selected.subtract(visibleIndices) } else { selected.formUnion(visibleIndices) }
                         }
-                        .font(.subheadline).frame(minHeight: 44).disabled(visibleIndices.isEmpty)
+                        .font(.subheadline).frame(minHeight: Theme.iconButtonSize).disabled(visibleIndices.isEmpty)
                     }
-                    HStack(spacing: 12) {
-                        Button { mark(true) } label: { Label("标记已读", systemImage: Icon.markRead) }
+                    HStack(spacing: Theme.space3) {
+                        Button { mark(true) } label: { Label { Text("标记已读") } icon: { ThemeIcon(symbol: Icon.markRead) } }
                             .buttonStyle(PrimaryButtonStyle())
-                        Button { mark(false) } label: { Label("标记未读", systemImage: Icon.markUnread) }
+                        Button { mark(false) } label: { Label { Text("标记未读") } icon: { ThemeIcon(symbol: Icon.markUnread) } }
                             .buttonStyle(SecondaryButtonStyle())
                     }
                     .disabled(selected.isEmpty || marking)
                 }
-                .padding(.horizontal, Theme.inset).padding(.bottom, 12)
+                .padding(Theme.cardInset)
+                .floatingPanel()
+                .padding(.horizontal, Theme.inset).padding(.bottom, Theme.space2)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
-                .background(Theme.bg)
-                .overlay(alignment: .top) { RowDivider() }
             }
         }
         .onAppear { loadRead() }
     }
 
     private func chapterRow(index: Int, chapter: Chapter) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Theme.space3) {
             Button {
                 if selecting {
                     if selected.contains(index) { selected.remove(index) } else { selected.insert(index) }
@@ -423,29 +449,33 @@ struct ChapterManagerView: View {
                     model.open(entry, chapter: index, position: 0)
                 }
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Theme.space3) {
+                    if !selecting && isCurrent(index) {
+                        Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: Theme.space3)
+                            .accessibilityHidden(true)
+                    }
                     if selecting {
-                        Image(systemName: Icon.selection(selected.contains(index)))
-                            .font(.system(size: 22)).foregroundStyle(selected.contains(index) ? Theme.accent : Theme.ink3)
+                        ThemeIcon(symbol: Icon.selection(selected.contains(index)))
+                            .font(.system(size: 22)).foregroundStyle(selected.contains(index) ? Theme.ink : Theme.ink3)
                             .frame(width: 28)
                     }
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(chapter.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
-                        Text("\(read.contains(index) ? "已读" : "未读") · 共 \(chapter.text.count) 字")
+                    VStack(alignment: .leading, spacing: Theme.space1) {
+                        Text(chapter.title).font(Theme.serif(17)).foregroundStyle(isCurrent(index) ? Theme.clayDeep : Theme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                        Text((isCurrent(index) ? "读到这里 · " : "") + "\(read.contains(index) ? "已读" : "未读") · 共 \(chapter.text.count) 字")
                             .font(.caption).foregroundStyle(read.contains(index) ? Theme.accent : Theme.ink3)
                     }
                     Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(selecting ? "\(selected.contains(index) ? "取消选择" : "选择")，\(chapter.title)" : "阅读，\(chapter.title)")
             if !selecting {
                 Button { listen(chapter: index) } label: {
-                    Label("听此章", systemImage: Icon.listen)
+                    Label { Text("听此章") } icon: { ThemeIcon(symbol: Icon.listen) }
                         .font(.caption).foregroundStyle(Theme.ink2)
-                        .padding(.horizontal, 10).frame(minHeight: 44)
+                        .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -453,7 +483,12 @@ struct ChapterManagerView: View {
                 .accessibilityLabel("听书，\(chapter.title)")
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, Theme.space1)
+    }
+
+    private func isCurrent(_ index: Int) -> Bool {
+        guard let entry = model.entries.first(where: { $0.id == book.id }) else { return false }
+        return entry.started && entry.progress.chapter == index
     }
 
     /// 正在听这本书时只跳章，不重建朗读。
