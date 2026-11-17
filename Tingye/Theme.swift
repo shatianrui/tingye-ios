@@ -3,27 +3,28 @@ import UIKit
 import CoreImage
 import Pow
 
-/// 听页新界面：纸面、墨色与克制陶土。ReaderPaper 和出版物排版独立保留。
+/// 听页界面「临窗」：冷灰底、墨色正文、窗蓝只标记正在发生的事。
+/// ReaderPaper 和出版物排版独立保留，不跟界面一起变色。
 enum Theme {
-    static let bg = dynamic(0xF7F4ED, 0x201F1C)
-    static let surface = dynamic(0xFFFDF8, 0x292723)
-    static let surface2 = dynamic(0xEEE9DF, 0x34312C)
-    static let ink = dynamic(0x292724, 0xF1EADF)
-    // UI 小字使用独立的暖灰层级；对比度由静态色值检查与既有 XCTest 共同约束。
-    static let ink2 = dynamic(0x625B52, 0xC2B9AB)
+    static let bg = dynamic(0xF4F6F8, 0x0E1216)
+    static let surface = dynamic(0xFFFFFF, 0x171C22)
+    static let surface2 = dynamic(0xE7ECF2, 0x232A33)
+    static let ink = dynamic(0x12161C, 0xF3F6F9)
+    // UI 小字使用独立的冷灰层级；对比度由静态色值检查与既有 XCTest 共同约束。
+    static let ink2 = dynamic(0x3A4553, 0xC3CEDA)
     // 元数据也保持可读，不用低对比灰来制造层级。
-    static let ink3 = dynamic(0x696158, 0xBEB5A7)
-    static let line = dynamic(0xD4CCC0, 0x5A544C, highLight: 0x80776B, highDark: 0xA3998B)
+    static let ink3 = dynamic(0x465264, 0xB4C0CE)
+    static let line = dynamic(0xC3CCD6, 0x3A4450, highLight: 0x4E5A68, highDark: 0xA8B4C2)
     static let rulePaint = line
-    static let onInk = dynamic(0xFFFDF8, 0x201F1C)
+    static let onInk = dynamic(0xF7F8FA, 0x0E1216)
     static let cardEdge = line
-    // 陶土小字（clayText）：链接式强调、当前章标记、眉题编号，对纸 ≥4.5:1。
-    static let accent = dynamic(0x98432E, 0xE9A18A)
-    static let accentSoft = dynamic(0xF0E4DA, 0x3B2B25)
-    static let onAccent = dynamic(0xFFFDF8, 0x201F1C)
-    // 陶土块面：主按钮面、选中下划线、进度已读段；只标记「正在发生」，不承载小字。
-    static let clay = dynamic(0xD97757, 0xD97757)
-    static let onClay = dynamic(0x141413, 0x141413)
+    // 窗蓝小字：链接、当前章、眉题。对纸面与浅底都 ≥4.5:1。
+    static let accent = dynamic(0x163E73, 0xA9C9F2)
+    static let accentSoft = dynamic(0xE3EDF8, 0x1A2C44)
+    static let onAccent = dynamic(0xFFFFFF, 0x0E1622)
+    // 进度与选中块面，与窗蓝同一家族；只标记「正在发生」，不承载小字。
+    static let clay = dynamic(0x163E73, 0x8FB6E6)
+    static let onClay = dynamic(0xFFFFFF, 0x0E1622)
     static let link = accent
     static let marker = clay
     static let onMarker = onClay
@@ -38,7 +39,7 @@ enum Theme {
     static let onWarm = dynamic(0x514A3F, 0xE0D5C4)
     static let gold = onWarm
     static let goldSoft = warm
-    // 玉绿已退役（v29 全局只留陶土一个彩色强调）：jade 坍缩为 accent，兼容既有调用点。
+    // 旧的玉绿、陶土调用点都收成窗蓝，避免页面上再出现第二套强调色。
     static let jade = accent
     static let jadeSoft = dynamic(0xEAF6EF, 0x1E3327)
     static let indigo = accent
@@ -57,7 +58,7 @@ enum Theme {
     static let radius: CGFloat = 14
     static let heroRadius: CGFloat = 16
     static let radiusSmall: CGFloat = 8
-    static let buttonRadius: CGFloat = 10
+    static let buttonRadius: CGFloat = 12
     static let buttonRadiusSmall: CGFloat = 8
     static let buttonHeight: CGFloat = 50
     static let iconButtonSize: CGFloat = 44
@@ -104,7 +105,7 @@ enum Theme {
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
     /// 占位封使用浅灰纸色，随日夜切换；真实导入书封不反色。
     static func coverUIColor(_ color: String) -> UIColor {
-        let papers: [UInt32] = [0xDCE7E2, 0xE2E8F4, 0xF2E5CF, 0xE6DFED, 0xF0DCD7]
+        let papers: [UInt32] = [0xD7E3EE, 0xE4E7F2, 0xE7E4F0, 0xDCE8E4, 0xE8E6EF]
         let light = papers[color.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % papers.count]
         return UIColor(hex: light)
     }
@@ -186,7 +187,7 @@ extension View {
         self.background { Theme.bg.ignoresSafeArea() }
     }
 
-    /// 跟读：淡陶土底与陶土竖条共同标记当前句，不只依赖颜色。
+    /// 跟读：淡窗蓝底与竖条共同标记当前句，不只依赖颜色。
     func markerHighlight() -> some View {
         self
             .foregroundStyle(Theme.ink)
@@ -451,15 +452,13 @@ struct SealBadge: View {
 
 // MARK: - 按钮（温润圆角，主次明确）
 
-/// 构建 138（Anthropic 化）：主操作改深色墨底 + 纸面字（Theme.ink 本身日/夜成对：
-/// 浅色模式深墨底、深色模式浅纸底，foreground 用 onInk 恒成对）；陶土退为点缀，不再做大面积按钮底。
-/// 次操作维持浅陶土底 + 陶土字（SecondaryButtonStyle）。
+/// 主操作是窗蓝实底；次操作是纸面描边，字用墨色，不再用第二套彩色。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var height: CGFloat = Theme.buttonHeight
-    var fill: Color = Theme.ink
-    var foreground: Color = Theme.onInk
+    var fill: Color = Theme.accent
+    var foreground: Color = Theme.onAccent
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.bold))
@@ -488,7 +487,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .padding(.horizontal, 18).padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: height)
-            .foregroundStyle(Theme.accent)
+            .foregroundStyle(Theme.ink)
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
             .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: 1) }
             .animation(Theme.pressSpring, value: configuration.isPressed)
@@ -504,7 +503,7 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 胶囊筛选块（构建 138 恢复胶囊形）：选中陶土实心，未选中纸面沉底；配色口径不变。
+/// 胶囊筛选：选中为窗蓝实心，未选中沉在次级表面上。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     func makeBody(configuration: Configuration) -> some View {
@@ -588,7 +587,7 @@ struct Card<Content: View>: View {
     }
 }
 
-/// 设置项图标：墨色线性图标，陶土留给编号与眉题。
+/// 设置项图标：墨色线性图标，窗蓝留给正在选中的项。
 struct SettingsIcon: View {
     let systemName: String
     let color: Color
@@ -640,7 +639,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, 0.5)).accessibilityHidden(true) }
 }
 
-/// 纸质栏目标题：宽字距眉题（可带编号），陶土。
+/// 栏目标题：系统标题，窗蓝编号，发丝线收束。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -687,7 +686,7 @@ struct PageMasthead: View {
                 .accessibilityHidden(true)
             }
             Text(L(title))
-                .font(Theme.serif(30, relativeTo: .largeTitle))
+                .font(.system(.largeTitle, design: .default).weight(.semibold))
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
@@ -983,20 +982,27 @@ struct EditorialIntro: View {
     var detail: String? = nil
     var eyebrow: String? = nil
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             if let eyebrow {
-                Text(L(eyebrow)).font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+                Text(L(eyebrow))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.accentSoft, in: Capsule())
             }
-            Text(L(title)).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
+            Text(L(title))
+                .font(.system(.title, design: .default).weight(.semibold))
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
             if let detail {
                 Text(L(detail)).font(.subheadline).foregroundStyle(Theme.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Rectangle().fill(Theme.line).frame(height: 1).padding(.top, 6).accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
@@ -1040,8 +1046,8 @@ struct PaperPanel: ViewModifier {
     @Environment(\.colorSchemeContrast) private var contrast
     func body(content: Content) -> some View {
         content.padding(inset).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.line, lineWidth: contrast == .increased ? 2 : 1) }
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.line, lineWidth: contrast == .increased ? 2 : 1) }
     }
 }
 

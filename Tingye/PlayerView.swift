@@ -173,7 +173,7 @@ struct PlayerView: View {
             HStack {
                 Button { dismiss() } label: {
                     HStack(spacing: 8) {
-                        Text("正在听").font(Theme.serif(28, relativeTo: .title))
+                        Text("正在听").font(.system(.title, design: .default).weight(.semibold))
                         ThemeIcon(symbol: Icon.collapse, size: 20)
                     }
                     .frame(minHeight: 44).contentShape(Rectangle())

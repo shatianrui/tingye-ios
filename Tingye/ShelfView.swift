@@ -315,21 +315,26 @@ struct ShelfView: View {
         model.visibleEntries.flatMap { $0.highlights ?? [] }.max { $0.date < $1.date }
     }
 
-    /// 进度发丝线：高 2，底 Theme.line、填充 Theme.clay。
+    /// 进度细条：高 4，底 Theme.line、填充窗蓝。
     private func progressHairline(_ fraction: Double) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Rectangle().fill(Theme.line)
-                Rectangle().fill(Theme.clay)
+                Capsule().fill(Theme.line)
+                Capsule().fill(Theme.accent)
                     .frame(width: geo.size.width * CGFloat(min(max(fraction, 0), 1)))
             }
         }
-        .frame(height: 2)
+        .frame(height: 4)
     }
 
     private func heroCard(_ entry: ShelfEntry) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("正在读", systemImage: Icon.read).font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+            Label("正在读", systemImage: Icon.read)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.accent)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Theme.accentSoft, in: Capsule())
             HStack(alignment: .top, spacing: 18) {
                 BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 VStack(alignment: .leading, spacing: 6) {
@@ -391,10 +396,10 @@ struct ShelfView: View {
         }
     }
 
-    /// 今日一句：左陶土竖线 + 宋体摘句，取全部划线中 date 最新一条。
+    /// 今日一句：左窗蓝竖线 + 宋体摘句，取全部划线中 date 最新一条。
     private func todayQuote(_ highlight: Highlight) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Rectangle().fill(Theme.clay).frame(width: 2)
+            RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Theme.accent).frame(width: 3)
             Text(highlight.text)
                 .font(Theme.serif(16, relativeTo: .callout))
                 .foregroundStyle(Theme.ink2)
@@ -407,9 +412,9 @@ struct ShelfView: View {
     private var addBooksMenu: some View {
         Button { searching = false; showingSources = true } label: {
             Label("添书", systemImage: Icon.add)
-                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onInk)
+                .font(.subheadline.weight(.bold)).foregroundStyle(Theme.onAccent)
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 44)
-                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
         }
         .buttonStyle(.plain)

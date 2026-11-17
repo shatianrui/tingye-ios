@@ -362,13 +362,11 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight).isDark }
-    /// 控件以当前纸色决定明暗；构建 139 起此色与 Theme.accent 同值（陶土），
-    /// 用于正文侧强调（选区面板传参、顶栏书签与正文页眉状态字），
-    /// 全 App 不再有钴蓝残留；chrome（底部面板、滑杆、上下章）仍用 Theme 陶土令牌。
-    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xF0AD88) : Color(hex: 0xA84A28) }
-    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x17233A) : .white }
-    /// chrome 浮层实体面：浅纸用白、深纸用炭黑（Theme.surface 深色值），不再用旧海军蓝。
-    private var readerPanelPaper: Color { isDarkPaper ? Color(hex: 0x1F1E1D) : .white }
+    /// 控件跟界面窗蓝走，不跟正文纸色走。浅纸用深窗蓝，深纸用浅窗蓝，保证落在纸面上仍可读。
+    private var readerAccent: Color { isDarkPaper ? Color(hex: 0xA9C9F2) : Color(hex: 0x163E73) }
+    private var readerOnAccent: Color { isDarkPaper ? Color(hex: 0x0E1622) : .white }
+    /// 浮在正文上的工具面：浅纸用白，深纸用与界面一致的深窗色。
+    private var readerPanelPaper: Color { isDarkPaper ? Color(hex: 0x171C22) : .white }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
     private var sentences: [Sentence] { document.sentences(chapter) }

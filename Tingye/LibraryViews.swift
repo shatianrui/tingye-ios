@@ -685,14 +685,14 @@ struct AppearanceView: View {
                         .scaledFont(23, weight: .semibold, relativeTo: .title2)
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("纸面的温度，墨色的清晰。选择适合此刻的界面。")
+                    Text("窗边的光，清楚的字。选择适合此刻的界面。")
                         .font(.subheadline)
                         .foregroundStyle(Theme.ink3)
                 }
                 VStack(spacing: 12) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "暖象牙纸面、炭色文字与陶土标记")
-                    appearanceOption("dark", title: "夜间", subtitle: "柔和炭色背景，安静地读入夜里")
+                    appearanceOption("light", title: "日间", subtitle: "冷灰纸面、墨色文字与窗蓝标记")
+                    appearanceOption("dark", title: "夜间", subtitle: "深窗色背景，安静地读入夜里")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)
@@ -742,16 +742,17 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x201F1C) : Color(hex: 0xF7F4ED)
-        let foreground = dark ? Color(hex: 0xF1EADF) : Color(hex: 0x292724)
+        let background = dark ? Color(hex: 0x0E1216) : Color(hex: 0xF4F6F8)
+        let foreground = dark ? Color(hex: 0xF3F6F9) : Color(hex: 0x12161C)
+        let mark = dark ? Color(hex: 0xA9C9F2) : Color(hex: 0x163E73)
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 4, height: 4)
-                Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
+                Circle().fill(mark).frame(width: 4, height: 4)
+                Capsule().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
             }
-            Rectangle().fill(Color(hex: dark ? 0x34312C : 0xFFFFFF)).frame(height: 25)
+            RoundedRectangle(cornerRadius: 4, style: .continuous).fill(Color(hex: dark ? 0x171C22 : 0xFFFFFF)).frame(height: 25)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 11, height: 15).padding(.leading, 6)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous).fill(mark).frame(width: 11, height: 15).padding(.leading, 6)
                 }
             Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
             Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
@@ -762,8 +763,8 @@ struct AppearanceView: View {
         .background(background)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x201F1C)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF0F0F0)) }
+                Rectangle().fill(Color(hex: 0x0E1216)).frame(width: 30)
+                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF3F6F9)) }
             }
         }
         .clipShape(Rectangle())

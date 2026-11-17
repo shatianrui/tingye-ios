@@ -138,28 +138,28 @@ struct QuoteShareCard: View {
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
                     .font(.system(size: 16))
-            }.foregroundStyle(Color(hex: 0x696158))
-            Rectangle().fill(Color(hex: 0x98432E)).frame(height: 2)
+            }.foregroundStyle(Color(hex: 0x465264))
+            Capsule().fill(Color(hex: 0x163E73)).frame(width: 36, height: 3)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x292724))
+                .foregroundStyle(Color(hex: 0x12161C))
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x292724))
+                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x12161C))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x696158))
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x465264))
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Color(hex: 0xD4CCC0)).frame(height: 1)
+            Rectangle().fill(Color(hex: 0xC3CCD6)).frame(height: 1)
             Text("留一点时间，给喜欢的文字。")
-                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x696158))
+                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x465264))
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xF7F4ED))
+        .background(Color(hex: 0xF4F6F8))
         .environment(\.colorScheme, .light)
     }
 
