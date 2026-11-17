@@ -8,6 +8,7 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     let publication: Publication
     let initialLocation: ReadiumShared.Locator
     let preferences: EPUBPreferences
+    let palette: ReaderPaper.Palette
     let fonts: [ReadiumFontProvider.FontFile]
     let request: Request?
     var decorations: [Decoration] = []
@@ -45,6 +46,7 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
             controller.navigator?.submitPreferences(preferences)
         }
         coordinator.applyDecorations()
+        coordinator.applyAppearance()
         coordinator.navigateIfNeeded()
     }
     static func dismantleUIViewController(_ controller: Container, coordinator: Coordinator) {
@@ -236,9 +238,27 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
         func navigator(_ navigator: Navigator, locationDidChange locator: ReadiumShared.Locator) {
             guard self.navigator === navigator else { return }
             navigatorReady = true
+            applyAppearance()
             navigateIfNeeded()
             if navigationTask != nil { deferredLocation = locator; return }
             reportLocation(locator)
+        }
+        /// 只注入颜色，不插入正文节点、不改变文字或排版尺寸。
+        func applyAppearance() {
+            guard navigatorReady, let navigator, parent.publication.metadata.layout != .fixed else { return }
+            let palette = parent.palette
+            let css = String(format: "a{color:#%06X!important}::selection{background:#%06X!important;color:#%06X!important}",
+                             palette.accent, palette.highlight, palette.foreground)
+            guard let data = try? JSONEncoder().encode(css), let literal = String(data: data, encoding: .utf8) else { return }
+            Task { @MainActor [weak self, weak navigator] in
+                guard let self, let navigator, self.navigator === navigator else { return }
+                _ = await navigator.evaluateJavaScript("""
+                (() => { let style = document.getElementById('tingye-reader-appearance');
+                  if (!style) { style = document.createElement('style'); style.id = 'tingye-reader-appearance'; document.head.appendChild(style); }
+                  if (style.textContent !== \(literal)) style.textContent = \(literal);
+                })();
+                """)
+            }
         }
         func navigator(_ navigator: VisualNavigator, didTapAt point: CGPoint) { parent.onTap() }
         func navigator(_ navigator: Navigator, presentExternalURL url: URL) {

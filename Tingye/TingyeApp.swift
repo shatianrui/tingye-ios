@@ -446,13 +446,13 @@ struct MiniPlayer: View {
                             BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(Theme.serif(17))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
                                     .font(.caption2)
                                     .monospacedDigit()
-                                    .foregroundStyle(Theme.ink3)
+                                    .foregroundStyle(Theme.ink2)
                                     .lineLimit(1)
                             }
                             Spacer(minLength: 0)
@@ -505,14 +505,14 @@ struct MiniPlayer: View {
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            .paperPanel(inset: 8)
+            .padding(.vertical, Theme.space2)
+            .background(Theme.surface2)
+            .overlay(alignment: .top) { RowDivider() }
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Theme.space4)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 16).padding(.vertical, 4)
-            .background(Theme.surface)
         }
     }
     private var subtitle: String {

@@ -21,16 +21,24 @@ struct ReaderMark: Equatable {
     var kind: String
 
     static let palette: [(key: String, name: String, hex: UInt32)] = [
-        ("yellow", "琥珀", 0xD69E3A), ("clay", "陶土", 0xA34F36), ("blue", "蓝", 0x4A6FA5), ("pink", "粉", 0xC85A53), ("purple", "紫", 0x7E629E),
+        ("clay", "陶土", 0xD97757), ("ink", "墨", 0x191817), ("gray", "灰", 0x6B6960),
     ]
-    // 旧标注的颜色是用户内容；仅新建标注的调色盘移除绿色。
+    /// 仅映射显示，不改写旧标注的存储键或坐标。
+    static func toneKey(_ key: String) -> String {
+        switch key {
+        case "ink", "blue", "purple": return "ink"
+        case "gray", "green": return "gray"
+        default: return "clay"
+        }
+    }
     static func uiColor(_ key: String) -> UIColor {
-        if key == "green" { return UIColor(hex: 0x4E8E75) }
-        return UIColor(hex: palette.first { $0.key == key }?.hex ?? 0xD69E3A)
+        switch toneKey(key) {
+        case "ink": return UIColor(Theme.ink)
+        case "gray": return UIColor(Theme.ink3)
+        default: return UIColor(Theme.clay)
+        }
     }
-    static func newColor(_ stored: String?) -> String {
-        palette.contains { $0.key == stored } ? (stored ?? "clay") : "clay"
-    }
+    static func newColor(_ stored: String?) -> String { toneKey(stored ?? "clay") }
     static func color(_ key: String) -> Color { Color(uiColor: uiColor(key)) }
 
     var style: Style { Style(color: kind == "selection" ? UIColor(Theme.accent) : Self.uiColor(color), kind: kind) }
@@ -144,9 +152,9 @@ struct SelectionPanel: View {
     }
 
     private var panelContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
-                Text("选段与标注").font(.headline).accessibilityAddTraits(.isHeader)
+                Text("选段与标注").font(Theme.serif(20)).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -166,43 +174,31 @@ struct SelectionPanel: View {
             .buttonStyle(.plain)
             Text(text)
                 .font(Theme.serif(18, relativeTo: .body)).lineLimit(4).lineSpacing(7)
-                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radius))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(tools, id: \.self) { item in
-                        Button { tool = item } label: {
-                            Text(item.rawValue).font(.caption.weight(.medium))
-                                .foregroundStyle(tool == item ? paper : tint)
-                                .padding(.horizontal, 16).frame(minHeight: 44)
-                                .background(tool == item ? accent : tint.opacity(0.06), in: Capsule())
-                        }
-                        .buttonStyle(.plain).accessibilityAddTraits(tool == item ? .isSelected : [])
-                    }
-                }
-            }
+                .padding(Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius))
+            SegmentedBar(options: tools, selection: tool, title: { $0.rawValue }, onSelect: { tool = $0 })
             Group {
                 switch tool {
                 case .mark: markTools
                 case .note:
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Theme.space3) {
                         if let note = existing?.note, !note.isEmpty {
-                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(tint.opacity(0.75))
+                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(Theme.ink3)
                         } else {
                             Text("给这段文字，留一点自己的想法。")
-                                .font(.subheadline).foregroundStyle(tint.opacity(0.75))
+                                .font(.subheadline).foregroundStyle(Theme.ink3)
                         }
                         action(existing?.note == nil ? "写笔记" : "编辑笔记", Icon.note, onNote, prominent: true)
                     }
                 case .quote:
-                    VStack(spacing: 8) {
+                    VStack(spacing: Theme.space2) {
                         HStack(spacing: 10) {
                             action("复制原文", Icon.copy, onCopy)
                             ShareLink(item: text) {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                                    .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                             }
                             .buttonStyle(.plain)
                         }
@@ -211,52 +207,47 @@ struct SelectionPanel: View {
                 }
             }
         }
-        .foregroundStyle(tint)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 16)
+        .foregroundStyle(Theme.ink)
+        .padding(.horizontal, Theme.space4)
+        .padding(.top, Theme.space2)
+        .padding(.bottom, Theme.space4)
         .frame(maxWidth: 520)
-        .background(paper, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .softCardShadow()
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .floatingPanel()
     }
 
     private var markTools: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 4) {
+            HStack(spacing: Theme.space1) {
                 ForEach(ReaderMark.palette, id: \.key) { item in
                     Button {
                         chosenColor = item.key
                         lastColor = item.key
                     } label: {
-                        VStack(spacing: 4) {
-                            Circle().fill(Color(uiColor: UIColor(hex: item.hex)))
-                                .frame(width: 24, height: 24)
-                                .overlay { if chosenColor == item.key { Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold)).foregroundStyle(.white) } }
+                        VStack(spacing: Theme.space1) {
+                            ZStack {
+                                if item.key == "clay" { Circle().fill(ReaderMark.color(item.key)) }
+                                else if item.key == "ink" { RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(ReaderMark.color(item.key)) }
+                                else { Capsule().strokeBorder(ReaderMark.color(item.key), lineWidth: Theme.ruleMedium) }
+                                if ReaderMark.toneKey(chosenColor) == item.key {
+                                    ThemeIcon(symbol: Icon.checkmark, size: 13)
+                                        .foregroundStyle(item.key == "clay" ? Theme.onClay : (item.key == "ink" ? Theme.bg : Theme.ink))
+                                }
+                            }
+                            .frame(width: Theme.space5, height: Theme.space5)
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                        .background(ReaderMark.toneKey(chosenColor) == item.key ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
-                    .accessibilityAddTraits(chosenColor == item.key ? .isSelected : [])
+                    .accessibilityAddTraits(ReaderMark.toneKey(chosenColor) == item.key ? .isSelected : [])
                 }
             }
-            HStack(spacing: 6) {
-                ForEach([("background", "浅底", Icon.highlight), ("underline", "直线", Icon.underlineStyle), ("wavy", "波浪线", Icon.wavyStyle)], id: \.0) { style, title, icon in
-                    Button {
-                        chosenStyle = style
-                        lastStyle = style
-                    } label: {
-                        Label(title, systemImage: icon).font(.caption.weight(.medium))
-                            .foregroundStyle(chosenStyle == style ? accent : tint)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
-                }
-            }
+            SegmentedBar(options: ["background", "underline", "wavy"], selection: chosenStyle,
+                         title: { ["background": "浅底", "underline": "直线", "wavy": "波浪线"][$0] ?? $0 },
+                         onSelect: { chosenStyle = $0; lastStyle = $0 })
             action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, chosenStyle) }, prominent: true)
             if existing != nil {
                 Button("删除这条标注…") { removing = true }
@@ -269,14 +260,14 @@ struct SelectionPanel: View {
 
     private func action(_ title: String, _ icon: String, _ run: @escaping () -> Void, prominent: Bool = false) -> some View {
         Button(action: run) {
-            HStack(spacing: 8) {
+            HStack(spacing: Theme.space2) {
                 ThemeIcon(symbol: icon, size: 20)
                 Text(L(title))
             }
                 .font(.body.weight(.medium))
-                .foregroundStyle(prominent ? paper : tint)
+                .foregroundStyle(prominent ? Theme.bg : Theme.ink)
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? accent : tint.opacity(0.06), in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                .background(prominent ? Theme.ink : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

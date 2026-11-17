@@ -182,13 +182,18 @@ final class ReadiumLocatorTests: XCTestCase {
         let batch = try await ReadiumAnnotations.decorations(marks, bridge: bridge, mode: "none")
         XCTAssertTrue(batch.decorations.isEmpty); XCTAssertEqual(batch.unresolved, marks.map(\.id))
     }
-    func testFiveColorsLegacyGreenAndThreeDecorationStyles() async throws {
+    func testThreeTonesLegacyColorsAndThreeDecorationStyles() async throws {
         let bridge = try await LocatorTestSupport.bridge(LocatorTestSupport.book(["选段。"]), self)
-        let colors = ReaderMark.palette.map(\.key) + ["green"]
+        XCTAssertEqual(ReaderMark.palette.map(\.key), ["clay", "ink", "gray"])
+        // 旧键仍可渲染，只映射外观；传入的标注内容、ID 与定位保持原样。
+        let legacyTones = ["yellow": "clay", "clay": "clay", "pink": "clay",
+                           "blue": "ink", "purple": "ink", "green": "gray"]
+        for (key, tone) in legacyTones { XCTAssertEqual(ReaderMark.toneKey(key), tone) }
+        let colors = ["clay", "ink", "gray", "yellow", "blue", "pink", "purple", "green"]
         for kind in ["background", "underline", "wavy"] {
             let marks = colors.map { Highlight(chapter: 0, start: 0, end: 0, text: "选段。", color: $0, style: kind) }
             let batch = try await ReadiumAnnotations.decorations(marks, bridge: bridge, mode: "none")
-            XCTAssertEqual(batch.decorations.count, 6); XCTAssertTrue(batch.unresolved.isEmpty)
+            XCTAssertEqual(batch.decorations.count, 8); XCTAssertTrue(batch.unresolved.isEmpty)
             for (decoration, mark) in zip(batch.decorations, marks) {
                 XCTAssertEqual(decoration.id, mark.id.uuidString)
                 XCTAssertEqual((decoration.style.config as? ReadiumNavigator.Decoration.Style.HighlightConfig)?.tint, ReaderMark.uiColor(mark.color))

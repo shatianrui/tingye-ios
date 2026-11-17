@@ -33,7 +33,7 @@ struct ComicReaderView: View {
 
     var body: some View {
         ZStack {
-            Theme.bg.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             if mode == "vertical" {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -64,18 +64,17 @@ struct ComicReaderView: View {
             }
 
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
+                HStack(spacing: Theme.space3) {
                     Button { dismiss() } label: {
                         ThemeIcon(symbol: Icon.back, size: 24)
                             .frame(width: 44, height: 44)
-                            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("返回")
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Theme.space1) {
                         Text(book.title).font(Theme.serif(20, relativeTo: .headline)).lineLimit(2)
                         Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
+                            .font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -102,31 +101,48 @@ struct ComicReaderView: View {
                     }
                     .accessibilityLabel("更多漫画操作")
                 }
-                .padding(12)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(Theme.space3)
+                .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
                 Spacer(minLength: 8)
                 ScrollView {
-                    VStack(spacing: 4) {
+                    VStack(spacing: Theme.space1) {
                         HStack {
                             Label("页码进度", systemImage: Icon.read)
                             Spacer()
                             Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
                         }
                         .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
-                        .padding(.horizontal, 8).padding(.top, 10)
-                        HStack(spacing: 10) {
+                        .padding(.horizontal, Theme.space2).padding(.top, Theme.space3)
+                        HStack(spacing: Theme.space3) {
                             pageStep(-1, "上一页", Icon.back)
                             if count > 1 {
                                 Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
                                     if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
                                 }
-                                .tint(Theme.accent)
+                                .tint(Theme.ink2)
+                                .overlay {
+                                    GeometryReader { geometry in
+                                        let fraction = (scrubbing ?? Double(page)) / Double(max(1, count - 1))
+                                        let thumb = Theme.space6
+                                        let center = thumb / 2 + (geometry.size.width - thumb) * fraction
+                                        ProgressLine(value: fraction)
+                                            .mask {
+                                                HStack(spacing: 0) {
+                                                    Rectangle().frame(width: max(0, center - thumb / 2))
+                                                    Color.clear.frame(width: thumb)
+                                                    Rectangle()
+                                                }
+                                            }
+                                            .frame(maxHeight: .infinity)
+                                    }.allowsHitTesting(false).accessibilityHidden(true)
+                                }
                                 .environment(\.layoutDirection, mode == "rtl" ? .rightToLeft : .leftToRight)
                                 .accessibilityLabel("页码").accessibilityValue("第 \(page + 1) 页，共 \(count) 页")
                             } else { Spacer() }
                             pageStep(1, "下一页", Icon.disclosure)
                         }
-                        HStack(spacing: 8) {
+                        HStack(spacing: Theme.space2) {
                             Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
                                 .accessibilityIdentifier("comic.contents")
                             Menu {
@@ -141,22 +157,24 @@ struct ComicReaderView: View {
                         }
                         .buttonStyle(.plain)
                         Text("双指缩放 · 双击适应屏幕")
-                            .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, 8)
+                            .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, Theme.space2)
                     }
-                    .padding(.horizontal, 12).padding(.bottom, 8)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
+                    .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
             }
             .frame(maxWidth: 760)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Theme.space5)
+            .padding(.vertical, Theme.space3)
             .foregroundStyle(Theme.ink)
             .opacity(chrome ? 1 : 0)
             .allowsHitTesting(chrome)
             .accessibilityHidden(!chrome)
         }
+        .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(!chrome)
         .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: chrome)
@@ -177,14 +195,15 @@ struct ComicReaderView: View {
         .onDisappear { model.setReadingSurface(book.id, visible: false) }
     }
     private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Theme.space2) {
             ThemeIcon(symbol: icon, size: 24)
             Text(L(title)).font(.footnote).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.onAccent : Theme.ink3)
+        .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
         .frame(maxWidth: .infinity, minHeight: 58)
-        .padding(.vertical, 4)
-        .background(selected ? Theme.accent : Theme.surface2, in: RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, Theme.space1)
+        .background(selected ? Theme.claySoft : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
         .contentShape(Rectangle())
     }
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {
@@ -206,30 +225,31 @@ struct ComicReaderView: View {
             ScrollViewReader { proxy in
                 List {
                     EditorialIntro(title: "翻到想看的那一页", detail: book.title, eyebrow: "漫画目录")
-                    Picker("页面类型", selection: $onlyBookmarks) {
-                        Text("全部页面").tag(false)
-                        Text("书签 \(bookmarks.count)").tag(true)
-                    }
-                    .pickerStyle(.segmented).listRowBackground(Color.clear)
+                    SegmentedBar(options: [false, true], selection: onlyBookmarks,
+                                 title: { $0 ? "书签 \(bookmarks.count)" : "全部页面" },
+                                 onSelect: { onlyBookmarks = $0 })
+                        .accessibilityLabel("页面类型").listRowBackground(Color.clear)
                     if onlyBookmarks && directoryPages.isEmpty {
                         Text("还没有书签。阅读时轻点顶部的书签图标，保存当前页。")
                             .font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear)
                     }
                     ForEach(directoryPages, id: \.self) { index in
                         Button { goToPage(index); showingPages = false } label: {
-                            HStack(spacing: 14) {
+                            PaperCard(padding: Theme.space3) {
+                            HStack(spacing: Theme.space3) {
                                 ComicPage(book: book, index: index, fit: .thumbnail)
                                     .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
                                 Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
-                                    .foregroundStyle(index == page ? Theme.accent : Theme.ink3).frame(width: 36)
-                                Text("第 \(index + 1) 页").font(.system(size: 15)).foregroundStyle(Theme.ink)
+                                    .foregroundStyle(index == page ? Theme.clayDeep : Theme.ink3).frame(width: 36)
+                                Text("第 \(index + 1) 页").font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink)
                                 Spacer()
                                 if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
-                                if index == page { Text("在读").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent) }
+                                if index == page { SealDot(text: "在读") }
                             }
-                            .frame(minHeight: 48).contentShape(Rectangle())
+                            .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
+                            }
                         }
-                        .buttonStyle(.plain).listRowBackground(index == page ? Theme.accentSoft : Theme.surface).id(index)
+                        .buttonStyle(.plain).listRowBackground(Color.clear).id(index)
                     }
                 }
                 .editorialList()
@@ -238,7 +258,8 @@ struct ComicReaderView: View {
                 .onAppear { proxy.scrollTo(page, anchor: .center) }
             }
         }
-        .tint(Theme.accent).presentationDetents([.medium, .large])
+        .preferredColorScheme(.dark)
+        .tint(Theme.clayDeep).presentationDetents([.medium, .large])
     }
     private var modeLabel: String {
         switch mode {

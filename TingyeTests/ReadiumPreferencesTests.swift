@@ -15,15 +15,15 @@ final class ReadiumPreferencesTests: XCTestCase {
     }
 
     func testEveryPaperResolvesExactDayNightAndAlwaysLightColors() {
-        // PLAN 4.2 的独立期望表；不从生产 resolve 反推期望值。
+        // v31 §7 的独立期望表；不从生产 resolve 反推期望值。
         let cases: [(ReaderPaper, [UInt32], [UInt32])] = [
-            (.paper, [0xFAF9F5, 0x1C1B18, 0x6E6A5A], [0x141413, 0xEFEDE6, 0x99968A]),
-            (.mist, [0xE6EBF1, 0x14181F, 0x666666], [0x1D2733, 0xD8E2EC, 0x93A3B5]),
-            (.ancient, [0xF3E7D6, 0x2C2418, 0x6E5F4B], [0x2A2118, 0xEAD9BE, 0xB39B78]),
-            (.eink, [0xF0F0F0, 0x242424, 0x666666], [0x1E1E1E, 0xE8E8E8, 0xA8A8A8]),
-            (.white, [0xFFFFFF, 0x14181F, 0x666666], [0x000000, 0xEFEFEA, 0xA9A9A2]),
-            (.blue, [0x1A2C3A, 0xD5E4F0, 0x8AA0B4], [0x1A2C3A, 0xD5E4F0, 0x8AA0B4]),
-            (.night, [0x101012, 0xEFEDE6, 0xA5A296], [0x101012, 0xEFEDE6, 0xA5A296])
+            (.paper, [0xFAF9F5, 0x191817, 0x6B6960], [0x131211, 0xF5F3EC, 0x9C988E]),
+            (.mist, [0xECEDE8, 0x191817, 0x4A4741], [0x242522, 0xF5F3EC, 0x9C988E]),
+            (.ancient, [0xF2ECE0, 0x191817, 0x4A4741], [0x29231D, 0xF5F3EC, 0x9C988E]),
+            (.eink, [0xF1F0EB, 0x191817, 0x4A4741], [0x1E1C1A, 0xF5F3EC, 0x9C988E]),
+            (.white, [0xFFFFFF, 0x191817, 0x6B6960], [0x131211, 0xF5F3EC, 0x9C988E]),
+            (.blue, [0x242A2C, 0xF5F3EC, 0xC9C5BA], [0x242A2C, 0xF5F3EC, 0xC9C5BA]),
+            (.night, [0x131211, 0xF5F3EC, 0x9C988E], [0x131211, 0xF5F3EC, 0x9C988E])
         ]
         for (paper, day, night) in cases {
             for dark in [false, true] {
@@ -33,6 +33,8 @@ final class ReadiumPreferencesTests: XCTestCase {
                     XCTAssertEqual([palette.background, palette.foreground, palette.secondary], expected, paper.rawValue)
                     let isDark = paper == .blue || paper == .night || (dark && !alwaysLight)
                     XCTAssertEqual(palette.isDark, isDark, paper.rawValue)
+                    XCTAssertEqual(palette.highlight, isDark ? 0x3E2A21 : 0xF7EAE3, paper.rawValue)
+                    XCTAssertEqual(palette.accent, isDark ? 0xF0AD88 : 0xAC4A26, paper.rawValue)
                     let bridge = mapped(.init(paper: paper.rawValue), dark: dark, alwaysLight: alwaysLight)
                     XCTAssertEqual(bridge.backgroundColor?.rawValue, Int(expected[0]))
                     XCTAssertEqual(bridge.textColor?.rawValue, Int(expected[1]))

@@ -2507,19 +2507,29 @@ extension NativeCoreTests {
 
 extension NativeCoreTests {
     @MainActor func testReaderHighlightUsesPaperAppearanceInsteadOfAppAppearance() {
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            for paper in ReaderPaper.allCases {
-                let preferences = ReaderPreferences(paper: paper.rawValue)
-                let followsDarkAppearance = paper.dark || (paper == .paper && style == .dark)
-                // v29 起跟读带统一陶土：Theme.swift 的 highlightBand 对所有纸面与外观
-                // 恒为 #D97757（日/夜同值），不再按纸色明暗解析为旧钴蓝 #315BEE/#8DA7FF；
-                // 按明暗区分的只剩 highlight 的透明度（见下方断言，规则未变）。
-                let expected = UIColor(hex: 0xD97757)
-                XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), expected,
-                               "\(paper.rawValue) 的跟读带应为统一陶土色")
-                let highlight = preferences.highlight.resolvedColor(with: traits)
-                XCTAssertEqual(highlight.cgColor.alpha, followsDarkAppearance ? 0.26 : 0.14, accuracy: 0.001)
+        let defaults = UserDefaults.standard
+        let key = "study.paperAlwaysLight"
+        let saved = defaults.object(forKey: key)
+        defer {
+            if let saved { defaults.set(saved, forKey: key) }
+            else { defaults.removeObject(forKey: key) }
+        }
+        for alwaysLight in [false, true] {
+            defaults.set(alwaysLight, forKey: key)
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                for paper in ReaderPaper.allCases {
+                    let preferences = ReaderPreferences(paper: paper.rawValue)
+                    let darkPaper = paper.dark || (style == .dark && !alwaysLight)
+                    XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), UIColor(hex: 0xD97757),
+                                   "\(paper.rawValue) 的跟读竖线应为统一陶土色")
+                    let highlight = preferences.highlight.resolvedColor(with: traits)
+                    XCTAssertEqual(highlight, UIColor(hex: darkPaper ? 0x3E2A21 : 0xF7EAE3),
+                                   "\(paper.rawValue) 的跟读底应随纸面解析 claySoft")
+                    XCTAssertEqual(highlight.cgColor.alpha, 1, accuracy: 0.001)
+                    let foreground = UIColor(preferences.foreground).resolvedColor(with: traits)
+                    XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: highlight), 4.5, paper.rawValue)
+                }
             }
         }
     }

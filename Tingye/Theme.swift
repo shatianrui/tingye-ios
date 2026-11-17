@@ -985,10 +985,28 @@ struct PrimaryButton: View {
 struct ClayButton: View {
     let title: String
     let action: () -> Void
+    private var symbol: String? = nil
+    private var loading = false
     init(_ title: String, action: @escaping () -> Void) { self.title = title; self.action = action }
+    init(systemName: String, label: String, loading: Bool = false, action: @escaping () -> Void) {
+        title = label; self.action = action; symbol = systemName; self.loading = loading
+    }
     var body: some View {
-        Button(action: action) { Text(L(title)) }
-            .buttonStyle(PrimaryButtonStyle(fill: Theme.clay, foreground: Theme.onClay))
+        if let symbol {
+            Button(action: action) {
+                ZStack {
+                    Circle().fill(Theme.clay)
+                    if loading { ProgressView().tint(Theme.onClay) }
+                    else { ThemeIcon(symbol: symbol, size: 28).foregroundStyle(Theme.onClay) }
+                }
+                .frame(width: Theme.space7 + Theme.space5, height: Theme.space7 + Theme.space5)
+                .contentShape(Circle())
+            }
+            .buttonStyle(PressButtonStyle()).accessibilityLabel(L(title))
+        } else {
+            Button(action: action) { Text(L(title)) }
+                .buttonStyle(PrimaryButtonStyle(fill: Theme.clay, foreground: Theme.onClay))
+        }
     }
 }
 
@@ -1095,17 +1113,18 @@ struct SheetChrome<Content: View>: View {
     let title: String
     var closeLabel = "关闭"
     let onClose: () -> Void
+    var showsHeader = true
     @ViewBuilder var content: Content
     var body: some View {
         VStack(spacing: Theme.space4) {
             Capsule().fill(Theme.line).frame(width: Theme.space6, height: Theme.space1)
                 .accessibilityHidden(true)
-            HStack(spacing: Theme.space3) {
+            if showsHeader { HStack(spacing: Theme.space3) {
                 Text(L(title)).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
                 Spacer(minLength: Theme.space2)
                 CircleIconButton(systemName: Icon.close, label: L(closeLabel), action: onClose)
-            }
+            } }
             content
         }
         .padding(Theme.cardInset)
@@ -1172,24 +1191,26 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
     var name: String {
         ["paper": "默认", "mist": "雾灰", "ancient": "旧书", "eink": "浅灰", "white": "纯白", "blue": "深蓝", "night": "夜读"][rawValue] ?? rawValue
     }
-    /// PLAN 4.2 的实际色值；原生动态色和 Readium 快照共用同一决策。
+    /// v31 §7：原生动态色和 Readium 快照共用同一决策。
     struct Palette: Equatable {
         let background: UInt32
         let foreground: UInt32
         let secondary: UInt32
         let isDark: Bool
+        var highlight: UInt32 { isDark ? 0x3E2A21 : 0xF7EAE3 }
+        var accent: UInt32 { isDark ? 0xF0AD88 : 0xAC4A26 }
     }
     func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
         let night = darkAppearance && !alwaysLight
         let values: (UInt32, UInt32, UInt32)
         switch self {
-        case .paper: values = night ? (0x141413, 0xEFEDE6, 0x99968A) : (0xFAF9F5, 0x1C1B18, 0x6E6A5A)
-        case .mist: values = night ? (0x1D2733, 0xD8E2EC, 0x93A3B5) : (0xE6EBF1, 0x14181F, 0x666666)
-        case .ancient: values = night ? (0x2A2118, 0xEAD9BE, 0xB39B78) : (0xF3E7D6, 0x2C2418, 0x6E5F4B)
-        case .eink: values = night ? (0x1E1E1E, 0xE8E8E8, 0xA8A8A8) : (0xF0F0F0, 0x242424, 0x666666)
-        case .white: values = night ? (0x000000, 0xEFEFEA, 0xA9A9A2) : (0xFFFFFF, 0x14181F, 0x666666)
-        case .blue: values = (0x1A2C3A, 0xD5E4F0, 0x8AA0B4)
-        case .night: values = (0x101012, 0xEFEDE6, 0xA5A296)
+        case .paper: values = night ? (0x131211, 0xF5F3EC, 0x9C988E) : (0xFAF9F5, 0x191817, 0x6B6960)
+        case .mist: values = night ? (0x242522, 0xF5F3EC, 0x9C988E) : (0xECEDE8, 0x191817, 0x4A4741)
+        case .ancient: values = night ? (0x29231D, 0xF5F3EC, 0x9C988E) : (0xF2ECE0, 0x191817, 0x4A4741)
+        case .eink: values = night ? (0x1E1C1A, 0xF5F3EC, 0x9C988E) : (0xF1F0EB, 0x191817, 0x4A4741)
+        case .white: values = night ? (0x131211, 0xF5F3EC, 0x9C988E) : (0xFFFFFF, 0x191817, 0x6B6960)
+        case .blue: values = (0x242A2C, 0xF5F3EC, 0xC9C5BA)
+        case .night: values = (0x131211, 0xF5F3EC, 0x9C988E)
         }
         return Palette(background: values.0, foreground: values.1, secondary: values.2, isDark: dark || night)
     }
@@ -1230,12 +1251,14 @@ struct ReaderPreferences: Equatable {
     var background: Color { kind.color(\.background) }
     var foreground: Color { kind.color(\.foreground) }
     var secondary: Color { kind.color(\.secondary) }
-    /// 原生阅读跟读标记（v29 起统一陶土，日/夜同值），纸色设置不变；透明度规则见 highlight。
-    var highlightBand: UIColor { UIColor(hex: 0xD97757) }
-    /// 连续滚动模式整句铺底：半透明陶土
+    /// 竖线与进度用陶土面，跟读铺底取纸面外观对应的 claySoft。
+    var highlightBand: UIColor { UIColor(Theme.clay) }
     var highlight: UIColor {
-        let band = highlightBand, darkPaper = kind.dark, followsAppearance = kind == .paper
-        return UIColor { band.resolvedColor(with: $0).withAlphaComponent(darkPaper || (followsAppearance && $0.userInterfaceStyle == .dark) ? 0.26 : 0.14) }
+        let paper = kind
+        return UIColor { traits in
+            UIColor(hex: paper.resolve(darkAppearance: traits.userInterfaceStyle == .dark,
+                                      alwaysLight: UserDefaults.standard.bool(forKey: "study.paperAlwaysLight")).highlight)
+        }
     }
     /// serif 思源宋体 / kai 霞鹜文楷 / hansans 思源黑体 / xixihei 霞鹜新晰黑 / system 系统字体 / custom:<PostScript 名> 导入的字体
     var uiFont: UIFont {
