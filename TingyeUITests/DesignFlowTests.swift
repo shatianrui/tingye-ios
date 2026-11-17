@@ -994,9 +994,32 @@ final class DesignFlowTests: XCTestCase {
 
 extension DesignFlowTests {
     private func cancelSystemBookPicker(_ app: XCUIApplication) {
-        let cancel = app.buttons.matching(NSPredicate(format: "label == '取消' OR label == 'Cancel'")).firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10))
-        cancel.tap()
+        let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let surfaces = [app, files, springboard]
+        let predicate = NSPredicate(format: "label == '取消' OR label == 'Cancel'")
+        let deadline = Date().addingTimeInterval(15)
+        var cancel: XCUIElement?
+        while cancel == nil, Date() < deadline {
+            for surface in surfaces {
+                let button = surface.buttons.matching(predicate).firstMatch
+                if button.exists {
+                    cancel = button
+                    break
+                }
+            }
+            if cancel == nil { RunLoop.current.run(until: Date().addingTimeInterval(0.4)) }
+        }
+        guard let button = cancel else {
+            XCTFail("系统文件选择器应已打开，并能取消")
+            return
+        }
+        let frame = button.frame
+        if frame.width > 1, frame.height > 1 {
+            button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        } else {
+            button.tap()
+        }
     }
 
     func testSystemFilePickerSingleImportFromSourcesDeliversAndShowsResult() {
