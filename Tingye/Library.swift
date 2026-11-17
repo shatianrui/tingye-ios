@@ -213,21 +213,20 @@ struct AppLockGate: ViewModifier {
             content.accessibilityHidden(enabled && locked)
                 if enabled && locked {
                     ZStack {
-                        Rectangle().fill(.ultraThickMaterial).ignoresSafeArea()
-                        VStack(spacing: 18) {
-                            Image(systemName: Icon.lock(true)).font(.system(size: 40, weight: .medium)).foregroundStyle(Theme.accent)
-                            Text("听页已上锁").font(Theme.serif(28, relativeTo: .title))
-                            Text("验证身份，回到你的私人书房。").font(.subheadline).foregroundStyle(Theme.ink2)
-                            Button("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
-                                .buttonStyle(PrimaryButtonStyle())
+                        Theme.bg.ignoresSafeArea()
+                        VStack(spacing: Theme.space4) {
+                            ThemeIcon(symbol: Icon.lock(true), size: 40).foregroundStyle(Theme.ink2)
+                            EmptyState(title: "听页已上锁", detail: "验证身份，回到你的私人书房。",
+                                       state: checking ? .loading : .empty)
+                            PrimaryButton("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
                                 .frame(maxWidth: 300).disabled(checking)
-                            if checking { ProgressView("正在验证…") }
-                        }
+                            if checking { Text("正在验证…").font(Theme.sans(13)).foregroundStyle(Theme.ink3) }
+                        }.padding(Theme.inset)
                     }
                     .transition(.opacity)
                 }
             }
-            .animation(.easeOut(duration: 0.2), value: locked)
+            .animation(Theme.pressAnimation, value: locked)
             .task { if enabled { await unlock() } }
             // 刚在设置里开启时不立即上锁，下次进入后台才生效
             .onChange(of: enabled) { _, on in if on { locked = false } }

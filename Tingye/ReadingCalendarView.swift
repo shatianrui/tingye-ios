@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 阅读日历：按月查看每天的阅读 / 听书时长，信号蓝深浅表示时长，达到每日目标的日子加粗下划线。
+/// 阅读日历：按月查看每天的阅读 / 听书时长，陶土淡底表示读日，达到每日目标的日子加粗下划线。
 struct ReadingCalendarView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -13,35 +13,35 @@ struct ReadingCalendarView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    EditorialIntro(title: "阅读日历", detail: "选择一天，看看那天读过的书。")
+                VStack(alignment: .leading, spacing: Theme.space5) {
+                    Masthead(title: "阅读日历", subtitle: "选择一天，看看那天读过的书。", titleSize: 28)
                     header
                     ScrollView(.horizontal) {
-                        VStack(spacing: 12) { weekdayRow; grid }.frame(minWidth: 332)
-                    }.paperPanel(inset: 12)
+                        VStack(spacing: Theme.space3) { weekdayRow; grid }.frame(minWidth: 332)
+                    }.paperPanel(inset: Theme.space3)
                     dayDetail
                     monthSummary
                 }
-                .padding(.horizontal, Theme.inset).padding(.vertical, 16)
+                .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space4)
                 .frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
             .paperBackground()
             .navigationTitle("阅读日历")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
         }
     }
 
     private var header: some View {
         HStack {
-            Button { shift(-1) } label: { ThemeIcon(symbol: Icon.back, size: 18).frame(width: 44, height: 44) }
+            Button { shift(-1) } label: { ThemeIcon(symbol: Icon.back, size: 18).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
                 .accessibilityLabel("上个月")
             Spacer()
             Text(month.formatted(.dateTime.year().month(.wide).locale(Locale.app)))
-                .scaledFont(24, weight: .semibold, relativeTo: .title2)
+                .font(Theme.serif(24, relativeTo: .title2))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
-            Button { shift(1) } label: { ThemeIcon(symbol: Icon.disclosure, size: 18).frame(width: 44, height: 44) }
+            Button { shift(1) } label: { ThemeIcon(symbol: Icon.disclosure, size: 18).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
                 .accessibilityLabel("下个月")
                 .disabled(isCurrentMonth).opacity(isCurrentMonth ? 0.3 : 1)
         }
@@ -51,16 +51,16 @@ struct ReadingCalendarView: View {
     private var weekdayRow: some View {
         HStack(spacing: 0) {
             ForEach(Self.weekdaySymbols(calendar), id: \.self) { day in
-                Text(day).font(.caption.weight(.bold)).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
+                Text(day).font(Theme.sans(13)).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
             }
         }
         .accessibilityHidden(true)
     }
 
     private var grid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                if let date { dayCell(date) } else { Color.clear.frame(height: 48) }
+                if let date { dayCell(date) } else { Color.clear.frame(height: Theme.space7).overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) } }
             }
         }
     }
@@ -69,21 +69,24 @@ struct ReadingCalendarView: View {
         let minutes = Self.minutes(model.readingSeconds, on: date)
         let isSelected = calendar.isDate(date, inSameDayAs: selected)
         let future = date > Date()
+        let today = calendar.isDateInToday(date)
         return Button { selected = date } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: Theme.space1) {
                 Text("\(calendar.component(.day, from: date))")
-                    .font(.subheadline.weight(minutes >= goalMinutes ? .bold : .regular)).monospacedDigit()
-                Rectangle().fill(minutes >= goalMinutes ? Theme.onClay : .clear).frame(width: 12, height: 2)
+                    .font(Theme.sans(15)).monospacedDigit()
+                Rectangle().fill(minutes >= goalMinutes ? Theme.ink : .clear).frame(width: Theme.space3, height: Theme.ruleMedium)
             }
-            .foregroundStyle(minutes >= goalMinutes ? Theme.onAccent : (future ? Theme.ink3.opacity(0.5) : Theme.ink))
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(minutes >= goalMinutes ? Theme.accent : minutes > 0 ? Theme.accentSoft : Theme.surface2.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { if isSelected { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.accent, lineWidth: 2) } }
+            .foregroundStyle(future ? Theme.ink4 : Theme.ink)
+            .frame(maxWidth: .infinity, minHeight: Theme.space7)
+            .background(minutes > 0 ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+            .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+            .overlay { if today { Circle().strokeBorder(Theme.clay, lineWidth: Theme.rule).padding(Theme.space1) } }
+            .overlay { if isSelected { RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.ink2, lineWidth: Theme.rule) } }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(future)
-        .accessibilityLabel(date.formatted(.dateTime.month().day().locale(Locale.app)) + "，\(minutes) 分钟")
+        .accessibilityLabel((today ? "今天，" : "") + date.formatted(.dateTime.month().day().locale(Locale.app)) + "，\(minutes) 分钟")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -91,25 +94,26 @@ struct ReadingCalendarView: View {
         let minutes = Self.minutes(model.readingSeconds, on: selected)
         let sessions = model.visibleSessions.filter { calendar.isDate($0.start, inSameDayAs: selected) }
         let books = Dictionary(grouping: sessions, by: \.title).map { ($0.key, $0.value.reduce(0) { $0 + $1.seconds }) }.sorted { $0.1 > $1.1 }
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: Theme.space2) {
             Text(selected.formatted(.dateTime.month().day().weekday(.wide).locale(Locale.app)))
-                .font(.caption.weight(.bold)).tracking(0.6).foregroundStyle(Theme.accent)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(minutes)").scaledFont(40, weight: .semibold, relativeTo: .largeTitle).monospacedDigit()
+                .font(Theme.sans(13)).tracking(0.6).foregroundStyle(Theme.clayDeep)
+            HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
+                Text("\(minutes)").font(Theme.serif(40, relativeTo: .largeTitle)).monospacedDigit()
                 Text("分钟").font(.subheadline).foregroundStyle(Theme.ink2)
                 Spacer()
-                if minutes >= goalMinutes { Text("达成目标").font(.caption.weight(.bold)).foregroundStyle(Theme.accent) }
+                if minutes >= goalMinutes { Text("达成目标").font(Theme.sans(13)).foregroundStyle(Theme.clayDeep) }
             }
             if books.isEmpty && minutes == 0 {
-                Text("这一天还没有阅读记录。").font(.subheadline).foregroundStyle(Theme.ink2)
+                EmptyState(title: "这一天还没有阅读记录。", detail: "选择一天，看看那天读过的书。")
             }
             ForEach(books, id: \.0) { title, seconds in
-                HStack {
-                    Text(title.isEmpty ? "未命名" : "《\(title)》").font(Theme.serif(15)).lineLimit(1)
-                    Spacer()
-                    Text("\(max(1, Int(seconds / 60))) 分").font(.footnote).monospacedDigit().foregroundStyle(Theme.ink2)
+                HairlineRow {
+                    HStack {
+                        Text(title.isEmpty ? "未命名" : "《\(title)》").font(Theme.serif(17)).lineLimit(1)
+                        Spacer()
+                        Text("\(max(1, Int(seconds / 60))) 分").font(.footnote).monospacedDigit().foregroundStyle(Theme.ink2)
+                    }
                 }
-                .overlay(alignment: .bottom) { RowDivider().offset(y: 6) }
             }
         }
         .foregroundStyle(Theme.ink)
@@ -120,7 +124,7 @@ struct ReadingCalendarView: View {
         let read = monthDays.filter { Self.minutes(model.readingSeconds, on: $0) >= 1 }.count
         let reached = monthDays.filter { Self.minutes(model.readingSeconds, on: $0) >= goalMinutes }.count
         let total = monthDays.reduce(0) { $0 + Self.minutes(model.readingSeconds, on: $1) }
-        return (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(spacing: 20))) {
+        return (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4)) : AnyLayout(HStackLayout(spacing: Theme.space5))) {
             summary("\(read)", "阅读天数")
             summary("\(reached)", "达标天数")
             summary("\(total)", "本月分钟")
@@ -128,10 +132,7 @@ struct ReadingCalendarView: View {
     }
 
     private func summary(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value).scaledFont(26, weight: .semibold, relativeTo: .title2).monospacedDigit().foregroundStyle(Theme.ink)
-            Text(L(label)).font(.caption).foregroundStyle(Theme.ink3)
-        }
+        StatBlock(value: value, label: label)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
     }

@@ -6,61 +6,101 @@ struct StorageView: View {
     @State private var usage: [StorageUsage.Item] = []
     @State private var scanning = false
     @State private var confirmAll = false
+    @State private var confirmKind: StorageUsage.Kind?
 
     var body: some View {
-        Form {
-            EditorialIntro(title: "给书库留出空间", detail: "原书与摘记妥善保留，可重建的缓存单独整理。")
-            Section {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
-                        .scaledFont(34, weight: .semibold, relativeTo: .largeTitle).monospacedDigit()
-                    Spacer()
-                    if scanning { ProgressView("正在统计…").font(.footnote) }
+        SettingsPage(title: "给书库留出空间", detail: "原书与摘记妥善保留，可重建的缓存单独整理。") {
+            SettingsGroup(title: "总占用") {
+                StatBlock(value: StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }), label: "总占用", size: 34)
+                if scanning {
+                    EmptyState(title: "正在统计…", detail: "书库、缓存与临时文件", state: .loading)
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("听页共占用 " + StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }))
-            } header: { Text("总占用") }
-            .listRowBackground(Theme.accentSoft)
-
-            Section {
+                usageBar.padding(.top, Theme.space4)
+            }
+            SettingsGroup(title: "分项", footer: "清理缓存不会删除书籍、进度或书摘；语音缓存清理后，云语音会在下次朗读时重新合成。") {
                 ForEach(usage) { item in
-                    HStack(spacing: 12) {
-                        EditorialRow(title: item.kind.title, detail: item.kind.detail,
-                            value: StorageUsage.format(item.bytes), disclosure: false)
-                        if item.kind.clearable {
-                            Button("清理") { clear(item.kind) }
-                                .frame(minWidth: 44, minHeight: 44)
-                                .buttonStyle(.borderless).foregroundStyle(Theme.accent)
-                                .disabled(item.bytes == 0)
-                                .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
-                        }
+                    HairlineRow(title: item.kind.title, detail: item.kind.detail, value: StorageUsage.format(item.bytes))
+                }
+            }
+            SettingsGroup(footer: "书架上的封面、分类显示不对或书籍消失时，可以修复书库索引；书籍文件本身不会改动。") {
+                HairlineRow(showsDivider: false) {
+                    TextButton("修复书库索引") {
+                        model.clearIndexCache()
+                        model.notify("已重建封面与分类索引。")
+                        rescan()
                     }
-                    .frame(minHeight: 44)
                 }
-            } header: { Text("分项") } footer: { Text("清理缓存不会删除书籍、进度或书摘；语音缓存清理后，云语音会在下次朗读时重新合成。") }
-            .listRowBackground(Theme.surface)
-
-            Section {
-                Button("清理全部缓存") { confirmAll = true }
-                    .accessibilityIdentifier("storage.clearAll")
-                Button("修复书库索引") {
-                    model.clearIndexCache()
-                    model.notify("已重建封面与分类索引。")
-                    rescan()
+            }
+            SettingsGroup(title: "清理缓存") {
+                ForEach(usage.filter { $0.kind.clearable }) { item in
+                    HairlineRow {
+                        Button { confirmKind = item.kind } label: {
+                            HStack {
+                                Text(item.kind.title)
+                                Spacer()
+                                Text("清理").font(Theme.sans(15))
+                            }.foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
+                        }
+                        .disabled(item.bytes == 0)
+                        .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
+                    }
                 }
-            } footer: { Text("书架上的封面、分类显示不对或书籍消失时，可以修复书库索引；书籍文件本身不会改动。") }
-            .listRowBackground(Theme.surface)
+                HairlineRow(showsDivider: false) {
+                    Button("清理全部缓存") { confirmAll = true }
+                        .foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
+                        .accessibilityIdentifier("storage.clearAll")
+                }
+            }
         }
-        .tint(Theme.accent)
-        .foregroundStyle(Theme.ink)
-        .editorialList()
-        .background(Theme.bg)
-        .navigationTitle("空间整理")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("空间整理").navigationBarTitleDisplayMode(.inline)
         .task { rescan() }
         .confirmationDialog("清理全部缓存？", isPresented: $confirmAll, titleVisibility: .visible) {
             Button("清理", role: .destructive) { StorageUsage.Kind.allCases.filter(\.clearable).forEach(clear) }
         } message: { Text("书籍、进度和书摘会保留。") }
+        .confirmationDialog("清理缓存？", isPresented: Binding(get: { confirmKind != nil }, set: { if !$0 { confirmKind = nil } }), titleVisibility: .visible) {
+            Button("清理", role: .destructive) {
+                if let kind = confirmKind { clear(kind) }
+                confirmKind = nil
+            }
+            Button("取消", role: .cancel) { confirmKind = nil }
+        } message: { Text("书籍、进度和书摘会保留。") }
+    }
+
+    private var usageBar: some View {
+        let books = usage.filter { $0.kind == .library || $0.kind == .originals }.reduce(Int64(0)) { $0 + $1.bytes }
+        let cache = usage.filter { $0.kind == .derived || $0.kind == .speech || $0.kind == .covers }.reduce(Int64(0)) { $0 + $1.bytes }
+        let other = usage.filter { $0.kind == .temporary }.reduce(Int64(0)) { $0 + $1.bytes }
+        let total = max(1, books + cache + other)
+        return VStack(alignment: .leading, spacing: Theme.space3) {
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Rectangle().fill(Theme.clay).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
+                    Rectangle().fill(Theme.surface2).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
+                    Rectangle().fill(Theme.line).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
+                }.clipShape(Capsule())
+            }.frame(height: Theme.progressHeight).background(Theme.line, in: Capsule()).accessibilityHidden(true)
+            // Text names and values accompany all three segments; color is never the only key.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Theme.space4) { usageLegend(books: books, cache: cache, other: other) }
+                VStack(alignment: .leading, spacing: Theme.space2) { usageLegend(books: books, cache: cache, other: other) }
+            }
+        }
+    }
+
+    private func usageLegend(books: Int64, cache: Int64, other: Int64) -> some View {
+        Group {
+            legend("书籍 · " + StorageUsage.format(books), color: Theme.clay)
+            legend("缓存 · " + StorageUsage.format(cache), color: Theme.surface2)
+            legend("其他 · " + StorageUsage.format(other), color: Theme.line)
+        }.font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+    }
+
+    private func legend(_ title: String, color: Color) -> some View {
+        HStack(spacing: Theme.space1) {
+            RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(color)
+                .frame(width: Theme.space2, height: Theme.space2).accessibilityHidden(true)
+            Text(title)
+        }
     }
 
     private func rescan() {

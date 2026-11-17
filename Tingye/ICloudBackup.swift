@@ -867,89 +867,70 @@ struct ICloudBackupView: View {
     private var localBookCount: Int { model.entries.filter(\.local).count }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                EditorialIntro(title: "安心保管你的书", detail: "原书、进度与摘记一起备份；阅读进度可独立同步。", eyebrow: "备份与同步")
-                if localBookCount == 0 {
-                    EditorialNotice(title: "还没有本机书籍可备份", detail: "先导入书籍，或从已有备份恢复。")
-                }
-                if model.restoringLibrary {
-                    EditorialNotice(title: "正在恢复书库", detail: "恢复完成前暂时不能修改书库，请保持应用开启。", kind: .working)
-                }
-                if let transfer = model.icloud {
-                    sectionTitle("当前操作")
-                    ICloudTransferCard(transfer: transfer)
-                        .paperPanel(inset: 16)
-                }
-
-                sectionTitle("保存当前书库")
-                HStack(spacing: 12) {
-                    ThemeIcon(symbol: Icon.shelf, size: 24).accessibilityHidden(true)
-                    Text("本机可备份书籍").font(.subheadline.weight(.medium))
-                    Spacer(minLength: 8)
-                    Text("\(localBookCount) 本").font(.subheadline).monospacedDigit().foregroundStyle(Theme.accent)
-                }
-                .foregroundStyle(Theme.ink)
-                .paperPanel(inset: 16)
-                Button("导出整库到文件") {
-                    Task {
-                        do { export = ExportedBook(url: try await model.makeLibraryExportFile()) }
-                        catch { model.message = error.localizedDescription }
+        SettingsPage(title: "安心保管你的书", detail: "原书、进度与摘记一起备份；阅读进度可独立同步。") {
+            if localBookCount == 0 {
+                EmptyState(title: "还没有本机书籍可备份", detail: "先导入书籍，或从已有备份恢复。")
+            }
+            if model.restoringLibrary {
+                EmptyState(title: "正在恢复书库", detail: "恢复完成前暂时不能修改书库，请保持应用开启。", state: .loading)
+            }
+            if let transfer = model.icloud {
+                SettingsGroup(title: "当前操作") { ICloudTransferCard(transfer: transfer) }
+            }
+            SettingsGroup(title: "保存当前书库", footer: "把整库导成一个文件（与 iCloud 备份相同的归档格式），可存到「文件」或发到其他设备留存。") {
+                HairlineRow(title: "本机可备份书籍", value: "\(localBookCount) 本", symbol: Icon.shelf)
+                HairlineRow(showsDivider: false) {
+                    TextButton("导出整库到文件") {
+                        Task {
+                            do { export = ExportedBook(url: try await model.makeLibraryExportFile()) }
+                            catch { model.message = error.localizedDescription }
+                        }
                     }
+                    .disabled(model.busy || localBookCount == 0)
+                    .accessibilityIdentifier("icloud.exportLibrary")
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .disabled(model.busy || localBookCount == 0)
-                .accessibilityIdentifier("icloud.exportLibrary")
-                Text("把整库导成一个文件（与 iCloud 备份相同的归档格式），可存到「文件」或发到其他设备留存。")
-                    .font(.caption).foregroundStyle(Theme.ink2)
-                if let upload = model.backupUpload {
-                    VStack(alignment: .leading, spacing: 8) {
+            }
+            if let upload = model.backupUpload {
+                PaperCard {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
                         ICloudUploadRow(status: upload)
                         if !upload.settled || upload.paused {
                             Button { model.refreshUploadStatus() } label: { Label("刷新上传状态", systemImage: Icon.refresh) }
-                                .frame(minHeight: 44)
+                                .buttonStyle(TextButtonStyle())
                         }
                     }
-                    .paperPanel(inset: 16)
                 }
-
-                sectionTitle("恢复书库")
-                Button("查找并查看最新备份") { model.readLatestICloudBackup() }
-                    .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
-                    .accessibilityIdentifier("icloud.restore")
-                Button("从文件恢复") { importingRestore = true }
-                    .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
-                    .accessibilityIdentifier("icloud.restoreFromFile")
-                Text("先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。从文件恢复可选择此前「导出整库到文件」保存的归档文件，同样先确认再还原。")
-                    .font(.caption).foregroundStyle(Theme.ink2)
-                    .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft.opacity(0.55), in: Rectangle())
-
-                sectionTitle("自动同步")
-                Toggle(isOn: $syncProgress) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("自动同步阅读进度").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                        Text("只同步章节与句子位置，不上传书籍")
-                            .font(.caption).foregroundStyle(Theme.ink2)
-                    }
-                }
-                .tint(Theme.accent).paperPanel(inset: 16)
-                ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
-                if syncProgress {
-                    Button("立即检查进度同步") { model.refreshProgressSync() }
-                        .buttonStyle(SecondaryButtonStyle())
-                        .accessibilityIdentifier("icloud.sync.check")
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("手动备份包含已下载书籍、阅读进度、书签和书摘笔记，每次保存独立副本；不包含语音密钥与阅读统计。")
-                    Text("备份写入后由系统上传，上传完成不代表其他设备已下载。自动同步要求同一 Apple 账号，且两台设备都有相同的书籍；到达时间由系统和网络决定。")
-                }
-                .font(.caption).foregroundStyle(Theme.ink2).padding(.top, 8)
             }
-            .padding(.horizontal, Theme.inset).padding(.top, 12).padding(.bottom, 24)
-            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+            SettingsGroup(title: "恢复书库", footer: "先查看备份日期与书籍数量。确认还原后，会替换对应书籍的内容、进度与书摘，其余书籍保留。从文件恢复可选择此前「导出整库到文件」保存的归档文件，同样先确认再还原。") {
+                HairlineRow {
+                    TextButton("查找并查看最新备份") { model.readLatestICloudBackup() }
+                        .disabled(model.busy).accessibilityIdentifier("icloud.restore")
+                }
+                HairlineRow(showsDivider: false) {
+                    TextButton("从文件恢复") { importingRestore = true }
+                        .disabled(model.busy).accessibilityIdentifier("icloud.restoreFromFile")
+                }
+            }
+            SettingsGroup(title: "自动同步") {
+                HairlineRow(showsDivider: false) {
+                    Toggle(isOn: $syncProgress) {
+                        VStack(alignment: .leading, spacing: Theme.space1) {
+                            Text("自动同步阅读进度").font(Theme.sans(16))
+                            Text("只同步章节与句子位置，不上传书籍").font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        }
+                    }.tint(Theme.clay)
+                }
+            }
+            ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)
+            if syncProgress {
+                SecondaryButton("立即检查进度同步") { model.refreshProgressSync() }
+                    .accessibilityIdentifier("icloud.sync.check")
+            }
+            VStack(alignment: .leading, spacing: Theme.space2) {
+                Text("手动备份包含已下载书籍、阅读进度、书签和书摘笔记，每次保存独立副本；不包含语音密钥与阅读统计。")
+                Text("备份写入后由系统上传，上传完成不代表其他设备已下载。自动同步要求同一 Apple 账号，且两台设备都有相同的书籍；到达时间由系统和网络决定。")
+            }.font(Theme.sans(13)).foregroundStyle(Theme.ink3)
         }
-        .background(Theme.bg)
         .navigationTitle("备份与同步")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -958,7 +939,7 @@ struct ICloudBackupView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(model.busy || localBookCount == 0)
                 .accessibilityIdentifier("icloud.backup")
-                .padding(.horizontal, Theme.inset).padding(.vertical, 12)
+                .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
         }
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
@@ -982,9 +963,6 @@ struct ICloudBackupView: View {
             }
         }
     }
-    private func sectionTitle(_ title: String) -> some View {
-        SectionTitle(text: title).padding(.top, 16)
-    }
 
 }
 
@@ -993,90 +971,83 @@ private struct ICloudTransferCard: View {
     @EnvironmentObject var model: AppModel
     let transfer: ICloudTransfer
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                if transfer.running { ProgressView() }
-                else { Image(systemName: symbol).foregroundStyle(tint).font(.system(size: 18, weight: .semibold)) }
-                Text(transfer.title).font(.headline).fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                if let count = transfer.countText { Text(count).font(.subheadline).monospacedDigit().foregroundStyle(.secondary) }
-            }
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            EmptyState(title: transfer.title, detail: transfer.activity,
+                       state: transfer.stage == .failed ? .error : transfer.running ? .loading : transfer.stage == .done ? .success : .empty,
+                       badge: transfer.countText)
             if let fraction = transfer.fraction, transfer.running {
-                ProgressView(value: fraction).accessibilityLabel(transfer.activity)
+                ProgressLine(value: fraction, track: Theme.line, tint: Theme.ink3, height: Theme.progressHeight).accessibilityLabel(transfer.activity)
             } else if transfer.running {
-                Text("此步骤无法预估进度").font(.caption).foregroundStyle(.secondary)
+                Text("此步骤无法预估进度").font(.caption).foregroundStyle(Theme.ink3)
             }
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Theme.space2) {
                 ForEach(Array(transfer.steps.enumerated()), id: \.offset) { _, stage in
                     let state = stepState(stage)
-                    HStack(spacing: 8) {
-                        Image(systemName: state.symbol).foregroundStyle(state.tint).frame(width: 18)
-                        Text(ICloudTransfer.title(stage, transfer.kind)).font(.subheadline).foregroundStyle(state.pending ? Color.secondary : Theme.ink)
+                    HStack(spacing: Theme.space2) {
+                        ThemeIcon(symbol: state.symbol, size: 18).foregroundStyle(state.tint).frame(width: 18)
+                        Text(ICloudTransfer.title(stage, transfer.kind)).font(.subheadline).foregroundStyle(state.pending ? Theme.ink3 : Theme.ink)
                     }.accessibilityElement(children: .combine)
                 }
             }
             if !transfer.detail.isEmpty {
-                Text(transfer.detail).font(.footnote).foregroundStyle(transfer.stage == .failed ? Theme.danger : Color.secondary)
+                Text(transfer.detail).font(Theme.sans(14)).foregroundStyle(transfer.stage == .failed ? Theme.danger : Theme.ink3)
+                    .padding(Theme.space2).background(transfer.stage == .failed ? Theme.dangerSoft : .clear, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
             }
-            HStack(spacing: 16) {
+            HStack(spacing: Theme.space4) {
                 if transfer.running && transfer.cancellable {
-                    Button("取消本次操作") { model.cancelICloud() }.frame(minHeight: 44)
+                    Button("取消本次操作") { model.cancelICloud() }.frame(minHeight: Theme.iconButtonSize)
                 }
                 if transfer.stage == .failed || transfer.stage == .cancelled {
-                    Button("重新尝试") { model.retryICloud() }.frame(minHeight: 44).disabled(model.busy)
+                    Button("重新尝试") { model.retryICloud() }.frame(minHeight: Theme.iconButtonSize).disabled(model.busy)
                 }
                 if transfer.finished {
-                    Button("收起状态") { model.dismissICloudStatus() }.frame(minHeight: 44).foregroundStyle(Theme.ink2)
+                    Button("收起状态") { model.dismissICloudStatus() }.frame(minHeight: Theme.iconButtonSize).foregroundStyle(Theme.ink2)
                 }
             }
             .buttonStyle(.borderless).font(.subheadline.weight(.medium))
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Theme.space1)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("icloud.transfer")
     }
-    private var symbol: String {
-        switch transfer.stage {
-        case .done: return Icon.selection(true)
-        case .failed: return Icon.transferFailed
-        case .cancelled: return Icon.transferCancelled
-        default: return Icon.help
-        }
-    }
-    private var tint: Color { transfer.stage == .failed ? Theme.danger : transfer.stage == .done ? Theme.ink : .secondary }
     private func stepState(_ stage: ICloudTransfer.Stage) -> (symbol: String, tint: Color, pending: Bool) {
         let steps = transfer.steps
-        guard let index = steps.firstIndex(of: stage) else { return (Icon.markUnread, .secondary, true) }
+        guard let index = steps.firstIndex(of: stage) else { return (Icon.markUnread, Theme.ink3, true) }
         let current = steps.firstIndex(of: transfer.lastActive) ?? (transfer.stage == .confirming ? steps.count : 0)
         if transfer.stage == .done || transfer.stage == .confirming || index < current { return (Icon.selection(true), Theme.ink, false) }
         if index == current {
             switch transfer.stage {
             case .failed: return (Icon.stepFailed, Theme.danger, false)
-            case .cancelled: return (Icon.transferCancelled, .secondary, false)
-            default: return (Icon.stepInProgress, Theme.accent, false)
+            case .cancelled: return (Icon.transferCancelled, Theme.ink3, false)
+            default: return (Icon.stepInProgress, Theme.clayDeep, false)
             }
         }
-        return (Icon.markUnread, .secondary, true)
+        return (Icon.markUnread, Theme.ink3, true)
     }
 }
 
 private struct ICloudUploadRow: View {
     let status: ICloudUploadStatus
+    private var state: EmptyState.State {
+        switch status.state {
+        case .checking, .waiting, .uploading: return status.paused ? .empty : .loading
+        case .uploaded: return .success
+        case .notUbiquitous: return .empty
+        case .failed: return .error
+        }
+    }
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            switch status.state {
-            case .checking, .waiting, .uploading:
-                if status.paused { Image(systemName: Icon.duration).foregroundStyle(.secondary) } else { ProgressView() }
-            case .uploaded: Image(systemName: Icon.cloudSynced).foregroundStyle(Theme.accent)
-            case .notUbiquitous: Image(systemName: Icon.cloudDisconnected).foregroundStyle(.secondary)
-            case .failed: Image(systemName: Icon.cloudError).foregroundStyle(Theme.danger)
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            EmptyState(title: "上传状态", detail: status.text, state: state)
+            if let checked = status.checkedAt {
+                HairlineRow(showsDivider: false) {
+                    Text("查询于 " + checked.formatted(date: .omitted, time: .standard))
+                        .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                }
             }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(status.text).font(.subheadline).fixedSize(horizontal: false, vertical: true)
-                if let checked = status.checkedAt { Text("查询于 " + checked.formatted(date: .omitted, time: .standard)).font(.caption).foregroundStyle(.secondary) }
-            }
-        }.accessibilityElement(children: .combine).accessibilityIdentifier("icloud.upload")
+        }
+        .accessibilityElement(children: .combine).accessibilityIdentifier("icloud.upload")
     }
 }
 
@@ -1086,28 +1057,29 @@ private struct ProgressSyncStatusRows: View {
     let enabled: Bool
     var body: some View {
         let summary = sync.summary(enabled: enabled)
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space3) {
+            HStack(alignment: .top, spacing: Theme.space3) {
                 ThemeIcon(symbol: summary.symbol, size: 24).foregroundStyle(summary.problem ? Theme.danger : Theme.ink).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Theme.space1) {
                     Text("同步状态").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                    Text(summary.title).font(.caption).foregroundStyle(summary.problem ? Theme.danger : Theme.accent)
+                    SealBadge(text: summary.title, color: summary.problem ? Theme.danger : Theme.clayDeep,
+                              background: summary.problem ? Theme.dangerSoft : Theme.claySoft)
                     Text(summary.detail).font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
             }
             .accessibilityElement(children: .combine).accessibilityIdentifier("icloud.sync.status")
             if enabled {
                 DisclosureGroup("同步详情") {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Theme.space3) {
                         row("最近本机提交", sync.lastCommit.map { "\(time($0)) · \(sync.lastCommitCount) 本 · 已交给系统，上传时间由 iCloud 决定" } ?? "本次启动尚未提交")
                         row("最近收到更新", sync.lastReceived.map { received($0) } ?? "本次启动尚未收到其他设备的更新")
                     }
-                    .padding(.top, 8).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .font(.caption).tint(Theme.ink2)
             }
         }
-        .paperPanel(inset: 16)
+        .paperPanel()
     }
     private func received(_ date: Date) -> String {
         var text = "\(time(date)) · \(sync.lastReceivedCount) 条变化"
@@ -1117,8 +1089,8 @@ private struct ProgressSyncStatusRows: View {
     }
     private func time(_ date: Date) -> String { date.formatted(date: Calendar.current.isDateInToday(date) ? .omitted : .abbreviated, time: .shortened) }
     private func row(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(L(title)).font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Theme.space1) {
+            Text(L(title)).font(.caption).foregroundStyle(Theme.ink3)
             Text(L(value)).font(.footnote).fixedSize(horizontal: false, vertical: true)
         }.accessibilityElement(children: .combine)
     }

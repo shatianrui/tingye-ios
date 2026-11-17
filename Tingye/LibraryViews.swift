@@ -552,14 +552,9 @@ struct ProfileView: View {
     private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
     var body: some View {
         settingsList
-            .navigationTitle("")
-            .toolbar(.hidden, for: .navigationBar)
-            .editorialList()
-            .paperBackground()
-            .listStyle(.insetGrouped)
-            .listSectionSpacing(4)
-            .contentMargins(.horizontal, Theme.inset, for: .scrollContent)
-            .contentMargins(.top, 12, for: .scrollContent)
+            .navigationTitle("隐私与关于")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
             .navigationDestination(item: $settingsRoute) { route in
                 settingsDestinationView(route)
                     .toolbar(.visible, for: .navigationBar)
@@ -587,99 +582,49 @@ struct ProfileView: View {
     }
 
     private var settingsList: some View {
-        List {
-            Section {
-                PageMasthead(title: "隐私与关于", subtitle: "更细致的控制，放在这里。")
-                .padding(.top, 12)
-                .listRowInsets(EdgeInsets(top: 0, leading: 2, bottom: 8, trailing: 2))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            }
-            settingsAdditional
-            Section {
-                Button("导出阅读数据", action: exportStats).frame(minHeight: 44)
-            } header: { settingSectionTitle("数据导出") }
-            .listRowBackground(Theme.surface)
-        }
-    }
-
-    private var settingsAdditional: some View {
-        Group {
-            Section {
-                Toggle(isOn: $appLock) {
-                    settingsRow(icon: Icon.lock(appLock), title: "应用锁", subtitle: "打开时使用\(PrivacyLock.biometryName)验证", disclosure: false)
+        SettingsPage(title: "隐私与关于", detail: "更细致的控制，放在这里。") {
+            SettingsGroup(title: "隐私与保护", footer: "隐藏的书只在验证身份后显示，退出 App 后自动重新隐藏。") {
+                HairlineRow {
+                    Toggle(isOn: $appLock) {
+                        EditorialRow(title: "应用锁", detail: "打开时使用\(PrivacyLock.biometryName)验证", symbol: Icon.lock(appLock), disclosure: false)
+                    }.tint(Theme.clay)
                 }
-                .frame(minHeight: 60)
-                .overlay(alignment: .bottom) { RowDivider() }
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
                 Button {
                     if model.hiddenUnlocked { model.hiddenUnlocked = false } else { Task { await model.unlockHidden() } }
                 } label: {
-                    settingsRow(icon: Icon.visibilityAction(currentlyVisible: model.hiddenUnlocked), title: model.hiddenUnlocked ? "重新隐藏私密书籍" : "查看隐藏的书", value: "\(model.entries.filter(\.isHidden).count) 本", disclosure: false)
-                        .frame(minHeight: 56)
-                        .overlay(alignment: .bottom) { RowDivider() }
+                    HairlineRow(title: model.hiddenUnlocked ? "重新隐藏私密书籍" : "查看隐藏的书",
+                                value: "\(model.entries.filter(\.isHidden).count) 本",
+                                symbol: Icon.visibilityAction(currentlyVisible: model.hiddenUnlocked))
                 }
-                .buttonStyle(.plain)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
                 settingsLink(.privacy, icon: Icon.privacy, title: "隐私政策")
-            } header: { settingSectionTitle("隐私与保护") } footer: {
-                Text("隐藏的书只在验证身份后显示，退出 App 后自动重新隐藏。")
-                    .font(.caption).foregroundStyle(Theme.ink3)
             }
-            Section {
-                settingsRow(title: "版本", value: version + " (" + build + ")", disclosure: false)
-                    .frame(minHeight: 56)
-                    .overlay(alignment: .bottom) { RowDivider() }
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                settingsLink(.licenses, icon: Icon.license, color: Theme.ink2, title: "开源组件与字体许可")
-            } header: { settingSectionTitle("关于听页") } footer: {
-                Text("\(model.entries.count) 本书，保存在本机和你的私人 iCloud。无需注册账号。")
-                    .font(.caption).foregroundStyle(Theme.ink3)
+            SettingsGroup(title: "关于听页", footer: "\(model.entries.count) 本书，保存在本机和你的私人 iCloud。无需注册账号。") {
+                HairlineRow {
+                    HStack {
+                        Text("版本").font(Theme.sans(16))
+                        Spacer()
+                        Text(version + " (" + build + ")").font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                    }
+                }
+                settingsLink(.licenses, icon: Icon.license, title: "开源组件与字体许可")
+            }
+            SettingsGroup(title: "数据导出") {
+                HairlineRow(showsDivider: false) { TextButton("导出阅读数据", action: exportStats) }
             }
         }
     }
 
-    private func settingSectionTitle(_ title: String) -> some View {
-        return SectionTitle(text: title, rule: false)
-            .textCase(nil)
-            .padding(.top, 10)
-            .padding(.bottom, 2)
-            .listRowInsets(EdgeInsets())
-    }
-
-    private func settingsLink(_ route: SettingsDestination, icon: String? = nil, color: Color = Theme.accent, title: String, subtitle: String? = nil, value: String? = nil, disclosure: Bool = true) -> some View {
+    private func settingsLink(_ route: SettingsDestination, icon: String, title: String) -> some View {
         Button { settingsRoute = route } label: {
-            settingsRow(icon: icon, color: color, title: title, subtitle: subtitle, value: value, disclosure: disclosure)
-                .padding(.horizontal, 16)
-                .frame(minHeight: subtitle == nil ? 52 : 64)
-                .overlay(alignment: .bottom) { RowDivider() }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-    }
-
-    private func settingsRow(icon: String? = nil, color: Color = Theme.accent, title: String, subtitle: String? = nil, value: String? = nil, disclosure: Bool = true) -> some View {
-        HStack(spacing: 12) {
-            if let icon {
-                SettingsIcon(systemName: icon, color: color)
+            HairlineRow {
+                HStack(spacing: Theme.space3) {
+                    ThemeIcon(symbol: icon, size: 20).foregroundStyle(Theme.ink2)
+                    Text(L(title)).font(Theme.sans(16)).foregroundStyle(Theme.clayDeep)
+                    Spacer()
+                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4)
+                }
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L(title)).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                if let subtitle { Text(L(subtitle)).font(.caption).foregroundStyle(Theme.ink3) }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if let value { Text(L(value)).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
-            if disclosure { ThemeIcon(symbol: Icon.disclosure, size: 16).foregroundStyle(Theme.ink3) }
-        }
+        }.buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -714,17 +659,9 @@ struct AppearanceView: View {
     @AppStorage("app.appearance") private var appearance = "system"
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("让听页，更合你的习惯。")
-                        .scaledFont(23, weight: .semibold, relativeTo: .title2)
-                        .foregroundStyle(Theme.ink)
-                        .accessibilityAddTraits(.isHeader)
-                    Text("纸面的温度，墨色的清晰。选择适合此刻的界面。")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink3)
-                }
-                VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
+                Masthead(title: "让听页，更合你的习惯。", subtitle: "纸面的温度，墨色的清晰。选择适合此刻的界面。", titleSize: 28)
+                VStack(spacing: Theme.space3) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
                     appearanceOption("light", title: "日间", subtitle: "暖象牙纸面、炭色文字与陶土标记")
                     appearanceOption("dark", title: "夜间", subtitle: "柔和炭色背景，安静地读入夜里")
@@ -732,10 +669,10 @@ struct AppearanceView: View {
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)
                     .foregroundStyle(Theme.ink3)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, Theme.space1)
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.vertical, 24)
+            .padding(.vertical, Theme.space5)
             .frame(maxWidth: 600)
             .frame(maxWidth: .infinity)
         }
@@ -750,25 +687,25 @@ struct AppearanceView: View {
             Haptics.selection()
             withAnimation(Theme.pressSpring) { appearance = value }
         } label: {
-            HStack(spacing: 18) {
-                appearancePreview(value)
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(L(title))
-                        .font(.headline)
-                        .foregroundStyle(Theme.ink)
-                    Text(L(subtitle))
-                        .font(.caption)
-                        .foregroundStyle(Theme.ink3)
+            PaperCard {
+                HairlineRow(showsDivider: false) {
+                    HStack(spacing: Theme.space4) {
+                        appearancePreview(value)
+                        VStack(alignment: .leading, spacing: Theme.space2) {
+                            Text(L(title))
+                                .font(.headline)
+                                .foregroundStyle(Theme.ink)
+                            Text(L(subtitle))
+                                .font(.caption)
+                                .foregroundStyle(Theme.ink3)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        ThemeIcon(symbol: Icon.selection(selected), size: 22)
+                            .foregroundStyle(selected ? Theme.ink : Theme.line)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: Icon.selection(selected))
-                    .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(selected ? Theme.accent : Theme.line)
             }
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).fill(Theme.surface))
-            .overlay { if selected { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.accent.opacity(0.45), lineWidth: 1) } }
-            .contentShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radius))
         }
         .buttonStyle(PressButtonStyle(scale: 0.99))
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -777,32 +714,25 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        let background = dark ? Color(hex: 0x201F1C) : Color(hex: 0xF7F4ED)
-        let foreground = dark ? Color(hex: 0xF1EADF) : Color(hex: 0x292724)
-        return VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 3) {
-                Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 4, height: 4)
-                Rectangle().fill(foreground.opacity(0.2)).frame(width: 21, height: 3)
-            }
-            Rectangle().fill(Color(hex: dark ? 0x34312C : 0xFFFFFF)).frame(height: 25)
+        return VStack(alignment: .leading, spacing: Theme.space2) {
+            Rectangle().fill(Theme.ink).frame(width: 40, height: Theme.progressHeight)
+            Rectangle().fill(Theme.surface).frame(height: Theme.space5)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Color(hex: dark ? 0xE9A18A : 0x98432E)).frame(width: 11, height: 15).padding(.leading, 6)
+                    Rectangle().fill(Theme.ink2).frame(width: Theme.space3, height: Theme.space4).padding(.leading, Theme.space2)
                 }
-            Rectangle().fill(foreground.opacity(0.35)).frame(width: 40, height: 3)
-            Rectangle().fill(foreground.opacity(0.18)).frame(height: 3)
-            Rectangle().fill(foreground.opacity(0.18)).frame(width: 32, height: 3)
+            Rectangle().fill(Theme.ink3).frame(width: 40, height: Theme.progressHeight)
+            Rectangle().fill(Theme.line).frame(height: Theme.progressHeight)
         }
-        .padding(11)
-        .frame(width: 74, height: 98)
-        .background(background)
+        .padding(Theme.space3).frame(width: 74, height: 98)
+        .background(Theme.bg)
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Color(hex: 0x201F1C)).frame(width: 30)
-                    .overlay { Image(systemName: Icon.nightBadge).font(.caption).foregroundStyle(Color(hex: 0xF0F0F0)) }
+                Rectangle().fill(Theme.ink).frame(width: 30)
+                    .overlay { ThemeIcon(symbol: Icon.nightBadge, size: 14).foregroundStyle(Theme.bg) }
             }
         }
-        .clipShape(Rectangle())
-        .overlay(Rectangle().strokeBorder(foreground.opacity(0.1), lineWidth: 1))
+        .overlay(Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline))
+        .environment(\.colorScheme, dark ? .dark : .light)
         .accessibilityHidden(true)
     }
 }
@@ -835,13 +765,15 @@ struct FontLicenseView: View {
     ]
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                EditorialIntro(title: "每一份创作，皆有出处", detail: "听页使用的开源组件、图标与字体及其许可。")
+            VStack(alignment: .leading, spacing: Theme.space5) {
+                Masthead(title: "每一份创作，皆有出处", subtitle: "听页使用的开源组件、图标与字体及其许可。", titleSize: 28)
                 SectionTitle(text: "开源组件")
                 ForEach(components, id: \.name) { component in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Link(component.name, destination: URL(string: component.url)!)
-                        Text(component.license).font(.caption).foregroundStyle(Theme.ink2)
+                    HairlineRow {
+                        VStack(alignment: .leading, spacing: Theme.space1) {
+                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(Theme.clayDeep)
+                            Text(component.license).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        }.padding(.vertical, Theme.space2)
                     }
                 }
                 ForEach(["Readium-LICENSE", "Readium-Dependencies-LICENSE", "ZIPFoundation-LICENSE", "SMBClient-LICENSE", "Pow-LICENSE", "Lucide-LICENSE"], id: \.self) { resource in
@@ -849,8 +781,8 @@ struct FontLicenseView: View {
                 }
                 DisclosureGroup("依赖解析中的可选组件与构建工具") {
                     ForEach(resolvedTools, id: \.name) { component in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Link(component.name, destination: URL(string: component.url)!)
+                        VStack(alignment: .leading, spacing: Theme.space1) {
+                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(Theme.clayDeep)
                             Text(component.license).font(.caption).foregroundStyle(Theme.ink2)
                         }
                     }
@@ -858,13 +790,13 @@ struct FontLicenseView: View {
                 SectionTitle(text: "字体")
 
                 ForEach(fonts, id: \.name) { font in
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
                         SectionTitle(text: font.name)
                         Text(license(font.resource))
                             .font(.system(.caption, design: .monospaced))
                             .foregroundStyle(Theme.ink2)
                             .textSelection(.enabled)
-                            .padding(14)
+                            .padding(Theme.space4)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
                     }
@@ -874,8 +806,8 @@ struct FontLicenseView: View {
                     .foregroundStyle(Theme.ink3)
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.vertical, 16)
-            .padding(.bottom, 32)
+            .padding(.vertical, Theme.space4)
+            .padding(.bottom, Theme.space6)
             .frame(maxWidth: Theme.pageWidth)
             .frame(maxWidth: .infinity)
         }
@@ -894,16 +826,16 @@ struct FontLicenseView: View {
 struct PrivacyPolicyView: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                EditorialIntro(title: "你的阅读，属于你", detail: "了解书籍、语音服务、备份与本机隐私保护。")
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                Masthead(title: "你的阅读，属于你", subtitle: "了解书籍、语音服务、备份与本机隐私保护。", titleSize: 28)
                 policy("数据存储", "听页是纯本地应用,没有账号,也不连接听页服务器。书籍、阅读进度与阅读时长保存在本设备。iCloud Drive 备份由你手动触发,包含当前书架的书籍、资源、进度与书签,由 Apple 账号管理。开启「自动同步阅读进度」时,每本书读到的章节与句子序号(及更新时间、由书名、作者、格式与章数生成的匹配摘要)会通过 iCloud 在你的设备间同步,不含书籍内容,可随时关闭;同步时间由系统决定。")
                 policy("阅读统计", "阅读时长按日记录在本设备,仅用于统计图表展示,不会自动上传。")
                 policy("第三方服务", "系统声音完全离线朗读。启用云端朗读(智谱 GLM / MiniMax)时,应用使用你自己的 API Key 直接连接对应服务商,当前句子的文本会发送给服务商以合成语音;API Key 仅保存在本机钥匙串。")
                 policy("数据导出与删除", "你可以在「我」中导出全部阅读统计,或在「iCloud 备份与还原」中管理备份。移除书籍后,本机副本立即删除。")
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.top, 8)
-            .padding(.bottom, 32)
+            .padding(.top, Theme.space2)
+            .padding(.bottom, Theme.space6)
             .frame(maxWidth: Theme.pageWidth)
             .frame(maxWidth: .infinity)
         }
@@ -913,8 +845,8 @@ struct PrivacyPolicyView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     private func policy(_ title: String, _ body: String) -> some View {
-        Card(padding: 16) {
-            VStack(alignment: .leading, spacing: 6) {
+        PaperCard {
+            VStack(alignment: .leading, spacing: Theme.space2) {
                 SectionTitle(text: title)
                 Text(body).font(.subheadline).lineSpacing(4).foregroundStyle(Theme.ink2)
             }

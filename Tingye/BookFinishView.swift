@@ -19,6 +19,7 @@ struct BookFinishView: View {
     var onCloseBook: () -> Void = {}
 
     private struct QuoteCandidate { let text: String; let chapter: Int?; let position: Int? }
+    @FocusState private var writingNote: Bool
     @State private var quotes: [QuoteCandidate] = []
     @State private var quoteIndex = 0
     @State private var finishNote = ""
@@ -52,14 +53,28 @@ struct BookFinishView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    EditorialIntro(title: "一本读完，留一点回响", detail: "回顾这段阅读，也可以把感想写下来。")
+                VStack(alignment: .leading, spacing: Theme.space5) {
+                    Masthead(title: "读完", subtitle: "一本读完，留一点回响", titleSize: 34)
                     header
+                    PaperCard {
+                        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4)) : AnyLayout(HStackLayout(spacing: Theme.space4))) {
+                            StatBlock(value: "\(Int(totalSeconds / 60))", label: "用时 · 分钟")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            StatBlock(value: "\(entry.notes.filter { $0.note != nil }.count)", label: "摘记")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            StatBlock(value: "\(entry.notes.count)", label: "划线")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3)) : AnyLayout(HStackLayout(spacing: Theme.space3))) {
+                        PrimaryButton("回书房") { dismiss(); onCloseBook() }
+                        TextButton("写一句") { writingNote = true }
+                    }
                     quoteCard
                     finishNoteSection
                     nextSection
                 }
-                .padding(.horizontal, Theme.inset).padding(.top, 10).padding(.bottom, 24)
+                .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
                 .frame(maxWidth: 680).frame(maxWidth: .infinity)
             }
             .paperBackground()
@@ -71,12 +86,12 @@ struct BookFinishView: View {
     }
 
     private var header: some View {
-        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 16))) {
+        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4)) : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))) {
             BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 8) {
-                Text("全书读完").font(.caption).foregroundStyle(Theme.accent)
-                Text(entry.title).font(Theme.serifSemibold(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
+            VStack(alignment: .leading, spacing: Theme.space2) {
+                Text("全书读完").font(.caption).foregroundStyle(Theme.clayDeep)
+                Text(entry.title).font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
                 Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(Theme.ink2)
                 Text(statsLine).font(.caption).foregroundStyle(Theme.ink2)
                     .accessibilityIdentifier("finish.statsLine")
@@ -86,23 +101,23 @@ struct BookFinishView: View {
     }
 
     private var quoteCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
                 Text("今日一句").font(.caption2.weight(.medium))
                 Spacer()
                 if quotes.count > 1 {
                     Button { quoteIndex = (quoteIndex + 1) % quotes.count; noteSaved = false } label: {
-                        Text("换一句").font(.caption).frame(minHeight: 44).contentShape(Rectangle())
+                        Text("换一句").font(.caption).frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("finish.quote.next")
                 }
             }
-            Text(quoteText).font(Theme.serifSemibold(20, relativeTo: .title3)).lineSpacing(7)
+            Text(quoteText).font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
-            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 16))) {
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3)) : AnyLayout(HStackLayout(spacing: Theme.space4))) {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
-                    .font(.caption)
+                    .font(.caption).foregroundStyle(Theme.ink3)
                 Spacer()
                 if let quote = currentQuote, let chapter = quote.chapter, let position = quote.position {
                     Button("回到原文") {
@@ -111,31 +126,31 @@ struct BookFinishView: View {
                     }
                 }
                 QuoteShareLink(text: quoteText, title: entry.title, author: entry.author, chapter: quoteChapterLabel) {
-                    HStack(spacing: 6) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享").underline() }
-                        .font(.footnote.weight(.medium)).frame(minHeight: 44).contentShape(Rectangle())
+                    HStack(spacing: Theme.space2) { ThemeIcon(symbol: Icon.share, size: 16); Text("分享") }
+                        .font(.footnote.weight(.medium)).frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("finish.quote.share")
             }
         }
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .foregroundStyle(Theme.onWarm)
+        .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
+        .foregroundStyle(Theme.ink)
     }
 
     private var finishNoteSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.space3) {
             SectionTitle(title: "读完感")
-            TextEditor(text: $finishNote)
+            TextEditor(text: $finishNote).focused($writingNote)
                 .font(.body).scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
-                .padding(8)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: 1) }
+                .padding(Theme.space2)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.lineField, lineWidth: Theme.hairline) }
                 .onChange(of: finishNote) { _, _ in noteSaved = false }
                 .accessibilityLabel("读完感")
             HStack {
                 Button { saveFinishNote() } label: { Text(noteSaved ? "已保存" : "保存读完感") }
-                    .buttonStyle(SecondaryButtonStyle(height: 44))
+                    .buttonStyle(SecondaryButtonStyle(height: Theme.iconButtonSize))
                     .disabled(finishNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasSavedNote)
                     .accessibilityIdentifier("finish.note.save")
                 Spacer()
@@ -147,26 +162,26 @@ struct BookFinishView: View {
     @ViewBuilder
     private var nextSection: some View {
         if let next = nextEntry {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Theme.space3) {
                 SectionTitle(title: "下一本")
-                HStack(spacing: 14) {
+                HStack(spacing: Theme.space4) {
                     BookCoverView(title: next.title, color: next.color, author: next.author, image: model.covers[next.id], width: 56)
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Theme.space1) {
                         Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
                         Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(Theme.ink2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Button { onOpenNext(next) } label: { Text("开始下一本") }
-                    .buttonStyle(PrimaryButtonStyle(height: 50))
+                    .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
                     .accessibilityIdentifier("finish.next.open")
             }
         } else {
-            VStack(alignment: .leading, spacing: 12) {
-                EditorialNotice(title: "这一段阅读告一段落", detail: "书库里还没有待读的书，可以回去挑选或导入下一本。")
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                EmptyState(title: "这一段阅读告一段落", detail: "书库里还没有待读的书，可以回去挑选或导入下一本。")
                 Button { dismiss(); onCloseBook() } label: { Text("回到书库") }
-                    .buttonStyle(SecondaryButtonStyle(height: 50))
+                    .buttonStyle(SecondaryButtonStyle(height: Theme.buttonHeight))
             }
         }
     }

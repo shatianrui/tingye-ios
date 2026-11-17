@@ -8,6 +8,7 @@ import SwiftUI
 struct NotesUnifiedView: View {
     @EnvironmentObject var model: AppModel
     @State private var query = ""
+    @State private var selectedKind: Item.Kind?
     @State private var removingHighlight: Highlight?
     @State private var removingHighlightEntryID: String?
     @State private var removingBookmark: Bookmark?
@@ -57,9 +58,9 @@ struct NotesUnifiedView: View {
 
     private func filteredItems(for entry: ShelfEntry) -> [Item] {
         Self.unifiedItems(for: entry).filter {
-            query.isEmpty
-                || $0.text.localizedCaseInsensitiveContains(query)
-                || ($0.noteText ?? "").localizedCaseInsensitiveContains(query)
+            (selectedKind == nil || $0.kind == selectedKind)
+                && (query.isEmpty || $0.text.localizedCaseInsensitiveContains(query)
+                    || ($0.noteText ?? "").localizedCaseInsensitiveContains(query))
         }
     }
 
@@ -82,13 +83,22 @@ struct NotesUnifiedView: View {
 
     var body: some View {
         List {
-            EditorialIntro(title: "留下的文字", detail: "划线、笔记与书签，按书收好，随时回到原文。")
+            Masthead(title: "留下的文字", subtitle: "划线、笔记与书签，按书收好，随时回到原文。", kicker: "摘记", titleSize: 28)
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.space2) {
+                    Chip(title: "全部", selected: selectedKind == nil) { selectedKind = nil }
+                    ForEach([Item.Kind.highlight, .note, .bookmark], id: \.rawValue) { kind in
+                        Chip(title: kind.rawValue, selected: selectedKind == kind) { selectedKind = kind }
+                    }
+                }
+            }.listRowBackground(Color.clear).listRowSeparator(.hidden)
             if !hasAnyItems {
-                ContentUnavailableView("还没有摘记", systemImage: Icon.highlight, description: Text("长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。"))
+                EmptyState(title: "还没有摘记", detail: "长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。")
                     .listRowBackground(Color.clear)
             }
             if hasAnyItems && books.isEmpty {
-                ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
+                EmptyState(title: "没有匹配的摘记", detail: query.isEmpty ? "试试其他类型。" : "没有找到包含「\(query)」的划线、笔记或书签。").listRowBackground(Color.clear)
             }
             ForEach(books) { group in
                 Section {
@@ -96,18 +106,18 @@ struct NotesUnifiedView: View {
                         row(item, entry: group.entry)
                     }
                 } header: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Theme.space2) {
                         BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 24)
-                        Text(group.entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
-                        SealBadge(text: "\(group.items.count) 条", color: Theme.gold, background: Theme.goldSoft)
+                        Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(Theme.ink).textCase(nil)
+                        SealBadge(text: "\(group.items.count) 条", color: Theme.ink3, background: Theme.surface2)
                         Spacer()
-                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }
+                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.clayDeep).frame(minHeight: Theme.iconButtonSize) }
                             .accessibilityLabel("导出《\(group.entry.title)》摘记")
                     }
                 }
             }
         }
-        .navigationTitle("书摘与笔记")
+        .navigationTitle("书摘与笔记").navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "搜索划线、笔记与书签")
         .editorialList()
         .background(Theme.bg)
@@ -132,62 +142,47 @@ struct NotesUnifiedView: View {
     }
 
     private func row(_ item: Item, entry: ShelfEntry) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button { model.open(entry, target: item.target) } label: {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text(item.kind.rawValue)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Theme.accentSoft, in: Capsule())
-                        Text("第 \(item.chapter + 1) 章").lineLimit(1)
-                        Spacer()
-                        Text(item.date.formatted(date: .abbreviated, time: .omitted))
-                    }
-                    .font(.caption2)
-                    .foregroundStyle(Theme.ink3)
-                    Text(item.text)
-                        .font(Theme.serif(17, relativeTo: .body))
-                        .lineSpacing(6)
-                        .foregroundStyle(Theme.ink)
-                        .lineLimit(5)
-                        .multilineTextAlignment(.leading)
-                        .padding(.leading, 11)
-                        .overlay(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 1.5)
-                                .fill(item.highlight.map { ReaderMark.color($0.color) } ?? Theme.accent)
-                                .frame(width: 2.5)
-                        }
-                    if let noteText = item.noteText {
-                        Text(noteText)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink2)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-                            .padding(.top, 2)
-                    }
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            HStack(spacing: 14) {
+        PaperCard {
+            VStack(alignment: .leading, spacing: Theme.space3) {
                 Button { model.open(entry, target: item.target) } label: {
-                    Label("回到原文", systemImage: Icon.read).frame(minHeight: 44)
-                }
-                Spacer(minLength: 0)
-                Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
-                    Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete).frame(minHeight: 44)
+                    HStack(alignment: .top, spacing: Theme.space3) {
+                        Rectangle().fill(item.kind == .bookmark ? Theme.line : Theme.clay)
+                            .frame(width: item.kind == .bookmark ? Theme.hairline : Theme.progressHeight)
+                        VStack(alignment: .leading, spacing: Theme.space2) {
+                            SealBadge(text: item.kind.rawValue, color: Theme.ink3, background: Theme.surface2)
+                            Text(item.text).font(Theme.serif(17, relativeTo: .body))
+                                .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
+                            if let noteText = item.noteText {
+                                Text(noteText).font(Theme.sans(15)).foregroundStyle(Theme.ink2)
+                                    .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                            }
+                            (Text(entry.title) + Text(" · 第 \(item.chapter + 1) 章 · ")
+                             + Text(item.date.formatted(date: .abbreviated, time: .shortened)).monospacedDigit())
+                                .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading).contentShape(Rectangle())
+                }.buttonStyle(.plain)
+                HairlineRow(showsDivider: false) {
+                    HStack(spacing: Theme.space3) {
+                        Button { model.open(entry, target: item.target) } label: {
+                            Label("回到原文", systemImage: Icon.read).frame(minHeight: Theme.iconButtonSize)
+                        }.foregroundStyle(Theme.clayDeep)
+                        Spacer(minLength: 0)
+                        Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
+                            Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete)
+                                .frame(minHeight: Theme.iconButtonSize)
+                        }.foregroundStyle(Theme.danger)
+                    }
+                    .font(Theme.sans(13)).buttonStyle(.borderless)
                 }
             }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(Theme.accent)
-            .buttonStyle(.borderless)
         }
-        .padding(.vertical, 5)
-        .listRowBackground(Theme.surface)
+        .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space1, trailing: 0))
+        .listRowBackground(Color.clear).listRowSeparator(.hidden)
         .swipeActions(allowsFullSwipe: false) {
             Button(role: .destructive) { beginRemoval(item, entry: entry) } label: { Label("删除", systemImage: Icon.delete) }
         }

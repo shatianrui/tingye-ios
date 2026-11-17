@@ -44,44 +44,70 @@ struct GeneralSettingsView: View {
     }
 
     var body: some View {
-        Form {
-            EditorialIntro(title: "按你的习惯阅读", detail: "启动、语言与交互，只影响这台设备的使用习惯。")
-            Section {
+        SettingsPage(title: "按你的习惯阅读", detail: "启动、语言与交互，只影响这台设备的使用习惯。") {
+            SettingsGroup(footer: "支持简体中文、繁體中文、English、日本語。在系统设置的「听页 › 语言」中切换。") {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                } label: {
-                    HStack { Text("语言"); Spacer(); Text(currentLanguage).foregroundStyle(Theme.ink3) }
-                }
+                } label: { HairlineRow(title: "语言", value: currentLanguage, disclosure: true, showsDivider: false) }
                 .accessibilityIdentifier("general.language")
-            } footer: { Text("支持简体中文、繁體中文、English、日本語。在系统设置的「听页 › 语言」中切换。") }
-            .listRowBackground(Theme.surface)
-            Section {
-                Toggle("启动时自动继续上次阅读", isOn: $resumeOnLaunch)
-                    .accessibilityIdentifier("general.resumeOnLaunch")
-            } header: { Text("首页") } footer: { Text("打开 App 时直接回到最近阅读的那本书与位置。") }
-            .listRowBackground(Theme.surface)
-            Section {
-                Toggle("达成每日目标时提示", isOn: $goalNotice)
-            } header: { Text("阅读目标") } footer: { Text("在 App 内显示提示；后台听书时以通知提醒。") }
-            .listRowBackground(Theme.surface)
-            Section {
-                Picker("默认阅读方式", selection: $comicMode) {
-                    ForEach(ComicPreset.modes, id: \.value) { Text($0.label).tag($0.value) }
+            }
+            SettingsGroup(title: "首页", footer: "打开 App 时直接回到最近阅读的那本书与位置。") {
+                HairlineRow(showsDivider: false) {
+                    Toggle("启动时自动继续上次阅读", isOn: $resumeOnLaunch)
+                        .accessibilityIdentifier("general.resumeOnLaunch")
                 }
-                .accessibilityIdentifier("general.comicMode")
-            } header: { Text("漫画") } footer: { Text("用于还没单独设置过的漫画；在漫画里切换方向只影响那一部。") }
-            .listRowBackground(Theme.surface)
-            Section {
-                Toggle("震动反馈", isOn: $haptics)
-                Toggle("阅读时自动隐藏 Home 指示条", isOn: $hideHomeIndicator)
-                Toggle("阅读与听书时保持屏幕常亮", isOn: $keepAwake)
-            } header: { Text("交互") } footer: { Text("震动反馈只在部分按钮和翻页时出现；屏幕常亮只在阅读与听书页面生效，离开即恢复系统休眠。") }
-            .listRowBackground(Theme.surface)
+            }
+            SettingsGroup(title: "阅读目标", footer: "在 App 内显示提示；后台听书时以通知提醒。") {
+                HairlineRow(showsDivider: false) { Toggle("达成每日目标时提示", isOn: $goalNotice) }
+            }
+            SettingsGroup(title: "漫画", footer: "用于还没单独设置过的漫画；在漫画里切换方向只影响那一部。") {
+                Text("默认阅读方式").font(Theme.sans(15)).padding(.bottom, Theme.space2)
+                SegmentedBar(options: ComicPreset.modes.map(\.value), selection: comicMode,
+                             title: { value in ComicPreset.modes.first { $0.value == value }?.label ?? value },
+                             onSelect: { comicMode = $0 })
+                    .accessibilityIdentifier("general.comicMode")
+            }
+            SettingsGroup(title: "交互", footer: "震动反馈只在部分按钮和翻页时出现；屏幕常亮只在阅读与听书页面生效，离开即恢复系统休眠。") {
+                HairlineRow { Toggle("震动反馈", isOn: $haptics) }
+                HairlineRow { Toggle("阅读时自动隐藏 Home 指示条", isOn: $hideHomeIndicator) }
+                HairlineRow(showsDivider: false) { Toggle("阅读与听书时保持屏幕常亮", isOn: $keepAwake) }
+            }
         }
-        .tint(Theme.accent)
-        .editorialList()
-        .background(Theme.bg)
-        .navigationTitle("通用设置")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("通用设置").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// D 单元设置构图：仅组合 A 单元的 Masthead / PaperCard / HairlineRow。
+struct SettingsPage<Content: View>: View {
+    let title: String
+    var detail: String? = nil
+    @ViewBuilder var content: Content
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
+                Masthead(title: title, subtitle: detail, titleSize: 28)
+                content
+            }
+            .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space5)
+            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+        }
+        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.clay)
+    }
+}
+
+struct SettingsGroup<Content: View>: View {
+    var title: String? = nil
+    var footer: String? = nil
+    @ViewBuilder var content: Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space3) {
+            if let title { SectionHeader(title: title) }
+            PaperCard { VStack(alignment: .leading, spacing: 0) { content } }
+            if let footer {
+                Text(L(footer)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }

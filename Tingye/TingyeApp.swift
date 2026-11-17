@@ -18,11 +18,14 @@ struct TingyeApp: App {
     init() {
         FontLibrary.registerAll()
         let navigation = UINavigationBarAppearance()
-        navigation.configureWithTransparentBackground()
+        navigation.configureWithOpaqueBackground()
+        navigation.backgroundColor = UIColor(Theme.bg)
+        navigation.shadowColor = UIColor(Theme.line)
         navigation.titleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
         navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
         UINavigationBar.appearance().standardAppearance = navigation
         UINavigationBar.appearance().scrollEdgeAppearance = navigation
+        UINavigationBar.appearance().compactAppearance = navigation
     }
     @AppStorage("app.appearance") private var appearanceMode = "system"
     var body: some Scene {
@@ -32,7 +35,8 @@ struct TingyeApp: App {
                 .modifier(UIReviewAppearance())
                 #endif
                 .environmentObject(model)
-                .tint(Theme.accent)
+                .tint(Theme.clayDeep)
+                .paperBackground()
                 .background(WindowAppearance(style: UIUserInterfaceStyle(appearance: appearanceMode)))
                 .onOpenURL { url in
                     model.beginImport([url])
@@ -227,8 +231,7 @@ struct StudyRootView: View {
                             NavigationLink(value: StudyRoute.me) {
                                 Label("我的", systemImage: Icon.profile)
                                     .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, 12).frame(minHeight: 44)
-                                    .background(Theme.surface, in: Capsule())
+                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(PressButtonStyle(scale: 0.92))
@@ -238,7 +241,9 @@ struct StudyRootView: View {
                         .padding(.horizontal, Theme.inset)
                         .background(Theme.bg)
                     }
+                    .toolbarBackground(Theme.bg, for: .navigationBar)
             }
+            .background(Theme.bg)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
             // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
             if !navigationHidden {
@@ -310,7 +315,7 @@ struct StudyRootView: View {
                 RoutedReaderView(book: book)
             }
                 .environmentObject(model)
-                .tint(Theme.accent)
+                .tint(Theme.clayDeep)
         }
         .sheet(isPresented: $model.showingPlayer, onDismiss: {
             model.releaseFileImportPresentation(playerImportToken)
@@ -529,11 +534,14 @@ private struct FeedbackOverlay: ViewModifier {
     @State private var importResultsToken = UUID()
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .top, spacing: 0) {
-            if let notice = model.notice {
+            if let message = model.message {
+                EmptyState(title: "操作未完成", detail: message, state: .error)
+                    .background(Theme.bg)
+            } else if let notice = model.notice {
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: Theme.space2) {
                         Text(L(notice.text)).font(.subheadline).foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Theme.space3)
                         Button { model.notice = nil } label: {
                             ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)
                         }.accessibilityLabel("关闭提示")
@@ -544,17 +552,13 @@ private struct FeedbackOverlay: ViewModifier {
                             .accessibilityIdentifier("import.results")
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Theme.space4)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .background(Theme.surface)
                 .overlay(alignment: .bottom) { RowDivider() }
             } else if model.busy {
-                HStack(spacing: 10) {
-                    ProgressView().tint(Theme.accent)
-                    Text(model.activity).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(12).frame(maxWidth: .infinity).background(Theme.surface)
-                .accessibilityElement(children: .combine)
+                EmptyState(title: model.activity, detail: "", state: .loading)
+                    .background(Theme.bg)
             }
         }
         .onChange(of: showingResults) { _, shown in
@@ -566,7 +570,7 @@ private struct FeedbackOverlay: ViewModifier {
         .sheet(isPresented: $showingResults, onDismiss: {
             model.releaseFileImportPresentation(importResultsToken)
         }) {
-            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent)
+            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.clayDeep)
         }
     }
 }
@@ -606,7 +610,7 @@ extension View {
 struct AirPlayButton: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
         let view = RoutePickerView()
-        view.activeTintColor = UIColor(Theme.accent)
+        view.activeTintColor = UIColor(Theme.clayDeep)
         view.tintColor = UIColor(Theme.ink)
         return view
     }
