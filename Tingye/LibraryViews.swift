@@ -660,11 +660,11 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: "让听页，更合你的习惯。", subtitle: "纸面的温度，墨色的清晰。选择适合此刻的界面。", titleSize: 28)
+                Masthead(title: "让听页，更合你的习惯。", subtitle: "窗边的光，清楚的字。选择适合此刻的界面。", titleSize: 28)
                 VStack(spacing: Theme.space3) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "暖象牙纸面、炭色文字与陶土标记")
-                    appearanceOption("dark", title: "夜间", subtitle: "柔和炭色背景，安静地读入夜里")
+                    appearanceOption("light", title: "日间", subtitle: "冷灰纸面、墨色文字与窗蓝标记")
+                    appearanceOption("dark", title: "夜间", subtitle: "深窗色背景，安静地读入夜里")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)

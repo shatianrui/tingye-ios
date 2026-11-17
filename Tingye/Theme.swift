@@ -2,31 +2,32 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 听页新界面：纸面、墨色与克制陶土。ReaderPaper 和出版物排版独立保留。
+/// 听页界面「临窗」：冷灰底、墨色正文、窗蓝只标记正在发生的事。
+/// 正文七种纸色的底与字独立保留，不跟界面一起变色。
 enum Theme {
-    static let bg = dynamic(0xFAF9F5, 0x131211)
-    static let surface = dynamic(0xFFFFFF, 0x1E1C1A)
-    static let surface2 = dynamic(0xF1EFE7, 0x292724)
-    static let surfaceSunken = dynamic(0xF6F4EC, 0x191715)
-    static let ink = dynamic(0x191817, 0xF5F3EC)
-    static let ink2 = dynamic(0x4A4741, 0xC9C5BA)
-    static let ink3 = dynamic(0x6B6960, 0x9C988E)
-    static let ink4 = dynamic(0xA3A099, 0x6E6B64)
-    static let line = dynamic(0xE6E3D9, 0x2E2C29)
+    static let bg = dynamic(0xF4F6F8, 0x0E1216)
+    static let surface = dynamic(0xFFFFFF, 0x171C22)
+    static let surface2 = dynamic(0xE7ECF2, 0x232A33)
+    static let surfaceSunken = dynamic(0xEEF2F6, 0x12181F)
+    static let ink = dynamic(0x12161C, 0xF3F6F9)
+    static let ink2 = dynamic(0x3A4553, 0xC3CEDA)
+    static let ink3 = dynamic(0x465264, 0xB4C0CE)
+    static let ink4 = dynamic(0x8B95A3, 0x6E7A88)
+    static let line = dynamic(0xC3CCD6, 0x3A4450)
     static let lineField = Color(UIColor { traits in
-        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF5F3EC : 0x191817)
+        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF3F6F9 : 0x12161C)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.16 : 0.14)
     })
-    /// 陶土字与陶土面分开：小字用 accent / clayDeep，实色面用 clay。
-    static let accent = dynamic(0xAC4A26, 0xF0AD88)
+    /// 窗蓝字与窗蓝面分开：小字用 accent / clayDeep，实色面用 clay。
+    static let accent = dynamic(0x163E73, 0xA9C9F2)
     static let clayDeep = accent
-    static let accentSoft = dynamic(0xF7EAE3, 0x3E2A21)
+    static let accentSoft = dynamic(0xE3EDF8, 0x1A2C44)
     static let claySoft = accentSoft
-    static let clay = dynamic(0xD97757, 0xD97757)
-    static let onClay = dynamic(0x16130F, 0x16130F)
+    static let clay = dynamic(0x163E73, 0x8FB6E6)
+    static let onClay = dynamic(0xFFFFFF, 0x0E1622)
     static let focus = clay
-    static let danger = dynamic(0xB23A3A, 0xFF9FAD)
-    static let dangerSoft = dynamic(0xF9ECEC, 0x382122)
+    static let danger = dynamic(0x9B2C3C, 0xF5B3BC)
+    static let dangerSoft = dynamic(0xF4E8EA, 0x3A2428)
 
     // 历史符号保留为 v31 语义别名，不再引入独立色板。
     static let rulePaint = line
@@ -491,12 +492,12 @@ struct SealBadge: View {
 
 // MARK: - 按钮（温润圆角，主次明确）
 
-/// v31 主操作：墨底纸字，随日夜外观自然反转。
+/// 主操作是窗蓝实底。日间用深窗蓝配浅字，夜间用浅窗蓝配深字。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     var height: CGFloat = Theme.buttonHeight
-    var fill: Color = Theme.ink
-    var foreground: Color = Theme.onInk
+    var fill: Color = Theme.accent
+    var foreground: Color = Theme.onAccent
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.sans(15, weight: .medium))
@@ -1197,8 +1198,8 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
         let foreground: UInt32
         let secondary: UInt32
         let isDark: Bool
-        var highlight: UInt32 { isDark ? 0x3E2A21 : 0xF7EAE3 }
-        var accent: UInt32 { isDark ? 0xF0AD88 : 0xAC4A26 }
+        var highlight: UInt32 { isDark ? 0x1A2C44 : 0xE3EDF8 }
+        var accent: UInt32 { isDark ? 0xA9C9F2 : 0x163E73 }
     }
     func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
         let night = darkAppearance && !alwaysLight
@@ -1251,7 +1252,7 @@ struct ReaderPreferences: Equatable {
     var background: Color { kind.color(\.background) }
     var foreground: Color { kind.color(\.foreground) }
     var secondary: Color { kind.color(\.secondary) }
-    /// 竖线与进度用陶土面，跟读铺底取纸面外观对应的 claySoft。
+    /// 竖线与进度用窗蓝面，跟读铺底取纸面外观对应的浅窗蓝。
     var highlightBand: UIColor { UIColor(Theme.clay) }
     var highlight: UIColor {
         let paper = kind
