@@ -1125,7 +1125,7 @@ struct ReaderView: View {
         guard let sentence = highlightRange else { return page }
         let overlap = NSIntersectionRange(sentence, range)
         guard overlap.length > 0 else { return page }
-        // 分页与滚动共用 resolve 的 claySoft，竖线由渲染视图单独绘制。
+        // 分页与滚动共用纸色解析后的跟读浅底。
         return SpeechHighlight.apply(to: page, sentence: NSRange(location: overlap.location - range.location, length: overlap.length), color: prefs.highlight)
     }
     // MARK: 滚动模式的块坐标换算（正文坐标 ↔ 附件增强串坐标；无块时恒等）
@@ -1269,9 +1269,9 @@ struct ReaderView: View {
             existing: existing,
             canExtendBack: value.start > 0,
             canExtendForward: value.end + 1 < sentences.count,
-            tint: prefs.foreground,
+            tint: Theme.ink,
             paper: readerPanelPaper,
-            accent: readerAccent,
+            accent: Theme.clayDeep,
             onMark: { color, style in
                 Haptics.selection()
                 if var item = existing { item.color = color; item.style = style; model.updateHighlight(book.id, item) }
@@ -1387,15 +1387,6 @@ final class CoreTextPageView: UIView {
                 context.setFillColor(color.resolvedColor(with: traitCollection).cgColor)
                 context.fill(CGRect(x: origins[index].x + x, y: origins[index].y - descent - 1, width: width, height: ascent + descent + 2))
             }
-            let spokenRuns = (CTLineGetGlyphRuns(line) as! [CTRun]).filter {
-                (CTRunGetAttributes($0) as NSDictionary)[NSAttributedString.Key.backgroundColor] is UIColor
-            }
-            if !spokenRuns.isEmpty {
-                var ascent: CGFloat = 0, descent: CGFloat = 0
-                CTLineGetTypographicBounds(line, &ascent, &descent, nil)
-                context.setFillColor(UIColor(Theme.clay).cgColor)
-                context.fill(CGRect(x: origins[index].x, y: origins[index].y - descent - 1, width: Theme.ruleMedium, height: ascent + descent + 2))
-            }
         }
         CTFrameDraw(frame, context)
     }
@@ -1498,7 +1489,7 @@ struct ScrollingText: UIViewRepresentable {
     func updateUIView(_ view: ReaderScrollTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        if coordinator.base !== attributed { coordinator.base = attributed; view.attributedText = attributed; view.speechRange = nil; coordinator.highlight = nil; coordinator.marks = []; coordinator.chapterID = ""; coordinator.followOffset = nil }
+        if coordinator.base !== attributed { coordinator.base = attributed; view.attributedText = attributed; coordinator.highlight = nil; coordinator.marks = []; coordinator.chapterID = ""; coordinator.followOffset = nil }
         if coordinator.highlight != highlight || coordinator.marks != marks {
             // 先清掉旧的划线与朗读样式，再按「划线 → 朗读句」的顺序重画，朗读句永远在最上层
             let storage = view.textStorage
@@ -1519,8 +1510,6 @@ struct ScrollingText: UIViewRepresentable {
             }
             if let new = highlight, NSMaxRange(new) <= storage.length { storage.addAttribute(.backgroundColor, value: color, range: new) }
             storage.endEditing(); coordinator.highlight = highlight; coordinator.marks = marks
-            view.speechRange = highlight
-            view.setNeedsDisplay()
         }
         if let followOffset, coordinator.followOffset != followOffset {
             coordinator.followOffset = followOffset
@@ -1564,19 +1553,6 @@ struct ScrollingText: UIViewRepresentable {
 /// Resolve long-document positions only after the view has its final width and
 /// TextKit has laid out the full text. Estimated layout can land hundreds of lines early.
 final class ReaderScrollTextView: UITextView {
-    var speechRange: NSRange?
-    override func draw(_ rect: CGRect) {
-        super.draw(rect)
-        guard let range = speechRange, let start = position(from: beginningOfDocument, offset: range.location),
-              let end = position(from: start, offset: range.length), let textRange = textRange(from: start, to: end),
-              let context = UIGraphicsGetCurrentContext() else { return }
-        UIColor(Theme.clay).setFill()
-        for selection in selectionRects(for: textRange) {
-            let box = selection.rect
-            context.fill(CGRect(x: textContainerInset.left, y: box.minY, width: Theme.ruleMedium, height: box.height))
-        }
-    }
-
     private var requestedOffset: Int?
     private var pendingPosition = false
     private var lastSize = CGSize.zero

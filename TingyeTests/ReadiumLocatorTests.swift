@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 import ReadiumShared
 import ReadiumNavigator
 @testable import Tingye
@@ -182,16 +183,24 @@ final class ReadiumLocatorTests: XCTestCase {
         let batch = try await ReadiumAnnotations.decorations(marks, bridge: bridge, mode: "none")
         XCTAssertTrue(batch.decorations.isEmpty); XCTAssertEqual(batch.unresolved, marks.map(\.id))
     }
-    func testThreeTonesLegacyColorsAndThreeDecorationStyles() async throws {
+    func testFiveColorsLegacyGreenAndThreeDecorationStyles() async throws {
         let bridge = try await LocatorTestSupport.bridge(LocatorTestSupport.book(["选段。"]), self)
-        XCTAssertEqual(ReaderMark.palette.map(\.key), ["clay", "ink", "gray"])
-        // 旧键仍可渲染，只映射外观；传入的标注内容、ID 与定位保持原样。
-        let legacyTones = ["yellow": "clay", "clay": "clay", "pink": "clay",
-                           "blue": "ink", "purple": "ink", "green": "gray"]
-        for (key, tone) in legacyTones { XCTAssertEqual(ReaderMark.toneKey(key), tone) }
-        let colors = ["clay", "ink", "gray", "yellow", "blue", "pink", "purple", "green"]
+        let palette = ["yellow", "clay", "blue", "pink", "purple"]
+        XCTAssertEqual(ReaderMark.palette.map(\.key), palette)
+        let colors: [(key: String, hex: UInt32)] = [
+            ("yellow", 0xD69E3A), ("clay", 0xA34F36), ("blue", 0x4A6FA5),
+            ("pink", 0xC85A53), ("purple", 0x7E629E), ("green", 0x4E8E75),
+            ("ink", 0xD69E3A), ("gray", 0xD69E3A),
+        ]
+        for (key, hex) in colors {
+            XCTAssertEqual(ReaderMark.uiColor(key), UIColor(hex: hex), key)
+            XCTAssertEqual(ReaderMark.newColor(key), palette.contains(key) ? key : "clay", key)
+        }
+        XCTAssertEqual(ReaderMark.uiColor("unknown"), UIColor(hex: 0xD69E3A))
+        XCTAssertEqual(ReaderMark.newColor("unknown"), "clay")
+        XCTAssertEqual(ReaderMark.newColor(nil), "clay")
         for kind in ["background", "underline", "wavy"] {
-            let marks = colors.map { Highlight(chapter: 0, start: 0, end: 0, text: "选段。", color: $0, style: kind) }
+            let marks = colors.map { Highlight(chapter: 0, start: 0, end: 0, text: "选段。", color: $0.key, style: kind) }
             let batch = try await ReadiumAnnotations.decorations(marks, bridge: bridge, mode: "none")
             XCTAssertEqual(batch.decorations.count, 8); XCTAssertTrue(batch.unresolved.isEmpty)
             for (decoration, mark) in zip(batch.decorations, marks) {

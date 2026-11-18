@@ -163,10 +163,7 @@ enum OriginalSpeechHighlight {
             for (const part of segments.reverse()) {
                 const r = document.createRange(); r.setStart(part.node, part.start); r.setEnd(part.node, part.end);
                 const mark = document.createElement('mark'); mark.dataset.tySpeech = 'true';
-                // 陶土跟读带：与原生文字模式共用纸色适配后的高亮，只铺文字底部。
-                // WebKit 对 mark 有默认黄色背景，必须显式清零，否则会透过渐变的透明部分显成荧光黄。
-                mark.style.setProperty('background-image', 'linear-gradient(180deg, rgba(0,0,0,0) 62%, ' + input.color + ' 62%)', 'important');
-                mark.style.setProperty('background-color', 'transparent', 'important');
+                mark.style.setProperty('background', input.color, 'important');
                 mark.style.setProperty('color', 'inherit', 'important'); r.surroundContents(mark);
             }
             // 按字跟随（与纯文本模式一致）：找到本句第 k 个非空白字所在页；跟随时该字进入新页即翻页，
@@ -304,7 +301,6 @@ struct OriginalBookView: UIViewRepresentable {
     /// 由协调器直接订阅，逐字变化不经过 SwiftUI 刷新。
     var spokenSource: CurrentValueSubject<Int?, Never>? = nil
     var follow = true
-    var highlightColor: UIColor = UIColor(Theme.wash)
     var readingPosition = 0
     /// 显式跳转与普通翻页回写区分开，避免每次保存位置又跳回当前句句首。
     var positionRevision = 0
@@ -366,7 +362,8 @@ struct OriginalBookView: UIViewRepresentable {
         view.scrollView.indicatorStyle = preferences.kind.dark ? .white : .default
         let typoKey = "\(preferences.font)-\(Int(preferences.fontSize.rounded()))-\(Int(preferences.lineSpacing.rounded()))-\(Int(preferences.paragraphSpacing.rounded()))-\(preferences.letterSpacing)-\(preferences.indent)-\(preferences.justified)"
         let key = "\(book.id)-\(chapter)-\(color)-\(paperHex)-\(accentHex)-\(typoKey)-\(html.hashValue)-\(css.hashValue)"
-        let highlightKey = "\(key)-\(String(describing: highlight))-\(highlightColor.resolvedColor(with: view.traitCollection).cssHex)"
+        let highlightColor = preferences.highlight.resolvedColor(with: view.traitCollection).cssHex
+        let highlightKey = "\(key)-\(String(describing: highlight))-\(highlightColor)"
         let text = book.chapters.indices.contains(chapter) ? book.chapters[chapter].text : ""
         if coordinator.text != text || coordinator.readingScript.isEmpty { coordinator.readingScript = OriginalReadingPosition.script(text: text) }
         coordinator.subscribe(spokenSource, view: view)
@@ -381,7 +378,7 @@ struct OriginalBookView: UIViewRepresentable {
             return
         }
         coordinator.highlightKey = highlightKey
-        let script = OriginalSpeechHighlight.script(text: text, range: highlight, follow: follow, color: highlightColor.resolvedColor(with: view.traitCollection).cssRgbaHalf, spoken: spoken)
+        let script = OriginalSpeechHighlight.script(text: text, range: highlight, follow: follow, color: highlightColor, spoken: spoken)
         let changed = coordinator.script != script
         coordinator.script = script
         guard coordinator.key != key else {
@@ -612,16 +609,10 @@ final class ResourceSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 }
 
-extension UIColor {
+private extension UIColor {
     var cssHex: String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(format: "#%02x%02x%02x", Int((min(max(r, 0), 1) * 255).rounded()), Int((min(max(g, 0), 1) * 255).rounded()), Int((min(max(b, 0), 1) * 255).rounded()))
-    }
-    /// 柔和跟读底色，与原生分页 / 连续滚动的低饱和高亮一致。
-    var cssRgbaHalf: String {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        getRed(&r, green: &g, blue: &b, alpha: &a)
-        return "rgba(\(Int((min(max(r, 0), 1) * 255).rounded())), \(Int((min(max(g, 0), 1) * 255).rounded())), \(Int((min(max(b, 0), 1) * 255).rounded())), 0.18)"
     }
 }

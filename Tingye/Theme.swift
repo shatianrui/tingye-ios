@@ -1251,8 +1251,7 @@ struct ReaderPreferences: Equatable {
     var background: Color { kind.color(\.background) }
     var foreground: Color { kind.color(\.foreground) }
     var secondary: Color { kind.color(\.secondary) }
-    /// 竖线与进度用陶土面，跟读铺底取纸面外观对应的 claySoft。
-    var highlightBand: UIColor { UIColor(Theme.clay) }
+    /// 跟读浅底取纸面外观对应的 claySoft。
     var highlight: UIColor {
         let paper = kind
         return UIColor { traits in
