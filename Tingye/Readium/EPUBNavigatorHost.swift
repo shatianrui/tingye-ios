@@ -2,6 +2,10 @@ import SwiftUI
 import UIKit
 import ReadiumShared
 import ReadiumNavigator
+#if DEBUG && targetEnvironment(simulator)
+import ObjectiveC
+import WebKit
+#endif
 
 /// UIKit 容器允许报告初始化错误。只在字体文件清单改变时重建 child，并保留 currentLocation。
 struct EPUBNavigatorHost: UIViewControllerRepresentable {
@@ -31,6 +35,9 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
     }
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIViewController(context: Context) -> Container {
+        #if DEBUG && targetEnvironment(simulator)
+        WKWebViewConfiguration.installOfflineEPUBFixtureNavigation()
+        #endif
         let controller = Container()
         context.coordinator.install(in: controller, location: initialLocation)
         return controller
@@ -282,3 +289,33 @@ struct EPUBNavigatorHost: UIViewControllerRepresentable {
         }
     }
 }
+
+#if DEBUG && targetEnvironment(simulator)
+private extension WKWebViewConfiguration {
+    static func installOfflineEPUBFixtureNavigation() {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        guard UIReview.isolated, version.majorVersion == 26, version.minorVersion == 4 else { return }
+        _ = offlineEPUBFixtureNavigation
+    }
+
+    // WebKit 313882: iOS 26.4 waits for AppSSO before dispatching local scheme requests.
+    // Readium owns the WKWebView configuration and registers the handler before creating each view.
+    static let offlineEPUBFixtureNavigation: Void = {
+        let registerSelector = #selector(WKWebViewConfiguration.setURLSchemeHandler(_:forURLScheme:))
+        let fixtureSelector = #selector(WKWebViewConfiguration.tingyeRegisterEPUBFixtureHandler(_:forURLScheme:))
+        guard let register = class_getInstanceMethod(WKWebViewConfiguration.self, registerSelector),
+              let fixtureRegister = class_getInstanceMethod(WKWebViewConfiguration.self, fixtureSelector)
+        else { return }
+        method_exchangeImplementations(register, fixtureRegister)
+    }()
+
+    @objc dynamic func tingyeRegisterEPUBFixtureHandler(_ handler: (any WKURLSchemeHandler)?, forURLScheme scheme: String) {
+        // Dispatches to WebKit's original registration after the exchange.
+        tingyeRegisterEPUBFixtureHandler(handler, forURLScheme: scheme)
+        let setter = NSSelectorFromString("_setExtensibleSSOEnabled:")
+        if handler != nil, preferences.responds(to: setter) {
+            preferences.setValue(false, forKey: "extensibleSSOEnabled")
+        }
+    }
+}
+#endif
