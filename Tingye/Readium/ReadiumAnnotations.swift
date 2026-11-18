@@ -9,7 +9,6 @@ enum ReadiumAnnotations {
     static let speechGroup = "tingye.tts"
     static let searchGroup = "tingye.search"
     static let wavy: Decoration.Style.Id = "tingye.wavy"
-    static let speech: Decoration.Style.Id = "tingye.speech"
     enum SelectionAction: Equatable { case highlight, bookmark, note }
     struct Batch {
         var decorations: [Decoration] = []
@@ -25,12 +24,6 @@ enum ReadiumAnnotations {
     }
     static func templates() -> [Decoration.Style.Id: HTMLDecorationTemplate] {
         var templates = HTMLDecorationTemplate.defaultTemplates(alpha: 0.28)
-        templates[speech] = HTMLDecorationTemplate(layout: .boxes, element: { decoration in
-            let color = (decoration.style.config as? Decoration.Style.HighlightConfig)?.tint ?? UIColor(Theme.claySoft)
-            return "<div class=\"ty-speech\" style=\"background:\(color.cssHex)\"/>"
-        }, stylesheet: """
-        .ty-speech { box-sizing:border-box;border-left:2px solid #D97757; }
-        """)
         templates[wavy] = HTMLDecorationTemplate(layout: .boxes, element: { decoration in
             let config = decoration.style.config as? Decoration.Style.HighlightConfig
             let color = config?.tint ?? ReaderMark.uiColor("yellow")

@@ -203,11 +203,7 @@ struct ReadiumReaderView: View {
                             fontFamily: ReadiumFontProvider.family(for: font, files: fonts),
                             fontLineHeight: ReadiumFontProvider.lineHeight(for: font, size: fontSize, files: fonts)),
                         palette: palette, fonts: fonts, request: request, decorations: decorations,
-                        speechDecorations: speechDecorations.map {
-                            Decoration(id: $0.id, locator: $0.locator,
-                                       style: .init(id: ReadiumAnnotations.speech,
-                                                    config: Decoration.Style.HighlightConfig(tint: UIColor(hex: palette.highlight), isActive: false)))
-                        }, searchDecorations: searchDecorations,
+                        speechDecorations: speechDecorations, searchDecorations: searchDecorations,
                         onSelection: selection, onDecoration: activateDecoration,
                         onLocation: locationChanged,
                         onVisibleEnd: noteVisibleEnd,

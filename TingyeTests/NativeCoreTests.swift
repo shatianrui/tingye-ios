@@ -1307,6 +1307,13 @@ final class ProgressAndBackupTests: XCTestCase {
         XCTAssertEqual(first as? Int, 3)
         let highlighted = try await web.evaluateJavaScript("Array.from(document.querySelectorAll('mark[data-ty-speech]')).map(m=>m.textContent).join('')", in: nil, contentWorld: .defaultClient)
         XCTAssertEqual(highlighted as? String, "春风📖。")
+        let hasSolidBackground = try await web.evaluateJavaScript("""
+            Array.from(document.querySelectorAll('mark[data-ty-speech]')).every(mark => {
+                const style = getComputedStyle(mark);
+                return style.backgroundColor === 'rgb(220, 232, 225)' && style.backgroundImage === 'none';
+            })
+            """, in: nil, contentWorld: .defaultClient)
+        XCTAssertEqual(hasSolidBackground as? Bool, true)
         _ = try await web.evaluateJavaScript(OriginalSpeechHighlight.script(text: chapter.text, range: sentences[2].range, follow: false, color: "#35504a"), in: nil, contentWorld: .defaultClient)
         let repeated = try await web.evaluateJavaScript("document.querySelectorAll('p')[1].querySelector('mark').textContent", in: nil, contentWorld: .defaultClient)
         XCTAssertEqual(repeated as? String, "归来。")
@@ -2521,8 +2528,7 @@ extension NativeCoreTests {
                 for paper in ReaderPaper.allCases {
                     let preferences = ReaderPreferences(paper: paper.rawValue)
                     let darkPaper = paper.dark || (style == .dark && !alwaysLight)
-                    XCTAssertEqual(preferences.highlightBand.resolvedColor(with: traits), UIColor(hex: style == .dark ? 0x8FB6E6 : 0x163E73),
-                                   "\(paper.rawValue) 的跟读竖线应为窗蓝")
+
                     let highlight = preferences.highlight.resolvedColor(with: traits)
                     XCTAssertEqual(highlight, UIColor(hex: darkPaper ? 0x1A2C44 : 0xE3EDF8),
                                    "\(paper.rawValue) 的跟读底应随纸面解析浅窗蓝")

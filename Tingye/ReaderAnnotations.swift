@@ -21,24 +21,16 @@ struct ReaderMark: Equatable {
     var kind: String
 
     static let palette: [(key: String, name: String, hex: UInt32)] = [
-        ("clay", "陶土", 0xD97757), ("ink", "墨", 0x191817), ("gray", "灰", 0x6B6960),
+        ("yellow", "琥珀", 0xD69E3A), ("clay", "陶土", 0xA34F36), ("blue", "蓝", 0x4A6FA5), ("pink", "粉", 0xC85A53), ("purple", "紫", 0x7E629E),
     ]
-    /// 仅映射显示，不改写旧标注的存储键或坐标。
-    static func toneKey(_ key: String) -> String {
-        switch key {
-        case "ink", "blue", "purple": return "ink"
-        case "gray", "green": return "gray"
-        default: return "clay"
-        }
-    }
+    // 旧标注的颜色是用户内容；仅新建标注的调色盘移除绿色。
     static func uiColor(_ key: String) -> UIColor {
-        switch toneKey(key) {
-        case "ink": return UIColor(Theme.ink)
-        case "gray": return UIColor(Theme.ink3)
-        default: return UIColor(Theme.clay)
-        }
+        if key == "green" { return UIColor(hex: 0x4E8E75) }
+        return UIColor(hex: palette.first { $0.key == key }?.hex ?? 0xD69E3A)
     }
-    static func newColor(_ stored: String?) -> String { toneKey(stored ?? "clay") }
+    static func newColor(_ stored: String?) -> String {
+        palette.contains { $0.key == stored } ? (stored ?? "clay") : "clay"
+    }
     static func color(_ key: String) -> Color { Color(uiColor: uiColor(key)) }
 
     var style: Style { Style(color: kind == "selection" ? UIColor(Theme.accent) : Self.uiColor(color), kind: kind) }
@@ -218,36 +210,41 @@ struct SelectionPanel: View {
 
     private var markTools: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: Theme.space1) {
+            HStack(spacing: 4) {
                 ForEach(ReaderMark.palette, id: \.key) { item in
                     Button {
                         chosenColor = item.key
                         lastColor = item.key
                     } label: {
-                        VStack(spacing: Theme.space1) {
-                            ZStack {
-                                if item.key == "clay" { Circle().fill(ReaderMark.color(item.key)) }
-                                else if item.key == "ink" { RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(ReaderMark.color(item.key)) }
-                                else { Capsule().strokeBorder(ReaderMark.color(item.key), lineWidth: Theme.ruleMedium) }
-                                if ReaderMark.toneKey(chosenColor) == item.key {
-                                    ThemeIcon(symbol: Icon.checkmark, size: 13)
-                                        .foregroundStyle(item.key == "clay" ? Theme.onClay : (item.key == "ink" ? Theme.bg : Theme.ink))
-                                }
-                            }
-                            .frame(width: Theme.space5, height: Theme.space5)
+                        VStack(spacing: 4) {
+                            Circle().fill(Color(uiColor: UIColor(hex: item.hex)))
+                                .frame(width: 24, height: 24)
+                                .overlay { if chosenColor == item.key { Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold)).foregroundStyle(.white) } }
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(ReaderMark.toneKey(chosenColor) == item.key ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
-                    .accessibilityAddTraits(ReaderMark.toneKey(chosenColor) == item.key ? .isSelected : [])
+                    .accessibilityAddTraits(chosenColor == item.key ? .isSelected : [])
                 }
             }
-            SegmentedBar(options: ["background", "underline", "wavy"], selection: chosenStyle,
-                         title: { ["background": "浅底", "underline": "直线", "wavy": "波浪线"][$0] ?? $0 },
-                         onSelect: { chosenStyle = $0; lastStyle = $0 })
+            HStack(spacing: 6) {
+                ForEach([("background", "浅底", Icon.highlight), ("underline", "直线", Icon.underlineStyle), ("wavy", "波浪线", Icon.wavyStyle)], id: \.0) { style, title, icon in
+                    Button {
+                        chosenStyle = style
+                        lastStyle = style
+                    } label: {
+                        Label(title, systemImage: icon).font(.caption.weight(.medium))
+                            .foregroundStyle(chosenStyle == style ? accent : tint)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
+                }
+            }
             action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, chosenStyle) }, prominent: true)
             if existing != nil {
                 Button("删除这条标注…") { removing = true }
