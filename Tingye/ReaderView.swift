@@ -794,9 +794,8 @@ struct ReaderView: View {
         return "第 \(chapter + 1) / \(chapters.count) 章"
     }
 
-    /// 底部菜单栏（构建 136 重做）：滑杆区与动作排合并为一块贴边全宽的实心面板——
-    /// 背景自顶边发丝线连续覆盖到屏幕底边（含安全区），内部只留一条发丝线，不再有两张卡之间的缝。
-    /// 内容仍居中限宽 760，与顶栏同宽口径；面板底色沿用 chrome 浮层的 readerPanelPaper。
+    /// 底部工具面板保持贴边全宽。进度、动作和朗读控制共用 16 点水平留白，
+    /// 宽屏内容居中限宽，辅助字号下的按钮仍可在面板内完整滚动显示。
     private func chapterBar(bottomInset: CGFloat) -> some View {
         VStack(spacing: Theme.space2) {
             IndexRule()
@@ -830,7 +829,7 @@ struct ReaderView: View {
             }
             Color.clear.frame(height: bottomInset)
         }
-        .padding(.horizontal, Theme.space3).padding(.top, Theme.space2)
+        .padding(.horizontal, Theme.space4).padding(.top, Theme.space2)
         .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         .background(IndexTheme.surface)
         .foregroundStyle(IndexTheme.ink)

@@ -1,6 +1,6 @@
 # 页签实施状态
 
-工作基线为 `56c3b79d71378c5d792f0db56097968bbf3fba48`（构建 148），分支 `redesign/full-product-20261121`。当前 **59/59 项均已核对生产路径**，其中 **54 项应用界面已实施结构迁移**，**5 项已实施应用周边呈现，系统或路由内部为 N/A**。目前为未提交工作区及 Linux 静态检查，59 项均待 macOS 与设备验收。完整范围见 [覆盖矩阵](COVERAGE.md)。以下第一、第二里程碑为当时的证据记录，以末尾的当前矩阵为准。
+工作基线为 `56c3b79d71378c5d792f0db56097968bbf3fba48`（构建 148），分支 `redesign/full-product-20261121`。当前 **59/59 项均已核对生产路径**，其中 **54 项应用界面已实施结构迁移**，**5 项已实施应用周边呈现，系统或路由内部为 N/A**。首轮 macOS Actions 已对 `9df50d8` 完成编译和测试，单元 186 项通过，UI 33 项中 1 项失败。对应布局修订已在本地实施，待新 SHA 复跑及设备验收。完整范围见 [覆盖矩阵](COVERAGE.md)。以下第一、第二里程碑为当时的证据记录，以末尾的当前矩阵为准。
 
 ## 第一里程碑 · 共享组件与书库
 
@@ -93,6 +93,14 @@
 
 只读比对协调方清单与当前工作区。20 个缺失文件均为 `Design/v21-swiss/icon/out/`（13）、`Design/v23-time/icon/out/`（4）、`Design/v31-anthropic/app-icon/out/`（3）的历史输出。HEAD 是普通 PNG。沿 PBXGroup 和打包资源反查生产引用，并核对应用/构建源码与真实 AppIcon 资产，20 个文件均不进入 App 或测试资源。排除项仅为这 20 条。本轮对它们没有恢复、覆盖、暂存或提交。生产 AppIcon 目录字节与 148 一致。
 
+### 首轮 macOS Actions 与 R05 修订
+
+Tests run `44929297226` 的 Unit 和 UI Checkout 日志均记录 `9df50d887093a7a66bca3fc1a27dff98971c2033`。两项均编译成功。Unit 执行 186 项、0 失败。UI 在 iPhone 17 Pro（iOS 26.4.1）模拟器执行 33 项、1 失败，日志未见跳过。摘记导航、取消移除、坏 PDF 返回三个新增 UI 用例均通过。
+
+唯一失败为 `testLargestTypeReaderToolsCanScrollWithoutLosingBackButton`，`TingyeUITests/DesignFlowTests.swift:813`。该断言检查工具按钮可点击、整体进入滚动视口且高度至少 44 点后，要求其左侧框线距屏幕左缘至少 16 点。UI 日志在检查第一个按钮 `reader.contents` 时记录实测 12 点。原生文字/PDF 共用的 `ReaderView.chapterBar` 在页签迁移后使用 `Theme.space3`，实际为 12 点。本地将这个面板的内容内边距改用现有 `Theme.space4`（16 点），保留全宽实底、工具滚动与所有测试断言。
+
+本次修订通过 `git diff --check`、`git diff --cached --check`、`python3 scripts/verify-swift-sources.py`（56 个成员）、`PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_release_provenance.py -v`（7 项）和 `PYTHONDONTWRITEBYTECODE=1 python3 docs/redesign-20261121/verify-local.py`。新布局待在修订 SHA 上执行原 UI 用例和全套测试，确认最大字号下四个按钮的完整框线及返回按钮可达。独立的真机验收仍待开展。
+
 ### Apple 平台后续验收
 
 用经审查提交的同一实施 SHA 先做 macOS 编译，再执行现有单元和 UI Actions，两类测试和来源守卫都保留。覆盖 iOS 17 和当前系统，以及小屏/横屏、深浅/高对比、最大字号、减少动态效果及透明度、VoiceOver、键盘和四语长串。导入要真机走本机、iCloud Drive 和第三方提供方的选中、取消、重新选择、作用域与结果弹层。既有「选文件后无响应」仍缺复现和根因或修复证据。
@@ -128,7 +136,7 @@
 | R02 原生分页、滚动及文内媒体 | 结构已实施。原生覆盖工具与插图目录的加载/失败已实施；原生正文视口、分页和媒体渲染保持。 `Tingye/ReaderView.swift` `ReaderView/NativeTypesetter/ScrollingText/ReaderMediaPage`。 | 已静态复核。原生正文、CoreText/UIKit 区段比对。 | 待验证。单/双页、连续滚动、图表文字、放大字号、位置不动。 |
 | R03 原页 PDFKit | 结构已实施。PDF 共用章页工具，PDFKit 无可用页时提供退出与修复指引。 `Tingye/ReaderView.swift` `ReaderDocument/PDFReader`。 | 已静态复核。核对原 PDFKit 页变更、背景及缩放操作，新增坏 PDF 返回用例。 | 待验证。损坏文件、扫描 PDF 与可提取文字 PDF；缩放、页位和纯图片页。 |
 | R04 Readium EPUB 加载与导航 | 结构已实施。Readium 的打开中、失败重试及顶部返回有专门呈现。 `Tingye/Readium/ReadiumReaderView.swift` `open/locationChanged`、`EPUBNavigatorHost.swift`、`PublicationStore.swift`（同目录）。 | 已静态复核。发布物会话、导航器回调及定位区段比对。 | 待验证。原 EPUB、派生 EPUB、内链、错误及未定位恢复。 |
-| R05 原生/PDF 工具栏、更多及自动翻页子面板 | 结构已实施。原生/PDF 顶栏、章页选择、更多及自动翻页按任务分层。 `Tingye/ReaderView.swift` `chapterBar/moreMenu/morePanelRows`。 | 已静态复核。原工具 ID、标签、popover 关闭与动作检查。 | 待验证。44 点触控、横屏/大字、定时/停止及弹层切换。 |
+| R05 原生/PDF 工具栏、更多及自动翻页子面板 | 结构已实施。原生/PDF 顶栏、章页选择、更多及自动翻页按任务分层。 `Tingye/ReaderView.swift` `chapterBar/moreMenu/morePanelRows`。 | 已静态复核。面板内容恢复 16 点水平边距，测试及原工具 ID 保留。 | `9df50d8` 最大字号左边距实测 12 点失败，待修订 SHA 复测。44 点触控、横屏、定时/停止及弹层切换仍需设备验收。 |
 | R06 原生目录 sheet | 结构已实施。目录、书签、插图、笔记各有段落和状态。 `Tingye/ReaderView.swift` `ContentsView/ChapterScrubber`。 | 已静态复核。章页跳转、监听状态和书签删除调用核对。 | 待验证。大图加载/失败、实时朗读状态、书签移除和位置。 |
 | R07 EPUB 目录、书签与摘记 sheet | 结构已实施。EPUB 各索引页分段，保留原目录深度、摘记与未定位提示。 `Tingye/Readium/ReadiumReaderView.swift` `contentsView`。 | 已静态复核。原 Locator 目标和目录回退分支核对。 | 待验证。原书层级、关闭及书签删除/标注跳转。 |
 | R08 书内搜索 | 结构已实施。搜索入口、等待、无命中、片段和数量提示。 `Tingye/ReaderView.swift` `ContentsView/ReaderSearch`，`Tingye/Readium/ReadiumReaderView.swift` `showSearch/jumpTo`。 | 已静态复核。UTF-16 偏移、异步取消、200 条上限及 UI 标识核对。 | 待验证。同章重复命中、大小字键盘、取消后旧任务、Readium 可见命中。 |
