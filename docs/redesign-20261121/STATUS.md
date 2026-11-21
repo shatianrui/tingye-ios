@@ -1,6 +1,6 @@
 # 页签实施状态
 
-工作基线为 `56c3b79d71378c5d792f0db56097968bbf3fba48`（构建 148），分支 `redesign/full-product-20261121`。当前 **59/59 项均已核对生产路径**，其中 **54 项应用界面已实施结构迁移**，**5 项已实施应用周边呈现，系统或路由内部为 N/A**。第二轮 macOS Actions 在 `cbbe25c` 上编译成功，单元 186 项通过，UI 33 项中 1 项失败。原生阅读器最大字号边距回归已通过，派生 EPUB 冒烟用例的新失败已定位到首个可用页面位置确认前，根因及设备验收仍待确认。完整范围见 [覆盖矩阵](COVERAGE.md)。以下第一、第二里程碑为当时的证据记录，以末尾的当前矩阵为准。
+工作基线为 `56c3b79d71378c5d792f0db56097968bbf3fba48`（构建 148），分支 `redesign/full-product-20261121`。当前 **59/59 项均已核对生产路径**，其中 **54 项应用界面已实施结构迁移**，**5 项已实施应用周边呈现，系统或路由内部为 N/A**。第二轮 macOS Actions 在 `cbbe25c` 上编译成功，单元 186 项通过，UI 33 项中 1 项失败。原生阅读器最大字号边距回归已通过，派生 EPUB 冒烟用例的新失败已定位到首个可用页面位置确认前，修订后的同源码单用例诊断已通过一次，根因及完整套件、设备验收仍待确认。完整范围见 [覆盖矩阵](COVERAGE.md)。以下第一、第二里程碑为当时的证据记录，以末尾的当前矩阵为准。
 
 ## 第一里程碑 · 共享组件与书库
 
@@ -114,6 +114,14 @@ Tests run `44931620062` 的两份实际 Checkout 日志均记录 `cbbe25c8060635
 
 派生 EPUB 单用例诊断已接入现有 `tests.yml` 的显式手动模式，默认完整 Unit/UI job 保留。首次诊断 `44935673186` 已通过 SHA 和环境检查，随后 Xcode 26.6 在运行测试前拒绝 `-test-iterations 1`，以 64 退出，原用例启动 0 次。该次没有执行 EPUB 复现实验。脚本已移除此参数，保留默认单次执行及成功时启动次数等于 1 的检查。协调方推送修订后可执行 `gh workflow run tests.yml --ref redesign/full-product-20261121 -f diagnostic_mode=epub-derived-once`。诊断配置 SHA 与被测 `cbbe25c` 分别记录；单次诊断不构成完整测试结果。YAML、Bash、Python 及六种事件/输入分流已静态核对，两个原 job 的新增条件以外逐字一致。工作区原守卫报告本次获准的 `.github` 差异。固定 `cbbe25c` 源码的基线边界断言经 Git 对象只读比对通过。精确环境和证据口径见 [派生 EPUB 单用例取证](EPUB-DIAGNOSTIC.md)。
 
+### 修订后的派生 EPUB 单用例结果
+
+Run `44936246544` 实际使用配置 SHA `51df34e97321b3e11cb2275646688f3a8761b25c` 和干净的应用/测试 SHA `cbbe25c8060635199995dae7cbdea461806578da`。arm64 runner 镜像 `20261117.0516.1`，Xcode 26.6（17F113），iPhone 17 Pro、iOS 26.4.1（23E254a）。首次诊断的 64 退出和 0 个用例仍计作启动参数错误。修订后的单次诊断退出 0，原用例启动 1 次、通过 1 项、失败 0、跳过 0，耗时 107.520 秒。完整 Unit/UI 未执行，第二轮整套测试的 1 个 UI 失败仍保留。
+
+成功路径中，PID 14682 的 WebKit 页面约 18:46:01.37 UTC 发出首个请求，WebContent 14750、14757 的首批本地资源任务于 18:46:05.56–05.89 走通，随后两个主 frame 于 18:46:13.58–13.94 加载完成。18:46:15.47 从无障碍树看到目录，18:46:15.67 的快照记录首章分页标记。测试随后通过网页正文、目录、搜索结果、排版及返回书库检查。过滤日志仅见一条 SSO 偏好读取，未检出 `tryAuthorize` 或 AppSSO 查询。整套失败没有可比的 WebKit 时间线。单跑通过支持间歇性表现，未证明根因或修复。新模拟器、禁用并行及无前序用例是本次诊断的区别。
+
+前置服务列表和结束截图采集均超时。后置服务状态、回查日志、结果摘要和附件导出命令成功，附件 manifest 为空。详细时间线和证据限制见 [派生 EPUB 单用例取证](EPUB-DIAGNOSTIC.md)。完整套件和真机验收仍待完成。
+
 ### Apple 平台后续验收
 
 用经审查提交的同一实施 SHA 先做 macOS 编译，再执行现有单元和 UI Actions，两类测试和来源守卫都保留。覆盖 iOS 17 和当前系统，以及小屏/横屏、深浅/高对比、最大字号、减少动态效果及透明度、VoiceOver、键盘和四语长串。导入要真机走本机、iCloud Drive 和第三方提供方的选中、取消、重新选择、作用域与结果弹层。既有「选文件后无响应」仍缺复现和根因或修复证据。
@@ -148,7 +156,7 @@ Tests run `44931620062` 的两份实际 Checkout 日志均记录 `cbbe25c8060635
 | R01 格式路由及全屏 | 周边已实施。全屏入口周边、加载/失败和返回路径已实施。格式路由内部为 N/A。 `Tingye/TingyeApp.swift` 根 cover、`Tingye/Readium/ReaderRouter.swift`。 | 已静态复核。ReaderRouter、AppModel 和根呈现门闩比对。 | 待验证。EPUB、原生文字、PDF、漫画各从多种入口打开及保存返回。 |
 | R02 原生分页、滚动及文内媒体 | 结构已实施。原生覆盖工具与插图目录的加载/失败已实施；原生正文视口、分页和媒体渲染保持。 `Tingye/ReaderView.swift` `ReaderView/NativeTypesetter/ScrollingText/ReaderMediaPage`。 | 已静态复核。原生正文、CoreText/UIKit 区段比对。 | 待验证。单/双页、连续滚动、图表文字、放大字号、位置不动。 |
 | R03 原页 PDFKit | 结构已实施。PDF 共用章页工具，PDFKit 无可用页时提供退出与修复指引。 `Tingye/ReaderView.swift` `ReaderDocument/PDFReader`。 | 已静态复核。核对原 PDFKit 页变更、背景及缩放操作，新增坏 PDF 返回用例。 | 待验证。损坏文件、扫描 PDF 与可提取文字 PDF；缩放、页位和纯图片页。 |
-| R04 Readium EPUB 加载与导航 | 结构已实施。Readium 的打开中、失败重试及顶部返回有专门呈现。 `Tingye/Readium/ReadiumReaderView.swift` `open/locationChanged`、`EPUBNavigatorHost.swift`、`PublicationStore.swift`（同目录）。 | 已静态复核。发布物会话、导航器回调及定位区段比对。 | 第二轮派生 EPUB 在首个可用位置确认前超时，根因待取证。原书、派生书、内链和失败恢复仍需设备验收。 |
+| R04 Readium EPUB 加载与导航 | 结构已实施。Readium 的打开中、失败重试及顶部返回有专门呈现。 `Tingye/Readium/ReadiumReaderView.swift` `open/locationChanged`、`EPUBNavigatorHost.swift`、`PublicationStore.swift`（同目录）。 | 已静态复核。发布物会话、导航器回调及定位区段比对。 | 第二轮派生 EPUB 在首个可用位置确认前超时。同源码单用例之后通过一次，根因仍待确认。原书、派生书、内链和失败恢复仍需设备验收。 |
 | R05 原生/PDF 工具栏、更多及自动翻页子面板 | 结构已实施。原生/PDF 顶栏、章页选择、更多及自动翻页按任务分层。 `Tingye/ReaderView.swift` `chapterBar/moreMenu/morePanelRows`。 | 已静态复核。面板内容恢复 16 点水平边距，测试及原工具 ID 保留。 | `cbbe25c` 最大字号滚动、边距及返回用例已通过。44 点触控、横屏、定时/停止及弹层切换仍需设备验收。 |
 | R06 原生目录 sheet | 结构已实施。目录、书签、插图、笔记各有段落和状态。 `Tingye/ReaderView.swift` `ContentsView/ChapterScrubber`。 | 已静态复核。章页跳转、监听状态和书签删除调用核对。 | 待验证。大图加载/失败、实时朗读状态、书签移除和位置。 |
 | R07 EPUB 目录、书签与摘记 sheet | 结构已实施。EPUB 各索引页分段，保留原目录深度、摘记与未定位提示。 `Tingye/Readium/ReadiumReaderView.swift` `contentsView`。 | 已静态复核。原 Locator 目标和目录回退分支核对。 | 第二轮冒烟未到目录断言，另外四个 Readium 用例通过。原书层级、关闭及书签/标注跳转待设备验收。 |
