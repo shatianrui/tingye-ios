@@ -1,6 +1,6 @@
 # 派生 EPUB 单用例取证
 
-复现 run `44931620062` 的 EPUB 首次加载失败。保留原用例 `TingyeUITests/DesignFlowTests/testEPUBDerivedFixtureSmokeAndSearch`、原样本及 XCTest 等待条件。一次调用、一次迭代，禁用 Xcode 并行克隆以便用同一模拟器 UDID 关联日志。失败退出码原样传给 Actions，诊断附件始终尝试上传。
+复现 run `44931620062` 的 EPUB 首次加载失败。保留原用例 `TingyeUITests/DesignFlowTests/testEPUBDerivedFixtureSmokeAndSearch`、原样本及 XCTest 等待条件。一次调用 `xcodebuild test`，沿用默认单次执行，禁用并行克隆以便用同一模拟器 UDID 关联日志。失败退出码原样传给 Actions，诊断附件始终尝试上传。
 
 ## 执行
 
@@ -13,6 +13,12 @@ gh workflow run tests.yml --ref redesign/full-product-20261121 -f diagnostic_mod
 Actions 有两次独立 checkout。`GITHUB_SHA` 与诊断配置 HEAD 对应。实际编译、运行的源码 HEAD 固定为 `cbbe25c8060635199995dae7cbdea461806578da`，脚本在执行前验证 SHA 和干净状态。`provenance.json`、`source-sha256.json` 和 `test-command.json` 用来核对配置 SHA、源码 SHA、关键文件和命令。Actions 手动重跑的 attempt 2 及以上在启动测试前退出。诊断结果不代表完整 Unit/UI 来源证明。
 
 失败运行的 Checkout 和 Xcode 日志给出 Xcode 26.6（17F113）、Apple Silicon、iPhone 17 Pro。xcresult 的 `operatingSystemVersionWithBuildNumber` 是 iOS `26.4.1 (23E254a)`。脚本从 `simctl list runtimes -j` 和设备类型 JSON 获取实际标识符，用版本和构建号精确匹配。若 SDK 只显示主次版本，还要求该 runtime 的 SystemVersion.plist 确认修订版本。缺少匹配项时退出并保留已获取的环境证据。脚本不安装 runtime。Actions 记录当次镜像元数据，托管镜像修订可能与历史运行不同。
+
+## 首次诊断启动结果
+
+Run `44935673186` 核对通过配置 `0fe158b`、应用/测试源码 `cbbe25c` 和精确 Xcode、模拟器环境。Xcode 26.6 在测试开始前拒绝 `-test-iterations 1`，报错 `Must specify -test-iterations with more than 1 iteration.`，退出码 64，原用例启动 0 次。该结果只记录诊断命令的参数错误，没有复现 EPUB 故障。
+
+修订移除了这两个参数，沿用 `xcodebuild test` 的默认单次执行。原 `-only-testing` 选择及成功时原用例启动次数必须等于 1 的检查保留。修订后的诊断尚待派发一次。
 
 ## 证据读取
 

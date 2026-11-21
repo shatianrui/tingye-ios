@@ -195,7 +195,7 @@ def main(source, out):
         command = [
             "xcodebuild", "test", "-project", "Tingye.xcodeproj", "-scheme", "Tingye",
             "-destination", f"platform=iOS Simulator,id={udid}",
-            "-parallel-testing-enabled", "NO", "-test-iterations", "1",
+            "-parallel-testing-enabled", "NO",
             f"-only-testing:{TEST}", "-derivedDataPath", str(out.parent / f"tingye-derived-{udid}"),
             "-resultBundlePath", str(bundle),
         ]

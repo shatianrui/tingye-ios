@@ -112,7 +112,7 @@ Tests run `44931620062` 的两份实际 Checkout 日志均记录 `cbbe25c8060635
 
 本轮只更新此文档。本地重新通过 diff 空白与暂存检查、Swift target 成员检查、7 项发布来源守卫用例及 `verify-local.py`。Linux 没有 Apple SDK 或 Xcode，未新跑本机 Swift 编译或模拟器。历史守卫的旧基线结论仍见上文。
 
-派生 EPUB 单用例诊断已接入现有 `tests.yml` 的显式手动模式，默认完整 Unit/UI job 保留。配置尚未派发。协调方推送配置后可执行 `gh workflow run tests.yml --ref redesign/full-product-20261121 -f diagnostic_mode=epub-derived-once`。诊断配置 SHA 与被测 `cbbe25c` 分别记录；单次诊断不构成完整测试结果。YAML、Bash、Python 及六种事件/输入分流已静态核对，两个原 job 的新增条件以外逐字一致。工作区原守卫报告本次获准的 `.github` 差异。固定 `cbbe25c` 源码的基线边界断言经 Git 对象只读比对通过。精确环境和证据口径见 [派生 EPUB 单用例取证](EPUB-DIAGNOSTIC.md)。
+派生 EPUB 单用例诊断已接入现有 `tests.yml` 的显式手动模式，默认完整 Unit/UI job 保留。首次诊断 `44935673186` 已通过 SHA 和环境检查，随后 Xcode 26.6 在运行测试前拒绝 `-test-iterations 1`，以 64 退出，原用例启动 0 次。该次没有执行 EPUB 复现实验。脚本已移除此参数，保留默认单次执行及成功时启动次数等于 1 的检查。协调方推送修订后可执行 `gh workflow run tests.yml --ref redesign/full-product-20261121 -f diagnostic_mode=epub-derived-once`。诊断配置 SHA 与被测 `cbbe25c` 分别记录；单次诊断不构成完整测试结果。YAML、Bash、Python 及六种事件/输入分流已静态核对，两个原 job 的新增条件以外逐字一致。工作区原守卫报告本次获准的 `.github` 差异。固定 `cbbe25c` 源码的基线边界断言经 Git 对象只读比对通过。精确环境和证据口径见 [派生 EPUB 单用例取证](EPUB-DIAGNOSTIC.md)。
 
 ### Apple 平台后续验收
 
