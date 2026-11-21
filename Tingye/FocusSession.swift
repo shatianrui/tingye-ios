@@ -172,24 +172,20 @@ struct FocusStartView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Theme.space5) {
-                    Masthead(title: "给这一页一点时间", subtitle: bookTitle, kicker: "专注阅读", titleSize: 28)
-                    switch store.phase {
-                    case .finished:
-                        FocusSummaryView(store: store, entry: entry, onContinue: { dismiss() }, onCloseBook: { dismiss(); onCloseBook() })
-                    case .running where store.bookID == bookID:
-                        runningSection
-                    case .running:
-                        otherBookSection
-                    case .idle:
-                        startSection
-                    }
+            IndexPage {
+                IndexHeading(title: Text("专注阅读"), detail: Text(verbatim: bookTitle), large: true)
+                switch store.phase {
+                case .finished:
+                    FocusSummaryView(store: store, entry: entry, onContinue: { dismiss() }, onCloseBook: { dismiss(); onCloseBook() })
+                case .running where store.bookID == bookID:
+                    runningSection
+                case .running:
+                    otherBookSection
+                case .idle:
+                    startSection
                 }
-                .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
-                .frame(maxWidth: 680).frame(maxWidth: .infinity)
             }
-            .paperBackground()
+            .tint(IndexTheme.accent)
             .navigationTitle("专注阅读")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
@@ -203,35 +199,35 @@ struct FocusStartView: View {
 
     private var startSection: some View {
         VStack(alignment: .leading, spacing: Theme.space5) {
-            timerFace(seconds: Double(effectiveMinutes * 60), progress: 0)
             VStack(alignment: .leading, spacing: Theme.space2) {
-                Text(bookTitle).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink3)
+                Text(bookTitle).font(IndexTheme.editorial(20, relativeTo: .title3)).foregroundStyle(IndexTheme.muted)
                 Text(chapterTitle.isEmpty ? "第 \(chapter + 1) 章" : "第 \(chapter + 1) 章 · \(chapterTitle)")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).foregroundStyle(IndexTheme.muted)
             }
-            SectionTitle(title: "专注时长")
-            SegmentedBar(options: [0, 1, 2], selection: mode,
-                         title: { ["25 分钟", "45 分钟", "自定义"][$0] }, onSelect: { mode = $0 })
+            IndexHeading(title: Text("专注时长"))
+            IndexScopePicker(options: [0, 1, 2], selection: mode,
+                         title: { Text(L(["25 分钟", "45 分钟", "自定义"][$0])) }, onSelect: { mode = $0 })
             if mode == 2 {
                 Stepper(value: $customMinutes, in: 10...90, step: 5) {
-                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).foregroundStyle(Theme.ink)
+                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).foregroundStyle(IndexTheme.ink)
                 }
             }
             Text("专注期间照常计入阅读统计，不会重复计。")
-                .font(.caption).foregroundStyle(Theme.ink2)
-            ClayButton("开始专注") {
+                .font(.caption).foregroundStyle(IndexTheme.muted)
+            Button("开始专注") {
                 Haptics.light()
                 savedTarget = effectiveMinutes
                 store.start(bookID: bookID, chapter: chapter, highlights: entry?.notes.count ?? 0, targetMinutes: effectiveMinutes)
                 dismiss()
             }
+            .buttonStyle(IndexActionStyle(role: .primary, expands: true))
             .accessibilityIdentifier("focus.start")
         }
     }
 
     private var runningSection: some View {
         VStack(alignment: .leading, spacing: Theme.space5) {
-            Label("正在专注", systemImage: Icon.sleepTimer).font(.headline).foregroundStyle(Theme.clayDeep)
+            Label("正在专注", systemImage: Icon.sleepTimer).font(.headline).foregroundStyle(IndexTheme.accent)
             TimelineView(.periodic(from: .now, by: 15)) { context in
                 timerFace(seconds: store.remaining(at: context.date),
                           progress: 1 - store.remaining(at: context.date) / Double(max(1, store.targetMinutes) * 60))
@@ -239,53 +235,46 @@ struct FocusStartView: View {
                     .onChange(of: context.date) { _, _ in store.completeIfDue(currentChapter: chapter) }
             }
             Text("目标 \(store.targetMinutes) 分钟 · 从第 \(store.chapterAtStart + 1) 章开始")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(IndexTheme.muted)
             Button {
                 store.finish(currentChapter: chapter)
             } label: { Text("结束专注") }
-            .buttonStyle(SecondaryButtonStyle())
+            .buttonStyle(IndexActionStyle(role: .secondary, expands: true))
             .accessibilityIdentifier("focus.finish")
             Button { store.abandon(); dismiss() } label: {
                 Text("放弃这次专注").frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
             }
-            .buttonStyle(.plain).font(.caption).foregroundStyle(Theme.ink2)
+            .buttonStyle(.plain).font(.caption).foregroundStyle(IndexTheme.muted)
         }
     }
 
     private var otherBookSection: some View {
         VStack(alignment: .leading, spacing: Theme.space5) {
-            EmptyState(title: "正在专注另一本书", detail: "结束或放弃上一场专注后，就可以为这本书开始新的会话。")
-            Text("一次只开一个专注会话。结束它之后，才能为这本书开始新的专注。")
-                .font(.subheadline).foregroundStyle(Theme.ink2)
+            IndexStatus(kind: .empty, title: Text("正在专注另一本书"), detail: Text("结束或放弃上一场专注后，就可以为这本书开始新的会话。"))
             Button { store.finish(currentChapter: store.chapterAtEnd) } label: { Text("结束那次专注") }
-                .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
+                .buttonStyle(IndexActionStyle(role: .primary, expands: true))
             Button { store.abandon(); } label: {
                 Text("放弃那次专注").frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
             }
-            .buttonStyle(.plain).font(.caption).foregroundStyle(Theme.ink2)
+            .buttonStyle(.plain).font(.caption).foregroundStyle(IndexTheme.muted)
         }
     }
 
     /// The existing store has no pause state. This face only presents elapsed progress.
     private func timerFace(seconds: Double, progress: Double) -> some View {
-        ZStack {
-            Circle().stroke(Theme.line, lineWidth: Theme.progressHeight)
-            Circle().trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(Theme.clay.opacity(0.18), style: StrokeStyle(lineWidth: Theme.progressHeight, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            Text(StatsView.clock(seconds)).font(Theme.serif(54, relativeTo: .largeTitle))
-                .monospacedDigit().foregroundStyle(Theme.ink)
-                .padding(Theme.space5).minimumScaleFactor(0.6).lineLimit(1)
+        VStack(alignment: .leading, spacing: Theme.space3) {
+            IndexMetric(value: Text(verbatim: StatsView.clock(seconds)), label: Text("剩余时间"), large: true)
+            ProgressView(value: min(1, max(0, progress))).tint(IndexTheme.accent)
+                .accessibilityHidden(true)
         }
-        // Diagram diameter, not container spacing; scales down on compact devices.
-        .frame(maxWidth: Theme.space7 * 6).aspectRatio(1, contentMode: .fit)
-        .frame(maxWidth: .infinity).padding(.vertical, Theme.space3)
+        .padding(Theme.space4)
+        .indexPanel(fill: IndexTheme.wash)
     }
 
     private func remainingLabel(at date: Date) -> String {
         let seconds = store.remaining(at: date)
-        if seconds <= 60 { return "还剩不足 1 分钟" }
-        return "还剩 \(Int(ceil(seconds / 60))) 分钟"
+        if seconds <= 60 { return L("还剩不足 1 分钟") }
+        return String(format: L("还剩 %lld 分钟"), Int(ceil(seconds / 60)))
     }
 }
 
@@ -300,8 +289,8 @@ struct FocusSummaryView: View {
 
     private var minutesText: String {
         let seconds = store.sessionSeconds
-        if seconds < 60 { return "不足 1 分钟" }
-        return "\(Int(seconds / 60)) 分钟"
+        if seconds < 60 { return L("不足 1 分钟") }
+        return String(format: L("%lld 分钟"), Int(seconds / 60))
     }
     private var newHighlights: Int? {
         guard let entry else { return nil }
@@ -313,30 +302,27 @@ struct FocusSummaryView: View {
         if let latest = entry?.notes.max(by: { $0.date < $1.date }), !latest.text.isEmpty { return latest.text }
         if let book = model.selectedBook, book.id == entry?.id,
            let quote = DailyQuote.pick(from: book, seed: Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0) { return quote.text }
-        return "把日子过慢一点，让喜欢的文字多停留一会儿。"
+        return L("把日子过慢一点，让喜欢的文字多停留一会儿。")
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.space5) {
-            VStack(alignment: .leading, spacing: Theme.space2) {
-                Label("专注完成", systemImage: Icon.checkmark).font(.headline).foregroundStyle(Theme.clayDeep)
-                Text(minutesText).font(Theme.serif(54, relativeTo: .largeTitle)).monospacedDigit().foregroundStyle(Theme.ink)
-                Text("读到第 \(store.chapterAtEnd + 1) 章" + (newHighlights.map { " · 新增 \($0) 条摘记" } ?? ""))
-                    .font(.caption).foregroundStyle(Theme.ink2)
+        VStack(alignment: .leading, spacing: Theme.space4) {
+            SettingsGroup(title: "专注完成") {
+                IndexMetric(value: Text(verbatim: minutesText), label: Text("专注时长"), large: true)
+                Text("读到第 \(store.chapterAtEnd + 1) 章").font(.subheadline)
+                if let newHighlights {
+                    Text("新增 \(newHighlights) 条摘记").font(.caption).foregroundStyle(IndexTheme.muted)
+                }
             }
-            VStack(alignment: .leading, spacing: Theme.space3) {
-                Text("今日一句").font(.caption2.weight(.medium))
-                Text(quoteText).font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
-                    .fixedSize(horizontal: false, vertical: true)
+            SettingsGroup(title: "今日一句") {
+                Text(verbatim: quoteText).font(IndexTheme.editorial(20, relativeTo: .title3)).lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true).padding(.vertical, Theme.space2)
             }
-            .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
-            .foregroundStyle(Theme.ink)
-            Button { store.dismissSummary(); onContinue() } label: { Text("继续读") }
-                .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
+            Button("继续读") { store.dismissSummary(); onContinue() }
+                .buttonStyle(IndexActionStyle(role: .primary, expands: true))
                 .accessibilityIdentifier("focus.summary.continue")
-            Button { store.dismissSummary(); onCloseBook() } label: { Text("合上书") }
-                .buttonStyle(SecondaryButtonStyle(height: Theme.buttonHeight))
+            Button("合上书") { store.dismissSummary(); onCloseBook() }
+                .buttonStyle(IndexActionStyle(role: .secondary, expands: true))
                 .accessibilityIdentifier("focus.summary.closeBook")
         }
     }

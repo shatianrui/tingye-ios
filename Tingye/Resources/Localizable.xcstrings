@@ -1,6 +1,3142 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "《%@》 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "『%@』 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "《%@》 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "《%@》 · %@" } }
+      }
+    },
+    "确定": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "OK" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "OK" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "确定" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "確定" } }
+      }
+    },
+    "听页 · 书籍保存在本机": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tingye · Books are stored on this device" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "聴頁 · 本は端末に保存されます" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听页 · 书籍保存在本机" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽頁 · 書籍儲存在本機" } }
+      }
+    },
+    "共读 %lld 天 · %lld 分钟 · %lld 条摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld days · %lld min · %lld notes and highlights" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 日 · %lld 分 · メモとハイライト %lld 件" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "共读 %lld 天 · %lld 分钟 · %lld 条摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "共讀 %lld 天 · %lld 分鐘 · %lld 條摘記" } }
+      }
+    },
+    "没有可定位的原文时，读完感仍按书保存在本机。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "When no passage is available to link, the reflection is still saved locally for this book." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "関連付ける本文がない場合も、読了メモは本ごとに端末に保存されます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有可定位的原文时，读完感仍按书保存在本机。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有可定位的原文時，讀完感仍會按書儲存在本機。" } }
+      }
+    },
+    "听页是纯本地应用,没有账号,也不连接听页服务器。书籍、阅读进度与阅读时长保存在本设备。iCloud Drive 备份由你手动触发,包含当前书架的书籍、资源、进度与书签,由 Apple 账号管理。开启「自动同步阅读进度」时,每本书读到的章节与句子序号(及更新时间、由书名、作者、格式与章数生成的匹配摘要)会通过 iCloud 在你的设备间同步,不含书籍内容,可随时关闭;同步时间由系统决定。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tingye stores books, reading positions and reading time on this device. It has no accounts or Tingye server connection. You manually start iCloud Drive backups of your library’s books, resources, positions and bookmarks. Your Apple Account manages these backups. When automatic reading progress sync is on, iCloud shares the current chapter and sentence, the update time and a matching summary based on the title, author, format and chapter count. It does not sync the book contents. You can turn it off at any time, and the system determines when sync occurs." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "聴頁は本、読書位置、読書時間を端末に保存します。専用アカウントや聴頁のサーバーへの接続はありません。iCloud Drive バックアップは手動で開始し、本棚の本、付属データ、位置、しおりを Apple Account で管理します。読書進捗の自動同期を有効にすると、現在の章と文番号、更新時刻、書名・著者・形式・章数に基づく照合情報が iCloud で同期されます。本の内容は同期されません。いつでも無効にでき、同期のタイミングはシステムが決定します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听页是纯本地应用,没有账号,也不连接听页服务器。书籍、阅读进度与阅读时长保存在本设备。iCloud Drive 备份由你手动触发,包含当前书架的书籍、资源、进度与书签,由 Apple 账号管理。开启「自动同步阅读进度」时,每本书读到的章节与句子序号(及更新时间、由书名、作者、格式与章数生成的匹配摘要)会通过 iCloud 在你的设备间同步,不含书籍内容,可随时关闭;同步时间由系统决定。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽頁將書籍、閱讀進度及閱讀時長儲存在本機，無須帳號，也不連線到聽頁伺服器。你可手動啟動 iCloud Drive 備份，包含目前書庫的書籍、資源、進度與書籤，由 Apple 帳號管理。啟用「自動同步閱讀進度」後，目前章節、句子序號、更新時間及依書名、作者、格式與章數產生的比對摘要會經 iCloud 同步。不會同步書籍內容，可隨時關閉，同步時間由系統決定。" } }
+      }
+    },
+    "暂时无法读取摘句": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t load a quote" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一節を読み込めませんでした" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂时无法读取摘句" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "暫時無法讀取摘句" } }
+      }
+    },
+    "这本书暂无可分享的摘句": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No shareable quote in this book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この本に共有できる一節がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这本书暂无可分享的摘句" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "這本書暫無可分享的摘句" } }
+      }
+    },
+    "《%@》第 %lld 章 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ · Chapter %lld · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "『%@』第 %lld 章 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "《%@》第 %lld 章 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "《%@》第 %lld 章 · %@" } }
+      }
+    },
+    "今天，%@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Today, %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今日、%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "今天，%@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "今天，%@" } }
+      }
+    },
+    "%lld 分钟，达成目标": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld minutes, goal reached" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 分、目標達成" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 分钟，达成目标" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 分鐘，達成目標" } }
+      }
+    },
+    "章节最大字数 %lld": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Maximum characters per chapter: %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "章の最大文字数：%lld" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "章节最大字数 %lld" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "章節最大字數 %lld" } }
+      }
+    },
+    "选择音色": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose a voice" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "音声を選ぶ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择音色" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇音色" } }
+      }
+    },
+    "查询于 %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Checked at %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%@ に確認" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查询于 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "查詢於 %@" } }
+      }
+    },
+    "%lld / %lld 本": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld of %lld books" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld / %lld 冊" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld / %lld 本" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld / %lld 本" } }
+      }
+    },
+    "%@ · %lld 本 · 已交给系统，上传时间由 iCloud 决定": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ · %lld books handed to iCloud for upload" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%@ · %lld 冊を iCloud に渡しました。アップロード時刻は iCloud が決定します" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ · %lld 本 · 已交给系统，上传时间由 iCloud 决定" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%@ · %lld 本 · 已交給系統，上傳時間由 iCloud 決定" } }
+      }
+    },
+    "%@ · %lld 条变化": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ · %lld changes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%@ · %lld 件の変更" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ · %lld 条变化" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%@ · %lld 條變更" } }
+      }
+    },
+    "已应用 %lld 本": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Applied to %lld books" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 冊に適用" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已应用 %lld 本" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已套用至 %lld 本" } }
+      }
+    },
+    "%lld 本正在阅读或朗读，保留本机位置": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Kept local positions for %lld books being read or played" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書中または読み上げ中の %lld 冊は端末の位置を保持" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 本正在阅读或朗读，保留本机位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 本正在閱讀或朗讀，保留本機位置" } }
+      }
+    },
+    "%lld / %lld 页 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Page %lld of %lld · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld / %lld ページ · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld / %lld 页 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld / %lld 頁 · %@" } }
+      }
+    },
+    "%lld 分后停": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stops in %lld min" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 分後に停止" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 分后停" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 分鐘後停止" } }
+      }
+    },
+    "%lld 小时": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld hr" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 時間" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 小时" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 小時" } }
+      }
+    },
+    "%lld 小时 %lld 分": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld hr %lld min" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 時間 %lld 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 小时 %lld 分" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 小時 %lld 分" } }
+      }
+    },
+    "25 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "25 minutes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "25 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "25 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "25 分鐘" } }
+      }
+    },
+    "45 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "45 minutes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "45 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "45 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "45 分鐘" } }
+      }
+    },
+    "EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "EPUB uses standard page turns. Chinese conversion affects display only. Notes keep their original locations." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "EPUB は標準のページめくりを使います。簡体字・繁体字の変換は表示のみに適用され、メモは原文の位置を保持します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "EPUB 使用標準翻頁。簡繁轉換只影響顯示，摘記會保留原文位置。" } }
+      }
+    },
+    "GLM / MiniMax / Azure / ElevenLabs / 自定义": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "GLM / MiniMax / Azure / ElevenLabs / Custom" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "GLM / MiniMax / Azure / ElevenLabs / カスタム" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "GLM / MiniMax / Azure / ElevenLabs / 自定义" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "GLM / MiniMax / Azure / ElevenLabs / 自訂" } }
+      }
+    },
+    "上传状态": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload status" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "アップロード状況" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "上传状态" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "上傳狀態" } }
+      }
+    },
+    "下一本": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Next book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "次の本" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "下一本" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "下一本" } }
+      }
+    },
+    "不足 1 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Under a minute" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "1 分未満" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "不足 1 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "不到 1 分鐘" } }
+      }
+    },
+    "专注完成": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Focus session complete" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "集中読書が完了しました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "专注完成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "專注完成" } }
+      }
+    },
+    "专注时长": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Focus time" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "集中時間" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "专注时长" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "專注時長" } }
+      }
+    },
+    "专注阅读": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Focus reading" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "集中読書" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "专注阅读" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "專注閱讀" } }
+      }
+    },
+    "个人字体": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "My fonts" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "マイフォント" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个人字体" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "個人字型" } }
+      }
+    },
+    "为听到处加书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bookmark listening position" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げ位置にしおりを付ける" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "为听到处加书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "為聽書位置加上書籤" } }
+      }
+    },
+    "书库、缓存与临时文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Library, cache and temporary files" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚・キャッシュ・一時ファイル" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书库、缓存与临时文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書庫、快取與暫存檔案" } }
+      }
+    },
+    "书库概览": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Library overview" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚の概要" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书库概览" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書庫概覽" } }
+      }
+    },
+    "书库里还没有待读的书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "There are no unread books in your library." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚に未読の本はありません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书库里还没有待读的书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書庫裡還沒有待读的書" } }
+      }
+    },
+    "书籍 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Books · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书籍 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書籍 · %@" } }
+      }
+    },
+    "云端合成": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cloud synthesis" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "クラウド音声合成" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "云端合成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "雲端合成" } }
+      }
+    },
+    "今日摘句": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Today’s quote" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今日の一節" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "今日摘句" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "今日摘句" } }
+      }
+    },
+    "从文件恢复": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restore from a file" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルから復元" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "从文件恢复" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "從檔案復原" } }
+      }
+    },
+    "会存进本书摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Saved in this book’s notes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この本のメモに保存されます" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "会存进本书摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "會存進本書摘記" } }
+      }
+    },
+    "使用你自己的服务。密钥仅保存在本机钥匙串，试听也会连接服务商。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Use your own service. Keys stay in this device’s Keychain. Previews also connect to the provider." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ご自身のサービスを使います。キーは端末のキーチェーンに保存され、試聴時もサービスに接続します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用你自己的服务。密钥仅保存在本机钥匙串，试听也会连接服务商。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用你自己的服務。金鑰只儲存在本機鑰匙圈，試聽時也會連線至服務商。" } }
+      }
+    },
+    "使用这台设备的声音，无需密钥。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Use the voices on this device. No key is needed." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "端末のシステム音声を使います。キーは不要です。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用这台设备的声音，无需密钥。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用此裝置的聲音，無需金鑰。" } }
+      }
+    },
+    "停止跟随": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stop following" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "追従を停止" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "停止跟随" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "停止跟隨" } }
+      }
+    },
+    "先导入书籍，或从已有备份恢复。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import books or restore an existing backup." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本を読み込むか、既存のバックアップから復元してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "先导入书籍，或从已有备份恢复。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "先匯入書籍，或從現有備份復原。" } }
+      }
+    },
+    "先用一段原文预览，再将规则用于导入或重新分章。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preview the rule with an excerpt before importing or rebuilding chapters." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み込みや章の再分割の前に、本文の一部でルールを確認できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "先用一段原文预览，再将规则用于导入或重新分章。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "先用一段原文預覽，再將規則用於匯入或重新分章。" } }
+      }
+    },
+    "全书读完": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Book finished" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読了" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "全书读完" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "全書讀完" } }
+      }
+    },
+    "其他 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Other · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "その他 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "其他 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "其他 · %@" } }
+      }
+    },
+    "内置字体与个人字体共用阅读偏好，原书内容不会被改写。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Built-in and personal fonts use the same reading settings. The original book is preserved." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "内蔵フォントと個人用フォントは同じ読書設定を使います。元の本は変更されません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "内置字体与个人字体共用阅读偏好，原书内容不会被改写。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "內建字型與個人字型共用閱讀偏好，原書內容會保留。" } }
+      }
+    },
+    "内置字体仍可在阅读排版中选择。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Built-in fonts are available in Reading Layout." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書のレイアウトから内蔵フォントを選べます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "内置字体仍可在阅读排版中选择。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "仍可在閱讀排版中選擇內建字型。" } }
+      }
+    },
+    "写一句": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Write a note" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ひとこと書く" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "写一句" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "寫一句" } }
+      }
+    },
+    "划线": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Highlights" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ハイライト" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "划线" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "劃線" } }
+      }
+    },
+    "剩余时间": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Time remaining" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "残り時間" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "剩余时间" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "剩餘時間" } }
+      }
+    },
+    "原书、进度与摘记一起备份；阅读进度可独立同步。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Back up books, positions and notes together. Reading positions can sync separately." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本、読書位置、メモをまとめてバックアップできます。読書位置だけを同期することもできます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "原书、进度与摘记一起备份；阅读进度可独立同步。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "原書、進度與摘記一併備份，閱讀進度可個別同步。" } }
+      }
+    },
+    "双指缩放 · 双击适应屏幕": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pinch to zoom · Double-tap to fit" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ピンチで拡大・ダブルタップで画面に合わせる" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "双指缩放 · 双击适应屏幕" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "雙指縮放 · 點兩下以符合螢幕" } }
+      }
+    },
+    "可以返回书库，通过修复原书补齐图片。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to the library and repair the book with its original file to recover the images." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚に戻り、元のファイルで本を修復すると画像を復元できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "可以返回书库，通过修复原书补齐图片。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "可以回到書庫，透過修復原書補齊圖片。" } }
+      }
+    },
+    "合上书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Close book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本を閉じる" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "合上书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "合上書" } }
+      }
+    },
+    "听书 %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listening %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げ %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听书 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽書 %@" } }
+      }
+    },
+    "听书 %lld 分钟 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listened %lld min · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げ %lld 分 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听书 %lld 分钟 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽書 %lld 分鐘 · %@" } }
+      }
+    },
+    "听页 · 今日阅读寄语": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tingye · A thought for today" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "聴頁 · 今日の読書メッセージ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听页 · 今日阅读寄语" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽頁 · 今日閱讀寄語" } }
+      }
+    },
+    "听页仍处于锁定状态，可以再次验证。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tingye is still locked. You can try again." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "聴頁はロック中です。もう一度認証できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听页仍处于锁定状态，可以再次验证。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽頁仍處於鎖定狀態，可以再次驗證。" } }
+      }
+    },
+    "回书房": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Back to Library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚に戻る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "回书房" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "回書房" } }
+      }
+    },
+    "回到朗读": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Jump to narration" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げ位置に移動" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "回到朗读" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "回到朗讀" } }
+      }
+    },
+    "声音设置需要检查": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check voice settings" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "音声設定を確認してください" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "声音设置需要检查" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請檢查聲音設定" } }
+      }
+    },
+    "备份与同步说明": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "About backup and sync" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "バックアップと同期について" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "备份与同步说明" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "備份與同步說明" } }
+      }
+    },
+    "对齐方式": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Alignment" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "文字揃え" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "对齐方式" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "對齊方式" } }
+      }
+    },
+    "导出《%@》摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export notes for %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "『%@』のメモを書き出す" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出《%@》摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯出《%@》摘記" } }
+      }
+    },
+    "导出整库到文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export library to a file" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚をファイルに書き出す" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出整库到文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯出整個書庫至檔案" } }
+      }
+    },
+    "导出阅读记录": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export reading history" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書記録を書き出す" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出阅读记录" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯出閱讀記錄" } }
+      }
+    },
+    "开源组件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open-source components" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "オープンソースコンポーネント" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "开源组件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開放原始碼元件" } }
+      }
+    },
+    "开源组件与字体许可": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open-source and font licenses" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "オープンソースとフォントのライセンス" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "开源组件与字体许可" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開放原始碼元件與字型授權" } }
+      }
+    },
+    "当前字体": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Current font" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "現在のフォント" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "当前字体" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "目前字型" } }
+      }
+    },
+    "当前规则": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Active rules" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "現在のルール" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "当前规则" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "目前規則" } }
+      }
+    },
+    "恢复完成前暂时不能修改书库，请保持应用开启。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep the app open. The library can’t be edited until the restore finishes." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "復元が終わるまでアプリを開いたままにしてください。その間は本棚を編集できません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "恢复完成前暂时不能修改书库，请保持应用开启。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "復原完成前暫時無法修改書庫，請保持 App 開啟。" } }
+      }
+    },
+    "我的书摘": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "My notes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書メモ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "我的书摘" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "我的書摘" } }
+      }
+    },
+    "打开时使用%@验证": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Authenticate with %@ when opening" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "起動時に %@ で認証" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开时使用%@验证" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開啟時使用%@驗證" } }
+      }
+    },
+    "打开系统设置": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open system settings" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "システム設定を開く" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开系统设置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開啟系統設定" } }
+      }
+    },
+    "把日子过慢一点，让喜欢的文字多停留一会儿。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Slow down a little, and linger over the words you love." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "少し歩みを緩めて、好きな言葉にもうしばらく浸りましょう。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "把日子过慢一点，让喜欢的文字多停留一会儿。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "把日子過慢一點，讓喜歡的文字多停留一會兒。" } }
+      }
+    },
+    "按全部查看": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View all" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "全期間を表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按全部查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "查看全部" } }
+      }
+    },
+    "按周查看": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View by week" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "週ごとに表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按周查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "按週查看" } }
+      }
+    },
+    "按年查看": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View by year" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "年ごとに表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按年查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "按年查看" } }
+      }
+    },
+    "按日查看": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View by day" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "日ごとに表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按日查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "按日查看" } }
+      }
+    },
+    "按月查看": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View by month" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "月ごとに表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按月查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "按月查看" } }
+      }
+    },
+    "搜索划线、笔记与书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search highlights, notes and bookmarks" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ハイライト、メモ、しおりを検索" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "搜索划线、笔记与书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "搜尋劃線、筆記與書籤" } }
+      }
+    },
+    "播放设置": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Playback settings" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "再生設定" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "播放设置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "播放設定" } }
+      }
+    },
+    "数据导出": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Data export" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "データの書き出し" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "数据导出" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "資料匯出" } }
+      }
+    },
+    "文字": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Text" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "文字" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文字" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "文字" } }
+      }
+    },
+    "新增 %lld 条摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New notes and highlights: %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "新しいメモとハイライト %lld 件" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新增 %lld 条摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "新增 %lld 條摘記" } }
+      }
+    },
+    "无": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "None" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "なし" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無" } }
+      }
+    },
+    "无法导出阅读记录": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t export reading history" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書記録を書き出せませんでした" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法导出阅读记录" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法匯出閱讀記錄" } }
+      }
+    },
+    "无法显示原版 PDF": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t display the original PDF" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "オリジナル PDF を表示できません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法显示原版 PDF" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法顯示原版 PDF" } }
+      }
+    },
+    "无法显示这张插图": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t display this illustration" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この挿絵を表示できません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法显示这张插图" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法顯示這張插圖" } }
+      }
+    },
+    "无跟读高亮": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No narration highlight" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げハイライトなし" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无跟读高亮" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無跟讀醒目標示" } }
+      }
+    },
+    "暂停": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pause" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一時停止" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂停" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "暫停" } }
+      }
+    },
+    "暂无正在听的书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing playing" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "再生中の本がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂无正在听的书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "目前沒有正在聽的書" } }
+      }
+    },
+    "暖纸底色与深青操作": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Warm paper and deep green controls" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "暖かい紙色と深緑の操作ボタン" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暖纸底色与深青操作" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "暖紙底色與深青操作" } }
+      }
+    },
+    "服务与输出": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Services and output" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "サービスと出力" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "服务与输出" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "服務與輸出" } }
+      }
+    },
+    "朗读暂时中断": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Playback interrupted" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げが中断しました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "朗读暂时中断" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "朗讀暫時中斷" } }
+      }
+    },
+    "本月记录": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This month’s activity" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今月の記録" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本月记录" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本月記錄" } }
+      }
+    },
+    "查看本书摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View this book’s notes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この本のメモを見る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查看本书摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "查看本書摘記" } }
+      }
+    },
+    "查看统计": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View statistics" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "統計を見る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查看统计" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "查看統計" } }
+      }
+    },
+    "标注样式": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Highlight style" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ハイライトのスタイル" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "标注样式" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "標註樣式" } }
+      }
+    },
+    "标注颜色": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Highlight color" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ハイライトの色" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "标注颜色" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "標註顏色" } }
+      }
+    },
+    "模糊": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Blur" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ぼかし" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "模糊" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "模糊" } }
+      }
+    },
+    "正在专注": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Focus session active" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "集中読書中" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在专注" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在專注" } }
+      }
+    },
+    "正在专注另一本书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A focus session is active for another book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "別の本で集中読書中です" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在专注另一本书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在專注另一本書" } }
+      }
+    },
+    "正在准备原书与阅读位置": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preparing the book and reading position" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本と読書位置を準備中" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在准备原书与阅读位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在準備原書與閱讀位置" } }
+      }
+    },
+    "正在加载图片…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading image…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "画像を読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在加载图片…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入圖片…" } }
+      }
+    },
+    "正在加载音色…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading voices…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "音声を読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在加载音色…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入音色…" } }
+      }
+    },
+    "正在恢复书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restoring library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本棚を復元中" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在恢复书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在復原書庫" } }
+      }
+    },
+    "正在统计…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Calculating…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "集計中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在统计…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在統計…" } }
+      }
+    },
+    "正在载入摘句": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading quote" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一節を読み込み中" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在载入摘句" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入摘句" } }
+      }
+    },
+    "正在验证…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Authenticating…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "認証中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在验证…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在驗證…" } }
+      }
+    },
+    "没有匹配的摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No matching entries" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一致するメモやマークがありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有匹配的摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有符合的摘記" } }
+      }
+    },
+    "没有可清理的缓存": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No cache to clear" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "消去できるキャッシュがありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有可清理的缓存" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有可清除的快取" } }
+      }
+    },
+    "没有找到包含「%@」的划线、笔记或书签。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No highlights, notes or bookmarks contain “%@”." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "「%@」を含むハイライト、メモ、しおりはありません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有找到包含「%@」的划线、笔记或书签。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "找不到包含「%@」的劃線、筆記或書籤。" } }
+      }
+    },
+    "没有阅读记录": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No reading activity" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書記録がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有阅读记录" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有閱讀記錄" } }
+      }
+    },
+    "浅纸常亮": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep light paper in Dark Mode" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ダークモードでも明るい用紙を使う" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "浅纸常亮" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "深色模式中維持淺色紙面" } }
+      }
+    },
+    "淡入": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fade" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "フェード" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "淡入" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "淡入" } }
+      }
+    },
+    "深色外观下，纸色也保持日间值": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep the daytime paper color in Dark Mode" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ダークモードでも昼間の用紙色を維持します" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "深色外观下，纸色也保持日间值" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "深色外觀下，紙色也保持日間值" } }
+      }
+    },
+    "深色纸面与浅色文字": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dark paper and light text" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "暗い紙面と明るい文字" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "深色纸面与浅色文字" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "深色紙面與淺色文字" } }
+      }
+    },
+    "清晨，湖面还没有醒来。\n让光缓缓移过纸面。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "At dawn, the lake is still asleep.\nLet the light drift across the page." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "朝の湖はまだ眠っている。\n光がゆっくりと紙の上を渡っていく。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清晨，湖面还没有醒来。\n让光缓缓移过纸面。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清晨，湖面還沒有醒來。\n讓光緩緩移過紙面。" } }
+      }
+    },
+    "清理缓存": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear cache" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キャッシュを消去" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清理缓存" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除快取" } }
+      }
+    },
+    "滑动": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Slide" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "スライド" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "滑动" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "滑動" } }
+      }
+    },
+    "用时 · 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Time · minutes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "所要時間（分）" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "用时 · 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "用時 · 分鐘" } }
+      }
+    },
+    "界面外观": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "App appearance" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "アプリの外観" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "界面外观" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "介面外觀" } }
+      }
+    },
+    "离线可用": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Available offline" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "オフラインで使用可" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "离线可用" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "離線可用" } }
+      }
+    },
+    "移除听到处书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove listening bookmark" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げ位置のしおりを削除" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "移除听到处书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "移除聽書位置書籤" } }
+      }
+    },
+    "章节最大字数 %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Maximum characters per chapter: %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "章の最大文字数：%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "章节最大字数 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "章節最大字數 %@" } }
+      }
+    },
+    "笔记 %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Note: %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "メモ：%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "笔记 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "筆記 %@" } }
+      }
+    },
+    "系统声音完全离线朗读。启用云端朗读(智谱 GLM / MiniMax / Azure / ElevenLabs / 自定义)时,应用使用你自己的 API Key 直接连接对应服务商,当前句子的文本会发送给服务商以合成语音;API Key 仅保存在本机钥匙串。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "System voices read entirely offline. When cloud speech is enabled (Zhipu GLM, MiniMax, Azure, ElevenLabs or a custom provider), the app connects directly to the provider with your API key and sends the current sentence for synthesis. The key is stored only in this device’s Keychain." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "システム音声はオフラインで読み上げます。クラウド読み上げ（Zhipu GLM、MiniMax、Azure、ElevenLabs、カスタム）を有効にすると、ご自身の API キーでサービスに直接接続し、読み上げ中の文を音声合成のために送信します。キーは端末のキーチェーンにのみ保存されます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统声音完全离线朗读。启用云端朗读(智谱 GLM / MiniMax / Azure / ElevenLabs / 自定义)时,应用使用你自己的 API Key 直接连接对应服务商,当前句子的文本会发送给服务商以合成语音;API Key 仅保存在本机钥匙串。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "系統聲音完全離線朗讀。啟用雲端朗讀（智譜 GLM、MiniMax、Azure、ElevenLabs 或自訂）時，App 以你的 API 金鑰直接連線至服務商，並傳送目前句子以合成語音。金鑰只儲存在本機鑰匙圈。" } }
+      }
+    },
+    "结束或放弃上一场专注后，就可以为这本书开始新的会话。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Finish or discard the current focus session before starting one for this book." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今の集中読書を終了するか破棄してから、この本で開始できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "结束或放弃上一场专注后，就可以为这本书开始新的会话。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "結束或放棄目前的專注後，就可以為這本書開始新的會話。" } }
+      }
+    },
+    "继续": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Resume" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "再開" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "继续" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "繼續" } }
+      }
+    },
+    "继续读": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep reading" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み続ける" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "继续读" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "繼續讀" } }
+      }
+    },
+    "缓存 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cache · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キャッシュ · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "缓存 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "快取 · %@" } }
+      }
+    },
+    "缩略图": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Thumbnails" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "サムネイル" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "缩略图" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "縮圖" } }
+      }
+    },
+    "翻页动画": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Page-turn animation" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ページめくりの効果" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "翻页动画" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "翻頁動畫" } }
+      }
+    },
+    "自定义": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Custom" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "カスタム" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自定义" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自訂" } }
+      }
+    },
+    "自定义 %lld 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Custom: %lld minutes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "カスタム：%lld 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自定义 %lld 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自訂 %lld 分鐘" } }
+      }
+    },
+    "藏书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Books" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "蔵書" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "藏书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "藏書" } }
+      }
+    },
+    "试听当前声音": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preview this voice" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "現在の音声を試聴" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "试听当前声音" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "試聽目前的聲音" } }
+      }
+    },
+    "试试其他类型。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Try another type." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "別の種類を選んでください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "试试其他类型。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "試試其他類型。" } }
+      }
+    },
+    "语言、漫画和交互": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Language, comics and interaction" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "言語、漫画、操作" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "语言、漫画和交互" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "語言、漫畫與互動" } }
+      }
+    },
+    "读到第 %lld 章": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reached chapter %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "第 %lld 章まで読みました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "读到第 %lld 章" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "讀到第 %lld 章" } }
+      }
+    },
+    "读完感": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading reflection" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読了メモ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "读完感" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "讀完感" } }
+      }
+    },
+    "调整后可返回试听，保存并应用后用于听书。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go back to preview your changes, then save and apply them for listening." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "変更後に戻って試聴できます。聴書に使うには保存して適用してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "调整后可返回试听，保存并应用后用于听书。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "調整後可返回試聽，儲存並套用後即可用於聽書。" } }
+      }
+    },
+    "跟读高亮": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Narration highlight" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げハイライト" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跟读高亮" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "跟讀醒目標示" } }
+      }
+    },
+    "返回书籍详情，重新选择原文件修复本书。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to book details and choose the original file to repair this book." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本の詳細に戻り、元のファイルを選び直して修復してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回书籍详情，重新选择原文件修复本书。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回書籍詳細資料，重新選擇原始檔案以修復本書。" } }
+      }
+    },
+    "还剩 %lld 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld minutes remaining" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "残り %lld 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还剩 %lld 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還剩 %lld 分鐘" } }
+      }
+    },
+    "还剩不足 1 分钟": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Less than a minute remaining" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "残り 1 分未満" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还剩不足 1 分钟" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還剩不到 1 分鐘" } }
+      }
+    },
+    "还没有个人字体": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No personal fonts yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "個人用フォントがありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有个人字体" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有個人字型" } }
+      }
+    },
+    "还没有本机书籍可备份": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No local books to back up" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "バックアップできる端末内の本がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有本机书籍可备份" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有本機書籍可備份" } }
+      }
+    },
+    "这一天还没有阅读记录。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "There is no reading activity for this day." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この日の読書記録はありません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这一天还没有阅读记录。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "這一天還沒有閱讀記錄。" } }
+      }
+    },
+    "这一页暂时无法显示": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This page couldn’t be displayed" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "このページを表示できません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这一页暂时无法显示" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "這一頁暫時無法顯示" } }
+      }
+    },
+    "连接云语音": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect cloud speech" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "クラウド音声に接続" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接云语音" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連線至雲端語音" } }
+      }
+    },
+    "连接云语音服务": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect a cloud speech service" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "クラウド音声サービスに接続" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接云语音服务" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連線至雲端語音服務" } }
+      }
+    },
+    "连续天数": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Current streak" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "連続日数" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连续天数" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連續天數" } }
+      }
+    },
+    "通知权限未开启": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Notifications are off" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "通知がオフです" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "通知权限未开启" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "通知權限未開啟" } }
+      }
+    },
+    "重试": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Retry" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "再試行" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "重试" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "重試" } }
+      }
+    },
+    "长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Touch and hold the text to highlight or add a note. Bookmarks added while reading or listening also appear here." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本文を長押しするとハイライトやメモを追加できます。読書中や読み上げ中に付けたしおりもここに表示されます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "長按正文可新增標註或筆記，閱讀或聽書時加入的書籤也會收在這裡。" } }
+      }
+    },
+    "间距与边距": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Spacing and margins" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "間隔と余白" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "间距与边距" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "間距與邊距" } }
+      }
+    },
+    "阅读 %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書 %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读 %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀 %@" } }
+      }
+    },
+    "阅读 %lld 分钟 · %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Read %lld min · %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書 %lld 分 · %@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读 %lld 分钟 · %@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀 %lld 分鐘 · %@" } }
+      }
+    },
+    "阅读 · 声音 · 数据": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading · Voice · Data" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書・音声・データ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读 · 声音 · 数据" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀 · 聲音 · 資料" } }
+      }
+    },
+    "阅读工具": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading tools" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書ツール" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读工具" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀工具" } }
+      }
+    },
+    "阅读概览": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading overview" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書の概要" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读概览" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀概覽" } }
+      }
+    },
+    "隐私与关于": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Privacy and about" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "プライバシーとアプリ情報" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "隐私与关于" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "隱私與關於" } }
+      }
+    },
+    "验证未完成": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Authentication incomplete" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "認証が完了していません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "验证未完成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "驗證未完成" } }
+      }
+    },
+    "%@ · 导入": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ · Import" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%@ · 読み込む" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ · 导入" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%@ · 匯入" } }
+      }
+    },
+    "%lld 个": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld items" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 件" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 个" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 個" } }
+      }
+    },
+    "%lld 个成功 · %lld 个失败": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld succeeded · %lld failed" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 件成功 · %lld 件失敗" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 个成功 · %lld 个失败" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 個成功 · %lld 個失敗" } }
+      }
+    },
+    "%lld 条": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld entries" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 件" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld 条" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 條" } }
+      }
+    },
+    "%lld分": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld min" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld分" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 分" } }
+      }
+    },
+    "%lld小时%lld分": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld h %lld min" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 時間 %lld 分" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%lld小时%lld分" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%lld 小時 %lld 分" } }
+      }
+    },
+    "不支持此格式": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unsupported format" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "非対応の形式" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "不支持此格式" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "不支援此格式" } }
+      }
+    },
+    "书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bookmarks" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "しおり" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書籤" } }
+      }
+    },
+    "书籍管理": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Manage book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本の管理" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "书籍管理" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "書籍管理" } }
+      }
+    },
+    "传书服务未能启动": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Transfer service unavailable" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "転送サービスを起動できません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "传书服务未能启动" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "傳書服務未能啟動" } }
+      }
+    },
+    "使用 smb:// 加 NAS 或电脑地址。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Enter smb:// followed by the NAS or computer address." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "smb:// に続けて NAS またはパソコンのアドレスを入力します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用 smb:// 加 NAS 或电脑地址。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用 smb:// 加 NAS 或電腦位址。" } }
+      }
+    },
+    "使用完整的 http:// 或 https:// 地址。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Enter the full http:// or https:// address." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "http:// または https:// で始まる完全なアドレスを入力します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用完整的 http:// 或 https:// 地址。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用完整的 http:// 或 https:// 位址。" } }
+      }
+    },
+    "保存笔记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save note" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ノートを保存" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "保存笔记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "儲存筆記" } }
+      }
+    },
+    "全部目录": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Full contents" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "すべての目次" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "全部目录" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "完整目錄" } }
+      }
+    },
+    "共 %lld 字": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld characters" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "全 %lld 文字" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "共 %lld 字" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "共 %lld 字" } }
+      }
+    },
+    "共 %lld 章": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld chapters" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "全 %lld 章" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "共 %lld 章" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "共 %lld 章" } }
+      }
+    },
+    "共 %lld 页": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld pages" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "全 %lld ページ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "共 %lld 页" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "共 %lld 頁" } }
+      }
+    },
+    "关闭导入结果": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Close import results" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み込み結果を閉じる" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关闭导入结果" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "關閉匯入結果" } }
+      }
+    },
+    "前往书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "書庫へ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "前往书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "前往書庫" } }
+      }
+    },
+    "取消选择，%@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Deselect %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "選択を解除：%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "取消选择，%@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "取消選擇，%@" } }
+      }
+    },
+    "可以筛选当前书目。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You can filter the current catalog." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "表示中の書目を絞り込めます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "可以筛选当前书目。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "可以篩選目前的書目。" } }
+      }
+    },
+    "可以返回分类，或下拉重新加载。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go back to categories or pull down to reload." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "分類に戻るか、下に引いて再読み込みできます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "可以返回分类，或下拉重新加载。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "可以返回分類，或下拉重新載入。" } }
+      }
+    },
+    "听至第 %lld 章": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listened to chapter %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "第 %lld 章まで再生" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听至第 %lld 章" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽至第 %lld 章" } }
+      }
+    },
+    "听至第 %lld 页": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Listened to page %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld ページまで再生" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "听至第 %lld 页" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "聽至第 %lld 頁" } }
+      }
+    },
+    "回到这个阅读位置": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to this reading position" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この読書位置に戻る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "回到这个阅读位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "回到這個閱讀位置" } }
+      }
+    },
+    "在电脑上选择文件，接收后会自动加入书库。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose files on your computer. Received files are added to the library." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "パソコンでファイルを選ぶと、受信後に書庫へ追加されます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在电脑上选择文件，接收后会自动加入书库。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "在電腦上選擇檔案，接收後會自動加入書庫。" } }
+      }
+    },
+    "在电脑浏览器打开": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open in your computer’s browser" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "パソコンのブラウザで開く" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在电脑浏览器打开" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "在電腦瀏覽器開啟" } }
+      }
+    },
+    "在阅读页顶部轻点书签图标，为当前页留下记号。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap the bookmark icon at the top of the reader to save your place." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書画面の上部にあるしおりのアイコンをタップして、位置を保存します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在阅读页顶部轻点书签图标，为当前页留下记号。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "在閱讀頁頂部輕點書籤圖示，儲存目前的位置。" } }
+      }
+    },
+    "复制完整地址": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy full address" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "アドレス全体をコピー" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "复制完整地址" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "複製完整位址" } }
+      }
+    },
+    "完整链接包含本次传书凭证": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The full link contains this transfer’s access code." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "リンクには今回の転送用アクセスコードが含まれます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "完整链接包含本次传书凭证" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "完整連結包含本次傳書憑證" } }
+      }
+    },
+    "导入书籍后，可以在这里查看每个文件的状态。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "After importing books, check each file’s status here." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本を読み込むと、ここでファイルごとの状態を確認できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导入书籍后，可以在这里查看每个文件的状态。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯入書籍後，可以在這裡查看各檔案的狀態。" } }
+      }
+    },
+    "尚未定位 · 原文与笔记已保留": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Location pending · Excerpt and note kept" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "位置未特定・原文とノートは保存済み" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "尚未定位 · 原文与笔记已保留" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "尚未定位 · 原文與筆記已保留" } }
+      }
+    },
+    "已保存的连接": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Saved connections" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "保存済みの接続" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已保存的连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已儲存的連線" } }
+      }
+    },
+    "已加入书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Added to library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "書庫に追加済み" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已加入书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已加入書庫" } }
+      }
+    },
+    "已处理 %lld / %lld 个文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Processed %lld of %lld files" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld / %lld ファイルを処理" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已处理 %lld / %lld 个文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已處理 %lld / %lld 個檔案" } }
+      }
+    },
+    "已导入 %lld 个文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Imported %lld files" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld ファイルを読み込みました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已导入 %lld 个文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已匯入 %lld 個檔案" } }
+      }
+    },
+    "已导入 %lld 本": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld books imported" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 冊を読み込みました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已导入 %lld 本" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已匯入 %lld 本" } }
+      }
+    },
+    "成功的书籍已加入书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Books added to the library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本を書庫に追加しました" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "成功的书籍已加入书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "成功的書籍已加入書庫" } }
+      }
+    },
+    "我的想法": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "My note" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "自分のノート" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "我的想法" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "我的想法" } }
+      }
+    },
+    "手机与电脑连接同一 WiFi，保持此页开启。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect your phone and computer to the same Wi-Fi and keep this page open." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "スマートフォンとパソコンを同じ Wi-Fi に接続し、この画面を開いたままにしてください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "手机与电脑连接同一 WiFi，保持此页开启。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "手機與電腦連線至相同的 WiFi，保持此頁開啟。" } }
+      }
+    },
+    "打开": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "開く" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開啟" } }
+      }
+    },
+    "打开听书": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open player" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み上げを開く" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开听书" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "開啟聽書" } }
+      }
+    },
+    "批量导入文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import multiple files" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "複数のファイルを読み込む" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "批量导入文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "批次匯入檔案" } }
+      }
+    },
+    "找到 %lld 处匹配": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld matches" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 件が一致" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "找到 %lld 处匹配" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "找到 %lld 處相符結果" } }
+      }
+    },
+    "搜索书内文字": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search this book" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本の中を検索" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "搜索书内文字" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "搜尋書內文字" } }
+      }
+    },
+    "搜索共享": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search shares" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "共有を検索" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "搜索共享" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "搜尋共享" } }
+      }
+    },
+    "摘记数": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Notes" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "摘記数" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "摘记数" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "摘記數" } }
+      }
+    },
+    "支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ 等格式。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Supports EPUB, TXT, MOBI, AZW3, PDF, DOCX, Markdown, CBZ, and more." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ などに対応しています。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ 等格式。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "支援 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ 等格式。" } }
+      }
+    },
+    "文件夹": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Folder" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "フォルダ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件夹" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "資料夾" } }
+      }
+    },
+    "无法读取共享书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t read the shared library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "共有書庫を読み込めません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法读取共享书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法讀取共享書庫" } }
+      }
+    },
+    "无法载入目录预览": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t load the contents preview" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "目次のプレビューを読み込めません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法载入目录预览" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法載入目錄預覽" } }
+      }
+    },
+    "无线传输": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wireless transfer" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ワイヤレス転送" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无线传输" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無線傳輸" } }
+      }
+    },
+    "显示前 200 处匹配，可输入更完整的词句缩小范围。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Showing the first 200 matches. Enter a longer phrase to narrow the search." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "最初の 200 件を表示しています。長めの語句で絞り込めます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示前 200 处匹配，可输入更完整的词句缩小范围。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "顯示前 200 處相符結果，可輸入更完整的詞句縮小範圍。" } }
+      }
+    },
+    "暂时无法读取简介。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The description couldn’t be loaded." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "紹介文を読み込めませんでした。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂时无法读取简介。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "暫時無法讀取簡介。" } }
+      }
+    },
+    "有 %lld 条原文与笔记已保留。可稍后重试定位。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld excerpts and notes are kept. You can try locating them again later." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld 件の原文とノートは保存されています。後でもう一度位置を特定できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "有 %lld 条原文与笔记已保留。可稍后重试定位。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "已保留 %lld 條原文與筆記。可稍後重試定位。" } }
+      }
+    },
+    "未分组": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ungrouped" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "未分類" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未分组" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "未分組" } }
+      }
+    },
+    "未找到匹配书目": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No matching titles" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一致する書目がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未找到匹配书目" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "找不到相符的書目" } }
+      }
+    },
+    "未找到匹配内容": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No matches" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一致する内容がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未找到匹配内容" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "找不到相符的內容" } }
+      }
+    },
+    "本机、iCloud 云盘或已连接的网盘": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "On this device, in iCloud Drive, or in a connected service" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この端末、iCloud Drive、または接続済みのクラウドストレージ" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本机、iCloud 云盘或已连接的网盘" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本機、iCloud Drive 或已連線的雲端硬碟" } }
+      }
+    },
+    "查看导入进度": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View import progress" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読み込みの進み具合を見る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查看导入进度" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "查看匯入進度" } }
+      }
+    },
+    "检查网络、服务器地址与登录信息后重试。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check the network, server address, and sign-in details, then try again." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ネットワーク、サーバーアドレス、ログイン情報を確認して再試行してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "检查网络、服务器地址与登录信息后重试。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "檢查網路、伺服器位址與登入資訊後重試。" } }
+      }
+    },
+    "正在保存阅读状态…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Saving reading status…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書状態を保存中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在保存阅读状态…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在儲存閱讀狀態…" } }
+      }
+    },
+    "正在准备文件…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preparing files…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルを準備中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在准备文件…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在準備檔案…" } }
+      }
+    },
+    "正在搜索原文…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Searching the text…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本文を検索中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在搜索原文…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在搜尋原文…" } }
+      }
+    },
+    "正在读取书目…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading the catalog…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "書目を読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在读取书目…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在讀取書目…" } }
+      }
+    },
+    "正在读取局域网书库…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading the network library…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ネットワーク書庫を読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在读取局域网书库…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在讀取區域網路書庫…" } }
+      }
+    },
+    "正在读取文件夹…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading folder…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "フォルダを読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在读取文件夹…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在讀取資料夾…" } }
+      }
+    },
+    "正在载入目录预览…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading the contents preview…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "目次のプレビューを読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在载入目录预览…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入目錄預覽…" } }
+      }
+    },
+    "正在载入简介…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loading the description…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "紹介文を読み込み中…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在载入简介…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在載入簡介…" } }
+      }
+    },
+    "没有可显示的页面": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No pages to display" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "表示できるページがありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有可显示的页面" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有可顯示的頁面" } }
+      }
+    },
+    "没有找到「%@」。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No matches for “%@”." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "「%@」に一致する内容がありません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有找到「%@」。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "找不到「%@」。" } }
+      }
+    },
+    "没有章节": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No chapters" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "章がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有章节" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有章節" } }
+      }
+    },
+    "没有符合条件的章节": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No matching chapters" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一致する章がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有符合条件的章节" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沒有符合條件的章節" } }
+      }
+    },
+    "浏览文件夹，选择书籍后下载到本机。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Browse folders and pick a book to download to this device." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "フォルダを参照し、この端末に保存する本を選びます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "浏览文件夹，选择书籍后下载到本机。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "瀏覽資料夾，選擇書籍後下載至本機。" } }
+      }
+    },
+    "等待电脑连接": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Waiting for your computer" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "パソコンの接続を待機中" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "等待电脑连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "等待電腦連線" } }
+      }
+    },
+    "累计时长": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Time spent" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "合計時間" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "累计时长" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "累計時長" } }
+      }
+    },
+    "继续阅读，%@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Continue reading, %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "続きを読む：%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "继续阅读，%@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "繼續閱讀，%@" } }
+      }
+    },
+    "网络不可用。检查网络后重试。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The network is unavailable. Check your connection and retry." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ネットワークに接続できません。接続を確認して再試行してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "网络不可用。检查网络后重试。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "網路無法使用。檢查網路後重試。" } }
+      }
+    },
+    "请查看逐项原因，再重新选择需要处理的文件。成功项会保留。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check each error, then select the affected files again. Imported books are kept." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルごとの原因を確認し、該当ファイルを選び直してください。読み込んだ本は残ります。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请查看逐项原因，再重新选择需要处理的文件。成功项会保留。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請查看逐項原因，再重新選擇需要處理的檔案。成功項目會保留。" } }
+      }
+    },
+    "请检查 WiFi 和系统的本地网络权限。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check Wi-Fi and the app’s Local Network permission in Settings." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Wi-Fi と設定のローカルネットワーク権限を確認してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请检查 WiFi 和系统的本地网络权限。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請檢查 WiFi 和系統的區域網路權限。" } }
+      }
+    },
+    "请检查共享地址、登录信息与系统的本地网络权限。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check the share address, sign-in details, and the app’s Local Network permission." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "共有アドレス、ログイン情報、ローカルネットワーク権限を確認してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请检查共享地址、登录信息与系统的本地网络权限。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請檢查共享位址、登入資訊與系統的區域網路權限。" } }
+      }
+    },
+    "请检查服务器地址": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check the server address" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "サーバーアドレスを確認してください" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请检查服务器地址" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請檢查伺服器位址" } }
+      }
+    },
+    "请求已取消。可以重新加载。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The request was canceled. You can reload." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "リクエストをキャンセルしました。再読み込みできます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请求已取消。可以重新加载。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請求已取消。可以重新載入。" } }
+      }
+    },
+    "读到这里": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Current reading position" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "現在の読書位置" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "读到这里" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "讀到這裡" } }
+      }
+    },
+    "读至第 %lld 章": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Read to chapter %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "第 %lld 章まで読了" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "读至第 %lld 章" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "讀至第 %lld 章" } }
+      }
+    },
+    "读至第 %lld 页": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Read to page %lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%lld ページまで読了" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "读至第 %lld 页" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "讀至第 %lld 頁" } }
+      }
+    },
+    "轻点阅读页右上角的书签，记住当前的位置。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap the bookmark at the top right of the reader to save your place." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書画面の右上にあるしおりをタップすると、現在の位置を保存できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "轻点阅读页右上角的书签，记住当前的位置。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "輕點閱讀頁右上角的書籤，儲存目前的位置。" } }
+      }
+    },
+    "输入关键词后提交，搜索远程书目。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Enter a keyword and submit it to search the remote catalog." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キーワードを入力して確定すると、リモート書目を検索できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "输入关键词后提交，搜索远程书目。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "輸入關鍵字後送出，搜尋遠端書目。" } }
+      }
+    },
+    "返回书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Back to library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "書庫に戻る" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回書庫" } }
+      }
+    },
+    "还没有书库连接": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No library connections yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "書庫の接続がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有书库连接" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有書庫連線" } }
+      }
+    },
+    "还没有书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No bookmarks yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "しおりがありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有書籤" } }
+      }
+    },
+    "还没有摘记": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No notes yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "摘記がありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有摘记" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有摘記" } }
+      }
+    },
+    "还没有收到文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No files received yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "まだファイルを受信していません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "还没有收到文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "還沒有收到檔案" } }
+      }
+    },
+    "这批文件未能导入": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No files were imported" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルを読み込めませんでした" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这批文件未能导入" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "這批檔案未能匯入" } }
+      }
+    },
+    "这里还没有书目": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No titles here yet" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ここに書目はありません" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "这里还没有书目" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "這裡還沒有書目" } }
+      }
+    },
+    "连接暂时未完成": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t complete the connection" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "接続を完了できませんでした" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接暂时未完成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連線暫時未完成" } }
+      }
+    },
+    "连接远程书库": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect to a remote library" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "リモート書庫に接続" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "连接远程书库" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "連線至遠端書庫" } }
+      }
+    },
+    "选中的原文": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Selected excerpt" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "選択した原文" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选中的原文" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選取的原文" } }
+      }
+    },
+    "选择下方的协议，添加你自己的书库。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose a protocol below to add your library." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "下からプロトコルを選んで書庫を追加します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择下方的协议，添加你自己的书库。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇下方的通訊協定，加入自己的書庫。" } }
+      }
+    },
+    "选择共享文件夹，浏览后将需要的书导入本机。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose a shared folder and browse for books to import." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "共有フォルダを選び、読み込む本を探します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择共享文件夹，浏览后将需要的书导入本机。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇共享資料夾，瀏覽後將需要的書匯入本機。" } }
+      }
+    },
+    "选择同格式的原书文件。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose the original file in the same format." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "同じ形式の元ファイルを選んでください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择同格式的原书文件。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇相同格式的原書檔案。" } }
+      }
+    },
+    "选择文件": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose a file" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルを選択" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇檔案" } }
+      }
+    },
+    "选择，%@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select %@" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "選択：%@" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择，%@" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇，%@" } }
+      }
+    },
+    "部分文件需要处理": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Some files need attention" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一部のファイルを確認してください" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "部分文件需要处理" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "部分檔案需要處理" } }
+      }
+    },
+    "部分标注尚未定位": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Some annotation locations are pending" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一部のマークの位置が未特定です" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "部分标注尚未定位" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "部分標註尚未定位" } }
+      }
+    },
+    "长按正文添加标注或写笔记。你的原文与想法会一起收在这里。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Press and hold the text to mark it or write a note. Excerpts and notes will appear here." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "本文を長押ししてマークやノートを追加できます。原文とノートはここに表示されます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "长按正文添加标注或写笔记。你的原文与想法会一起收在这里。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "長按正文新增標註或撰寫筆記。原文與想法會一起收在這裡。" } }
+      }
+    },
+    "阅读书签": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reading bookmarks" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書のしおり" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读书签" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀書籤" } }
+      }
+    },
+    "阅读时点按顶部书签，留下想回来的位置。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap the bookmark at the top of the reader to save your place." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書画面の上部にあるしおりをタップして位置を保存します。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读时点按顶部书签，留下想回来的位置。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀時點按頂部書籤，儲存想回來的位置。" } }
+      }
+    },
+    "阅读时轻点顶部的书签图标，保存当前页。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap the bookmark icon while reading to save the current page." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "読書中に上部のしおりアイコンをタップすると、現在のページを保存できます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "阅读时轻点顶部的书签图标，保存当前页。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "閱讀時輕點頂部的書籤圖示，儲存目前的頁面。" } }
+      }
+    },
+    "需要登录，请返回连接设置检查访问凭据。": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sign-in required. Go back to connection settings and check your details." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ログインが必要です。接続設定に戻り、認証情報を確認してください。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "需要登录，请返回连接设置检查访问凭据。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "需要登入，請返回連線設定檢查存取憑證。" } }
+      }
+    },
+    "筛选 · %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter · %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "絞り込み · %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选 · %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "篩選 · %lld"
+          }
+        }
+      }
+    },
+    "视图": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表示"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视图"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視"
+          }
+        }
+      }
+    },
+    "读完": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読了"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读完"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讀完"
+          }
+        }
+      }
+    },
+    "已暂停": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一時停止"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暫停"
+          }
+        }
+      }
+    },
+    "第 %lld 章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chapter %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章"
+          }
+        }
+      }
+    },
+    "摘记": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読書ノート"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘记"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘記"
+          }
+        }
+      }
+    },
+    "我的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイページ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我的"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我的"
+          }
+        }
+      }
+    },
+    "搜索": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
+          }
+        }
+      }
+    },
+    "添书": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add books"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本を追加"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添书"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添書"
+          }
+        }
+      }
+    },
+    "开始专注": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "集中を開始"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始专注"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始專注"
+          }
+        }
+      }
+    },
+    "分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groups"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "グループ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分组"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分組"
+          }
+        }
+      }
+    },
+    "今日已读 %lld 小时 %lld 分钟": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld h %lld min read today"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日の読書 %lld 時間 %lld 分"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日已读 %lld 小时 %lld 分钟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日已讀 %lld 小時 %lld 分鐘"
+          }
+        }
+      }
+    },
+    "第 %lld / %lld 页": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %lld of %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld ページ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld / %lld 页"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld / %lld 頁"
+          }
+        }
+      }
+    },
+    "已读完": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読了"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已读完"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已讀完"
+          }
+        }
+      }
+    },
+    "待读": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To read"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未読"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待读"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "待讀"
+          }
+        }
+      }
+    },
+    "已读完 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finished · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読了 · %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已读完 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已讀完 · %@"
+          }
+        }
+      }
+    },
+    "第 %lld 页 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %lld · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ページ · %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 页 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 頁 · %@"
+          }
+        }
+      }
+    },
+    "第 %lld 章 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chapter %lld · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章 · %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %lld 章 · %@"
+          }
+        }
+      }
+    },
+    "%lld 个分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld groups"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld グループ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个分组"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個分組"
+          }
+        }
+      }
+    },
+    "搜索结果：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results for %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "検索結果：%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索结果：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋結果：%@"
+          }
+        }
+      }
+    },
+    "还没有分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No groups yet"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "グループがありません"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有分组"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還沒有分組"
+          }
+        }
+      }
+    },
+    "在书库选择「整理」，再通过「移动分组」创建。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Organize in the library, then Move to Group to create a group."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書庫で「整理」を選び、「グループに移動」から作成します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在书库选择「整理」，再通过「移动分组」创建。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在書庫選擇「整理」，再透過「移動分組」建立。"
+          }
+        }
+      }
+    },
+    "没有可选择的书籍": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No books to select"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択できる本がありません"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可选择的书籍"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可選擇的書籍"
+          }
+        }
+      }
+    },
+    "退出整理后可以调整筛选或导入书籍。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exit Organize to adjust filters or import books."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "整理を終了すると、絞り込みの変更や本の読み込みができます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出整理后可以调整筛选或导入书籍。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出整理後可以調整篩選或匯入書籍。"
+          }
+        }
+      }
+    },
+    "支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份，也可使用 WiFi 传书、WebDAV 或 OPDS。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import EPUB, TXT, PDF, MOBI, AZW3, CBZ, and Tingye backups. Wi-Fi transfer, WebDAV, and OPDS are also available."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EPUB、TXT、PDF、MOBI、AZW3、CBZ、Tingye のバックアップを読み込めます。Wi-Fi 転送、WebDAV、OPDS も使えます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份，也可使用 WiFi 传书、WebDAV 或 OPDS。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援 EPUB、TXT、PDF、MOBI、AZW3、CBZ 與聽頁備份，也可使用 WiFi 傳書、WebDAV 或 OPDS。"
+          }
+        }
+      }
+    },
+    "已选择": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択済み"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选择"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已選擇"
+          }
+        }
+      }
+    },
+    "未选择": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not selected"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未選択"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未选择"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未選擇"
+          }
+        }
+      }
+    },
+    "取消选择《%@》": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deselect %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ の選択を解除"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消选择《%@》"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消選擇《%@》"
+          }
+        }
+      }
+    },
+    "选择《%@》": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ を選択"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择《%@》"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇《%@》"
+          }
+        }
+      }
+    },
+    "搜索覆盖所有分组。隐藏书籍需验证后查看。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search covers every group. Unlock hidden books to include them."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてのグループを検索します。非表示の本を含めるには認証してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索覆盖所有分组。隐藏书籍需验证后查看。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋涵蓋所有分組。隱藏書籍需驗證後查看。"
+          }
+        }
+      }
+    },
+    "最近搜索": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent searches"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近の検索"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近搜尋"
+          }
+        }
+      }
+    },
+    "清空": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消去"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        }
+      }
+    },
     "正在打开 EPUB…": {
       "localizations": {
         "en": {

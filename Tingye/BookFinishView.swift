@@ -25,6 +25,7 @@ struct BookFinishView: View {
     @State private var finishNote = ""
     @State private var noteSaved = false
     @State private var loaded = false
+    @State private var loadingQuotes = true
 
     private static let fallbackQuote = "把日子过慢一点，让喜欢的文字多停留一会儿。"
 
@@ -33,8 +34,8 @@ struct BookFinishView: View {
     private var bookSessions: [ReadingSession] { model.visibleSessions.filter { $0.bookID == entry.id } }
     private var totalSeconds: Double { bookSessions.reduce(0) { $0 + $1.seconds } }
     private var readingDays: Int { Set(bookSessions.map { AppModel.dayKey($0.start) }).count }
-    private var statsLine: String {
-        "共读 \(readingDays) 天 · \(Int(totalSeconds / 60)) 分钟 · \(entry.notes.count) 条摘记"
+    private var statsLine: Text {
+        Text("共读 \(readingDays) 天 · \(Int(totalSeconds / 60)) 分钟 · \(entry.notes.count) 条摘记")
     }
 
     /// 下一本：与 NowView「待读清单」完全相同的选择（本地、未开卷、按加入时间倒序的第一本）。
@@ -44,40 +45,39 @@ struct BookFinishView: View {
     }
 
     private var currentQuote: QuoteCandidate? { quotes.indices.contains(quoteIndex) ? quotes[quoteIndex] : nil }
-    private var quoteText: String { currentQuote?.text ?? Self.fallbackQuote }
+    private var quoteText: String { currentQuote?.text ?? L(Self.fallbackQuote) }
     private var quoteChapterLabel: String {
         guard let chapter = currentQuote?.chapter else { return "" }
-        return "第 \(chapter + 1) 章"
+        return String(format: L("第 %lld 章"), chapter + 1)
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Theme.space5) {
-                    Masthead(title: "读完", subtitle: "一本读完，留一点回响", titleSize: 34)
+            IndexPage {
+                SettingsGroup(title: "读完") {
                     header
-                    PaperCard {
-                        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4)) : AnyLayout(HStackLayout(spacing: Theme.space4))) {
-                            StatBlock(value: "\(Int(totalSeconds / 60))", label: "用时 · 分钟")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            StatBlock(value: "\(entry.notes.filter { $0.note != nil }.count)", label: "摘记")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            StatBlock(value: "\(entry.notes.count)", label: "划线")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+                    IndexRule().padding(.vertical, Theme.space2)
+                    (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space2)) : AnyLayout(HStackLayout(spacing: Theme.space3))) {
+                        IndexMetric(value: Text(Int(totalSeconds / 60), format: .number), label: Text("用时 · 分钟"))
+                        IndexMetric(value: Text(entry.notes.filter { $0.note != nil }.count, format: .number), label: Text("摘记"))
+                        IndexMetric(value: Text(entry.notes.count, format: .number), label: Text("划线"))
                     }
-                    (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3)) : AnyLayout(HStackLayout(spacing: Theme.space3))) {
-                        PrimaryButton("回书房") { dismiss(); onCloseBook() }
-                        TextButton("写一句") { writingNote = true }
-                    }
-                    quoteCard
-                    finishNoteSection
-                    nextSection
+                    .padding(.vertical, Theme.space2)
                 }
-                .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
-                .frame(maxWidth: 680).frame(maxWidth: .infinity)
+                quoteCard
+                finishNoteSection
+                nextSection
             }
-            .paperBackground()
+            .scrollDismissesKeyboard(.interactively)
+            .tint(IndexTheme.accent)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if !writingNote {
+                    IndexBottomBar {
+                        Button("回书房") { dismiss(); onCloseBook() }
+                            .buttonStyle(IndexActionStyle(role: .primary, expands: true))
+                    }
+                }
+            }
             .navigationTitle("读完")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
@@ -87,13 +87,13 @@ struct BookFinishView: View {
 
     private var header: some View {
         (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4)) : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))) {
-            BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
+            BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 68, usesIndexPalette: true)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Theme.space2) {
-                Text("全书读完").font(.caption).foregroundStyle(Theme.clayDeep)
-                Text(entry.title).font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
-                Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(Theme.ink2)
-                Text(statsLine).font(.caption).foregroundStyle(Theme.ink2)
+                Text("全书读完").font(.caption).foregroundStyle(IndexTheme.accent)
+                Text(entry.title).font(IndexTheme.editorial(23, relativeTo: .title2)).foregroundStyle(IndexTheme.ink)
+                Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(IndexTheme.muted)
+                statsLine.font(.caption).foregroundStyle(IndexTheme.muted)
                     .accessibilityIdentifier("finish.statsLine")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,11 +113,14 @@ struct BookFinishView: View {
                     .accessibilityIdentifier("finish.quote.next")
                 }
             }
-            Text(quoteText).font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
+            if loadingQuotes && currentQuote == nil {
+                IndexStatus(kind: .loading, title: Text("正在载入摘句"))
+            }
+            Text(verbatim: quoteText).font(IndexTheme.editorial(20, relativeTo: .title3)).lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
             (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3)) : AnyLayout(HStackLayout(spacing: Theme.space4))) {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
-                    .font(.caption).foregroundStyle(Theme.ink3)
+                    .font(.caption).foregroundStyle(IndexTheme.muted)
                 Spacer()
                 if let quote = currentQuote, let chapter = quote.chapter, let position = quote.position {
                     Button("回到原文") {
@@ -132,29 +135,38 @@ struct BookFinishView: View {
                 .accessibilityIdentifier("finish.quote.share")
             }
         }
-        .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
-        .foregroundStyle(Theme.ink)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(Theme.space3).indexPanel(fill: IndexTheme.wash)
+        .foregroundStyle(IndexTheme.ink)
     }
 
     private var finishNoteSection: some View {
-        VStack(alignment: .leading, spacing: Theme.space3) {
-            SectionTitle(title: "读完感")
+        let canAnchor = currentQuote?.chapter != nil && currentQuote?.position != nil
+        return VStack(alignment: .leading, spacing: Theme.space3) {
+            HStack {
+                IndexHeading(title: Text("读完感"))
+                Button("写一句") { writingNote = true }.buttonStyle(IndexActionStyle())
+            }
             TextEditor(text: $finishNote).focused($writingNote)
                 .font(.body).scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
                 .padding(Theme.space2)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.lineField, lineWidth: Theme.hairline) }
+                .background(IndexTheme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous)
+                        .strokeBorder(writingNote ? IndexTheme.accent : IndexTheme.edge, lineWidth: Theme.rule)
+                        .allowsHitTesting(false)
+                }
                 .onChange(of: finishNote) { _, _ in noteSaved = false }
                 .accessibilityLabel("读完感")
             HStack {
                 Button { saveFinishNote() } label: { Text(noteSaved ? "已保存" : "保存读完感") }
-                    .buttonStyle(SecondaryButtonStyle(height: Theme.iconButtonSize))
+                    .buttonStyle(IndexActionStyle(role: .secondary))
                     .disabled(finishNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasSavedNote)
                     .accessibilityIdentifier("finish.note.save")
                 Spacer()
-                Text("会存进本书摘记").font(.caption2).foregroundStyle(Theme.ink2)
+                Text(canAnchor ? "会存进本书摘记" : "没有可定位的原文时，读完感仍按书保存在本机。")
+                    .font(.caption).foregroundStyle(IndexTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -163,25 +175,25 @@ struct BookFinishView: View {
     private var nextSection: some View {
         if let next = nextEntry {
             VStack(alignment: .leading, spacing: Theme.space3) {
-                SectionTitle(title: "下一本")
+                IndexHeading(title: Text("下一本"))
                 HStack(spacing: Theme.space4) {
-                    BookCoverView(title: next.title, color: next.color, author: next.author, image: model.covers[next.id], width: 56)
+                    BookCoverView(title: next.title, color: next.color, author: next.author, image: model.covers[next.id], width: 56, usesIndexPalette: true)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: Theme.space1) {
-                        Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
-                        Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(Theme.ink2)
+                        Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(IndexTheme.ink).lineLimit(2)
+                        Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(IndexTheme.muted)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Button { onOpenNext(next) } label: { Text("开始下一本") }
-                    .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
+                    .buttonStyle(IndexActionStyle(role: .primary))
                     .accessibilityIdentifier("finish.next.open")
             }
         } else {
             VStack(alignment: .leading, spacing: Theme.space3) {
-                EmptyState(title: "这一段阅读告一段落", detail: "书库里还没有待读的书，可以回去挑选或导入下一本。")
+                IndexStatus(kind: .empty, title: Text("书库里还没有待读的书"))
                 Button { dismiss(); onCloseBook() } label: { Text("回到书库") }
-                    .buttonStyle(SecondaryButtonStyle(height: Theme.buttonHeight))
+                    .buttonStyle(IndexActionStyle(role: .secondary))
             }
         }
     }
@@ -200,6 +212,7 @@ struct BookFinishView: View {
     private func loadContent() async {
         guard !loaded else { return }
         loaded = true
+        defer { loadingQuotes = false }
         loadFinishNote()
         var candidates: [QuoteCandidate] = entry.notes
             .sorted { $0.date > $1.date }

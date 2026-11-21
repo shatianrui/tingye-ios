@@ -44,14 +44,14 @@ struct GeneralSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "按你的习惯阅读", detail: "启动、语言与交互，只影响这台设备的使用习惯。") {
+        SettingsPage(title: "通用设置", detail: "语言、漫画和交互") {
             SettingsGroup(footer: "支持简体中文、繁體中文、English、日本語。在系统设置的「听页 › 语言」中切换。") {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                } label: { HairlineRow(title: "语言", value: currentLanguage, disclosure: true, showsDivider: false) }
+                } label: { IndexRowLabel(title: Text("语言"), detail: Text(verbatim: currentLanguage), disclosure: true) }
                 .accessibilityIdentifier("general.language")
             }
-            SettingsGroup(title: "首页", footer: "打开 App 时直接回到最近阅读的那本书与位置。") {
+            SettingsGroup(title: "首页") {
                 HairlineRow(showsDivider: false) {
                     Toggle("启动时自动继续上次阅读", isOn: $resumeOnLaunch)
                         .accessibilityIdentifier("general.resumeOnLaunch")
@@ -62,8 +62,8 @@ struct GeneralSettingsView: View {
             }
             SettingsGroup(title: "漫画", footer: "用于还没单独设置过的漫画；在漫画里切换方向只影响那一部。") {
                 Text("默认阅读方式").font(Theme.sans(15)).padding(.bottom, Theme.space2)
-                SegmentedBar(options: ComicPreset.modes.map(\.value), selection: comicMode,
-                             title: { value in ComicPreset.modes.first { $0.value == value }?.label ?? value },
+                IndexScopePicker(options: ComicPreset.modes.map(\.value), selection: comicMode,
+                             title: { value in Text(L(ComicPreset.modes.first { $0.value == value }?.label ?? value)) },
                              onSelect: { comicMode = $0 })
                     .accessibilityIdentifier("general.comicMode")
             }
@@ -77,21 +77,18 @@ struct GeneralSettingsView: View {
     }
 }
 
-/// D 单元设置构图：仅组合 A 单元的 Masthead / PaperCard / HairlineRow。
 struct SettingsPage<Content: View>: View {
     let title: String
     var detail: String? = nil
     @ViewBuilder var content: Content
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: title, subtitle: detail, titleSize: 28)
-                content
-            }
-            .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space5)
-            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+        IndexPage {
+            IndexHeading(title: Text(L(title)), detail: detail.map { Text(L($0)) }, large: true)
+            content
         }
-        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.clay)
+        .foregroundStyle(IndexTheme.ink)
+        .tint(IndexTheme.accent)
     }
 }
 
@@ -99,15 +96,19 @@ struct SettingsGroup<Content: View>: View {
     var title: String? = nil
     var footer: String? = nil
     @ViewBuilder var content: Content
+
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.space3) {
-            if let title { SectionHeader(title: title) }
-            PaperCard { VStack(alignment: .leading, spacing: 0) { content } }
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            if let title { IndexHeading(title: Text(L(title))) }
+            VStack(alignment: .leading, spacing: 0) { content }
+                .padding(.horizontal, Theme.space3).padding(.vertical, Theme.space2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .indexPanel()
             if let footer {
-                Text(L(footer)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                Text(L(footer)).font(.caption).foregroundStyle(IndexTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressButtonStyle())
     }
 }

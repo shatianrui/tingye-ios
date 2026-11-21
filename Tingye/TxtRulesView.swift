@@ -17,103 +17,83 @@ struct TxtRulesView: View {
 
     var body: some View {
         List {
-            Masthead(title: "让章节各就其位", subtitle: "先用一段原文预览，再将规则用于导入或重新分章。", titleSize: 28)
+            IndexHeading(title: Text("TXT 分章规则"), detail: Text("先用一段原文预览，再将规则用于导入或重新分章。"))
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
             Section {
-                PaperCard {
-                    HairlineRow(showsDivider: false) {
-                        Stepper(value: $maxLength, in: 5_000...200_000, step: 5_000) {
-                            Text("章节最大字数 \(maxLength)").monospacedDigit()
-                        }.accessibilityIdentifier("txt.maxLength")
-                    }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: Theme.space2) {
-                            ForEach([10_000, 30_000, 50_000], id: \.self) { value in
-                                Chip(title: "\(value)", selected: maxLength == value) { maxLength = value }
-                            }
-                        }
-                    }
+                Stepper(value: $maxLength, in: 5_000...200_000, step: 5_000) {
+                    Text("章节最大字数 \(maxLength)").monospacedDigit()
                 }
+                .accessibilityIdentifier("txt.maxLength")
+                IndexScopePicker(options: [10_000, 30_000, 50_000], selection: maxLength,
+                                 title: { Text($0, format: .number) }, onSelect: { maxLength = $0 })
             } header: { Text("TXT 分章") } footer: { Text("超过这个字数的章节会在段落处继续切分，避免整本书只有一章。") }
-            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            .listRowBackground(IndexTheme.surface)
+
             Section {
-                ruleRow(name: "内置规则", pattern: "", selected: active.isEmpty)
+                ruleRow(name: L("内置规则"), pattern: "", selected: active.isEmpty)
                 ForEach(rules, id: \.self) { pattern in
                     ruleRow(name: pattern, pattern: pattern, selected: active == pattern)
                         .swipeActions { Button("删除", role: .destructive) { remove(pattern) } }
                 }
             } header: { Text("使用中的规则") } footer: { Text("轻点选用。内置规则识别「第X章 / 回 / 卷」「Chapter N」与 Markdown 标题。") }
-            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            .listRowBackground(IndexTheme.surface)
+
             Section {
-                PaperCard {
-                    VStack(alignment: .leading, spacing: Theme.space3) {
-                        TextField("例如：^\\s*第.{1,9}章.*$", text: $draft, axis: .vertical)
-                            .font(.system(.body, design: .monospaced))
-                            .textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .padding(Theme.space3)
-                            .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusField))
-                            .overlay { RoundedRectangle(cornerRadius: Theme.radiusField).strokeBorder(Theme.lineField, lineWidth: Theme.hairline) }
-                            .accessibilityIdentifier("txt.draft")
-                        if !draft.isEmpty && draftRegex == nil {
-                            SealBadge(text: "正则表达式无效。", color: Theme.danger, background: Theme.dangerSoft)
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    TextField("例如：^\\s*第.{1,9}章.*$", text: $draft, axis: .vertical)
+                        .font(.system(.body, design: .monospaced))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .padding(Theme.space3)
+                        .background(IndexTheme.canvas, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: IndexTheme.controlRadius)
+                                .strokeBorder(IndexTheme.edge, lineWidth: Theme.rule).allowsHitTesting(false)
                         }
-                        HairlineRow {
-                            HStack {
-                                TextButton("加入并使用") { add(draft, use: true) }
-                                Spacer()
-                                TextButton("仅加入") { add(draft, use: false) }
-                            }.disabled(draftRegex == nil)
-                        }
-                        HairlineRow(showsDivider: false) {
-                            Menu("从预设加入") {
-                                ForEach(TxtChapterRules.presets, id: \.pattern) { preset in
-                                    Button(preset.name) { add(preset.pattern, use: false) }
-                                }
-                            }.foregroundStyle(Theme.clayDeep)
+                        .accessibilityIdentifier("txt.draft")
+                    if !draft.isEmpty && draftRegex == nil {
+                        IndexStatus(kind: .failure, title: Text("正则表达式无效。"))
+                    }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: Theme.space2) { addActions }.fixedSize(horizontal: true, vertical: false)
+                        VStack(alignment: .leading, spacing: Theme.space2) { addActions }
+                    }
+                    .disabled(draftRegex == nil)
+                    Menu("从预设加入") {
+                        ForEach(TxtChapterRules.presets, id: \.pattern) { preset in
+                            Button(L(preset.name)) { add(preset.pattern, use: false) }
                         }
                     }
+                    .frame(minHeight: Theme.iconButtonSize)
                 }
+                .padding(.vertical, Theme.space2)
             } header: { Text("添加规则") } footer: { Text("每行开头匹配到的文字作为章节标题。错误的规则可能导致章节错乱，可随时换回内置规则。") }
-            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            .listRowBackground(IndexTheme.surface)
+
             Section {
-                PaperCard {
-                    VStack(alignment: .leading, spacing: 0) {
-                        HairlineRow {
-                            TextField("粘贴一段原文试试", text: $sample, axis: .vertical).lineLimit(3...8)
-                        }
-                        ForEach(Array(previewTitles.enumerated()), id: \.offset) { index, title in
-                            HairlineRow {
-                                HStack(spacing: Theme.space3) {
-                                    Text(String(format: "%02d", index + 1)).font(Theme.sans(15)).foregroundStyle(Theme.ink3).monospacedDigit()
-                                    Text(title).font(Theme.serif(17)).lineLimit(1)
-                                }
-                            }
-                        }
-                    }
+                TextField("粘贴一段原文试试", text: $sample, axis: .vertical).lineLimit(3...8)
+                    .padding(.vertical, Theme.space2)
+                ForEach(Array(previewTitles.enumerated()), id: \.offset) { index, title in
+                    IndexRowLabel(title: Text(verbatim: title), detail: Text("第 \(index + 1) 章"))
                 }
             } header: { Text("预览（\(previewTitles.count) 章）") }
-            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            .listRowBackground(IndexTheme.surface)
         }
-        .tint(Theme.clayDeep).foregroundStyle(Theme.ink)
-        .editorialList().paperBackground()
+        .indexList()
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("TXT 分章规则").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder private var addActions: some View {
+        Button("加入并使用") { add(draft, use: true) }.buttonStyle(IndexActionStyle(role: .primary))
+        Button("仅加入") { add(draft, use: false) }.buttonStyle(IndexActionStyle(role: .secondary))
     }
 
     private func ruleRow(name: String, pattern: String, selected: Bool) -> some View {
         Button { active = pattern } label: {
-            PaperCard {
-                HairlineRow(showsDivider: false) {
-                    HStack {
-                        Text(name).font(pattern.isEmpty ? .body : .system(.footnote, design: .monospaced))
-                            .foregroundStyle(Theme.ink).lineLimit(2)
-                        Spacer()
-                        if selected { ThemeIcon(symbol: Icon.checkmark, size: 18).foregroundStyle(Theme.clayDeep) }
-                    }
-                    .frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
-                }
-            }
+            IndexRowLabel(title: Text(verbatim: name), detail: selected ? Text("当前规则") : nil,
+                          symbol: selected ? Icon.checkmark : nil)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressButtonStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
     private func add(_ pattern: String, use: Bool) {

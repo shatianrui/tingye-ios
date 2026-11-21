@@ -82,7 +82,7 @@ struct SMBBrowser: View {
     @State private var shares: [String] = []
     @State private var files: [SMBEntry] = []
     @State private var loading = true
-    @State private var error: String?
+    @State private var error: SourceBrowseFailure?
     @State private var query = ""
     private var shownFiles: [SMBEntry] { query.isEmpty ? files : files.filter { $0.name.localizedCaseInsensitiveContains(query) } }
 
@@ -94,51 +94,63 @@ struct SMBBrowser: View {
         _connection = StateObject(wrappedValue: connection ?? SMBConnection(source: source))
     }
 
+    private var shownShares: [String] {
+        query.isEmpty ? shares : shares.filter { $0.localizedCaseInsensitiveContains(query) }
+    }
+    private var directoryTitle: String {
+        guard let share else { return source.name }
+        return path.isEmpty ? share : (path as NSString).lastPathComponent
+    }
+
     var body: some View {
         List {
-            Masthead(title: "局域网书库", subtitle: "选择共享文件夹，浏览后将需要的书导入本机。", titleSize: 28)
+            IndexHeading(title: Text(verbatim: directoryTitle),
+                         detail: Text(share == nil ? "选择共享文件夹，浏览后将需要的书导入本机。" : "浏览文件夹，选择书籍后下载到本机。"))
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
-            if let error {
+            if loading {
+                IndexStatus(kind: .loading, title: Text("正在读取局域网书库…"))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if let error {
                 Section {
-                    EditorialNotice(title: "无法读取共享书库", detail: error, kind: .failure)
-                    Button("重新加载") { Task { await load() } }.disabled(loading)
+                    IndexStatus(kind: .failure, title: Text("无法读取共享书库"), detail: error.detail)
+                    Button("重新加载") { Task { await load() } }
+                        .buttonStyle(IndexActionStyle(role: .secondary))
                 }
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if share == nil ? shownShares.isEmpty : shownFiles.isEmpty {
+                let title: LocalizedStringKey = !query.isEmpty ? "未找到匹配文件" : (share == nil ? "没有可用的共享" : "空文件夹")
+                IndexStatus(kind: .empty, title: Text(title))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
+
             if share == nil {
-                ForEach(shares, id: \.self) { name in
+                ForEach(shownShares, id: \.self) { name in
                     NavigationLink { SMBBrowser(source: source, share: name, path: "", connection: connection) } label: {
-                        HairlineRow(title: name, symbol: Icon.folder)
+                        IndexRowLabel(title: Text(verbatim: name), symbol: Icon.folder)
                     }
                 }
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                .listRowBackground(IndexTheme.surface)
             } else {
                 ForEach(shownFiles) { item in
                     if item.isFolder {
                         NavigationLink { SMBBrowser(source: source, share: share, path: join(item.name), connection: connection) } label: { row(item) }
-                    } else {
+                    } else if ImportableFile.accepts(item.name) {
                         Button { download(item) } label: { row(item) }
-                            .disabled(!ImportableFile.accepts(item.name) || model.busy)
+                            .buttonStyle(PressButtonStyle())
+                            .disabled(model.busy)
+                    } else {
+                        row(item)
                     }
                 }
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                .listRowBackground(IndexTheme.surface)
             }
         }
-        .overlay {
-            if loading { EmptyState(title: "局域网书库", detail: "选择共享文件夹，浏览后将需要的书导入本机。", state: .loading) }
-            else if error == nil && (share == nil ? shares.isEmpty : shownFiles.isEmpty) {
-                EmptyState(title: share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), detail: "")
-            }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
-        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
-        .navigationTitle(share == nil ? source.name : (path.isEmpty ? share! : (path as NSString).lastPathComponent))
+        .indexList()
+        .navigationTitle(directoryTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .searchable(text: $query, prompt: "在当前文件夹中搜索")
+        .searchable(text: $query, prompt: share == nil ? "搜索共享" : "在当前文件夹中搜索")
         .refreshable { await load() }
         .task { await load() }
     }
@@ -146,11 +158,8 @@ struct SMBBrowser: View {
     private func join(_ name: String) -> String { path.isEmpty ? name : path + "/" + name }
 
     private func row(_ item: SMBEntry) -> some View {
-        let importable = ImportableFile.accepts(item.name)
-        return HairlineRow(title: item.name,
-            detail: item.isFolder ? "文件夹" : ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file),
-            value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
-            symbol: item.isFolder ? Icon.folder : Icon.document)
+        SourceFileRow(name: item.name, isFolder: item.isFolder,
+                      size: ByteCountFormatter.string(fromByteCount: Int64(clamping: item.size), countStyle: .file))
     }
 
     private func load() async {
@@ -172,7 +181,7 @@ struct SMBBrowser: View {
                 }
             }
             error = nil
-        } catch { self.error = error.localizedDescription }
+        } catch { self.error = SourceBrowseFailure(error, localNetwork: true) }
     }
 
     private func download(_ item: SMBEntry) {

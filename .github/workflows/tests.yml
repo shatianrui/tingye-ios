@@ -25,6 +25,14 @@ name: Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      diagnostic_mode:
+        description: "Run full Tests or the single derived EPUB diagnostic"
+        type: choice
+        default: full
+        options:
+          - full
+          - epub-derived-once
   pull_request:
   # 这条集成分支没有拉取请求权限，也不能 workflow_dispatch。
   # 推送到下面两个分支时直接跑测试，合入 main 后这条过滤不会匹配 main。
@@ -37,11 +45,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.ref }}
-  cancel-in-progress: true
+  group: tests-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && inputs.diagnostic_mode == 'epub-derived-once' && '-diagnostic-epub' || '' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' || inputs.diagnostic_mode != 'epub-derived-once' }}
 
 jobs:
   unit-tests:
+    if: github.event_name != 'workflow_dispatch' || inputs.diagnostic_mode != 'epub-derived-once'
     name: Unit tests (TingyeTests)
     runs-on: macos-15
     env:
@@ -96,6 +105,7 @@ jobs:
           if-no-files-found: ignore
 
   ui-tests:
+    if: github.event_name != 'workflow_dispatch' || inputs.diagnostic_mode != 'epub-derived-once'
     name: UI tests (TingyeUITests)
     runs-on: macos-latest
     timeout-minutes: 90
@@ -145,3 +155,40 @@ jobs:
           name: ui-test-results
           path: TestResults/
           if-no-files-found: ignore
+
+  epub-derived-diagnostic:
+    name: EPUB diagnostic (one case only)
+    if: github.event_name == 'workflow_dispatch' && inputs.diagnostic_mode == 'epub-derived-once' && github.ref == 'refs/heads/redesign/full-product-20261121'
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Checkout diagnostic configuration
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-config
+          persist-credentials: false
+
+      - name: Checkout exact app and test source
+        uses: actions/checkout@v4
+        with:
+          ref: cbbe25c8060635199995dae7cbdea461806578da
+          path: application-source
+          persist-credentials: false
+
+      - name: Run the original EPUB smoke test once
+        shell: bash
+        run: |
+          python3 diagnostic-config/docs/redesign-20261121/diagnose-epub-smoke.py \
+            application-source "$RUNNER_TEMP/tingye-epub-evidence"
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: epub-smoke-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tingye-epub-evidence/
+          if-no-files-found: warn
+          retention-days: 7

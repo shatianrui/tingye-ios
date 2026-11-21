@@ -1,13 +1,16 @@
 import SwiftUI
 
 /// 今日一句：每天从书库轮换一本，摘出其中一句；「从这句读」一次性定位到原文（`AppModel.readerJump`）。
-/// 显示在统计页的「日」视图。
+/// 在书库与我的概览提供本书摘句。
 struct DailyQuoteCard: View {
     @EnvironmentObject var model: AppModel
     /// 兼容历史调用；专注版不显示装饰编号。
     var number: String? = nil
     var compact = false
     @State private var quote: DailyQuote?
+    @State private var loadedEntryID: String?
+    @State private var failedEntryID: String?
+    @State private var retryQuote = 0
 
     /// 每天固定轮换一本，而不是总是第一本。
     private var pick: ShelfEntry? {
@@ -19,39 +22,38 @@ struct DailyQuoteCard: View {
 
     var body: some View {
         if let entry = pick {
-            VStack(alignment: .leading, spacing: Theme.space4) {
-                VStack(alignment: .leading, spacing: Theme.space3) {
-                    Text("今日摘句").mastheadStyle()
-                    Group {
-                        if let quote, quote.entryID == entry.id { Text(quote.text) }
-                        else { Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : []) }
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                IndexHeading(title: Text("今日摘句"))
+                if let quote, quote.entryID == entry.id {
+                    Text(verbatim: quote.text)
+                        .font(IndexTheme.editorial(21, relativeTo: .title3)).lineSpacing(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("《\(entry.title)》第 \(quote.chapter + 1) 章 · \(quote.chapterTitle)").font(.caption).foregroundStyle(IndexTheme.muted)
+                    QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
+                        IndexActionLabel(title: "分享摘句卡片", symbol: Icon.share)
                     }
-                    .font(Theme.serif(20, relativeTo: .title3))
-                    .lineSpacing(Theme.space2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(Theme.ink)
-                    Text("—— " + sourceLine(entry))
-                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                        .lineLimit(2)
+                    .buttonStyle(IndexActionStyle())
+                    .accessibilityIdentifier("quote.share")
+                } else {
+                    Text(verbatim: entry.title).font(.headline)
+                    if loadedEntryID != entry.id {
+                        IndexStatus(kind: .loading, title: Text("正在载入摘句"))
+                    } else if failedEntryID == entry.id {
+                        IndexStatus(kind: .failure, title: Text("暂时无法读取摘句"))
+                        Button("重试") { retryQuote += 1 }.buttonStyle(IndexActionStyle(role: .secondary))
+                    } else {
+                        IndexStatus(kind: .empty, title: Text("这本书暂无可分享的摘句"))
+                    }
                 }
-                .padding(.leading, Theme.space4)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
-                if !compact {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: Theme.space3) { quoteActions(entry) }
-                        VStack(spacing: Theme.space3) { quoteActions(entry) }
-                    }
-                    if let quote, quote.entryID == entry.id {
-                        QuoteShareLink(text: quote.text, title: entry.title, author: entry.author, chapter: quote.chapterTitle) {
-                            Label { Text("分享摘句卡片") } icon: { ThemeIcon(symbol: Icon.share, size: 16) }
-                                .font(Theme.sans(15)).foregroundStyle(Theme.clayDeep)
-                                .frame(minHeight: Theme.iconButtonSize)
-                        }
-                        .accessibilityIdentifier("quote.share")
-                    }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Theme.space2) { quoteActions(entry) }.fixedSize(horizontal: true, vertical: false)
+                    VStack(alignment: .leading, spacing: Theme.space1) { quoteActions(entry) }
                 }
             }
+            .foregroundStyle(IndexTheme.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Theme.space4)
+            .indexPanel(fill: IndexTheme.wash)
             .contextMenu {
                 Button { model.open(entry) } label: { Label { Text(entry.started ? "继续阅读" : "开始阅读") } icon: { ThemeIcon(symbol: Icon.read) } }
                 Button { model.listen(entry.id) } label: { Label { Text("听书") } icon: { ThemeIcon(symbol: Icon.listen) } }
@@ -65,30 +67,38 @@ struct DailyQuoteCard: View {
                 if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
                 else { model.open(entry) }
             }
-            .task(id: entry.id + AppModel.dayKey(Date())) { await loadQuote(entry) }
+            .task(id: "\(entry.id):\(AppModel.dayKey(Date())):\(retryQuote)") { await loadQuote(entry) }
         }
     }
 
     @ViewBuilder private func quoteActions(_ entry: ShelfEntry) -> some View {
-        PrimaryButton(quote?.entryID == entry.id ? "从这句读" : "开始阅读") {
+        Button(quote?.entryID == entry.id ? "从这句读" : "开始阅读") {
             Haptics.light()
             if let quote, quote.entryID == entry.id { model.open(entry, target: .init(chapter: quote.chapter, position: quote.position, anchor: .init(quote: quote.text))) }
             else { model.open(entry) }
         }
-        SecondaryButton("听这本书") { model.listen(entry.id) }
-    }
-
-    private func sourceLine(_ entry: ShelfEntry) -> String {
-        guard let quote, quote.entryID == entry.id else { return "《\(entry.title)》· \(entry.author)" }
-        return "《\(entry.title)》第 \(quote.chapter + 1) 章 · \(quote.chapterTitle)"
+        .buttonStyle(IndexActionStyle(role: .primary))
+        if !compact {
+            Button("听这本书") { model.listen(entry.id) }.buttonStyle(IndexActionStyle(role: .secondary))
+        }
     }
 
     /// 在后台切句，挑一句长度适中的话；同一天同一本书总是同一句。
     private func loadQuote(_ entry: ShelfEntry) async {
-        guard let book = try? await model.loadBook(entry.id) else { quote = nil; return }
+        loadedEntryID = nil
+        failedEntryID = nil
+        defer { if !Task.isCancelled { loadedEntryID = entry.id } }
+        guard let book = try? await model.loadBook(entry.id) else {
+            if !Task.isCancelled {
+                quote = nil
+                failedEntryID = entry.id
+            }
+            return
+        }
         let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
         let box = BookBox(book: book)
-        quote = await Task.detached(priority: .utility) { DailyQuote.pick(from: box.book, seed: day) }.value
+        let picked = await Task.detached(priority: .utility) { DailyQuote.pick(from: box.book, seed: day) }.value
+        if !Task.isCancelled { quote = picked }
     }
 }
 
@@ -122,7 +132,7 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 刊式摘句卡：宣纸白、报头双线、靛蓝引号与题条。导出为图片分享，始终使用日间配色。
+/// 摘句分享图沿用暖纸、深绿与书目说明，导出使用日间色。
 struct QuoteShareCard: View {
     let text: String
     let title: String
@@ -135,28 +145,26 @@ struct QuoteShareCard: View {
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
                     .font(.system(size: 16))
-            }.foregroundStyle(Color(hex: 0x465264))
-            Capsule().fill(Color(hex: 0x163E73)).frame(width: 36, height: 3)
+            }.foregroundStyle(Color(hex: 0x545D53))
+            Capsule().fill(Color(hex: 0x2D594B)).frame(width: 36, height: 3)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x12161C))
+                .foregroundStyle(Color(hex: 0x232823))
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x12161C))
+                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x232823))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x465264))
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x545D53))
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Color(hex: 0xC3CCD6)).frame(height: 1)
-            Text("留一点时间，给喜欢的文字。")
-                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x465264))
+            Rectangle().fill(Color(hex: 0xD9D5C8)).frame(height: 1)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xF4F6F8))
+        .background(Color(hex: 0xF5F1E8))
         .environment(\.colorScheme, .light)
     }
 

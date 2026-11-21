@@ -208,37 +208,56 @@ struct AppLockGate: ViewModifier {
     @Environment(\.scenePhase) private var phase
     @State private var locked = true
     @State private var checking = false
+    @State private var retryNeeded = false
     func body(content: Content) -> some View {
         ZStack {
             content.accessibilityHidden(enabled && locked)
-                if enabled && locked {
-                    ZStack {
-                        Theme.bg.ignoresSafeArea()
-                        VStack(spacing: Theme.space4) {
-                            ThemeIcon(symbol: Icon.lock(true), size: 40).foregroundStyle(Theme.ink2)
-                            EmptyState(title: "听页已上锁", detail: "验证身份，回到你的私人书房。",
-                                       state: checking ? .loading : .empty)
-                            PrimaryButton("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
-                                .frame(maxWidth: 300).disabled(checking)
-                            if checking { Text("正在验证…").font(Theme.sans(13)).foregroundStyle(Theme.ink3) }
-                        }.padding(Theme.inset)
+                .allowsHitTesting(!enabled || !locked)
+            if enabled && locked {
+                IndexTheme.canvas.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Theme.space4) {
+                        ThemeIcon(symbol: Icon.lock(true), size: 34).foregroundStyle(IndexTheme.accent)
+                            .accessibilityHidden(true)
+                        IndexHeading(title: Text("听页已上锁"), large: true)
+                        if checking {
+                            IndexStatus(kind: .loading, title: Text("正在验证…"))
+                        } else if retryNeeded {
+                            IndexStatus(kind: .failure, title: Text("验证未完成"),
+                                        detail: Text("听页仍处于锁定状态，可以再次验证。"))
+                        }
+                        Button("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
+                            .buttonStyle(IndexActionStyle(role: .primary, expands: true))
+                            .disabled(checking)
                     }
-                    .transition(.opacity)
+                    .padding(Theme.space4)
+                    .indexPanel()
+                    .padding(Theme.space4)
+                    .frame(maxWidth: 420).frame(maxWidth: .infinity)
                 }
+                .defaultScrollAnchor(.center)
+                .transition(.opacity)
             }
-            .animation(Theme.pressAnimation, value: locked)
+        }
+            .animation(IndexTheme.transition, value: locked)
+            .respectReducedMotion()
             .task { if enabled { await unlock() } }
             // 刚在设置里开启时不立即上锁，下次进入后台才生效
             .onChange(of: enabled) { _, on in if on { locked = false } }
             .onChange(of: phase) { _, value in
                 guard enabled else { return }
-                if value == .background { locked = true }
+                if value == .background { locked = true; retryNeeded = false }
                 if value == .active, locked { Task { await unlock() } }
             }
     }
     @MainActor private func unlock() async {
         guard !checking else { return }
         checking = true; defer { checking = false }
-        if await PrivacyLock.authenticate(reason: "解锁听页") { locked = false }
+        if await PrivacyLock.authenticate(reason: "解锁听页") {
+            retryNeeded = false
+            locked = false
+        } else {
+            retryNeeded = true
+        }
     }
 }

@@ -64,112 +64,14 @@ struct ComicReaderView: View {
             }
 
             VStack(spacing: 0) {
-                HStack(spacing: Theme.space3) {
-                    Button { dismiss() } label: {
-                        ThemeIcon(symbol: Icon.back, size: 24)
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("返回")
-                    VStack(alignment: .leading, spacing: Theme.space1) {
-                        Text(book.title).font(Theme.serif(20, relativeTo: .headline)).lineLimit(2)
-                        Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink3)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
-                    Button {
-                        Haptics.selection()
-                        model.bookmark(book.id, chapter: page, position: 0, excerpt: "第 \(page + 1) 页")
-                    } label: {
-                        ThemeIcon(symbol: Icon.bookmark(marked), size: 24)
-                            .foregroundStyle(marked ? Theme.accent : Theme.ink)
-                            .frame(width: 44, height: 44).contentShape(Rectangle())
-                            .id(marked)
-                            .transition(marked ? .movingParts.pop(Theme.accent) : .identity)
-                            .animation(.easeOut(duration: 0.25), value: marked)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(marked ? "移除本页书签" : "为本页添加书签")
-                    .accessibilityAddTraits(marked ? .isSelected : [])
-                    .accessibilityIdentifier("comic.bookmark")
-                    Menu {
-                        Button { onlyBookmarks = true; showingPages = true } label: { Label("查看书签", systemImage: Icon.bookmark(false)) }
-                        Button { showingHelp = true } label: { Label("阅读操作说明", systemImage: Icon.help) }
-                    } label: {
-                        ThemeIcon(symbol: Icon.more, size: 24).frame(width: 44, height: 44).contentShape(Rectangle())
-                    }
-                    .accessibilityLabel("更多漫画操作")
-                }
-                .padding(Theme.space3)
-                .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-                Spacer(minLength: 8)
-                ScrollView {
-                    VStack(spacing: Theme.space1) {
-                        HStack {
-                            Label("页码进度", systemImage: Icon.read)
-                            Spacer()
-                            Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
-                        }
-                        .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
-                        .padding(.horizontal, Theme.space2).padding(.top, Theme.space3)
-                        HStack(spacing: Theme.space3) {
-                            pageStep(-1, "上一页", Icon.back)
-                            if count > 1 {
-                                Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
-                                    if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
-                                }
-                                .tint(Theme.ink2)
-                                .overlay {
-                                    GeometryReader { geometry in
-                                        let fraction = (scrubbing ?? Double(page)) / Double(max(1, count - 1))
-                                        let thumb = Theme.space6
-                                        let center = thumb / 2 + (geometry.size.width - thumb) * fraction
-                                        ProgressLine(value: fraction)
-                                            .mask {
-                                                HStack(spacing: 0) {
-                                                    Rectangle().frame(width: max(0, center - thumb / 2))
-                                                    Color.clear.frame(width: thumb)
-                                                    Rectangle()
-                                                }
-                                            }
-                                            .frame(maxHeight: .infinity)
-                                    }.allowsHitTesting(false).accessibilityHidden(true)
-                                }
-                                .environment(\.layoutDirection, mode == "rtl" ? .rightToLeft : .leftToRight)
-                                .accessibilityLabel("页码").accessibilityValue("第 \(page + 1) 页，共 \(count) 页")
-                            } else { Spacer() }
-                            pageStep(1, "下一页", Icon.disclosure)
-                        }
-                        HStack(spacing: Theme.space2) {
-                            Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
-                                .accessibilityIdentifier("comic.contents")
-                            Menu {
-                                Picker("阅读方向", selection: $mode) {
-                                    Label("从左往右", systemImage: Icon.nextDirection).tag("ltr")
-                                    Label("从右往左（日漫）", systemImage: Icon.prevDirection).tag("rtl")
-                                    Label("上下滚动（条漫）", systemImage: Icon.downDirection).tag("vertical")
-                                }
-                            } label: { comicAction(Icon.readingDirection, modeLabel, selected: true) }
-                            .accessibilityLabel("翻页方式，当前\(modeLabel)")
-                            Button { onlyBookmarks = true; showingPages = true } label: { comicAction(Icon.bookmark(false), "书签") }
-                        }
-                        .buttonStyle(.plain)
-                        Text("双指缩放 · 双击适应屏幕")
-                            .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, Theme.space2)
-                    }
-                    .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
-                    .background(Theme.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-                }
-                .scrollBounceBehavior(.basedOnSize)
-                .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
+                comicHeader
+                Spacer(minLength: Theme.space2)
+                comicTools
             }
             .frame(maxWidth: 760)
             .padding(.horizontal, Theme.space5)
             .padding(.vertical, Theme.space3)
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(IndexTheme.ink)
             .opacity(chrome ? 1 : 0)
             .allowsHitTesting(chrome)
             .accessibilityHidden(!chrome)
@@ -194,18 +96,116 @@ struct ComicReaderView: View {
         .onChange(of: mode) { _, value in ComicPreset.save(value, for: book.id) }
         .onDisappear { model.setReadingSurface(book.id, visible: false) }
     }
-    private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
-        VStack(spacing: Theme.space2) {
-            ThemeIcon(symbol: icon, size: 24)
-            Text(L(title)).font(.footnote).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+    private var comicHeader: some View {
+        HStack(spacing: Theme.space3) {
+            Button { dismiss() } label: {
+                ThemeIcon(symbol: Icon.back, size: 24)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("返回")
+            VStack(alignment: .leading, spacing: Theme.space1) {
+                Text(book.title).font(IndexTheme.editorial(20, relativeTo: .headline)).lineLimit(2)
+                Text("\(page + 1) / \(count) 页 · \(modeLabel)")
+                    .font(.caption).monospacedDigit().foregroundStyle(IndexTheme.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
+            Button {
+                Haptics.selection()
+                model.bookmark(book.id, chapter: page, position: 0, excerpt: "第 \(page + 1) 页")
+            } label: {
+                ThemeIcon(symbol: Icon.bookmark(marked), size: 24)
+                    .foregroundStyle(marked ? IndexTheme.accent : IndexTheme.ink)
+                    .frame(width: 44, height: 44).contentShape(Rectangle())
+                    .id(marked)
+                    .transition(marked ? .movingParts.pop(IndexTheme.accent) : .identity)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: marked)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(marked ? "移除本页书签" : "为本页添加书签")
+            .accessibilityAddTraits(marked ? .isSelected : [])
+            .accessibilityIdentifier("comic.bookmark")
+            Menu {
+                Button { onlyBookmarks = true; showingPages = true } label: { Label("查看书签", systemImage: Icon.bookmark(false)) }
+                Button { showingHelp = true } label: { Label("阅读操作说明", systemImage: Icon.help) }
+            } label: {
+                ThemeIcon(symbol: Icon.more, size: 24).frame(width: 44, height: 44).contentShape(Rectangle())
+            }
+            .accessibilityLabel("更多漫画操作")
         }
-        .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
-        .frame(maxWidth: .infinity, minHeight: 58)
-        .padding(.vertical, Theme.space1)
-        .background(selected ? Theme.claySoft : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
-        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-        .contentShape(Rectangle())
+        .padding(Theme.space3)
+        .indexPanel()
     }
+
+    private var comicTools: some View {
+        ScrollView {
+            VStack(spacing: Theme.space1) {
+                HStack {
+                    Label("页码进度", systemImage: Icon.read)
+                    Spacer()
+                    Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
+                }
+                .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(IndexTheme.muted)
+                .padding(.horizontal, Theme.space2).padding(.top, Theme.space3)
+                HStack(spacing: Theme.space3) {
+                    pageStep(-1, "上一页", Icon.back)
+                    if count > 1 {
+                        Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
+                            if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
+                        }
+                        .tint(IndexTheme.accent)
+                        .overlay {
+                            GeometryReader { geometry in
+                                let fraction = (scrubbing ?? Double(page)) / Double(max(1, count - 1))
+                                let thumb = Theme.space6
+                                let center = thumb / 2 + (geometry.size.width - thumb) * fraction
+                                ProgressLine(value: fraction, track: IndexTheme.edge, tint: IndexTheme.accent)
+                                    .mask {
+                                        HStack(spacing: 0) {
+                                            Rectangle().frame(width: max(0, center - thumb / 2))
+                                            Color.clear.frame(width: thumb)
+                                            Rectangle()
+                                        }
+                                    }
+                                    .frame(maxHeight: .infinity)
+                            }.allowsHitTesting(false).accessibilityHidden(true)
+                        }
+                        .environment(\.layoutDirection, mode == "rtl" ? .rightToLeft : .leftToRight)
+                        .accessibilityLabel("页码").accessibilityValue("第 \(page + 1) 页，共 \(count) 页")
+                    } else { Spacer() }
+                    pageStep(1, "下一页", Icon.disclosure)
+                }
+                IndexRule()
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1),
+                                         count: typeSize.isAccessibilitySize ? 2 : 3), spacing: Theme.space1) {
+                    Button { onlyBookmarks = false; showingPages = true } label: { comicAction(Icon.grid, "缩略图") }
+                        .accessibilityIdentifier("comic.contents")
+                    Menu {
+                        Picker("阅读方向", selection: $mode) {
+                            Label("从左往右", systemImage: Icon.nextDirection).tag("ltr")
+                            Label("从右往左（日漫）", systemImage: Icon.prevDirection).tag("rtl")
+                            Label("上下滚动（条漫）", systemImage: Icon.downDirection).tag("vertical")
+                        }
+                    } label: { comicAction(Icon.readingDirection, modeLabel, selected: true) }
+                    .accessibilityLabel("翻页方式，当前\(modeLabel)")
+                    Button { onlyBookmarks = true; showingPages = true } label: { comicAction(Icon.bookmark(false), "书签") }
+                }
+                .buttonStyle(.plain)
+                Text("双指缩放 · 双击适应屏幕")
+                    .font(.caption2).foregroundStyle(IndexTheme.muted).padding(.vertical, Theme.space2)
+            }
+            .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
+            .indexPanel()
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
+    }
+
+    private func comicAction(_ icon: String, _ title: String, selected: Bool = false) -> some View {
+        IndexToolLabel(title: LocalizedStringKey(title), symbol: icon, active: selected)
+    }
+
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {
         let enabled = (0..<count).contains(page + delta)
         return Button { goToPage(page + delta) } label: {
@@ -224,42 +224,55 @@ struct ComicReaderView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    EditorialIntro(title: "翻到想看的那一页", detail: book.title, eyebrow: "漫画目录")
-                    SegmentedBar(options: [false, true], selection: onlyBookmarks,
-                                 title: { $0 ? "书签 \(bookmarks.count)" : "全部页面" },
-                                 onSelect: { onlyBookmarks = $0 })
-                        .accessibilityLabel("页面类型").listRowBackground(Color.clear)
-                    if onlyBookmarks && directoryPages.isEmpty {
-                        Text("还没有书签。阅读时轻点顶部的书签图标，保存当前页。")
-                            .font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear)
+                    IndexHeading(title: Text(verbatim: book.title), detail: Text("第 \(page + 1) / \(count) 页"))
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                    IndexScopePicker(options: [false, true], selection: onlyBookmarks,
+                                     title: { $0 ? Text("书签 \(bookmarks.count)") : Text("全部页面") },
+                                     onSelect: { onlyBookmarks = $0 })
+                        .accessibilityLabel("页面类型")
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                    if directoryPages.isEmpty {
+                        IndexStatus(kind: .empty,
+                                    title: Text(onlyBookmarks ? "还没有书签" : "没有可显示的页面"),
+                                    detail: onlyBookmarks ? Text("阅读时轻点顶部的书签图标，保存当前页。") : nil)
+                            .listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
                     ForEach(directoryPages, id: \.self) { index in
                         Button { goToPage(index); showingPages = false } label: {
-                            PaperCard(padding: Theme.space3) {
                             HStack(spacing: Theme.space3) {
                                 ComicPage(book: book, index: index, fit: .thumbnail)
-                                    .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
-                                Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
-                                    .foregroundStyle(index == page ? Theme.clayDeep : Theme.ink3).frame(width: 36)
-                                Text("第 \(index + 1) 页").font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink)
-                                Spacer()
-                                if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
-                                if index == page { SealDot(text: "在读") }
+                                    .frame(width: 44, height: 60).clipped()
+                                    .allowsHitTesting(false).accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: Theme.space1) {
+                                    Text("第 \(index + 1) 页").font(.body.weight(.medium))
+                                        .monospacedDigit().foregroundStyle(IndexTheme.ink)
+                                    if index == page {
+                                        Text("在读").font(.caption).foregroundStyle(IndexTheme.accent)
+                                    }
+                                    if bookmarks.contains(where: { $0.chapter == index }) {
+                                        Label("书签", systemImage: Icon.bookmark(true))
+                                            .font(.caption).foregroundStyle(IndexTheme.accent)
+                                    }
+                                }
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(.vertical, Theme.space2)
                             .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
-                            }
                         }
-                        .buttonStyle(.plain).listRowBackground(Color.clear).id(index)
+                        .buttonStyle(PressButtonStyle())
+                        .listRowBackground(index == page ? IndexTheme.wash : IndexTheme.surface)
+                        .id(index)
                     }
                 }
-                .editorialList()
+                .indexList()
                 .navigationTitle("页面目录").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { showingPages = false } } }
                 .onAppear { proxy.scrollTo(page, anchor: .center) }
             }
         }
         .preferredColorScheme(.dark)
-        .tint(Theme.clayDeep).presentationDetents([.medium, .large])
+        .tint(IndexTheme.accent).presentationDetents([.medium, .large])
     }
     private var modeLabel: String {
         switch mode {
@@ -298,16 +311,13 @@ private struct ComicPage: View {
                         .transition(reduceMotion ? .opacity : .movingParts.blur(radius: 10))
                 }
             } else if attempted {
-                VStack(spacing: 12) {
-                    Image(systemName: Icon.warning).font(.title2).accessibilityHidden(true)
-                    Text("这一页暂时无法显示").font(.subheadline)
-                    Text("可以返回书库，通过修复原书补齐图片。").font(.footnote)
-                }.foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
+                pageStatus(.failure, title: Text("这一页暂时无法显示"),
+                           detail: Text("可以返回书库，通过修复原书补齐图片。"))
             } else {
-                ProgressView("正在加载图片…").tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
+                pageStatus(.loading, title: Text("正在加载图片…"))
             }
         }
-        .animation(.easeOut(duration: 0.3), value: image != nil)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: image != nil)
         .accessibilityLabel("第 \(index + 1) 页")
         .task(id: index) {
             defer { if !Task.isCancelled { attempted = true } }
@@ -331,6 +341,24 @@ private struct ComicPage: View {
             }
         }
     }
+    @ViewBuilder private func pageStatus(_ kind: IndexStatus.Kind, title: Text, detail: Text? = nil) -> some View {
+        if fit == .thumbnail {
+            ThemeIcon(symbol: kind == .failure ? Icon.warning : Icon.read)
+                .accessibilityHidden(true)
+        } else {
+            let panel = IndexStatus(kind: kind, title: title, detail: detail)
+                .padding(Theme.space4)
+                .frame(maxWidth: 420)
+                .frame(maxWidth: .infinity, minHeight: fit == .width ? 220 : nil,
+                       maxHeight: fit == .page ? .infinity : nil)
+            if let onTap {
+                panel.contentShape(Rectangle()).onTapGesture(perform: onTap)
+            } else {
+                panel
+            }
+        }
+    }
+
     private struct BookBox: @unchecked Sendable { let book: Book }
 }
 
