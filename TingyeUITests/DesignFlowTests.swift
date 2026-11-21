@@ -1087,3 +1087,64 @@ extension DesignFlowTests {
         screenshot(resultApp, "结果重选-取消回书库")
     }
 }
+
+extension DesignFlowTests {
+    func testShelfOpensNotesDirectlyAndReturnsToShelf() {
+        let app = launch("shelf")
+        let notes = app.buttons["study.openNotes"]
+        XCTAssertTrue(notes.waitForExistence(timeout: 15))
+        XCTAssertTrue(notes.isHittable)
+        notes.tap()
+
+        let bar = app.navigationBars["书摘与笔记"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        let back = bar.buttons.firstMatch
+        XCTAssertTrue(back.isHittable, "从书库进入摘记应能通过系统返回键回到书库")
+        back.tap()
+
+        XCTAssertTrue(notes.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["study.openProfile"].isHittable)
+        XCTAssertTrue(app.buttons["shelf.search"].isHittable)
+    }
+}
+
+extension DesignFlowTests {
+    func testDetailManagementOffersBothRemovalScopesAndCancelKeepsBook() {
+        let app = launch("shelf")
+        let detail = app.buttons["book.detail.ui-long"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 15))
+        reveal(detail, in: app)
+        detail.tap()
+
+        let remove = app.buttons["detail.remove"]
+        reveal(remove, in: app)
+        remove.tap()
+        let local = app.buttons["仅删除本机"]
+        XCTAssertTrue(local.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["删除本机和 iCloud"].exists)
+        cancelConfirmation(in: app)
+
+        XCTAssertTrue(local.waitForNonExistence(timeout: 5))
+        let read = app.buttons["detail.reading"]
+        reveal(read, in: app)
+        XCTAssertTrue(read.isHittable, "取消移除后，书籍详情仍应保有阅读入口")
+    }
+}
+
+extension DesignFlowTests {
+    func testUnreadableOriginalPDFOffersReturnToLibrary() {
+        let app = launch("reader-pdf-unavailable")
+        let exit = app.buttons["reader.pdfUnavailable.return"]
+        XCTAssertTrue(exit.waitForExistence(timeout: 15))
+        XCTAssertTrue(exit.isHittable)
+        let message = app.descendants(matching: .any)["reader.pdfUnavailable.message"]
+        XCTAssertTrue(message.exists)
+        XCTAssertTrue(message.label.contains("无法显示原版 PDF"))
+        XCTAssertFalse(app.buttons["reader.nextChapter"].exists)
+
+        exit.tap()
+
+        XCTAssertTrue(app.buttons["shelf.search"].waitForExistence(timeout: 5))
+        XCTAssertFalse(exit.exists)
+    }
+}

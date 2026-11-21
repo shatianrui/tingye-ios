@@ -147,13 +147,291 @@ enum Theme {
         return LinearGradient(colors: [c, c], startPoint: .top, endPoint: .bottom)
     }
 
-    private static func dynamic(_ light: UInt32, _ dark: UInt32, highLight: UInt32? = nil, highDark: UInt32? = nil) -> Color {
+    fileprivate static func dynamic(_ light: UInt32, _ dark: UInt32, highLight: UInt32? = nil, highDark: UInt32? = nil) -> Color {
         Color(UIColor { traits in
             let night = traits.userInterfaceStyle == .dark
             let value = traits.accessibilityContrast == .high
                 ? (night ? highDark ?? dark : highLight ?? light) : (night ? dark : light)
             return UIColor(hex: value)
         })
+    }
+}
+
+// MARK: - 页签界面令牌与组件
+
+/// 界面纸面。正文继续从 ReaderPaper 解析颜色。
+enum IndexTheme {
+    static let canvas = Theme.dynamic(0xF5F1E8, 0x191D1B)
+    static let surface = Theme.dynamic(0xFFFCF6, 0x232925)
+    static let wash = Theme.dynamic(0xE9EDE5, 0x303B34)
+    static let ink = Theme.dynamic(0x232823, 0xF1EEE4)
+    static let muted = Theme.dynamic(0x545D53, 0xB8C1B7, highLight: 0x232823, highDark: 0xF1EEE4)
+    static let accent = Theme.dynamic(0x2D594B, 0xA9D7C0)
+    static let onAccent = Theme.dynamic(0xFFFFFF, 0x172820)
+    static let edge = Theme.dynamic(0x777F75, 0x7E897F, highLight: 0x232823, highDark: 0xF1EEE4)
+    static let rule = Theme.dynamic(0xD9D5C8, 0x404A42, highLight: 0x777F75, highDark: 0x7E897F)
+    static let danger = Theme.dynamic(0x9C343C, 0xFFACB2)
+    static let dangerWash = Theme.dynamic(0xF7E6E3, 0x40292B)
+    static let warning = Theme.dynamic(0x775217, 0xF3C980)
+
+    static let controlRadius: CGFloat = 8
+    static let panelRadius: CGFloat = 16
+    static let coverRadius: CGFloat = 4
+    static let actionHeight: CGFloat = 48
+    static let press = Animation.easeOut(duration: 0.12)
+    static let transition = Animation.easeInOut(duration: 0.2)
+    private static let hasEditorialFont = UIFont(name: Theme.serifName, size: 17) != nil
+
+    static func editorial(_ size: CGFloat, relativeTo style: Font.TextStyle) -> Font {
+        if hasEditorialFont {
+            return Theme.serif(size, relativeTo: style)
+        }
+        return .system(style, design: .serif)
+    }
+}
+
+struct IndexRule: View {
+    var body: some View {
+        Rectangle().fill(IndexTheme.rule).frame(height: Theme.hairline)
+            .allowsHitTesting(false).accessibilityHidden(true)
+    }
+}
+
+struct IndexActionLabel: View {
+    let title: LocalizedStringKey
+    var symbol: String? = nil
+
+    var body: some View {
+        HStack(spacing: Theme.space2) {
+            if let symbol { ThemeIcon(symbol: symbol, size: 16).accessibilityHidden(true) }
+            Text(title).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+struct IndexToolLabel: View {
+    let title: LocalizedStringKey
+    let symbol: String
+    var active = false
+
+    var body: some View {
+        VStack(spacing: Theme.space1) {
+            ThemeIcon(symbol: symbol, size: 19).accessibilityHidden(true)
+            Text(title).font(.caption.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+        }
+        .multilineTextAlignment(.center)
+        .foregroundStyle(active ? IndexTheme.accent : IndexTheme.ink)
+        .padding(.horizontal, Theme.space1).padding(.vertical, Theme.space1)
+        .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight)
+        .background(active ? IndexTheme.wash : .clear, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
+        .contentShape(Rectangle())
+        .accessibilityAddTraits(active ? .isSelected : [])
+    }
+}
+
+struct IndexHeading: View {
+    let title: Text
+    var detail: Text? = nil
+    var large = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space1) {
+            title.font(IndexTheme.editorial(large ? 30 : 21, relativeTo: large ? .largeTitle : .title3))
+                .foregroundStyle(IndexTheme.ink)
+                .accessibilityAddTraits(.isHeader)
+            if let detail {
+                detail.font(.subheadline).foregroundStyle(IndexTheme.muted)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct IndexStatus: View {
+    enum Kind: Equatable { case empty, loading, failure, success }
+
+    let kind: Kind
+    let title: Text
+    var detail: Text? = nil
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Theme.space3) {
+            switch kind {
+            case .loading: ProgressView().tint(IndexTheme.accent).accessibilityHidden(true)
+            case .failure: ThemeIcon(symbol: Icon.warning).foregroundStyle(IndexTheme.danger).accessibilityHidden(true)
+            case .success: ThemeIcon(symbol: Icon.markRead).foregroundStyle(IndexTheme.accent).accessibilityHidden(true)
+            case .empty: EmptyView()
+            }
+            VStack(alignment: .leading, spacing: Theme.space1) {
+                title.font(.headline).foregroundStyle(kind == .failure ? IndexTheme.danger : IndexTheme.ink)
+                if let detail { detail.font(.subheadline).foregroundStyle(IndexTheme.muted) }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.space3)
+        .indexPanel(fill: kind == .failure ? IndexTheme.dangerWash : IndexTheme.wash)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct IndexRowLabel: View {
+    let title: Text
+    var detail: Text? = nil
+    var symbol: String? = nil
+    var disclosure = false
+
+    var body: some View {
+        HStack(spacing: Theme.space3) {
+            if let symbol {
+                ThemeIcon(symbol: symbol, size: 18).foregroundStyle(IndexTheme.accent)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: Theme.space1) {
+                title.font(.body.weight(.medium)).foregroundStyle(IndexTheme.ink)
+                if let detail { detail.font(.caption).foregroundStyle(IndexTheme.muted) }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if disclosure {
+                ThemeIcon(symbol: Icon.disclosure, size: 12).foregroundStyle(IndexTheme.muted)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.vertical, Theme.space2)
+        .frame(minHeight: Theme.rowMinHeight)
+        .contentShape(Rectangle())
+    }
+}
+
+struct IndexPage<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.space4) { content }
+                .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space4)
+                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+        }
+        .background(IndexTheme.canvas.ignoresSafeArea())
+        .foregroundStyle(IndexTheme.ink)
+    }
+}
+
+struct IndexMetric: View {
+    let value: Text
+    let label: Text
+    var large = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.space1) {
+            label.font(.caption).foregroundStyle(IndexTheme.muted)
+            value.font(IndexTheme.editorial(large ? 34 : 22, relativeTo: large ? .largeTitle : .title2))
+                .monospacedDigit().foregroundStyle(IndexTheme.ink)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct IndexBottomBar<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            IndexRule()
+            content.padding(.horizontal, Theme.space4).padding(.vertical, Theme.space2)
+                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+        }
+        .background(IndexTheme.canvas)
+    }
+}
+
+struct IndexScopePicker<Option: Hashable>: View {
+    let options: [Option]
+    let selection: Option
+    let title: (Option) -> Text
+    let onSelect: (Option) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            : AnyLayout(HStackLayout(spacing: Theme.space1))
+        layout {
+            ForEach(options, id: \.self) { option in
+                Button { onSelect(option) } label: {
+                    title(option)
+                        .font(.subheadline.weight(option == selection ? .semibold : .medium))
+                        .foregroundStyle(option == selection ? IndexTheme.accent : IndexTheme.muted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, Theme.space1).padding(.vertical, Theme.space1)
+                        .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
+                        .contentShape(Rectangle())
+                        .overlay(alignment: .bottom) {
+                            if option == selection {
+                                Rectangle().fill(IndexTheme.accent).frame(height: Theme.ruleMedium)
+                                    .accessibilityHidden(true).allowsHitTesting(false)
+                            }
+                        }
+                }
+                .buttonStyle(PressButtonStyle())
+                .accessibilityAddTraits(option == selection ? .isSelected : [])
+            }
+        }
+        .overlay(alignment: .bottom) { IndexRule() }
+    }
+}
+
+struct IndexActionStyle: ButtonStyle {
+    enum Role: Equatable { case primary, secondary, plain }
+
+    var role: Role = .plain
+    var expands = false
+    @Environment(\.isEnabled) private var enabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: IndexTheme.controlRadius)
+        let primary = role == .primary
+        let outlined = role == .secondary
+        let fill: Color = primary ? IndexTheme.accent : (outlined ? IndexTheme.surface : .clear)
+        let opacity = configuration.isPressed ? Theme.pressedOpacity : 1
+        return configuration.label
+            .font(.subheadline.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Theme.space2)
+            .padding(.vertical, Theme.space1)
+            .frame(minWidth: Theme.iconButtonSize, maxWidth: expands ? .infinity : nil,
+                   minHeight: primary ? IndexTheme.actionHeight : Theme.iconButtonSize)
+            .foregroundStyle(primary ? IndexTheme.onAccent : IndexTheme.accent)
+            .background(fill, in: shape)
+            .overlay {
+                if outlined {
+                    shape.strokeBorder(IndexTheme.edge, lineWidth: Theme.rule).allowsHitTesting(false)
+                }
+            }
+            .contentShape(shape)
+            .opacity(enabled ? opacity : Theme.disabledOpacity)
+            .animation(IndexTheme.press, value: configuration.isPressed)
+            .respectReducedMotion()
+    }
+}
+
+extension View {
+    func indexList() -> some View {
+        listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(IndexTheme.canvas.ignoresSafeArea())
+            .tint(IndexTheme.accent)
+    }
+
+    func indexPanel(fill: Color = IndexTheme.surface) -> some View {
+        let shape = RoundedRectangle(cornerRadius: IndexTheme.panelRadius)
+        return background(fill, in: shape)
+            .overlay { shape.strokeBorder(IndexTheme.rule, lineWidth: Theme.hairline).allowsHitTesting(false) }
     }
 }
 
@@ -782,18 +1060,20 @@ struct BookCoverView: View {
     var author = ""
     var image: UIImage? = nil
     var width: CGFloat = 98
-    /// 书架网格中的 mono 序号（01、02…），nil 不显示。
-    var index: Int? = nil
-    init(title: String, color: String = "ink", author: String = "", data: Data? = nil, image: UIImage? = nil, width: CGFloat = 98, index: Int? = nil) {
+    var usesIndexPalette = false
+    init(title: String, color: String = "ink", author: String = "", data: Data? = nil, image: UIImage? = nil,
+         width: CGFloat = 98, usesIndexPalette: Bool = false) {
         self.title = title; self.color = color; self.author = author; self.width = width
         self.image = image ?? data.flatMap(UIImage.init(data:))
-        self.index = index
+        self.usesIndexPalette = usesIndexPalette
     }
+    private var paper: Color { usesIndexPalette ? IndexTheme.wash : Theme.coverColor(color) }
     var body: some View {
-        let fg = Theme.coverForeground(color)
+        let fg = usesIndexPalette ? IndexTheme.ink : Theme.coverForeground(color)
+        let radius = usesIndexPalette ? IndexTheme.coverRadius : Theme.coverRadius(width)
         Group {
             if let image {
-                Image(uiImage: image).resizable().scaledToFit().background(Theme.surface2)
+                Image(uiImage: image).resizable().scaledToFit().background(usesIndexPalette ? IndexTheme.wash : Theme.surface2)
                     .transition(.opacity)
             } else if width < 52 {
                 tinyPlaceholder(fg)
@@ -806,10 +1086,14 @@ struct BookCoverView: View {
         // 封面是固定比例的书籍图像；可缩放的完整书名由外部标题及无障碍标签提供。
         .dynamicTypeSize(.medium)
         .frame(width: width, height: width / 0.75)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous)
+            RoundedRectangle(cornerRadius: radius)
+                .strokeBorder(usesIndexPalette ? IndexTheme.rule : Theme.line, lineWidth: Theme.hairline)
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .inset(by: Theme.hairline)
                 .strokeBorder(Color.white.opacity(0.35), lineWidth: Theme.rule)
                 .allowsHitTesting(false)
@@ -819,7 +1103,7 @@ struct BookCoverView: View {
     }
     private func tinyPlaceholder(_ fg: Color) -> some View {
         ZStack(alignment: .leading) {
-            Theme.coverColor(color)
+            paper
             Text(L(title))
                 .font(Theme.serifBold(max(8, width * 0.17))).serifEmbolden(max(8, width * 0.17))
                 .foregroundStyle(fg)
@@ -832,7 +1116,7 @@ struct BookCoverView: View {
     private func slipPlaceholder(_ fg: Color) -> some View {
         let titleSize = min(24, max(11, width * 0.14))
         return ZStack(alignment: .leading) {
-            Theme.coverColor(color)
+            paper
             VStack(alignment: .leading, spacing: 0) {
                 Text(L(title))
                     .font(Theme.serifBold(titleSize)).foregroundStyle(fg).serifEmbolden(titleSize)
@@ -845,11 +1129,6 @@ struct BookCoverView: View {
                 }
                 Spacer(minLength: 0)
                 Rectangle().fill(fg).frame(height: 1).accessibilityHidden(true)
-                if let index {
-                    Text(String(format: "%02d", index))
-                        .font(Theme.sans(max(8, width * 0.08))).monospacedDigit()
-                        .foregroundStyle(fg.opacity(0.75)).padding(.top, max(3, width * 0.04))
-                }
             }
             .padding(.leading, max(8, width * 0.12))
             .padding(.trailing, max(8, width * 0.1))
@@ -864,10 +1143,13 @@ struct FlexibleCover: View {
     var color = "ink"
     var author = ""
     var image: UIImage?
-    var index: Int? = nil
+    var usesIndexPalette = false
     var body: some View {
         Color.clear.aspectRatio(0.75, contentMode: .fit).overlay {
-            GeometryReader { geo in BookCoverView(title: title, color: color, author: author, image: image, width: geo.size.width, index: index) }
+            GeometryReader { geo in
+                BookCoverView(title: title, color: color, author: author, image: image,
+                              width: geo.size.width, usesIndexPalette: usesIndexPalette)
+            }
         }
     }
 }
