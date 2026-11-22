@@ -420,8 +420,7 @@ struct ReaderView: View {
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
                 Group {
                     if let pdf = document.pdf {
-                        PDFReader(data: pdf, page: $chapter, onUnavailable: { pdfUnavailable = true })
-                            .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
+                        PDFReader(data: pdf, page: $chapter, onUnavailable: { pdfUnavailable = true }, onTap: { toggleChrome() })
                             .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
                     } else {
                         textContent
@@ -1661,6 +1660,7 @@ struct PDFReader: UIViewRepresentable {
     let data: Data
     @Binding var page: Int
     var onUnavailable: () -> Void = {}
+    var onTap: () -> Void = {}
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PDFView {
 #if DEBUG
@@ -1681,6 +1681,13 @@ struct PDFReader: UIViewRepresentable {
         view.displayMode = .singlePageContinuous; view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         view.backgroundColor = UIColor(Theme.bg)
+        // PDFKit 的私有滚动手势偶尔吞掉 SwiftUI simultaneousGesture；在原生视图层接收单击，
+        // 与滚动和捏合缩放同时识别，且不取消 PDFView 自身的触摸处理。
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tap.cancelsTouchesInView = false
+        tap.maximumNumberOfTouches = 1
+        tap.delegate = context.coordinator
+        view.addGestureRecognizer(tap)
         context.coordinator.observer = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak coordinator = context.coordinator] _ in
             guard let coordinator, let current = view.currentPage, let doc = view.document else { return }
             let index = doc.index(for: current)
@@ -1693,10 +1700,18 @@ struct PDFReader: UIViewRepresentable {
         view.backgroundColor = UIColor(Theme.bg)
         if let doc = view.document, let target = doc.page(at: page), view.currentPage !== target { view.go(to: target) }
     }
-    final class Coordinator {
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var parent: PDFReader; var observer: NSObjectProtocol?
-        init(_ parent: PDFReader) { self.parent = parent }
+        init(_ parent: PDFReader) { self.parent = parent; super.init() }
         deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+            guard gesture.state == .ended else { return }
+            parent.onTap()
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            true
+        }
     }
 }
 
