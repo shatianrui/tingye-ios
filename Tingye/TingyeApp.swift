@@ -323,8 +323,19 @@ struct StudyRootView: View {
     }
 
     private var destinations: some View {
-        VStack(spacing: 0) {
+        HStack(spacing: Theme.space3) {
             HStack(spacing: Theme.space2) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(IndexTheme.accent)
+                    .frame(width: 10, height: 18)
+                    .accessibilityHidden(true)
+                Text("TINGYE")
+                    .font(.caption.weight(.bold)).tracking(2)
+                    .foregroundStyle(IndexTheme.ink)
+                    .accessibilityHidden(true)
+            }
+            Spacer(minLength: Theme.space2)
+            HStack(spacing: Theme.space1) {
                 NavigationLink(value: StudyRoute.notes) {
                     IndexActionLabel(title: "摘记", symbol: Icon.note)
                 }
@@ -337,11 +348,11 @@ struct StudyRootView: View {
                 .accessibilityIdentifier("study.openProfile")
             }
             .buttonStyle(IndexActionStyle())
-            .padding(.horizontal, Theme.space4)
-            .frame(maxWidth: Theme.pageWidth, alignment: .trailing)
-            .frame(maxWidth: .infinity)
-            IndexRule()
         }
+        .padding(.horizontal, Theme.space4)
+        .padding(.vertical, Theme.space2)
+        .frame(maxWidth: Theme.pageWidth)
+        .frame(maxWidth: .infinity)
         .background(IndexTheme.canvas)
     }
 
@@ -527,11 +538,18 @@ struct MiniPlayer: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, Theme.space2)
-            .background(IndexTheme.surface)
-            .overlay(alignment: .top) { IndexRule() }
+            .background(IndexTheme.surface, in: RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous)
+                    .strokeBorder(IndexTheme.rule, lineWidth: Theme.hairline)
+            }
+            .softCardShadow()
+            .padding(.horizontal, Theme.space3)
+            .padding(.bottom, Theme.space2)
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: IndexTheme.rule, tint: IndexTheme.accent, height: 2)
-                    .padding(.horizontal, Theme.space4)
+                    .padding(.horizontal, Theme.space6)
+                    .padding(.bottom, Theme.space2)
                     .accessibilityHidden(true)
             }
         }

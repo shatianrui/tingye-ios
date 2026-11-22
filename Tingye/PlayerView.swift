@@ -369,9 +369,9 @@ struct PlayerView: View {
                     else { ThemeIcon(symbol: Icon.playback(player.playing), size: 26) }
                 }
                 .foregroundStyle(IndexTheme.onAccent)
-                .frame(width: 64, height: 52)
-                .background(IndexTheme.accent, in: RoundedRectangle(cornerRadius: IndexTheme.panelRadius))
-                .contentShape(Rectangle())
+                .frame(width: 72, height: 72)
+                .background(IndexTheme.accent, in: Circle())
+                .contentShape(Circle())
             }
             .buttonStyle(PressButtonStyle())
             .accessibilityLabel(player.buffering ? "正在准备声音" : (player.playing ? "暂停朗读" : "继续朗读"))

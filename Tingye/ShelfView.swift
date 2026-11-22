@@ -274,16 +274,16 @@ struct ShelfView: View {
 
     private var shelfHeader: some View {
         adaptiveRow {
-            VStack(alignment: .leading, spacing: Theme.space1) {
-                Text("书库").font(IndexTheme.editorial(30, relativeTo: .largeTitle))
-                    .foregroundStyle(IndexTheme.ink).accessibilityAddTraits(.isHeader)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
-                    todayReadingLabel
-                }
-                .font(.caption).foregroundStyle(IndexTheme.muted)
+        VStack(alignment: .leading, spacing: Theme.space1) {
+            Text("书库").font(IndexTheme.editorial(34, relativeTo: .largeTitle))
+                .foregroundStyle(IndexTheme.ink).accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Date.now, format: .dateTime.month().day().weekday(.abbreviated))
+                todayReadingLabel
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .font(.subheadline).foregroundStyle(IndexTheme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: Theme.space2) {
                 searchEntry
                 addBookButton
@@ -316,7 +316,7 @@ struct ShelfView: View {
         VStack(alignment: .leading, spacing: Theme.space2) {
             HStack(alignment: .top, spacing: Theme.space3) {
                 CoverView(title: entry.title, color: entry.color, author: entry.author,
-                          image: model.covers[entry.id], width: 46, usesIndexPalette: true)
+                          image: model.covers[entry.id], width: 64, usesIndexPalette: true)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Theme.space1) {
                     Text(entry.title).font(IndexTheme.editorial(22, relativeTo: .title2))
@@ -364,8 +364,8 @@ struct ShelfView: View {
                 .accessibilityIdentifier("study.heroFocus")
             }
         }
-        .padding(Theme.space3)
-        .indexPanel(fill: IndexTheme.wash)
+        .padding(Theme.cardInset)
+        .indexPanel(fill: IndexTheme.surface)
     }
 
     private func continueProgressLabel(_ entry: ShelfEntry) -> some View {
@@ -387,10 +387,11 @@ struct ShelfView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, Theme.space4)
-        .overlay(alignment: .leading) {
-            Rectangle().fill(IndexTheme.accent).frame(width: Theme.ruleMedium)
-                .allowsHitTesting(false).accessibilityHidden(true)
+        .padding(Theme.cardInset)
+        .background(IndexTheme.surface, in: RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous)
+                .strokeBorder(IndexTheme.rule, lineWidth: Theme.hairline)
         }
     }
 
@@ -431,22 +432,16 @@ struct ShelfView: View {
             }
             libraryOptions
         }
-        .overlay(alignment: .bottom) { IndexRule() }
     }
 
     private func kindLabel(_ title: LocalizedStringKey, selected: Bool) -> some View {
         Text(title)
             .font(.subheadline.weight(selected ? .semibold : .medium))
             .foregroundStyle(selected ? IndexTheme.accent : IndexTheme.muted)
-            .padding(.horizontal, Theme.space2)
+            .padding(.horizontal, Theme.space3)
             .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+            .background(selected ? IndexTheme.surface : .clear, in: Capsule())
             .contentShape(Rectangle())
-            .overlay(alignment: .bottom) {
-                if selected {
-                    Rectangle().fill(IndexTheme.accent).frame(height: Theme.ruleMedium)
-                        .allowsHitTesting(false).accessibilityHidden(true)
-                }
-            }
     }
 
     private func kindButton(_ title: LocalizedStringKey, value: String) -> some View {

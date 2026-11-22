@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 听页界面「临窗」：冷灰底、墨色正文、窗蓝只标记正在发生的事。
+/// 听页「澄读」：雾白画布、墨黑文字与清透蓝，内容优先的现代极简界面。
 /// 正文七种纸色的底与字独立保留，不跟界面一起变色。
 enum Theme {
     static let bg = dynamic(0xF4F6F8, 0x0E1216)
@@ -18,7 +18,7 @@ enum Theme {
         UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF3F6F9 : 0x12161C)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.16 : 0.14)
     })
-    /// 窗蓝字与窗蓝面分开：小字用 accent / clayDeep，实色面用 clay。
+    /// 文字强调与实色动作共享澄蓝；日夜模式分别保证文字和控件对比度。
     static let accent = dynamic(0x163E73, 0xA9C9F2)
     static let clayDeep = accent
     static let accentSoft = dynamic(0xE3EDF8, 0x1A2C44)
@@ -67,17 +67,17 @@ enum Theme {
     static let space5: CGFloat = 24
     static let space6: CGFloat = 32
     static let space7: CGFloat = 48
-    static let inset: CGFloat = 24
-    static let insetCompact: CGFloat = 20
+    static let inset: CGFloat = 20
+    static let insetCompact: CGFloat = 16
     static let cardInset: CGFloat = 20
     static let rowMinHeight: CGFloat = 52
-    static let sectionSpacing = space6
-    static let pageWidth: CGFloat = 720
-    static let radius: CGFloat = 18
+    static let sectionSpacing = space5
+    static let pageWidth: CGFloat = 760
+    static let radius: CGFloat = 20
     static let heroRadius: CGFloat = 28
     static let buttonRadius: CGFloat = 14
-    static let radiusField: CGFloat = 12
-    static let radiusSmall: CGFloat = 6
+    static let radiusField: CGFloat = 14
+    static let radiusSmall: CGFloat = 10
     /// 全圆胶囊的兼容数值；组件实际使用 Capsule()。
     static let radiusPill: CGFloat = 9999
     static let buttonRadiusSmall = radiusSmall
@@ -100,34 +100,29 @@ enum Theme {
     static let pressAnimation = Animation.easeOut(duration: 0.2)
     static let smoothSpring = pressSpring
 
-    // MARK: - 字体：界面使用系统字体；宋体用于书名、摘句与正文偏好
+    // MARK: - 字体：系统字体建立清晰层级；宋体仅保留给正文偏好和文学摘句
 
     static let serifName = "NotoSerifCJKsc-Regular"
     static func serif(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         .custom(serifName, size: size, relativeTo: style)
     }
-    /// v29：宋体只有 Regular，取消合成字重；保留签名兼容调用点，与 serif 相同。
     static func serifSemibold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         serif(size, relativeTo: style)
     }
-    /// v29：同 serifSemibold，不再合成粗体；层级靠字号、留白与发丝线建立。
     static func serifBold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         serif(size, relativeTo: style)
     }
-    /// 界面字体：系统字体（真实字重、与 SF Symbols 基线对齐）。固定字号，不再随 relativeTo 缩放。
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)
     }
-    /// Font 不承载 tracking；配合 .mastheadStyle() 应用完整眉题样式。
     static let masthead = Font.system(size: 12, weight: .semibold)
-    /// 统计数字沿用宋体 Regular；调用方使用 monospacedDigit() 对齐数位。
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle) -> Font {
-        serif(size, relativeTo: style)
+        .system(size: size, weight: .semibold, design: .rounded)
     }
-    /// 栏目标签（同 masthead）。
     static let kicker = masthead
-    /// 报刊标题：宋体 Regular，书名、页面标题、报头都用它。
-    static func headline(_ size: CGFloat) -> Font { serifBold(size, relativeTo: .title) }
+    static func headline(_ size: CGFloat) -> Font {
+        .system(size: size, weight: .bold)
+    }
 
     // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
 
@@ -157,36 +152,33 @@ enum Theme {
     }
 }
 
-// MARK: - 页签界面令牌与组件
+// MARK: - 澄读设计令牌与全界面组件
 
-/// 界面纸面。正文继续从 ReaderPaper 解析颜色。
+/// 应用界面语义色。正文继续从 ReaderPaper 独立解析颜色。
 enum IndexTheme {
-    static let canvas = Theme.dynamic(0xF5F1E8, 0x191D1B)
-    static let surface = Theme.dynamic(0xFFFCF6, 0x232925)
-    static let wash = Theme.dynamic(0xE9EDE5, 0x303B34)
-    static let ink = Theme.dynamic(0x232823, 0xF1EEE4)
-    static let muted = Theme.dynamic(0x545D53, 0xB8C1B7, highLight: 0x232823, highDark: 0xF1EEE4)
-    static let accent = Theme.dynamic(0x2D594B, 0xA9D7C0)
-    static let onAccent = Theme.dynamic(0xFFFFFF, 0x172820)
-    static let edge = Theme.dynamic(0x777F75, 0x7E897F, highLight: 0x232823, highDark: 0xF1EEE4)
-    static let rule = Theme.dynamic(0xD9D5C8, 0x404A42, highLight: 0x777F75, highDark: 0x7E897F)
-    static let danger = Theme.dynamic(0x9C343C, 0xFFACB2)
-    static let dangerWash = Theme.dynamic(0xF7E6E3, 0x40292B)
-    static let warning = Theme.dynamic(0x775217, 0xF3C980)
+    static let canvas = Theme.dynamic(0xF5F7FA, 0x0B0F14)
+    static let surface = Theme.dynamic(0xFFFFFF, 0x141A21)
+    static let wash = Theme.dynamic(0xEAF1FB, 0x182A43)
+    static let ink = Theme.dynamic(0x101418, 0xF2F5F7, highLight: 0x000000, highDark: 0xFFFFFF)
+    static let muted = Theme.dynamic(0x465464, 0xAEBAC6, highLight: 0x101418, highDark: 0xF2F5F7)
+    static let accent = Theme.dynamic(0x245FD1, 0x9ABDFF, highLight: 0x17479F, highDark: 0xC4D8FF)
+    static let onAccent = Theme.dynamic(0xFFFFFF, 0x071426)
+    static let edge = Theme.dynamic(0x68788A, 0x8294A8, highLight: 0x101418, highDark: 0xF2F5F7)
+    static let rule = Theme.dynamic(0xDCE3EA, 0x2C3946, highLight: 0x68788A, highDark: 0x8294A8)
+    static let danger = Theme.dynamic(0xA1283A, 0xFFB4BE, highLight: 0x7E1427, highDark: 0xFFD3D9)
+    static let dangerWash = Theme.dynamic(0xFBEAED, 0x3A2028)
+    static let warning = Theme.dynamic(0x805000, 0xFFD38A, highLight: 0x573500, highDark: 0xFFE4B8)
 
-    static let controlRadius: CGFloat = 8
-    static let panelRadius: CGFloat = 16
-    static let coverRadius: CGFloat = 4
-    static let actionHeight: CGFloat = 48
-    static let press = Animation.easeOut(duration: 0.12)
-    static let transition = Animation.easeInOut(duration: 0.2)
-    private static let hasEditorialFont = UIFont(name: Theme.serifName, size: 17) != nil
+    static let controlRadius: CGFloat = 14
+    static let panelRadius: CGFloat = 22
+    static let coverRadius: CGFloat = 8
+    static let actionHeight: CGFloat = 50
+    static let press = Animation.easeOut(duration: 0.16)
+    static let transition = Animation.easeInOut(duration: 0.22)
 
+    /// 统一使用系统字体的真实字重和 Dynamic Type，不再把界面标题做成报刊宋体。
     static func editorial(_ size: CGFloat, relativeTo style: Font.TextStyle) -> Font {
-        if hasEditorialFont {
-            return Theme.serif(size, relativeTo: style)
-        }
-        return .system(style, design: .serif)
+        .system(style, weight: size >= 28 ? .bold : .semibold)
     }
 }
 
@@ -345,7 +337,7 @@ struct IndexBottomBar<Content: View>: View {
             content.padding(.horizontal, Theme.space4).padding(.vertical, Theme.space2)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
-        .background(IndexTheme.canvas)
+        .background(IndexTheme.surface)
     }
 }
 
@@ -358,7 +350,7 @@ struct IndexScopePicker<Option: Hashable>: View {
 
     var body: some View {
         let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space1))
             : AnyLayout(HStackLayout(spacing: Theme.space1))
         layout {
             ForEach(options, id: \.self) { option in
@@ -368,21 +360,18 @@ struct IndexScopePicker<Option: Hashable>: View {
                         .foregroundStyle(option == selection ? IndexTheme.accent : IndexTheme.muted)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, Theme.space1).padding(.vertical, Theme.space1)
+                        .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1)
                         .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
+                        .background(option == selection ? IndexTheme.surface : .clear,
+                                    in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius - 4, style: .continuous))
                         .contentShape(Rectangle())
-                        .overlay(alignment: .bottom) {
-                            if option == selection {
-                                Rectangle().fill(IndexTheme.accent).frame(height: Theme.ruleMedium)
-                                    .accessibilityHidden(true).allowsHitTesting(false)
-                            }
-                        }
                 }
                 .buttonStyle(PressButtonStyle())
                 .accessibilityAddTraits(option == selection ? .isSelected : [])
             }
         }
-        .overlay(alignment: .bottom) { IndexRule() }
+        .padding(Theme.space1)
+        .background(IndexTheme.wash, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius, style: .continuous))
     }
 }
 
@@ -402,15 +391,15 @@ struct IndexActionStyle: ButtonStyle {
         return configuration.label
             .font(.subheadline.weight(.semibold))
             .multilineTextAlignment(.center)
-            .padding(.horizontal, Theme.space2)
+            .padding(.horizontal, Theme.space3)
             .padding(.vertical, Theme.space1)
             .frame(minWidth: Theme.iconButtonSize, maxWidth: expands ? .infinity : nil,
                    minHeight: primary ? IndexTheme.actionHeight : Theme.iconButtonSize)
-            .foregroundStyle(primary ? IndexTheme.onAccent : IndexTheme.accent)
+            .foregroundStyle(primary ? IndexTheme.onAccent : (outlined ? IndexTheme.ink : IndexTheme.accent))
             .background(fill, in: shape)
             .overlay {
                 if outlined {
-                    shape.strokeBorder(IndexTheme.edge, lineWidth: Theme.rule).allowsHitTesting(false)
+                    shape.strokeBorder(IndexTheme.rule, lineWidth: Theme.rule).allowsHitTesting(false)
                 }
             }
             .contentShape(shape)
@@ -429,9 +418,10 @@ extension View {
     }
 
     func indexPanel(fill: Color = IndexTheme.surface) -> some View {
-        let shape = RoundedRectangle(cornerRadius: IndexTheme.panelRadius)
+        let shape = RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous)
         return background(fill, in: shape)
             .overlay { shape.strokeBorder(IndexTheme.rule, lineWidth: Theme.hairline).allowsHitTesting(false) }
+            .softCardShadow()
     }
 }
 
@@ -827,12 +817,12 @@ struct ChipPillStyle: ButtonStyle {
             if selected { Image(systemName: Icon.checkmark).accessibilityHidden(true) }
             configuration.label
         }
-        .font(Theme.sans(15))
-        .foregroundStyle(selected ? Theme.bg : Theme.ink)
+        .font(Theme.sans(15, weight: .medium))
+        .foregroundStyle(selected ? Theme.accent : Theme.ink2)
         .padding(.horizontal, Theme.space3)
         .frame(minHeight: Theme.iconButtonSize)
-        .background(selected ? Theme.ink : Theme.surface, in: Capsule())
-        .overlay { Capsule().strokeBorder(selected ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
+        .background(selected ? Theme.accentSoft : Theme.surface, in: Capsule())
+        .overlay { Capsule().strokeBorder(selected ? Color.clear : Theme.line, lineWidth: Theme.rule) }
         .contentShape(Capsule())
         .modifier(PressFeedback(pressed: configuration.isPressed))
         .opacity(isEnabled ? 1 : Theme.disabledOpacity)
@@ -919,9 +909,10 @@ struct SettingsIcon: View {
     let systemName: String
     let color: Color
     var body: some View {
-        ThemeIcon(symbol: systemName, size: 22, weight: .medium)
+        ThemeIcon(symbol: systemName, size: 20, weight: .medium)
             .foregroundStyle(color)
-            .frame(width: 32, height: 32)
+            .frame(width: 36, height: 36)
+            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -981,7 +972,7 @@ struct SectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
             if let number { Text(number).mastheadStyle().foregroundStyle(Theme.accent) }
-            Text(L(text)).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
+            Text(L(text)).font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if let badge { SealBadge(text: badge) }
             if rule { Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true) }
@@ -1014,7 +1005,7 @@ struct PageMasthead: View {
                 .mastheadStyle()
             }
             Text(L(title))
-                .font(Theme.serif(titleSize, relativeTo: .largeTitle))
+                .scaledFont(titleSize, weight: .bold, relativeTo: .largeTitle)
                 .lineSpacing(titleSize * 0.2)
                 .minimumScaleFactor(min(1, 24 / titleSize))
                 .foregroundStyle(Theme.ink)
@@ -1105,7 +1096,7 @@ struct BookCoverView: View {
         ZStack(alignment: .leading) {
             paper
             Text(L(title))
-                .font(Theme.serifBold(max(8, width * 0.17))).serifEmbolden(max(8, width * 0.17))
+                .font(.system(size: max(8, width * 0.17), weight: .semibold)).serifEmbolden(max(8, width * 0.17))
                 .foregroundStyle(fg)
                 .lineLimit(3)
                 .minimumScaleFactor(0.7)
@@ -1119,7 +1110,7 @@ struct BookCoverView: View {
             paper
             VStack(alignment: .leading, spacing: 0) {
                 Text(L(title))
-                    .font(Theme.serifBold(titleSize)).foregroundStyle(fg).serifEmbolden(titleSize)
+                    .font(.system(size: titleSize, weight: .semibold)).foregroundStyle(fg).serifEmbolden(titleSize)
                     .lineLimit(3).minimumScaleFactor(0.72).multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 if width >= 72 && !author.isEmpty {
@@ -1224,7 +1215,7 @@ struct SectionHeader: View {
     var action: (() -> Void)? = nil
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.space3) {
-            Text(L(title)).font(Theme.serif(20, relativeTo: .title3))
+            Text(L(title)).font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
@@ -1403,7 +1394,7 @@ struct SheetChrome<Content: View>: View {
             Capsule().fill(Theme.line).frame(width: Theme.space6, height: Theme.space1)
                 .accessibilityHidden(true)
             if showsHeader { HStack(spacing: Theme.space3) {
-                Text(L(title)).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
+                Text(L(title)).font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
                 Spacer(minLength: Theme.space2)
                 CircleIconButton(systemName: Icon.close, label: L(closeLabel), action: onClose)
@@ -1437,7 +1428,7 @@ struct EmptyState: View {
             if state == .error {
                 Image(systemName: Icon.warning).foregroundStyle(Theme.danger).accessibilityHidden(true)
             }
-            Text(L(title)).font(Theme.serif(22, relativeTo: .title2)).foregroundStyle(Theme.ink)
+            Text(L(title)).font(.title2.weight(.semibold)).foregroundStyle(Theme.ink)
                 .padding(state == .error ? Theme.space2 : 0)
                 .background(state == .error ? Theme.dangerSoft : .clear,
                             in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
@@ -1589,7 +1580,7 @@ struct EditorialIntro: View {
             if let eyebrow {
                 Text(L(eyebrow)).mastheadStyle(color: Theme.accent).foregroundStyle(Theme.accent)
             }
-            Text(L(title)).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
+            Text(L(title)).scaledFont(28, weight: .bold, relativeTo: .title).foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
             if let detail {
                 Text(L(detail)).font(Theme.sans(13)).foregroundStyle(Theme.ink2)
