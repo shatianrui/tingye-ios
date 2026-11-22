@@ -92,7 +92,7 @@ struct ShelfView: View {
             if UIReview.screen == "shelf-list" { layout = "list" }
             if UIReview.screen == "shelf-edit" { editing = true }
             if UIReview.screen == "shelf-comics" { kind = "comics" }
-            if (UIReview.screen ?? "").hasPrefix("sources") { showingSources = true }
+            if (UIReview.screen ?? "").hasPrefix("sources") { presentImportHub() }
             if ["detail", "chapters"].contains(UIReview.screen), reviewDetail == nil, isRoot {
                 reviewDetail = (model.lastBook ?? model.entries.first(where: \.local))?.id
             }
@@ -161,9 +161,6 @@ struct ShelfView: View {
         .preference(key: LibraryNavigationHiddenKey.self, value: editing || searching)
         .animation(IndexTheme.transition, value: editing)
         .respectReducedMotion()
-        .onChange(of: showingSources) { _, shown in
-            if shown { model.holdFileImportPresentation(importHubToken) }
-        }
         .onChange(of: showingImportResults) { _, shown in
             if shown { model.holdFileImportPresentation(importResultsToken) }
         }
@@ -395,8 +392,14 @@ struct ShelfView: View {
         }
     }
 
+    /// 必须先登记呈现占用，再打开导入页；否则同帧请求系统选择器时可能提前消费请求。
+    private func presentImportHub() {
+        model.holdFileImportPresentation(importHubToken)
+        showingSources = true
+    }
+
     private var addBookButton: some View {
-        Button { searching = false; showingSources = true } label: {
+        Button { searching = false; presentImportHub() } label: {
             IndexActionLabel(title: "添书", symbol: Icon.add)
         }
         .buttonStyle(IndexActionStyle(role: heroEntry == nil ? .primary : .secondary))
@@ -638,7 +641,7 @@ struct ShelfView: View {
             }
         } else if !isRoot {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button { searching = false; showingSources = true } label: {
+                Button { searching = false; presentImportHub() } label: {
                     Text("添书").font(.subheadline.weight(.medium)).frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                 }
                 .accessibilityIdentifier("import.book")
@@ -781,7 +784,7 @@ struct ShelfView: View {
             Text(detail).font(.subheadline).foregroundStyle(IndexTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
             if let addTitle {
-                Button { showingSources = true } label: {
+                Button { presentImportHub() } label: {
                     IndexActionLabel(title: addTitle, symbol: Icon.add)
                 }
                 .buttonStyle(IndexActionStyle(role: .secondary))
