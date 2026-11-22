@@ -1685,7 +1685,7 @@ struct PDFReader: UIViewRepresentable {
         // 与滚动和捏合缩放同时识别，且不取消 PDFView 自身的触摸处理。
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         tap.cancelsTouchesInView = false
-        tap.maximumNumberOfTouches = 1
+        tap.numberOfTouchesRequired = 1
         tap.delegate = context.coordinator
         view.addGestureRecognizer(tap)
         context.coordinator.observer = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak coordinator = context.coordinator] _ in
