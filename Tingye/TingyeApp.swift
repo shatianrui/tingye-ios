@@ -19,10 +19,10 @@ struct TingyeApp: App {
         FontLibrary.registerAll()
         let navigation = UINavigationBarAppearance()
         navigation.configureWithOpaqueBackground()
-        navigation.backgroundColor = UIColor(Theme.bg)
-        navigation.shadowColor = UIColor(Theme.line)
-        navigation.titleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
-        navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
+        navigation.backgroundColor = UIColor(IndexTheme.canvas)
+        navigation.shadowColor = UIColor(IndexTheme.rule)
+        navigation.titleTextAttributes = [.foregroundColor: UIColor(IndexTheme.ink)]
+        navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(IndexTheme.ink)]
         UINavigationBar.appearance().standardAppearance = navigation
         UINavigationBar.appearance().scrollEdgeAppearance = navigation
         UINavigationBar.appearance().compactAppearance = navigation
@@ -35,8 +35,8 @@ struct TingyeApp: App {
                 .modifier(UIReviewAppearance())
                 #endif
                 .environmentObject(model)
-                .tint(Theme.clayDeep)
-                .paperBackground()
+                .tint(IndexTheme.accent)
+                .background(IndexTheme.canvas.ignoresSafeArea())
                 .background(WindowAppearance(style: UIUserInterfaceStyle(appearance: appearanceMode)))
                 .onOpenURL { url in
                     model.beginImport([url])
@@ -73,6 +73,12 @@ enum UIReview {
         let books: [Book]
         if screen?.hasPrefix("reader-original") == true { books = [originalReviewBook()] }
         else if screen == "reader-pdf" { books = [pdfReviewBook()] }
+        else if screen == "reader-pdf-unavailable" {
+            let invalidPDF = Data("invalid PDF payload".utf8).base64EncodedString()
+            books = [Book(id: "ui-pdf-unavailable", title: "无法解析的原版",
+                          format: "PDF", chapters: [Chapter(title: "第一页", text: "")],
+                          extras: ["pdf": .string(invalidPDF)])]
+        }
         else { books = showcase ? showcaseBooks() : [first, second] }
         guard !books.isEmpty else { throw ReaderError.message("预览示例未加载。") }
         for book in books { try disk.write(book) }
@@ -189,13 +195,9 @@ enum UIReview {
 }
 #endif
 
-/// StudyRootView 的编程式导航目标。目前只有「我的」一层；
-/// 统计、书摘与设置目录都在 StatsView(ji: true) 内，子页面由 StatsView 自行路由。
-enum StudyRoute: Hashable { case me }
+enum StudyRoute: Hashable { case notes, me }
 
-/// v29「书房」根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
-/// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
-/// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
+/// 书库是单栈根页面，阅读器、播放器和文件选择器仍由根统一呈现。
 struct StudyRootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -218,32 +220,21 @@ struct StudyRootView: View {
         VStack(spacing: 0) {
             NavigationStack(path: $path) {
                 ShelfView()
-                    .navigationDestination(for: StudyRoute.self) { _ in
-                        // ji 版自带隐藏导航栏、无系统返回箭头，故传入返回动作：
-                        // 页眉返回按钮清空编程式导航路径，回到书库根页面。
-                        StatsView(ji: true, onBack: { path = [] })
-                    }
-                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
-                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        HStack {
-                            Spacer()
-                            NavigationLink(value: StudyRoute.me) {
-                                Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
-                            .accessibilityLabel("我的")
-                            .accessibilityIdentifier("study.openProfile")
+                    .navigationDestination(for: StudyRoute.self) { route in
+                        switch route {
+                        case .notes:
+                            NotesUnifiedView()
+                                .toolbar(.visible, for: .navigationBar)
+                        case .me:
+                            StatsView(ji: true, onBack: { path = [] })
                         }
-                        .padding(.horizontal, Theme.inset)
-                        .background(Theme.bg)
                     }
-                    .toolbarBackground(Theme.bg, for: .navigationBar)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        destinations
+                    }
+                    .toolbarBackground(IndexTheme.canvas, for: .navigationBar)
             }
-            .background(Theme.bg)
+            .background(IndexTheme.canvas)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
             // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
             if !navigationHidden {
@@ -251,7 +242,7 @@ struct StudyRootView: View {
             }
         }
         .disabled(model.restoringLibrary)
-        .paperBackground()
+        .background(IndexTheme.canvas.ignoresSafeArea())
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
         .onChange(of: model.entries.count, initial: true) { _, count in
             // 书架首次载入后只自动打开一次；之后回前台、切页都不再自动打开。
@@ -315,7 +306,7 @@ struct StudyRootView: View {
                 RoutedReaderView(book: book)
             }
                 .environmentObject(model)
-                .tint(Theme.clayDeep)
+                .tint(IndexTheme.accent)
         }
         .sheet(isPresented: $model.showingPlayer, onDismiss: {
             model.releaseFileImportPresentation(playerImportToken)
@@ -329,6 +320,40 @@ struct StudyRootView: View {
         .feedbackOverlay()
         .modifier(AppLockGate())
         .respectReducedMotion()
+    }
+
+    private var destinations: some View {
+        HStack(spacing: Theme.space3) {
+            HStack(spacing: Theme.space2) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(IndexTheme.accent)
+                    .frame(width: 10, height: 18)
+                    .accessibilityHidden(true)
+                Text("TINGYE")
+                    .font(.caption.weight(.bold)).tracking(2)
+                    .foregroundStyle(IndexTheme.ink)
+                    .accessibilityHidden(true)
+            }
+            Spacer(minLength: Theme.space2)
+            HStack(spacing: Theme.space1) {
+                NavigationLink(value: StudyRoute.notes) {
+                    IndexActionLabel(title: "摘记", symbol: Icon.note)
+                }
+                .accessibilityLabel("摘记")
+                .accessibilityIdentifier("study.openNotes")
+                NavigationLink(value: StudyRoute.me) {
+                    IndexActionLabel(title: "我的", symbol: Icon.profile)
+                }
+                .accessibilityLabel("我的")
+                .accessibilityIdentifier("study.openProfile")
+            }
+            .buttonStyle(IndexActionStyle())
+        }
+        .padding(.horizontal, Theme.space4)
+        .padding(.vertical, Theme.space2)
+        .frame(maxWidth: Theme.pageWidth)
+        .frame(maxWidth: .infinity)
+        .background(IndexTheme.canvas)
     }
 
     #if DEBUG
@@ -436,7 +461,7 @@ extension UIUserInterfaceStyle {
 
 // MARK: - 迷你播放器（底部导航上方）
 
-/// 迷你播放器以中性样式保留「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
+/// 根听书条。展开、回到朗读和播放控制各有独立触点。
 struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
@@ -448,20 +473,22 @@ struct MiniPlayer: View {
                 layout {
                     Button { model.showingPlayer = true } label: {
                         HStack(spacing: 12) {
-                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
+                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id],
+                                          width: 28, usesIndexPalette: true)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
-                                    .font(Theme.serif(17))
-                                    .foregroundStyle(Theme.ink)
+                                    .font(IndexTheme.editorial(17, relativeTo: .body))
+                                    .foregroundStyle(IndexTheme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
                                     .font(.caption2)
                                     .monospacedDigit()
-                                    .foregroundStyle(Theme.ink2)
-                                    .lineLimit(1)
+                                    .foregroundStyle(player.error == nil ? IndexTheme.muted : IndexTheme.danger)
+                                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                             }
                             Spacer(minLength: 0)
-                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(Theme.ink3)
+                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(IndexTheme.accent)
                                 .accessibilityHidden(true)
                         }
                         .frame(minHeight: 44).contentShape(Rectangle())
@@ -473,9 +500,9 @@ struct MiniPlayer: View {
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
                             ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink2)
+                                .foregroundStyle(IndexTheme.accent)
                                 .frame(width: 32, height: 32)
-                                .background(Theme.surface, in: Circle())
+                                .background(IndexTheme.wash, in: Circle())
                                 .contentShape(Rectangle())
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
@@ -488,14 +515,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.ink2)
+                                ProgressView().controlSize(.small).tint(IndexTheme.onAccent)
                             } else {
                                 ThemeIcon(symbol: Icon.playback(player.playing), size: 16)
                             }
                         }
-                        .foregroundStyle(Theme.ink2)
+                        .foregroundStyle(IndexTheme.onAccent)
                         .frame(width: 32, height: 32)
-                        .background(Theme.surface, in: Circle())
+                        .background(IndexTheme.accent, in: Circle())
                         .contentShape(Rectangle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
@@ -511,19 +538,30 @@ struct MiniPlayer: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, Theme.space2)
-            .background(Theme.surface2)
-            .overlay(alignment: .top) { RowDivider() }
+            .background(IndexTheme.surface, in: RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: IndexTheme.panelRadius, style: .continuous)
+                    .strokeBorder(IndexTheme.rule, lineWidth: Theme.hairline)
+            }
+            .softCardShadow()
+            .padding(.horizontal, Theme.space3)
+            .padding(.bottom, Theme.space2)
             .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
-                    .padding(.horizontal, Theme.space4)
+                ProgressBar(value: player.progress, track: IndexTheme.rule, tint: IndexTheme.accent, height: 2)
+                    .padding(.horizontal, Theme.space6)
+                    .padding(.bottom, Theme.space2)
                     .accessibilityHidden(true)
             }
         }
     }
     private var subtitle: String {
-        if player.error != nil { return "朗读出错 · 轻点打开重试" }
-        if player.buffering { return "正在合成语音…" }
-        return "\(player.playing ? "正在听" : "已暂停") · \(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)"
+        if player.error != nil { return L("朗读出错 · 轻点打开重试") }
+        if player.buffering { return L("正在合成语音…") }
+        let status = L(player.playing ? "正在听" : "已暂停")
+        let chapter = player.chapterTitle.isEmpty
+            ? String(format: L("第 %lld 章"), player.chapter + 1)
+            : player.chapterTitle
+        return "\(status) · \(chapter)"
     }
 }
 
@@ -532,34 +570,10 @@ private struct FeedbackOverlay: ViewModifier {
     @EnvironmentObject private var model: AppModel
     @State private var showingResults = false
     @State private var importResultsToken = UUID()
+
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .top, spacing: 0) {
-            if let message = model.message {
-                EmptyState(title: "操作未完成", detail: message, state: .error)
-                    .background(Theme.bg)
-            } else if let notice = model.notice {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .top, spacing: Theme.space2) {
-                        Text(L(notice.text)).font(.subheadline).foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Theme.space3)
-                        Button { model.notice = nil } label: {
-                            ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)
-                        }.accessibilityLabel("关闭提示")
-                    }
-                    if notice.importResults {
-                        Button("查看逐项结果") { model.notice = nil; showingResults = true }
-                            .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
-                            .accessibilityIdentifier("import.results")
-                    }
-                }
-                .padding(.horizontal, Theme.space4)
-                .frame(maxWidth: 760).frame(maxWidth: .infinity)
-                .background(Theme.surface)
-                .overlay(alignment: .bottom) { RowDivider() }
-            } else if model.busy {
-                EmptyState(title: model.activity, detail: "", state: .loading)
-                    .background(Theme.bg)
-            }
+            indexFeedback
         }
         .onChange(of: showingResults) { _, shown in
             if shown { model.holdFileImportPresentation(importResultsToken) }
@@ -570,9 +584,52 @@ private struct FeedbackOverlay: ViewModifier {
         .sheet(isPresented: $showingResults, onDismiss: {
             model.releaseFileImportPresentation(importResultsToken)
         }) {
-            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.clayDeep)
+            NavigationStack { ImportResultsView() }.environmentObject(model).tint(IndexTheme.accent)
         }
     }
+
+    @ViewBuilder private var indexFeedback: some View {
+        if let message = model.message {
+            IndexStatus(kind: .failure, title: Text("操作未完成"), detail: Text(L(message)))
+                .padding(.horizontal, Theme.space3).background(IndexTheme.canvas)
+        } else if let report = model.importReport, !report.finished {
+            VStack(alignment: .leading, spacing: Theme.space1) {
+                IndexStatus(kind: .loading, title: Text("正在导入书籍"),
+                            detail: report.indexSummary)
+                Button("查看导入进度") { showingResults = true }
+                    .buttonStyle(IndexActionStyle())
+                    .accessibilityIdentifier("import.progress")
+            }
+            .padding(.horizontal, Theme.space3).padding(.top, Theme.space1)
+            .frame(maxWidth: Theme.pageWidth, alignment: .leading)
+            .frame(maxWidth: .infinity).background(IndexTheme.canvas)
+        } else if model.busy {
+            let title = model.activity == "正在导入书籍" && model.importReport == nil
+                ? Text("正在准备文件…") : Text(L(model.activity))
+            IndexStatus(kind: .loading, title: title)
+                .padding(.horizontal, Theme.space3).background(IndexTheme.canvas)
+        } else if let notice = model.notice {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: Theme.space2) {
+                    let title = notice.importResults ? model.importReport?.indexSummary ?? Text(L(notice.text)) : Text(L(notice.text))
+                    title.font(.subheadline).foregroundStyle(IndexTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Theme.space3)
+                    Button { model.notice = nil } label: { ThemeIcon(symbol: Icon.close) }
+                        .buttonStyle(IndexActionStyle()).accessibilityLabel("关闭提示")
+                }
+                if notice.importResults {
+                    Button("查看逐项结果") { model.notice = nil; showingResults = true }
+                        .buttonStyle(IndexActionStyle()).accessibilityIdentifier("import.results")
+                }
+            }
+            .padding(.horizontal, Theme.space3)
+            .frame(maxWidth: Theme.pageWidth, alignment: .leading)
+            .frame(maxWidth: .infinity).background(IndexTheme.surface)
+            .overlay(alignment: .bottom) { IndexRule() }
+        }
+    }
+
 }
 /// 阅读 / 听书页保持屏幕常亮：引用计数，阅读页上叠放听书页时不会提前恢复休眠。
 @MainActor enum ScreenAwake {
@@ -610,8 +667,8 @@ extension View {
 struct AirPlayButton: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
         let view = RoutePickerView()
-        view.activeTintColor = UIColor(Theme.clayDeep)
-        view.tintColor = UIColor(Theme.ink)
+        view.activeTintColor = UIColor(IndexTheme.accent)
+        view.tintColor = UIColor(IndexTheme.ink)
         return view
     }
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {

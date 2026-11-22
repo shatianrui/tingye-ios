@@ -9,47 +9,48 @@ struct StorageView: View {
     @State private var confirmKind: StorageUsage.Kind?
 
     var body: some View {
-        SettingsPage(title: "给书库留出空间", detail: "原书与摘记妥善保留，可重建的缓存单独整理。") {
+        SettingsPage(title: "空间整理") {
             SettingsGroup(title: "总占用") {
-                StatBlock(value: StorageUsage.format(usage.reduce(0) { $0 + $1.bytes }), label: "总占用", size: 34)
-                if scanning {
-                    EmptyState(title: "正在统计…", detail: "书库、缓存与临时文件", state: .loading)
+                if scanning && usage.isEmpty {
+                    IndexStatus(kind: .loading, title: Text("正在统计…"))
+                } else {
+                    IndexMetric(value: Text(verbatim: StorageUsage.format(usage.reduce(0) { $0 + $1.bytes })),
+                                label: Text("书库、缓存与临时文件"), large: true)
+                    usageBar.padding(.top, Theme.space3)
+                    if scanning { ProgressView("正在统计…").padding(.top, Theme.space2) }
                 }
-                usageBar.padding(.top, Theme.space4)
             }
-            SettingsGroup(title: "分项", footer: "清理缓存不会删除书籍、进度或书摘；语音缓存清理后，云语音会在下次朗读时重新合成。") {
+            SettingsGroup(title: "分项") {
                 ForEach(usage) { item in
-                    HairlineRow(title: item.kind.title, detail: item.kind.detail, value: StorageUsage.format(item.bytes))
+                    IndexRowLabel(title: Text(L(item.kind.title)),
+                                  detail: Text("\(StorageUsage.format(item.bytes)) · \(L(item.kind.detail))"))
+                    if item.id != usage.last?.id { IndexRule() }
                 }
+            }
+            SettingsGroup(title: "清理缓存", footer: "清理缓存不会删除书籍、进度或书摘；语音缓存清理后，云语音会在下次朗读时重新合成。") {
+                ForEach(usage.filter { $0.kind.clearable }) { item in
+                    Button { confirmKind = item.kind } label: {
+                        IndexRowLabel(title: Text(L(item.kind.title)),
+                                      detail: item.bytes == 0 ? Text("没有可清理的缓存") : Text(verbatim: StorageUsage.format(item.bytes)),
+                                      symbol: Icon.delete, disclosure: item.bytes > 0)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(item.bytes == 0)
+                    .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
+                    IndexRule()
+                }
+                Button(role: .destructive) { confirmAll = true } label: {
+                    IndexActionLabel(title: "清理全部缓存", symbol: Icon.delete)
+                        .foregroundStyle(IndexTheme.danger).frame(minHeight: Theme.iconButtonSize)
+                }
+                .accessibilityIdentifier("storage.clearAll")
             }
             SettingsGroup(footer: "书架上的封面、分类显示不对或书籍消失时，可以修复书库索引；书籍文件本身不会改动。") {
-                HairlineRow(showsDivider: false) {
-                    TextButton("修复书库索引") {
-                        model.clearIndexCache()
-                        model.notify("已重建封面与分类索引。")
-                        rescan()
-                    }
-                }
-            }
-            SettingsGroup(title: "清理缓存") {
-                ForEach(usage.filter { $0.kind.clearable }) { item in
-                    HairlineRow {
-                        Button { confirmKind = item.kind } label: {
-                            HStack {
-                                Text(item.kind.title)
-                                Spacer()
-                                Text("清理").font(Theme.sans(15))
-                            }.foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
-                        }
-                        .disabled(item.bytes == 0)
-                        .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
-                    }
-                }
-                HairlineRow(showsDivider: false) {
-                    Button("清理全部缓存") { confirmAll = true }
-                        .foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
-                        .accessibilityIdentifier("storage.clearAll")
-                }
+                Button("修复书库索引") {
+                    model.clearIndexCache()
+                    model.notify("已重建封面与分类索引。")
+                    rescan()
+                }.buttonStyle(IndexActionStyle(role: .secondary))
             }
         }
         .navigationTitle("空间整理").navigationBarTitleDisplayMode(.inline)
@@ -74,11 +75,11 @@ struct StorageView: View {
         return VStack(alignment: .leading, spacing: Theme.space3) {
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    Rectangle().fill(Theme.clay).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
-                    Rectangle().fill(Theme.surface2).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
-                    Rectangle().fill(Theme.line).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
+                    Rectangle().fill(IndexTheme.accent).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
+                    Rectangle().fill(IndexTheme.edge).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
+                    Rectangle().fill(IndexTheme.rule).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
                 }.clipShape(Capsule())
-            }.frame(height: Theme.progressHeight).background(Theme.line, in: Capsule()).accessibilityHidden(true)
+            }.frame(height: Theme.progressHeight).background(IndexTheme.rule, in: Capsule()).accessibilityHidden(true)
             // Text names and values accompany all three segments; color is never the only key.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Theme.space4) { usageLegend(books: books, cache: cache, other: other) }
@@ -89,17 +90,17 @@ struct StorageView: View {
 
     private func usageLegend(books: Int64, cache: Int64, other: Int64) -> some View {
         Group {
-            legend("书籍 · " + StorageUsage.format(books), color: Theme.clay)
-            legend("缓存 · " + StorageUsage.format(cache), color: Theme.surface2)
-            legend("其他 · " + StorageUsage.format(other), color: Theme.line)
-        }.font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+            legend(Text("书籍 · \(StorageUsage.format(books))"), color: IndexTheme.accent)
+            legend(Text("缓存 · \(StorageUsage.format(cache))"), color: IndexTheme.edge)
+            legend(Text("其他 · \(StorageUsage.format(other))"), color: IndexTheme.rule)
+        }.font(Theme.sans(13)).monospacedDigit().foregroundStyle(IndexTheme.muted)
     }
 
-    private func legend(_ title: String, color: Color) -> some View {
+    private func legend(_ title: Text, color: Color) -> some View {
         HStack(spacing: Theme.space1) {
             RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(color)
                 .frame(width: Theme.space2, height: Theme.space2).accessibilityHidden(true)
-            Text(title)
+            title
         }
     }
 

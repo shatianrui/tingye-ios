@@ -101,8 +101,8 @@ struct SelectionPanel: View {
     let canExtendBack: Bool
     let canExtendForward: Bool
     let tint: Color
-    var paper: Color = Theme.surface
-    var accent: Color = Theme.accent
+    var paper: Color = IndexTheme.surface
+    var accent: Color = IndexTheme.accent
     let onMark: (_ color: String, _ style: String) -> Void
     let onRemove: () -> Void
     let onNote: () -> Void
@@ -113,6 +113,7 @@ struct SelectionPanel: View {
     @AppStorage("highlight.lastColor") private var lastColor = "clay"
     @AppStorage("highlight.lastStyle") private var lastStyle = "background"
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var tool: Tool = SelectionTool.visible().first ?? .mark
     @State private var chosenColor = "clay"
     @State private var chosenStyle = "background"
@@ -146,7 +147,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
-                Text("选段与标注").font(Theme.serif(20)).accessibilityAddTraits(.isHeader)
+                IndexHeading(title: Text("选段与标注"))
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -157,6 +158,7 @@ struct SelectionPanel: View {
                     Label("扩大选区", systemImage: Icon.extendRange)
                         .font(.caption.weight(.medium)).frame(minHeight: 44)
                 }
+                .disabled(!canExtendBack && !canExtendForward)
                 Button(action: onClose) {
                     ThemeIcon(symbol: Icon.close, size: 20)
                         .frame(width: 44, height: 44)
@@ -165,52 +167,48 @@ struct SelectionPanel: View {
             }
             .buttonStyle(.plain)
             Text(text)
-                .font(Theme.serif(18, relativeTo: .body)).lineLimit(4).lineSpacing(7)
+                .font(IndexTheme.editorial(18, relativeTo: .body)).lineLimit(typeSize.isAccessibilitySize ? nil : 4).lineSpacing(6)
                 .padding(Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius))
-            SegmentedBar(options: tools, selection: tool, title: { $0.rawValue }, onSelect: { tool = $0 })
+                .background(IndexTheme.wash, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
+            IndexScopePicker(options: tools, selection: tool, title: { Text(L($0.rawValue)) }, onSelect: { tool = $0 })
             Group {
                 switch tool {
                 case .mark: markTools
                 case .note:
                     VStack(alignment: .leading, spacing: Theme.space3) {
                         if let note = existing?.note, !note.isEmpty {
-                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(Theme.ink3)
+                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(IndexTheme.muted)
                         } else {
                             Text("给这段文字，留一点自己的想法。")
-                                .font(.subheadline).foregroundStyle(Theme.ink3)
+                                .font(.subheadline).foregroundStyle(IndexTheme.muted)
                         }
                         action(existing?.note == nil ? "写笔记" : "编辑笔记", Icon.note, onNote, prominent: true)
                     }
                 case .quote:
                     VStack(spacing: Theme.space2) {
-                        HStack(spacing: 10) {
+                        (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: Theme.space1)) : AnyLayout(HStackLayout(spacing: Theme.space2))) {
                             action("复制原文", Icon.copy, onCopy)
-                            ShareLink(item: text) {
-                                Label("分享选段", systemImage: Icon.share)
-                                    .font(.subheadline.weight(.medium))
-                                    .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
-                            }
-                            .buttonStyle(.plain)
+                            ShareLink(item: text) { IndexActionLabel(title: "分享选段", symbol: Icon.share) }
+                                .buttonStyle(IndexActionStyle(role: .secondary, expands: true))
                         }
                         action("从这里开始听", Icon.listen, onListen)
                     }
                 }
             }
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(IndexTheme.ink)
         .padding(.horizontal, Theme.space4)
         .padding(.top, Theme.space2)
         .padding(.bottom, Theme.space4)
         .frame(maxWidth: 520)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .floatingPanel()
+        .indexPanel(fill: paper)
     }
 
     private var markTools: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 4) {
+            IndexHeading(title: Text("标注颜色"))
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1),
+                                    count: typeSize.isAccessibilitySize ? 2 : 5), spacing: Theme.space1) {
                 ForEach(ReaderMark.palette, id: \.key) { item in
                     Button {
                         chosenColor = item.key
@@ -219,27 +217,29 @@ struct SelectionPanel: View {
                         VStack(spacing: 4) {
                             Circle().fill(Color(uiColor: UIColor(hex: item.hex)))
                                 .frame(width: 24, height: 24)
-                                .overlay { if chosenColor == item.key { Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold)).foregroundStyle(.white) } }
-                            Text(item.name).font(.caption2)
+                                .overlay { if chosenColor == item.key { Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold)).foregroundStyle(item.key == "yellow" ? Color(hex: 0x232823) : .white) } }
+                            Text(L(item.name)).font(.caption).fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
                         .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(item.name)色标注")
+                    .accessibilityLabel("\(L(item.name))色标注")
                     .accessibilityAddTraits(chosenColor == item.key ? .isSelected : [])
                 }
             }
-            HStack(spacing: 6) {
+            IndexRule()
+            IndexHeading(title: Text("标注样式"))
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: Theme.space1)) : AnyLayout(HStackLayout(spacing: Theme.space1))) {
                 ForEach([("background", "浅底", Icon.highlight), ("underline", "直线", Icon.underlineStyle), ("wavy", "波浪线", Icon.wavyStyle)], id: \.0) { style, title, icon in
                     Button {
                         chosenStyle = style
                         lastStyle = style
                     } label: {
-                        Label(title, systemImage: icon).font(.caption.weight(.medium))
+                        IndexActionLabel(title: LocalizedStringKey(title), symbol: icon).font(.caption.weight(.medium))
                             .foregroundStyle(chosenStyle == style ? accent : tint)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
+                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
@@ -248,7 +248,7 @@ struct SelectionPanel: View {
             action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, chosenStyle) }, prominent: true)
             if existing != nil {
                 Button("删除这条标注…") { removing = true }
-                    .font(.caption).foregroundStyle(Theme.danger)
+                    .font(.caption).foregroundStyle(IndexTheme.danger)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .buttonStyle(.plain)
             }
@@ -257,17 +257,9 @@ struct SelectionPanel: View {
 
     private func action(_ title: String, _ icon: String, _ run: @escaping () -> Void, prominent: Bool = false) -> some View {
         Button(action: run) {
-            HStack(spacing: Theme.space2) {
-                ThemeIcon(symbol: icon, size: 20)
-                Text(L(title))
-            }
-                .font(.body.weight(.medium))
-                .foregroundStyle(prominent ? Theme.bg : Theme.ink)
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? Theme.ink : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
-                .contentShape(Rectangle())
+            IndexActionLabel(title: LocalizedStringKey(title), symbol: icon)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(IndexActionStyle(role: prominent ? .primary : .secondary, expands: true))
     }
 }
 
@@ -281,35 +273,43 @@ struct NoteEditor: View {
     @FocusState private var focused: Bool
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    EditorialIntro(title: "把想法留在这里", detail: "原文与笔记分别保存，随时可以修改笔记。")
-                    Text("选中的原文").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink2)
-                    Text(quote)
-                        .font(Theme.serif(19, relativeTo: .body))
-                        .foregroundStyle(Theme.ink).lineSpacing(8)
-                        .fixedSize(horizontal: false, vertical: true).padding(20)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
-                    Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
+            IndexPage {
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    IndexHeading(title: Text("选中的原文"))
+                    Text(verbatim: quote)
+                        .font(IndexTheme.editorial(19, relativeTo: .body))
+                        .foregroundStyle(IndexTheme.ink).lineSpacing(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(Theme.space4)
+                .indexPanel(fill: IndexTheme.wash)
+
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    IndexHeading(title: Text("我的想法")).accessibilityHidden(true)
                     TextEditor(text: $text)
-                        .font(.body).foregroundStyle(Theme.ink)
+                        .font(.body).foregroundStyle(IndexTheme.ink)
                         .focused($focused)
                         .scrollContentBackground(.hidden)
-                        .padding(10).frame(minHeight: 180)
-                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
+                        .padding(Theme.space2).frame(minHeight: 180)
+                        .background(IndexTheme.surface, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: IndexTheme.controlRadius)
+                                .strokeBorder(focused ? IndexTheme.accent : IndexTheme.edge, lineWidth: Theme.rule)
+                                .allowsHitTesting(false)
+                        }
                         .overlay(alignment: .topLeading) {
-                            if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
+                            if text.isEmpty {
+                                Text("写一点你的想法").foregroundStyle(IndexTheme.muted)
+                                    .padding(.horizontal, Theme.space3).padding(.vertical, Theme.space4)
+                                    .allowsHitTesting(false).accessibilityHidden(true)
+                            }
                         }
                         .accessibilityLabel("我的想法")
-                    Button("保存笔记", action: save).buttonStyle(PrimaryButtonStyle(height: 50))
-                    Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle(height: 50))
                 }
-                .padding(24)
-                .frame(maxWidth: 640).frame(maxWidth: .infinity)
+                Button("保存笔记", action: save).buttonStyle(IndexActionStyle(role: .primary, expands: true))
+                Button("取消") { dismiss() }.buttonStyle(IndexActionStyle(role: .plain, expands: true))
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.bg)
             .navigationTitle("笔记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -318,7 +318,7 @@ struct NoteEditor: View {
             }
             .onAppear { focused = true }
         }
-        .tint(Theme.accent)
+        .tint(IndexTheme.accent)
         .presentationDetents([.large])
     }
     private func save() { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
@@ -348,14 +348,18 @@ struct NotesList: View {
     var body: some View {
         Group {
             if notes.isEmpty {
-                EditorialNotice(title: "还没有摘记", detail: "长按正文添加标注或写笔记。你的原文与想法会一起收在这里。")
+                IndexStatus(kind: .empty, title: Text("还没有摘记"),
+                            detail: Text("长按正文添加标注或写笔记。你的原文与想法会一起收在这里。"))
                     .listRowBackground(Color.clear)
             }
             ForEach(notes) { note in
                 VStack(alignment: .leading, spacing: 8) {
                     Button { onJump(note) } label: { NoteRow(note: note, chapter: chapterTitle(note.chapter)) }
                         .buttonStyle(.plain)
-                    if unresolvedIDs.contains(note.id) { Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(Theme.ink3) }
+                    if unresolvedIDs.contains(note.id) {
+                        Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(IndexTheme.warning)
+                    }
+                    IndexRule()
                     (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 14))) {
                         Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read).frame(minHeight: 44) }
                         Button { editing = note } label: { Label(note.note == nil ? "写笔记" : "编辑笔记", systemImage: Icon.note).frame(minHeight: 44) }
@@ -374,15 +378,15 @@ struct NotesList: View {
                         } label: { Label("更多", systemImage: Icon.more).frame(minHeight: 44) }
                     }
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(IndexTheme.accent)
                     .frame(minHeight: 44)
                     .buttonStyle(.borderless)
                 }
                 .padding(.vertical, 10)
-                .listRowBackground(Theme.surface)
+                .listRowBackground(IndexTheme.surface)
                 .swipeActions(allowsFullSwipe: false) {
                     Button(role: .destructive) { removing = note } label: { Label("删除", systemImage: Icon.delete) }
-                    Button { editing = note } label: { Label("笔记", systemImage: Icon.note) }.tint(Theme.accent)
+                    Button { editing = note } label: { Label("笔记", systemImage: Icon.note) }.tint(IndexTheme.accent)
                 }
                 .contextMenu {
                     Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read) }
@@ -411,35 +415,34 @@ struct NotesList: View {
 struct NoteRow: View {
     let note: Highlight
     let chapter: String
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Circle().fill(ReaderMark.color(note.color)).frame(width: 7, height: 7)
-                Text(chapter).lineLimit(1)
-                Spacer()
-                Text(note.date.formatted(date: .abbreviated, time: .omitted))
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space1))
+            : AnyLayout(HStackLayout(spacing: Theme.space2))
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            layout {
+                Text(verbatim: chapter).frame(maxWidth: .infinity, alignment: .leading)
+                Text(note.date, format: .dateTime.year().month().day())
             }
-            .font(.caption2)
-            .foregroundStyle(Theme.ink3)
-            Text(note.text)
-                .font(Theme.serif(17, relativeTo: .body))
-                .lineSpacing(6)
-                .foregroundStyle(Theme.ink)
-                .lineLimit(5)
-                .padding(.leading, 11)
-                .overlay(alignment: .leading) { RoundedRectangle(cornerRadius: 1.5).fill(ReaderMark.color(note.color)).frame(width: 2.5) }
+            .font(.caption).foregroundStyle(IndexTheme.muted)
+            Text(verbatim: note.text)
+                .font(IndexTheme.editorial(17, relativeTo: .body)).lineSpacing(5)
+                .foregroundStyle(IndexTheme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 5)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, Theme.space3)
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 1.5).fill(ReaderMark.color(note.color))
+                        .frame(width: Theme.ruleMedium).allowsHitTesting(false).accessibilityHidden(true)
+                }
             if let text = note.note {
-                Text(text)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink2)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-                    .padding(.top, 2)
+                Text(verbatim: text).font(.subheadline).foregroundStyle(IndexTheme.ink)
+                    .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(IndexTheme.wash, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, Theme.space1)
         .contentShape(Rectangle())
     }
 }

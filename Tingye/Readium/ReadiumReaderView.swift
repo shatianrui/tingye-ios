@@ -217,26 +217,23 @@ struct ReadiumReaderView: View {
                     })
                 }
             }
-            if session.loading {
-                VStack(spacing: 12) {
-                    ProgressView().controlSize(.large)
-                    Text("正在打开 EPUB…").font(.headline)
-                    Text("正在准备原书与阅读位置").font(.subheadline)
-                }.padding(24).background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 12))
-                .accessibilityElement(children: .combine)
-            }
             if let error = session.error {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle").font(.title2).accessibilityHidden(true)
-                    Text("EPUB 打开失败").font(.title3.weight(.semibold))
-                    Text(error).font(.callout).multilineTextAlignment(.center)
-                    Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
-                        .font(.footnote).foregroundStyle(Color(hex: palette.secondary))
-                    Button("重试") { persist(); ready = false; retry = UUID() }.buttonStyle(.borderedProminent)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Theme.space3) {
+                        IndexStatus(kind: .failure, title: Text("EPUB 打开失败"), detail: Text(verbatim: error))
+                        Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
+                            .foregroundStyle(IndexTheme.muted)
+                        Button("重试") { persist(); ready = false; retry = UUID() }
+                            .buttonStyle(IndexActionStyle(role: .primary))
+                    }
+                    .padding(Theme.space4).indexPanel()
+                    .padding(.horizontal, Theme.space4)
+                    .frame(maxWidth: 500).frame(maxWidth: .infinity)
+                    .padding(.top, 104)
                 }
-                .padding(24).frame(maxWidth: 500)
-                .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 18))
-                .padding(20)
+            } else if session.loading {
+                IndexStatus(kind: .loading, title: Text("正在打开 EPUB…"), detail: Text("正在准备原书与阅读位置"))
+                    .padding(.horizontal, Theme.space4).frame(maxWidth: 500)
             }
         }
         .overlay(alignment: .topLeading) {
@@ -309,10 +306,6 @@ struct ReadiumReaderView: View {
                 case .preferences:
                     NavigationStack {
                         ReadingPreferencesView(showsPreview: false)
-                            .safeAreaInset(edge: .bottom) {
-                                Text("EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。")
-                                    .font(.footnote).foregroundStyle(Theme.ink3).padding(12).frame(maxWidth: .infinity).background(Theme.bg)
-                            }
                     }
                 case .contents: NavigationStack { contentsView }
                 case .player: PlayerView(player: model.player, fromReader: true)
@@ -334,7 +327,7 @@ struct ReadiumReaderView: View {
                     }
                 }
             }
-            .environmentObject(model).tint(Theme.accent)
+            .environmentObject(model).tint(IndexTheme.accent)
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
     }
@@ -344,8 +337,8 @@ struct ReadiumReaderView: View {
                 .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
             VStack(alignment: .leading, spacing: Theme.space1) {
                 Text(title).accessibilityIdentifier("reader.currentTitle")
-                    .font(Theme.serif(17, relativeTo: .headline)).lineLimit(2)
-                Text(book.title).font(Theme.sans(13)).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
+                    .font(IndexTheme.editorial(17, relativeTo: .headline)).lineLimit(2)
+                Text(book.title).font(.caption).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
             }.frame(maxWidth: .infinity, alignment: .leading)
             Button {
                 let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
@@ -362,34 +355,50 @@ struct ReadiumReaderView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, Theme.insetCompact).padding(.vertical, Theme.space2)
         .frame(maxWidth: 760)
-    }
-    private var bottomBar: some View {
-        SheetChrome(title: title, onClose: { chrome = false }, showsHeader: false) {
-            VStack(spacing: Theme.space2) {
-                if mappedChapter, !book.chapters.isEmpty {
-                    HStack {
-                        Label("章节进度", systemImage: Icon.contents)
-                        Spacer()
-                        Text("\(chapter + 1) / \(book.chapters.count)").monospacedDigit()
-                    }
-                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                    ChapterScrubber(chapter: chapter, count: book.chapters.count, isPDF: false, tint: Theme.ink2,
-                                    onStep: { jumpTo(chapter: chapter + $0, position: 0) },
-                                    onCommit: { jumpTo(chapter: $0, position: 0) })
-                }
-                RowDivider()
-                Group {
-                    if typeSize.isAccessibilitySize {
-                        ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.space2) { bottomActions }
-                        }.frame(maxHeight: 280)
-                    } else { HStack(spacing: Theme.space2) { bottomActions } }
-                }
-            }
-            .frame(maxWidth: 720).frame(maxWidth: .infinity)
+        .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: IndexTheme.panelRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: IndexTheme.panelRadius)
+                .strokeBorder(Color(hex: palette.secondary).opacity(0.4), lineWidth: Theme.hairline).allowsHitTesting(false)
         }
-        .background(Theme.surface.ignoresSafeArea(edges: .bottom))
-        .foregroundStyle(Theme.ink)
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            IndexRule()
+            ViewThatFits(in: .vertical) {
+                toolsContent
+                ScrollView { toolsContent }.scrollBounceBehavior(.basedOnSize)
+            }
+            .frame(maxHeight: typeSize.isAccessibilitySize ? 330 : 245)
+        }
+        .background(IndexTheme.surface.ignoresSafeArea(edges: .bottom))
+        .foregroundStyle(IndexTheme.ink)
+    }
+
+    private var toolsContent: some View {
+        VStack(spacing: Theme.space2) {
+            if mappedChapter, !book.chapters.isEmpty {
+                HStack {
+                    Label("章节进度", systemImage: Icon.contents)
+                    Spacer(minLength: 0)
+                    Text("\(chapter + 1) / \(book.chapters.count)").monospacedDigit()
+                }
+                .font(.caption).foregroundStyle(IndexTheme.muted)
+                ChapterScrubber(chapter: chapter, count: book.chapters.count, isPDF: false, tint: IndexTheme.accent,
+                                onStep: { jumpTo(chapter: chapter + $0, position: 0) },
+                                onCommit: { jumpTo(chapter: $0, position: 0) })
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1),
+                                     count: typeSize.isAccessibilitySize ? 2 : 3), spacing: Theme.space1) {
+                bottomActions
+            }
+            if audioActive {
+                IndexRule()
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.space1) { speechActions }
+            }
+        }
+        .padding(Theme.space3)
+        .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
     }
     @ViewBuilder private var bottomActions: some View {
         chromeButton("目录", symbol: Icon.contents, selected: sheet == .contents) { sheet = .contents }.accessibilityIdentifier("reader.contents")
@@ -397,98 +406,131 @@ struct ReadiumReaderView: View {
             startSpeech()
         }
         .accessibilityIdentifier("reader.listen")
-        if audioActive {
-            chromeButton(audioPlaying ? "暂停" : "继续", symbol: Icon.playback(audioPlaying)) {
-                if model.player.playing { model.player.pause() } else { model.player.resume() }
-            }.accessibilityIdentifier("reader.toggle")
-            .accessibilityLabel(audioPlaying ? "暂停朗读" : "继续朗读")
-            chromeButton(following ? "停止跟随" : "回到朗读", symbol: Icon.listening, selected: following) {
-                if following {
-                    following = false
-                } else if model.player.playing {
-                    following = true
-                    refreshSpeech(playing: true, chapter: model.player.chapter, position: model.player.position)
-                } else {
-                    jumpTo(ReadiumSpeechBridge.sentence(book: book, chapter: model.player.chapter, position: model.player.position))
-                }
-            }.accessibilityIdentifier("reader.returnToSpeech")
-            .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
-        }
-        chromeButton("设置", symbol: Icon.typography, selected: sheet == .preferences) { sheet = .preferences }.accessibilityIdentifier("reader.preferences")
+        chromeButton("设置", symbol: Icon.typography, selected: sheet == .preferences) { sheet = .preferences }
+            .accessibilityIdentifier("reader.preferences")
     }
-    private func chromeButton(_ title: LocalizedStringKey, symbol: String, enabled: Bool = true, selected: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: Theme.space2) {
-                ThemeIcon(symbol: symbol, size: 21)
-                Text(title).font(Theme.sans(13)).fixedSize(horizontal: false, vertical: true)
+
+    @ViewBuilder private var speechActions: some View {
+        chromeButton(audioPlaying ? "暂停" : "继续", symbol: Icon.playback(audioPlaying)) {
+            if model.player.playing { model.player.pause() } else { model.player.resume() }
+        }.accessibilityIdentifier("reader.toggle")
+        .accessibilityLabel(audioPlaying ? "暂停朗读" : "继续朗读")
+        chromeButton(following ? "停止跟随" : "回到朗读", symbol: Icon.listening, selected: following) {
+            if following {
+                following = false
+            } else if model.player.playing {
+                following = true
+                refreshSpeech(playing: true, chapter: model.player.chapter, position: model.player.position)
+            } else {
+                jumpTo(ReadiumSpeechBridge.sentence(book: book, chapter: model.player.chapter, position: model.player.position))
             }
-            .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
-            .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight)
-            .padding(.horizontal, Theme.space1)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain).disabled(!enabled)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        }.accessibilityIdentifier("reader.returnToSpeech")
+        .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
     }
+
+    private func chromeButton(_ title: LocalizedStringKey, symbol: String, enabled: Bool = true,
+                              selected: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) { IndexToolLabel(title: title, symbol: symbol, active: selected) }
+            .buttonStyle(PressButtonStyle()).disabled(!enabled)
+    }
+
     private var contentsView: some View {
         List {
-            EditorialIntro(title: "目录与摘记", detail: book.title, eyebrow: "阅读导航")
-            Button("搜索书内文字") { following = false; sheet = .search }.accessibilityIdentifier("reader.search")
-            SegmentedBar(options: [0, 1, 2], selection: contentsMode,
-                         title: { ["目录", "书签", "摘记"][$0] }, onSelect: { contentsMode = $0 })
-                .listRowBackground(Color.clear)
-            if contentsMode == 0 {
-            if !session.contents.isEmpty {
-                ForEach(session.contents) { item in
-                    let current = session.contents.first(where: { session.map?.chapter(for: $0.link.href) == chapter })?.id == item.id
-                    Button {
-                        navigateLink(item.link)
-                        sheet = nil
-                    } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
-                            Text(item.link.title ?? item.link.href).font(Theme.serif(17))
-                                .foregroundStyle(current ? Theme.clayDeep : Theme.ink)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: Theme.space2)
-                            if current { SealDot(text: "在读") }
-                        }.padding(.leading, CGFloat(min(item.depth, 8)) * Theme.space3).padding(.vertical, Theme.space2).frame(minHeight: Theme.rowMinHeight)
-                    }
-                    .listRowBackground(current ? Theme.claySoft : Theme.surface)
-                }
-            } else {
-                ForEach(book.chapters.indices, id: \.self) { index in
-                    Button { jumpTo(chapter: index, position: 0); sheet = nil } label: {
-                        HStack {
-                            Text(book.chapters[index].title).font(Theme.serif(17)).foregroundStyle(index == chapter ? Theme.clayDeep : Theme.ink)
-                            Spacer()
-                            if index == chapter { SealDot(text: "在读") }
-                        }.frame(minHeight: Theme.rowMinHeight)
-                    }
-                        .disabled(session.map?.href(for: index) == nil)
-                }
+            IndexHeading(title: Text(verbatim: book.title))
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            Button { following = false; sheet = .search } label: {
+                IndexActionLabel(title: "搜索书内文字", symbol: Icon.search)
             }
+            .buttonStyle(IndexActionStyle(role: .secondary))
+            .accessibilityIdentifier("reader.search")
+            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            IndexScopePicker(options: [0, 1, 2], selection: contentsMode, title: {
+                switch $0 {
+                case 1: Text("书签")
+                case 2: Text("摘记")
+                default: Text("目录")
+                }
+            }, onSelect: { contentsMode = $0 })
+            .listRowBackground(Color.clear).listRowSeparator(.hidden)
+
+            switch contentsMode {
+            case 1: epubBookmarks
+            case 2: epubNotes
+            default: epubChapters
             }
-            if contentsMode == 1 { Section("书签") {
-                if entry?.bookmarks.isEmpty != false {
-                    EditorialNotice(title: "还没有书签", detail: "轻点阅读页右上角的书签，记住当前的位置。")
-                }
-                ForEach(entry?.bookmarks ?? []) { mark in
-                    Button(mark.excerpt) { jumpTo(.init(mark)); sheet = nil }
-                        .swipeActions { Button("删除", role: .destructive) { model.removeBookmark(book.id, id: mark.id) } }
-                }
-            } }
-            if contentsMode == 2 { Section("摘记") {
-                if !unresolvedAnnotations.isEmpty {
-                    EditorialNotice(title: "部分标注尚未定位", detail: "有 \(unresolvedAnnotations.count) 条原文与笔记已保留。可稍后重试定位。")
-                }
-                NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) { note in jumpTo(.init(note)); sheet = nil }
-            } }
         }
-        .editorialList()
+        .indexList()
         .accessibilityIdentifier("reader.epubContents")
         .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }
     }
+
+    @ViewBuilder private var epubChapters: some View {
+        if !session.contents.isEmpty {
+            let currentID = session.contents.first(where: { session.map?.chapter(for: $0.link.href) == chapter })?.id
+            ForEach(session.contents) { item in
+                let current = item.id == currentID
+                Button {
+                    navigateLink(item.link)
+                    sheet = nil
+                } label: {
+                    epubChapterRow(item.link.title ?? item.link.href, current: current)
+                        .padding(.leading, CGFloat(min(item.depth, 8)) * Theme.space2)
+                }
+                .buttonStyle(PressButtonStyle())
+                .listRowBackground(current ? IndexTheme.wash : IndexTheme.surface)
+            }
+        } else {
+            if book.chapters.isEmpty {
+                IndexStatus(kind: .empty, title: Text("没有章节"))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            }
+            ForEach(book.chapters.indices, id: \.self) { index in
+                Button { jumpTo(chapter: index, position: 0); sheet = nil } label: {
+                    epubChapterRow(book.chapters[index].title, current: index == chapter)
+                }
+                .buttonStyle(PressButtonStyle())
+                .disabled(session.map?.href(for: index) == nil)
+                .listRowBackground(index == chapter ? IndexTheme.wash : IndexTheme.surface)
+            }
+        }
+    }
+
+    private func epubChapterRow(_ title: String, current: Bool) -> some View {
+        IndexRowLabel(title: Text(verbatim: title), detail: current ? Text("在读") : nil,
+                      symbol: current ? Icon.read : nil)
+    }
+
+    @ViewBuilder private var epubBookmarks: some View {
+        if entry?.bookmarks.isEmpty != false {
+            IndexStatus(kind: .empty, title: Text("还没有书签"),
+                        detail: Text("轻点阅读页右上角的书签，记住当前的位置。"))
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+        }
+        ForEach(entry?.bookmarks ?? []) { mark in
+            Button { jumpTo(.init(mark)); sheet = nil } label: {
+                let heading = book.chapters.indices.contains(mark.chapter)
+                    ? Text(verbatim: book.chapters[mark.chapter].title) : Text("第 \(mark.chapter + 1) 章")
+                IndexRowLabel(title: heading,
+                              detail: mark.excerpt.isEmpty ? Text("回到此处") : Text(verbatim: mark.excerpt),
+                              symbol: Icon.bookmark(false))
+            }
+            .buttonStyle(PressButtonStyle()).listRowBackground(IndexTheme.surface)
+            .swipeActions { Button("删除", role: .destructive) { model.removeBookmark(book.id, id: mark.id) } }
+        }
+    }
+
+    @ViewBuilder private var epubNotes: some View {
+        if !unresolvedAnnotations.isEmpty {
+            IndexStatus(kind: .empty, title: Text("部分标注尚未定位"),
+                        detail: Text("有 \(unresolvedAnnotations.count) 条原文与笔记已保留。可稍后重试定位。"))
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
+        }
+        NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) {
+            note in jumpTo(.init(note)); sheet = nil
+        }
+    }
+
     @MainActor private func open() async {
         ready = false; mappedChapter = false
         speechDecorations = []; searchDecorations = []; pendingSearch = nil; speechNavigation = false
@@ -645,8 +687,8 @@ struct ReadiumReaderView: View {
     @ViewBuilder private var annotationPanel: some View {
         if let draft {
             SelectionPanel(text: draft.text, existing: entry?.notes.first { $0.id == draft.id },
-                           canExtendBack: false, canExtendForward: false, tint: Theme.ink,
-                           paper: Theme.surface, accent: Theme.clayDeep,
+                           canExtendBack: false, canExtendForward: false, tint: IndexTheme.ink,
+                           paper: IndexTheme.surface, accent: IndexTheme.accent,
                            onMark: { color, style in var changed = draft; changed.color = color; changed.style = style; saveAnnotation(changed) },
                            onRemove: { model.removeHighlight(book.id, id: draft.id); sheet = nil },
                            onNote: { sheet = .note },

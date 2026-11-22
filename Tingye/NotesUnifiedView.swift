@@ -83,44 +83,40 @@ struct NotesUnifiedView: View {
 
     var body: some View {
         List {
-            Masthead(title: "留下的文字", subtitle: "划线、笔记与书签，按书收好，随时回到原文。", kicker: "摘记", titleSize: 28)
+            IndexHeading(title: Text("摘记"), detail: Text("搜索划线、笔记与书签"), large: true)
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.space2) {
-                    Chip(title: "全部", selected: selectedKind == nil) { selectedKind = nil }
-                    ForEach([Item.Kind.highlight, .note, .bookmark], id: \.rawValue) { kind in
-                        Chip(title: kind.rawValue, selected: selectedKind == kind) { selectedKind = kind }
-                    }
-                }
-            }.listRowBackground(Color.clear).listRowSeparator(.hidden)
+            IndexScopePicker(options: [nil, Item.Kind.highlight, .note, .bookmark], selection: selectedKind,
+                             title: { kind in kind.map { Text(L($0.rawValue)) } ?? Text("全部") },
+                             onSelect: { selectedKind = $0 })
+                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             if !hasAnyItems {
-                EmptyState(title: "还没有摘记", detail: "长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。")
-                    .listRowBackground(Color.clear)
-            }
-            if hasAnyItems && books.isEmpty {
-                EmptyState(title: "没有匹配的摘记", detail: query.isEmpty ? "试试其他类型。" : "没有找到包含「\(query)」的划线、笔记或书签。").listRowBackground(Color.clear)
+                IndexStatus(kind: .empty, title: Text("还没有摘记"),
+                            detail: Text("长按正文添加标注、写笔记，或在阅读与听书时加书签，都会收进这里。"))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if books.isEmpty {
+                IndexStatus(kind: .empty, title: Text("没有匹配的摘记"),
+                            detail: query.isEmpty ? Text("试试其他类型。") : Text("没有找到包含「\(query)」的划线、笔记或书签。"))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
             ForEach(books) { group in
                 Section {
-                    ForEach(group.items) { item in
-                        row(item, entry: group.entry)
-                    }
+                    ForEach(group.items) { item in row(item, entry: group.entry) }
                 } header: {
-                    HStack(spacing: Theme.space2) {
-                        BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 24)
-                        Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(Theme.ink).textCase(nil)
-                        SealBadge(text: "\(group.items.count) 条", color: Theme.ink3, background: Theme.surface2)
-                        Spacer()
-                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.clayDeep).frame(minHeight: Theme.iconButtonSize) }
-                            .accessibilityLabel("导出《\(group.entry.title)》摘记")
+                    HStack(alignment: .top, spacing: Theme.space2) {
+                        IndexHeading(title: Text(verbatim: group.entry.title), detail: Text("\(group.items.count) 条"))
+                        ShareLink(item: Self.markdown(group.entry)) {
+                            IndexActionLabel(title: "导出", symbol: Icon.share)
+                        }
+                        .buttonStyle(IndexActionStyle())
+                        .accessibilityLabel("导出《\(group.entry.title)》摘记")
                     }
+                    .textCase(nil)
                 }
             }
         }
         .navigationTitle("书摘与笔记").navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "搜索划线、笔记与书签")
-        .editorialList()
-        .background(Theme.bg)
+        .indexList()
         .confirmationDialog("删除这条标注？", isPresented: Binding(get: { removingHighlight != nil }, set: { if !$0 { removingHighlight = nil } }), titleVisibility: .visible) {
             Button("删除标注与附带笔记", role: .destructive) {
                 if let highlight = removingHighlight, let entryID = removingHighlightEntryID {
@@ -142,50 +138,50 @@ struct NotesUnifiedView: View {
     }
 
     private func row(_ item: Item, entry: ShelfEntry) -> some View {
-        PaperCard {
-            VStack(alignment: .leading, spacing: Theme.space3) {
-                Button { model.open(entry, target: item.target) } label: {
-                    HStack(alignment: .top, spacing: Theme.space3) {
-                        Rectangle().fill(item.kind == .bookmark ? Theme.line : Theme.clay)
-                            .frame(width: item.kind == .bookmark ? Theme.hairline : Theme.progressHeight)
-                        VStack(alignment: .leading, spacing: Theme.space2) {
-                            SealBadge(text: item.kind.rawValue, color: Theme.ink3, background: Theme.surface2)
-                            Text(item.text).font(Theme.serif(17, relativeTo: .body))
-                                .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
-                            if let noteText = item.noteText {
-                                Text(noteText).font(Theme.sans(15)).foregroundStyle(Theme.ink2)
-                                    .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-                            }
-                            (Text(entry.title) + Text(" · 第 \(item.chapter + 1) 章 · ")
-                             + Text(item.date.formatted(date: .abbreviated, time: .shortened)).monospacedDigit())
-                                .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: Theme.space1) {
+            Button { model.open(entry, target: item.target) } label: {
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    Text(L(item.kind.rawValue)).font(.caption.weight(.semibold)).foregroundStyle(IndexTheme.accent)
+                    Text(verbatim: item.text).font(IndexTheme.editorial(17, relativeTo: .body))
+                        .foregroundStyle(IndexTheme.ink).lineSpacing(5)
+                    if let noteText = item.noteText {
+                        Text(verbatim: noteText).font(.subheadline).foregroundStyle(IndexTheme.ink)
+                            .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(IndexTheme.wash, in: RoundedRectangle(cornerRadius: IndexTheme.controlRadius))
                     }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading).contentShape(Rectangle())
-                }.buttonStyle(.plain)
-                HairlineRow(showsDivider: false) {
-                    HStack(spacing: Theme.space3) {
-                        Button { model.open(entry, target: item.target) } label: {
-                            Label("回到原文", systemImage: Icon.read).frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.clayDeep)
-                        Spacer(minLength: 0)
-                        Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
-                            Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete)
-                                .frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.danger)
-                    }
-                    .font(Theme.sans(13)).buttonStyle(.borderless)
+                    Text("第 \(item.chapter + 1) 章 · \(item.date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundStyle(IndexTheme.muted)
                 }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressButtonStyle())
+            IndexRule()
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Theme.space2) { rowActions(item, entry: entry) }.fixedSize(horizontal: true, vertical: false)
+                VStack(alignment: .leading, spacing: 0) { rowActions(item, entry: entry) }
             }
         }
-        .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space1, trailing: 0))
-        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+        .padding(.vertical, Theme.space2)
+        .listRowBackground(IndexTheme.surface)
         .swipeActions(allowsFullSwipe: false) {
             Button(role: .destructive) { beginRemoval(item, entry: entry) } label: { Label("删除", systemImage: Icon.delete) }
         }
+    }
+
+    @ViewBuilder private func rowActions(_ item: Item, entry: ShelfEntry) -> some View {
+        Button { model.open(entry, target: item.target) } label: {
+            IndexActionLabel(title: "回到原文", symbol: Icon.read)
+        }
+        .buttonStyle(IndexActionStyle())
+        Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
+            IndexActionLabel(title: item.kind == .bookmark ? "移除书签" : "删除标注…", symbol: Icon.delete)
+                .foregroundStyle(IndexTheme.danger)
+                .font(.subheadline).padding(.horizontal, Theme.space2)
+                .frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
+        }
+        .buttonStyle(PressButtonStyle())
     }
 
     private func beginRemoval(_ item: Item, entry: ShelfEntry) {
