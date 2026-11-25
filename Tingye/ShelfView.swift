@@ -392,7 +392,7 @@ struct ShelfView: View {
         let readCh = min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))
         let listenPos = entry.listeningProgress
         let listenCh = listenPos.map { min(max(1, $0.chapter + 1), max(1, entry.chapterCount)) }
-        let dualTrackDiverged = !entry.isComic && entry.hasListened && listenCh != nil && listenCh != readCh
+        let dualTrackDiverged = !entry.isComic && entry.hasListened == true && listenCh != nil && listenCh != readCh
         return PaperCard(padding: Theme.cardInset) {
             VStack(alignment: .leading, spacing: Theme.space3) {
                 HStack(spacing: Theme.space2) {
@@ -408,7 +408,7 @@ struct ShelfView: View {
                             .foregroundStyle(Theme.ink2)
                             .accessibilityIdentifier("study.heroChapter")
                     }
-                    if let listenCh, !entry.isComic, entry.hasListened {
+                    if let listenCh, !entry.isComic, entry.hasListened == true {
                         Text("· 听 CH \(String(format: "%02d", listenCh))")
                             .font(Theme.sans(11, weight: .medium)).monospacedDigit()
                             .foregroundStyle(dualTrackDiverged ? Theme.accent : Theme.ink3)
