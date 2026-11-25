@@ -402,8 +402,7 @@ struct ShelfView: View {
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                     if entry.started, entry.chapterCount > 0 {
-                        let unit = entry.isComic ? "P" : "CH"
-                        Text("读 \(unit) \(String(format: "%02d", readCh))")
+                        Text("第 \(readCh) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
                             .font(Theme.sans(11, weight: .medium)).monospacedDigit()
                             .foregroundStyle(Theme.ink2)
                             .accessibilityIdentifier("study.heroChapter")

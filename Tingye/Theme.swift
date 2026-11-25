@@ -5,25 +5,25 @@ import CoreImage
 /// 听页界面「简格 Linear Reader」：极净中性画布、1px 发丝线分层、单一靛蓝焦点。
 /// 正文七种纸色的底与字独立保留，不跟界面一起变色。
 enum Theme {
-    static let bg = dynamic(0xFAFAFA, 0x0B0C0E, highLight: 0xFFFFFF, highDark: 0x050607)
-    static let surface = dynamic(0xFFFFFF, 0x121417, highLight: 0xFFFFFF, highDark: 0x101216)
-    static let surface2 = dynamic(0xF4F4F5, 0x1A1D23, highLight: 0xECECEE, highDark: 0x1F232B)
+    static let bg = dynamic(0xFAFAFA, 0x0B0C0E)
+    static let surface = dynamic(0xFFFFFF, 0x121417)
+    static let surface2 = dynamic(0xF4F4F5, 0x1A1D23)
     static let surfaceSunken = dynamic(0xF1F1F3, 0x101216)
-    static let ink = dynamic(0x09090B, 0xF4F4F5, highLight: 0x000000, highDark: 0xFFFFFF)
-    static let ink2 = dynamic(0x52525B, 0xA1A1AA, highLight: 0x27272A, highDark: 0xD4D4D8)
-    static let ink3 = dynamic(0x71717A, 0x71717A, highLight: 0x3F3F46, highDark: 0xA1A1AA)
+    static let ink = dynamic(0x09090B, 0xF4F4F5)
+    static let ink2 = dynamic(0x52525B, 0xA1A1AA)
+    static let ink3 = dynamic(0x6B6B75, 0xA1A1AA)
     static let ink4 = dynamic(0xA1A1AA, 0x52525B)
-    static let line = dynamic(0xE4E4E7, 0x23262E, highLight: 0xD4D4D8, highDark: 0x3A3F4B)
+    static let line = dynamic(0xE4E4E7, 0x23262E)
     static let lineField = Color(UIColor { traits in
         UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF4F4F5 : 0x09090B)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.14 : 0.10)
     })
     /// 单一功能强调色（靛蓝）：小字与描边用 accent，实底主操作用 clay。
-    static let accent = dynamic(0x4F46E5, 0x818CF8, highLight: 0x3730A3, highDark: 0xA5B4FC)
+    static let accent = dynamic(0x4F46E5, 0x818CF8)
     static let clayDeep = accent
     static let accentSoft = dynamic(0xEEF2FF, 0x1E1F3A)
     static let claySoft = accentSoft
-    static let clay = dynamic(0x4F46E5, 0x6366F1, highLight: 0x3730A3, highDark: 0x818CF8)
+    static let clay = dynamic(0x4F46E5, 0x818CF8)
     static let onClay = dynamic(0xFFFFFF, 0x0B0C0E)
     static let focus = clay
     static let danger = dynamic(0xDC2626, 0xF87171)
@@ -1136,7 +1136,7 @@ struct SheetChrome<Content: View>: View {
             } }
             content
         }
-        .padding(Theme.cardInset)
+        .padding(.horizontal, 16).padding(.vertical, Theme.cardInset)
         .background(Theme.surface, in: SheetTopShape())
         .overlay { SheetTopShape().stroke(Theme.line, lineWidth: Theme.hairline).allowsHitTesting(false) }
         .clipShape(SheetTopShape())
@@ -1206,8 +1206,8 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
         let foreground: UInt32
         let secondary: UInt32
         let isDark: Bool
-        var highlight: UInt32 { isDark ? 0x1E1F3A : 0xEEF2FF }
-        var accent: UInt32 { isDark ? 0x818CF8 : 0x4F46E5 }
+        var highlight: UInt32 { isDark ? 0x1A2C44 : 0xE3EDF8 }
+        var accent: UInt32 { isDark ? 0xA9C9F2 : 0x163E73 }
     }
     func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
         let night = darkAppearance && !alwaysLight

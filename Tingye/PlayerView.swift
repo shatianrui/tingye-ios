@@ -195,14 +195,13 @@ struct PlayerView: View {
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(1)
                             HStack(spacing: 5) {
-                                Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
+                                Text("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
                                     .lineLimit(1)
+                                    .accessibilityIdentifier("player.currentChapter")
                                 Text("· \(player.voiceLabel)")
                                     .lineLimit(1)
                             }
                             .font(Theme.sans(11.5)).foregroundStyle(Theme.ink3)
-                            .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
-                            .accessibilityIdentifier("player.currentChapter")
                         }
                         Spacer(minLength: 0)
                     }
