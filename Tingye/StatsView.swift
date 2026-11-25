@@ -113,49 +113,66 @@ struct StatsView: View {
     }
 
     private var profileContent: some View {
-        VStack(alignment: .leading, spacing: Theme.space5) {
-            HStack {
+        VStack(alignment: .leading, spacing: Theme.space4) {
+            HStack(spacing: Theme.space2) {
                 if let onBack {
                     Button { onBack() } label: {
-                        ThemeIcon(symbol: Icon.back, size: 20, weight: .medium)
-                            .foregroundStyle(Theme.ink)
-                            .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+                        ThemeIcon(symbol: Icon.back, size: 17, weight: .medium)
+                            .foregroundStyle(Theme.ink2)
+                            .frame(width: 34, height: 34)
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                            .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.92))
                     .accessibilityLabel("返回")
                     .accessibilityIdentifier("study.profileBack")
                 }
-                Masthead(title: "我的", subtitle: "在每一天，留下阅读的痕迹。", titleSize: 28)
-                Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("我的").font(Theme.sans(22, weight: .semibold)).foregroundStyle(Theme.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("本地优先 · 读听数据仅留在本机").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                }
+                Spacer(minLength: 0)
                 Button { showingSettings = true } label: {
-                    ThemeIcon(symbol: Icon.settings, size: 22).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+                    ThemeIcon(symbol: Icon.settings, size: 17)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                 }
                 .accessibilityLabel("设置")
                 .accessibilityIdentifier("profile.settings")
             }
             collectionSummary
             monthlyFootprint
-            profileEntry("阅读足迹", value: "查看统计") { showingStats = true }
-                .accessibilityIdentifier("profile.stats")
-            profileEntry("我的书摘", value: "\(model.noteCount) 条") { settingsRoute = .notes }
-                .accessibilityIdentifier("profile.notes")
+            PaperCard(padding: Theme.cardInset) {
+                VStack(spacing: 0) {
+                    profileEntry("阅读足迹", value: "查看统计") { showingStats = true }
+                        .accessibilityIdentifier("profile.stats")
+                    profileEntry("我的书摘", value: "\(model.noteCount) 条") { settingsRoute = .notes }
+                        .accessibilityIdentifier("profile.notes")
+                    Button { showingSettings = true } label: {
+                        HairlineRow(title: "设置", value: "阅读 · 声音 · 数据", disclosure: true, showsDivider: false)
+                    }.buttonStyle(.plain)
+                }
+            }
             if model.visibleEntries.contains(where: { $0.local && !$0.isComic }) {
                 DailyQuoteCard(compact: true)
             } else {
-                VStack(alignment: .leading, spacing: Theme.space3) {
-                    Text("今日摘句").font(.caption2.weight(.medium))
-                    Text("把日子过慢一点，\n让喜欢的文字多停留一会儿。")
-                        .font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
-                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(Theme.ink3)
+                PaperCard(padding: Theme.cardInset) {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
+                        Text("今日摘句").font(Theme.sans(11, weight: .semibold)).foregroundStyle(Theme.accent)
+                        Text("把日子过慢一点，让喜欢的文字多停留一会儿。")
+                            .font(Theme.serif(17, relativeTo: .title3)).lineSpacing(6).foregroundStyle(Theme.ink)
+                        Text("听页 · 今日阅读寄语").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                    }
                 }
-                .foregroundStyle(Theme.ink3)
-                .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
             }
-            profileEntry("设置", value: "阅读 · 声音 · 数据") { showingSettings = true }
             Text("无需账号，你的书留在你的设备。")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
         }
         .foregroundStyle(Theme.ink)
     }
@@ -169,34 +186,61 @@ struct StatsView: View {
         let finished = model.visibleEntries.filter { $0.started && $0.readFraction >= 0.995 }.count
         let streak = AppModel.readingStreak(model.readingSeconds).current
         return Button { showingStats = true } label: {
-            VStack(alignment: .leading, spacing: Theme.space4) {
-                Text("这个月，读听了").font(.caption)
-                Text(Self.preciseDuration(seconds)).font(Theme.serif(36, relativeTo: .largeTitle))
-                    .minimumScaleFactor(0.6).lineLimit(1).monospacedDigit()
-                ViewThatFits(in: .horizontal) {
-                    HStack { Text("累计读完 \(finished) 本"); Spacer(); Text("连续阅读 \(streak) 天") }
-                    VStack(alignment: .leading, spacing: Theme.space2) { Text("累计读完 \(finished) 本"); Text("连续阅读 \(streak) 天") }
+            PaperCard(padding: Theme.cardInset) {
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    HStack {
+                        Text("本月读听").font(Theme.sans(12, weight: .medium)).foregroundStyle(Theme.ink3)
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Text("查看统计").font(Theme.sans(12, weight: .medium)).foregroundStyle(Theme.accent)
+                            ThemeIcon(symbol: Icon.disclosure, size: 12).foregroundStyle(Theme.accent)
+                        }
+                    }
+                    Text(Self.preciseDuration(seconds))
+                        .font(Theme.display(30)).monospacedDigit()
+                        .minimumScaleFactor(0.6).lineLimit(1)
+                        .foregroundStyle(Theme.ink)
+                    RowDivider()
+                    ViewThatFits(in: .horizontal) {
+                        HStack {
+                            Text("累计读完 \(finished) 本").monospacedDigit()
+                            Spacer()
+                            Text("连续阅读 \(streak) 天").monospacedDigit().foregroundStyle(streak > 0 ? Theme.success : Theme.ink2)
+                        }
+                        VStack(alignment: .leading, spacing: Theme.space1) {
+                            Text("累计读完 \(finished) 本").monospacedDigit()
+                            Text("连续阅读 \(streak) 天").monospacedDigit()
+                        }
+                    }
+                    .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2)
                 }
-                .font(.caption)
             }
-            .foregroundStyle(Theme.ink)
-            .paperPanel()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressButtonStyle())
         .accessibilityHint("查看完整阅读统计")
     }
 
     private var collectionSummary: some View {
-        PaperCard {
-            summaryLayout {
-                StatBlock(value: "\(model.visibleEntries.count)", label: "藏书")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                StatBlock(value: totalReadingText, label: "累计时长")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                StatBlock(value: "\(AppModel.readingStreak(model.readingSeconds).current)", label: "连续天数")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        let kpiLayout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: Theme.space2))
+            : AnyLayout(HStackLayout(spacing: Theme.space2))
+        return kpiLayout {
+            kpiTile(value: "\(model.visibleEntries.count)", label: "藏书")
+            kpiTile(value: totalReadingText, label: "累计时长")
+            kpiTile(value: "\(AppModel.readingStreak(model.readingSeconds).current) 天", label: "连续阅读")
         }
+    }
+
+    private func kpiTile(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label).font(Theme.sans(11.5, weight: .medium)).foregroundStyle(Theme.ink3)
+            Text(value).font(Theme.display(20)).monospacedDigit().foregroundStyle(Theme.ink)
+                .lineLimit(1).minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 12)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
     }
 
     private func profileEntry(_ title: String, value: String, action: @escaping () -> Void) -> some View {

@@ -15,7 +15,8 @@ struct PlayerView: View {
     @State private var settings = false
     @State private var chaptersSheet = false
     @State private var endingListening = false
-    @State private var showingContext = false
+    /// 简格听书流默认展开前后文逐句转录流，轻点任意句即可跳转朗读。
+    @State private var showingContext = true
     /// 句子流可见高度与当前句高度：长句会被底部控制区挡住，换句时据此把当前句滚进视野。
     @State private var viewportHeight: CGFloat = 0
     @State private var currentHeight: CGFloat = 0
@@ -168,21 +169,49 @@ struct PlayerView: View {
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
 
-    // MARK: 紧凑书名栏
+    // MARK: 紧凑书头（把视野还给可点击逐句转录字幕流）
 
     private func hero(_ book: Book, coverWidth: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: Theme.space3) {
-            HStack {
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            HStack(spacing: Theme.space2) {
                 Button { dismiss() } label: {
-                    HStack(spacing: Theme.space2) {
-                        Text("正在听").font(Theme.serif(28, relativeTo: .title))
-                        ThemeIcon(symbol: Icon.collapse, size: 20)
-                    }
-                    .frame(minHeight: 44).contentShape(Rectangle())
+                    ThemeIcon(symbol: Icon.collapse, size: 17)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("收起播放器")
                 .accessibilityIdentifier("player.collapse")
-                Spacer(minLength: 12)
+
+                Button { showingCover = true } label: {
+                    HStack(spacing: Theme.space2) {
+                        BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 34)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(book.title)
+                                .font(Theme.sans(14, weight: .semibold))
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                            HStack(spacing: 5) {
+                                Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
+                                    .lineLimit(1)
+                                Text("· \(player.voiceLabel)")
+                                    .lineLimit(1)
+                            }
+                            .font(Theme.sans(11.5)).foregroundStyle(Theme.ink3)
+                            .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
+                            .accessibilityIdentifier("player.currentChapter")
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("查看《\(book.title)》封面")
+                .accessibilityIdentifier("player.cover")
+
                 Menu {
                     Button { showingCover = true } label: { Label("查看封面", systemImage: Icon.emptyBook) }
                     Button { chaptersSheet = true } label: { Label("听书目录", systemImage: Icon.contents) }
@@ -194,42 +223,21 @@ struct PlayerView: View {
                     Button(role: .destructive) { endingListening = true } label: { Label("结束听书", systemImage: Icon.stopListening) }
                         .accessibilityIdentifier("player.endListening")
                 } label: {
-                    ThemeIcon(symbol: Icon.more, size: 24).frame(width: 44, height: 44)
+                    ThemeIcon(symbol: Icon.more, size: 17)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                 }
                 .accessibilityLabel("更多听书操作")
                 .accessibilityIdentifier("player.more")
             }
             .buttonStyle(.plain)
-            HStack {
-                Label(player.voiceLabel, systemImage: Icon.voice)
-                Spacer(minLength: 8)
-                Text("辅助朗读").font(.caption)
-            }.font(.subheadline).foregroundStyle(Theme.ink2)
-            RowDivider().padding(.vertical, Theme.space1)
-            VStack(spacing: Theme.space3) {
-                Button { showingCover = true } label: {
-                    BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: coverWidth)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-                        .softCardShadow()
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("查看《\(book.title)》封面")
-                .accessibilityIdentifier("player.cover")
-                Text(book.title)
-                    .font(Theme.serif(22, relativeTo: .title2))
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                    .multilineTextAlignment(.center)
-                Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
-                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                    .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
-                    .accessibilityIdentifier("player.currentChapter")
-            }
-            .frame(maxWidth: .infinity)
-
+            RowDivider()
         }
         .foregroundStyle(content)
-        .padding(.horizontal, Theme.inset).padding(.top, Theme.space2).padding(.bottom, Theme.space2)
+        .padding(.horizontal, Theme.inset).padding(.top, Theme.space2).padding(.bottom, Theme.space1)
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
 
@@ -257,11 +265,17 @@ struct PlayerView: View {
             }
             if let sentence = player.currentSentence {
                 Text(sentence.text)
-                    .font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
+                    .font(Theme.serif(19, relativeTo: .title3)).lineSpacing(7)
+                    .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    // 将留白纳入滚动目标，句首/句尾定位后字形仍与裁切边界保持距离。
-                    .padding(.vertical, Theme.space2)
+                    .padding(.horizontal, Theme.space3)
+                    .padding(.vertical, Theme.space3)
+                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                            .strokeBorder(Theme.accent.opacity(0.28), lineWidth: Theme.rule)
+                    }
                     .id(player.position)
                     .transition(.opacity)
                     .accessibilityLabel("当前句：\(sentence.text)")
@@ -311,11 +325,13 @@ struct PlayerView: View {
     private func lyricLine(_ text: String, offset: Int) -> some View {
         Button { Haptics.light(); player.skip(offset) } label: {
             Text(text)
-                .font(Theme.serif(18, relativeTo: .body)).lineSpacing(6)
-                .foregroundStyle(Theme.ink2)
-                .lineLimit(2)
+                .font(Theme.serif(16, relativeTo: .body)).lineSpacing(6)
+                .foregroundStyle(offset < 0 ? Theme.ink3 : Theme.ink2)
+                .lineLimit(3)
                 .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(.horizontal, Theme.space3)
+                .padding(.vertical, Theme.space2)
+                .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

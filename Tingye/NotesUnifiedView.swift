@@ -141,44 +141,61 @@ struct NotesUnifiedView: View {
         } message: { Text("只移除这枚书签，书中原文不会改变。") }
     }
 
+    private func accentColor(for item: Item) -> Color {
+        if item.kind == .bookmark { return Theme.accent }
+        if let colorName = item.highlight?.color { return ReaderMark.color(colorName) }
+        return Theme.accent
+    }
+
     private func row(_ item: Item, entry: ShelfEntry) -> some View {
-        PaperCard {
-            VStack(alignment: .leading, spacing: Theme.space3) {
+        let markColor = accentColor(for: item)
+        return PaperCard(padding: Theme.cardInset) {
+            VStack(alignment: .leading, spacing: Theme.space2) {
                 Button { model.open(entry, target: item.target) } label: {
                     HStack(alignment: .top, spacing: Theme.space3) {
-                        Rectangle().fill(item.kind == .bookmark ? Theme.line : Theme.clay)
-                            .frame(width: item.kind == .bookmark ? Theme.hairline : Theme.progressHeight)
-                        VStack(alignment: .leading, spacing: Theme.space2) {
-                            SealBadge(text: item.kind.rawValue, color: Theme.ink3, background: Theme.surface2)
-                            Text(item.text).font(Theme.serif(17, relativeTo: .body))
-                                .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
-                            if let noteText = item.noteText {
-                                Text(noteText).font(Theme.sans(15)).foregroundStyle(Theme.ink2)
-                                    .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                        Capsule().fill(markColor)
+                            .frame(width: 3)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: Theme.space2) {
+                                SealBadge(text: item.kind.rawValue,
+                                          color: item.kind == .note ? Theme.accent : Theme.ink2,
+                                          background: item.kind == .note ? Theme.accentSoft : Theme.surface2)
+                                Text("CH \(String(format: "%02d", item.chapter + 1))")
+                                    .font(Theme.sans(11, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink3)
+                                Spacer(minLength: 0)
+                                Text(item.date.formatted(date: .abbreviated, time: .shortened))
+                                    .font(Theme.sans(11)).monospacedDigit().foregroundStyle(Theme.ink3)
                             }
-                            (Text(entry.title) + Text(" · 第 \(item.chapter + 1) 章 · ")
-                             + Text(item.date.formatted(date: .abbreviated, time: .shortened)).monospacedDigit())
-                                .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                            Text(item.text).font(Theme.serif(16, relativeTo: .body))
+                                .lineSpacing(5).foregroundStyle(Theme.ink).lineLimit(5)
+                            if let noteText = item.noteText {
+                                Text(noteText).font(Theme.sans(13.5)).foregroundStyle(Theme.ink2)
+                                    .padding(.horizontal, 10).padding(.vertical, 8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+                                    .overlay { RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading).contentShape(Rectangle())
                 }.buttonStyle(.plain)
-                HairlineRow(showsDivider: false) {
-                    HStack(spacing: Theme.space3) {
-                        Button { model.open(entry, target: item.target) } label: {
-                            Label("回到原文", systemImage: Icon.read).frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.clayDeep)
-                        Spacer(minLength: 0)
-                        Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
-                            Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete)
-                                .frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.danger)
-                    }
-                    .font(Theme.sans(13)).buttonStyle(.borderless)
+                RowDivider()
+                HStack(spacing: Theme.space3) {
+                    Button { model.open(entry, target: item.target) } label: {
+                        Label("回到原文", systemImage: Icon.read)
+                            .font(Theme.sans(12.5, weight: .medium))
+                            .frame(minHeight: 32)
+                    }.foregroundStyle(Theme.accent)
+                    Spacer(minLength: 0)
+                    Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
+                        Label(item.kind == .bookmark ? "移除书签" : "删除", systemImage: Icon.delete)
+                            .font(Theme.sans(12.5))
+                            .frame(minHeight: 32)
+                    }.foregroundStyle(Theme.danger)
                 }
+                .buttonStyle(.borderless)
             }
         }
         .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space1, trailing: 0))

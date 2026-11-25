@@ -339,28 +339,73 @@ struct ReadiumReaderView: View {
         }
     }
     private var topBar: some View {
-        HStack(spacing: Theme.space3) {
-            Button { persist(); dismiss() } label: { ThemeIcon(symbol: Icon.back).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
+        let listenChapter = entry?.listeningProgress.map { $0.chapter }
+        let dualTrackHint: Bool = {
+            guard mappedChapter, let listenChapter, entry?.hasListened == true else { return false }
+            return listenChapter != chapter
+        }()
+        return VStack(spacing: Theme.space2) {
+            HStack(spacing: Theme.space2) {
+                Button { persist(); dismiss() } label: {
+                    ThemeIcon(symbol: Icon.back, size: 17)
+                        .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+                }
                 .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
-            VStack(alignment: .leading, spacing: Theme.space1) {
-                Text(title).accessibilityIdentifier("reader.currentTitle")
-                    .font(Theme.serif(17, relativeTo: .headline)).lineLimit(2)
-                Text(book.title).font(Theme.sans(13)).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            Button {
-                let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
-                model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
-                               locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
-            } label: {
-                let marked = entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true
-                ThemeIcon(symbol: Icon.bookmark(marked))
-                    .foregroundStyle(marked ? Color(hex: palette.accent) : Color(hex: palette.foreground))
-                    .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
-            }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).accessibilityIdentifier("reader.currentTitle")
+                        .font(Theme.sans(14, weight: .semibold)).lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(book.title).font(Theme.sans(11.5)).foregroundStyle(Theme.ink3).lineLimit(1)
+                        if mappedChapter, !book.chapters.isEmpty {
+                            Text("· CH \(String(format: "%02d", chapter + 1))/\(book.chapters.count)")
+                                .font(Theme.sans(11)).monospacedDigit().foregroundStyle(Theme.ink3)
+                        }
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
+                    model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
+                                   locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
+                } label: {
+                    let marked = entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true
+                    ThemeIcon(symbol: Icon.bookmark(marked), size: 17)
+                        .foregroundStyle(marked ? Theme.accent : Theme.ink2)
+                        .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+                }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
+            }
+            .foregroundStyle(Theme.ink)
+            .buttonStyle(.plain)
+            .padding(.horizontal, Theme.space2)
+            .padding(.vertical, 4)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+            .softCardShadow()
+
+            if dualTrackHint, let listenChapter {
+                HStack(spacing: Theme.space2) {
+                    Image(systemName: Icon.listening).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.accent)
+                    Text("读 CH \(String(format: "%02d", chapter + 1)) · 听 CH \(String(format: "%02d", listenChapter + 1))")
+                        .font(Theme.sans(11.5, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink2)
+                    Spacer(minLength: Theme.space2)
+                    Button("从此处听") {
+                        Haptics.light()
+                        model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: position))
+                        following = true
+                    }
+                    .font(Theme.sans(11.5, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.horizontal, 9).padding(.vertical, 4)
+                    .background(Theme.accentSoft, in: Capsule())
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Theme.space3).padding(.vertical, 6)
+                .background(Theme.surface, in: Capsule())
+                .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                .softCardShadow()
+            }
         }
-        .foregroundStyle(Color(hex: palette.foreground))
-        .buttonStyle(.plain)
-        .padding(.horizontal, Theme.insetCompact).padding(.vertical, Theme.space2)
+        .padding(.horizontal, Theme.inset)
+        .padding(.top, Theme.space2)
         .frame(maxWidth: 760)
     }
     private var bottomBar: some View {

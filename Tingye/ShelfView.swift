@@ -2,10 +2,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
 
-/// 书库：清晰的书目、柔和的封面网格与可跨分组的搜索和整理。
+/// 书库：清晰的书目、紧致的封面网格与可跨分组的搜索和整理。
 struct ShelfView: View {
     /// 当前所在分组；nil 为书库根目录
     var group: String? = nil
+    /// 书房顶栏直达回调（由 StudyRootView 注入）
+    var onOpenNotes: (() -> Void)? = nil
+    var onOpenProfile: (() -> Void)? = nil
     @EnvironmentObject var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var query = ""
@@ -105,35 +108,30 @@ struct ShelfView: View {
                 // 搜索时让出页首与类型栏，键盘上方直接呈现结果；取消后恢复完整浏览入口。
                 if isRoot && !searching && !editing { shelfHeader }
                 if !isRoot && !searching && !editing {
-                    Masthead(title: title, subtitle: shelfSubtitle, titleSize: 28)
-                        .padding(.bottom, Theme.space5)
+                    Masthead(title: title, subtitle: shelfSubtitle, titleSize: 26)
+                        .padding(.bottom, Theme.space4)
                 }
-                // 「书房」首页（仅根目录、非搜索、非整理）：正在读大卡 + 今日一句，位于搜索入口之上。
+                // 「简格」首页：单行高效顶栏下方直接呈现正在读双轨卡片与极简摘句条。
                 if isRoot && !searching && !editing, let heroEntry {
-                    heroCard(heroEntry).padding(.top, Theme.sectionSpacing)
-                    if let latestHighlight { todayQuote(latestHighlight).padding(.top, Theme.sectionSpacing) }
+                    heroCard(heroEntry).padding(.top, Theme.space4)
+                    if let latestHighlight { todayQuote(latestHighlight).padding(.top, Theme.space3) }
                 }
                 if !editing {
                     if searching { shelfSearchBar }
-                    else { searchEntry.padding(.top, isRoot ? Theme.space5 : 0) }
+                    else { searchEntry.padding(.top, isRoot ? Theme.space4 : 0) }
                 }
-                if isRoot && !editing && !searching { kindSelector.padding(.top, Theme.space4) }
+                if isRoot && !editing && !searching { kindSelector.padding(.top, Theme.space3) }
                 shelfControls.padding(.top, editing ? Theme.space4 : Theme.space2)
                 if editing || !searchText.isEmpty || hasFilters { scopeNotice.padding(.top, Theme.space2) }
                 if sorted.isEmpty && folders.isEmpty {
                     emptyState
                 } else {
-                    if useList || editing || searching { bookList.padding(.top, Theme.space3) } else { bookGrid.padding(.top, Theme.space2) }
+                    if useList || editing || searching { bookList.padding(.top, Theme.space2) } else { bookGrid.padding(.top, Theme.space2) }
                 }
                 if searching { recentSearches.padding(.top, Theme.cardInset) }
-                if !editing && !searching {
-                    Button { showingSources = true } label: { Label { Text("添书") } icon: { ThemeIcon(symbol: Icon.add) } }
-                        .buttonStyle(SecondaryButtonStyle()).padding(.top, Theme.cardInset)
-                        .accessibilityIdentifier("import.book")
-                }
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.top, isRoot ? Theme.space3 : Theme.space1)
+            .padding(.top, isRoot ? Theme.space2 : Theme.space1)
             .padding(.bottom, Theme.space6)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
@@ -269,9 +267,86 @@ struct ShelfView: View {
         "\(model.visibleEntries.filter { !$0.isComic }.count) 本书 · \(model.visibleEntries.filter(\.isComic).count) 本漫画"
     }
 
+    /// 简格单行高效顶栏：合并原安全区条与 34pt 大报头，集成连续阅读胶囊、摘记箱直达、我的与主操作 `+ 添书`。
     private var shelfHeader: some View {
-        Masthead(title: "书房", subtitle: todayReadingText,
-                 kicker: "\(todayDateText) · 书房", actionTitle: "搜索", action: startSearch)
+        HStack(spacing: Theme.space2) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("书房")
+                        .font(Theme.sans(22, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .accessibilityAddTraits(.isHeader)
+                    if todayReadingMinutes > 0 {
+                        HStack(spacing: 4) {
+                            Circle().fill(Theme.success).frame(width: 6, height: 6)
+                            Text("今日 \(todayReadingMinutes)m")
+                                .font(Theme.sans(11, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(Theme.ink2)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Theme.surface, in: Capsule())
+                        .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                    }
+                }
+                Text("\(todayDateText) · \(todayReadingText)")
+                    .font(Theme.sans(12))
+                    .foregroundStyle(Theme.ink3)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: Theme.space1)
+            if let onOpenNotes {
+                Button(action: onOpenNotes) {
+                    ThemeIcon(symbol: Icon.quote, size: 16)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressButtonStyle())
+                .accessibilityLabel("摘记箱")
+                .accessibilityIdentifier("study.openNotes")
+            }
+            if let onOpenProfile {
+                Button(action: onOpenProfile) {
+                    ThemeIcon(symbol: Icon.profile, size: 17)
+                        .foregroundStyle(Theme.ink2)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressButtonStyle())
+                .accessibilityLabel("我的")
+                .accessibilityIdentifier("study.openProfile")
+            }
+            Button { searching = false; showingSources = true } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: Icon.add).font(.system(size: 13, weight: .semibold))
+                    Text("添书").font(Theme.sans(13, weight: .semibold))
+                }
+                .foregroundStyle(Theme.onClay)
+                .padding(.horizontal, 11)
+                .frame(height: 34)
+                .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .frame(minHeight: Theme.iconButtonSize)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressButtonStyle())
+            .accessibilityLabel("添书")
+            .accessibilityIdentifier("import.book")
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var todayReadingMinutes: Int {
+        let calendar = Calendar.current
+        let seconds = model.visibleSessions.filter { calendar.isDateInToday($0.start) }.reduce(0) { $0 + $1.seconds }
+        return Int(seconds / 60)
     }
 
     /// 「书房」页眉副行：日期 · 星期 + 今日已读时长。
@@ -314,29 +389,53 @@ struct ShelfView: View {
     }
 
     private func heroCard(_ entry: ShelfEntry) -> some View {
-        PaperCard {
-            VStack(alignment: .leading, spacing: Theme.space4) {
-                SectionHeader(title: "正在读")
-                // 封面宽度是书封排版尺寸，沿用详情页的 104pt。
+        let readCh = min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))
+        let listenPos = entry.listeningProgress
+        let listenCh = listenPos.map { min(max(1, $0.chapter + 1), max(1, entry.chapterCount)) }
+        let dualTrackDiverged = !entry.isComic && entry.hasListened && listenCh != nil && listenCh != readCh
+        return PaperCard(padding: Theme.cardInset) {
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                HStack(spacing: Theme.space2) {
+                    Text("正在读")
+                        .font(Theme.sans(11, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    if entry.started, entry.chapterCount > 0 {
+                        let unit = entry.isComic ? "P" : "CH"
+                        Text("读 \(unit) \(String(format: "%02d", readCh))")
+                            .font(Theme.sans(11, weight: .medium)).monospacedDigit()
+                            .foregroundStyle(Theme.ink2)
+                            .accessibilityIdentifier("study.heroChapter")
+                    }
+                    if let listenCh, !entry.isComic, entry.hasListened {
+                        Text("· 听 CH \(String(format: "%02d", listenCh))")
+                            .font(Theme.sans(11, weight: .medium)).monospacedDigit()
+                            .foregroundStyle(dualTrackDiverged ? Theme.accent : Theme.ink3)
+                    }
+                    Spacer(minLength: 0)
+                    if entry.started {
+                        Text(entry.readFraction >= 0.995 ? "已读完" : entry.percentText)
+                            .font(Theme.sans(11, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(entry.readFraction >= 0.995 ? Theme.success : Theme.ink2)
+                    }
+                }
                 let layout = typeSize.isAccessibilitySize
-                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
-                    : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3))
+                    : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space3))
                 layout {
-                    CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
-                    VStack(alignment: .leading, spacing: Theme.space2) {
+                    CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 76)
+                    VStack(alignment: .leading, spacing: 5) {
                         Text(entry.title)
                             .accessibilityIdentifier("study.heroTitle")
                             .accessibilityLabel(entry.title)
-                            .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                            .font(Theme.serif(18)).foregroundStyle(Theme.ink)
                             .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                        Text(entry.author.isEmpty ? entry.format : entry.author)
-                            .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                        if entry.started, entry.chapterCount > 0 {
-                            let chapter = "第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")"
-                            Text(chapter).font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
-                                .accessibilityIdentifier("study.heroChapter").accessibilityLabel(chapter)
-                        }
-                        heroProgress(entry)
+                        Text(entry.author.isEmpty ? entry.format : "\(entry.author) · \(entry.format)")
+                            .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                            .lineLimit(1)
+                        ProgressLine(value: entry.started ? entry.readFraction : 0, track: Theme.surface2, tint: Theme.accent, height: 3)
+                            .padding(.top, 4)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -346,13 +445,24 @@ struct ShelfView: View {
                         model.open(entry)
                     }
                     .accessibilityIdentifier("study.heroContinue")
-                    SecondaryButton("开始专注") {
-                        // 漫画沿用直接打开行为，不写专注直达键。
-                        if !entry.isComic { UserDefaults.standard.set(entry.id, forKey: "study.openFocus.bookID") }
-                        Haptics.light()
-                        model.open(entry)
+                    if !entry.isComic {
+                        Button {
+                            Haptics.light()
+                            model.run("正在准备听书") { [model] in
+                                model.startListening(try model.book(entry.id))
+                            }
+                        } label: {
+                            ListenLabel(bookID: entry.id, player: model.player)
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("study.heroFocus")
+                    } else {
+                        SecondaryButton("翻开漫画") {
+                            Haptics.light()
+                            model.open(entry)
+                        }
+                        .accessibilityIdentifier("study.heroFocus")
                     }
-                    .accessibilityIdentifier("study.heroFocus")
                 }
             }
         }
@@ -374,21 +484,40 @@ struct ShelfView: View {
         }
     }
 
-    /// 保留最新划线数据源，以编辑引文呈现；不改变每日摘句的轮换规则。
+    /// 紧凑摘句卡片：点击可直达摘记箱回顾。
     private func todayQuote(_ highlight: Highlight) -> some View {
-        HStack(alignment: .top, spacing: Theme.space3) {
-            VStack(alignment: .leading, spacing: Theme.space2) {
-                Text(highlight.text).font(Theme.serif(20)).foregroundStyle(Theme.ink)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
+        let content = HStack(alignment: .top, spacing: Theme.space3) {
+            Rectangle().fill(Theme.accent).frame(width: 2.5)
+                .clipShape(Capsule())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(highlight.text).font(Theme.serif(15)).foregroundStyle(Theme.ink)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                 if let entry = model.visibleEntries.first(where: { ($0.highlights ?? []).contains(where: { $0.id == highlight.id }) }) {
                     Text("《\(entry.title)》 · \(entry.author.isEmpty ? "佚名" : entry.author)")
-                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        .font(Theme.sans(11.5)).foregroundStyle(Theme.ink3)
+                        .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if onOpenNotes != nil {
+                ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4)
+                    .padding(.top, 2)
+            }
         }
-        .padding(.leading, Theme.space4)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
+        .padding(.horizontal, Theme.space3)
+        .padding(.vertical, 10)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+
+        return Group {
+            if let onOpenNotes {
+                Button(action: onOpenNotes) { content }
+                    .buttonStyle(PressButtonStyle())
+            } else {
+                content
+            }
+        }
     }
 
     /// v29 导入收敛：唯一的「添书」入口，直接打开 ImportHub（含文件导入、传书方式与最近导入结果）。
@@ -408,17 +537,18 @@ struct ShelfView: View {
     private var searchEntry: some View {
         Button(action: startSearch) {
             HStack(spacing: Theme.space2) {
-                ThemeIcon(symbol: Icon.search, size: 21)
+                ThemeIcon(symbol: Icon.search, size: 16)
                     .foregroundStyle(Theme.ink3)
                 Text(searchText.isEmpty ? "搜索书名、作者或分组" : searchText)
-                    .font(.subheadline)
+                    .font(Theme.sans(14))
                     .foregroundStyle(Theme.ink3)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, Theme.space4)
-            .frame(minHeight: Theme.rowMinHeight)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .padding(.horizontal, Theme.space3)
+            .frame(minHeight: 40)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

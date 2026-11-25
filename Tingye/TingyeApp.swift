@@ -189,13 +189,11 @@ enum UIReview {
 }
 #endif
 
-/// StudyRootView 的编程式导航目标。目前只有「我的」一层；
-/// 统计、书摘与设置目录都在 StatsView(ji: true) 内，子页面由 StatsView 自行路由。
-enum StudyRoute: Hashable { case me }
+/// StudyRootView 的编程式导航目标：支持「我的」与书房顶栏直达「摘记箱」。
+enum StudyRoute: Hashable { case me, notes }
 
-/// v29「书房」根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
-/// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
-/// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
+/// 简格 Linear Reader 根视图：单一 NavigationStack，书房（ShelfView 本体）为根页面；
+/// 顶部单行高效栏已并入 ShelfView，移除原独立 safeAreaInset 占位，释放首屏阅读视野。
 struct StudyRootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
@@ -217,29 +215,17 @@ struct StudyRootView: View {
     var body: some View {
         VStack(spacing: 0) {
             NavigationStack(path: $path) {
-                ShelfView()
-                    .navigationDestination(for: StudyRoute.self) { _ in
-                        // ji 版自带隐藏导航栏、无系统返回箭头，故传入返回动作：
-                        // 页眉返回按钮清空编程式导航路径，回到书库根页面。
-                        StatsView(ji: true, onBack: { path = [] })
-                    }
-                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
-                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        HStack {
-                            Spacer()
-                            NavigationLink(value: StudyRoute.me) {
-                                Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
-                            .accessibilityLabel("我的")
-                            .accessibilityIdentifier("study.openProfile")
+                ShelfView(
+                    onOpenNotes: { path.append(.notes) },
+                    onOpenProfile: { path.append(.me) }
+                )
+                    .navigationDestination(for: StudyRoute.self) { route in
+                        switch route {
+                        case .me:
+                            StatsView(ji: true, onBack: { path = [] })
+                        case .notes:
+                            NotesUnifiedView()
                         }
-                        .padding(.horizontal, Theme.inset)
-                        .background(Theme.bg)
                     }
                     .toolbarBackground(Theme.bg, for: .navigationBar)
             }
@@ -472,12 +458,11 @@ struct MiniPlayer: View {
 
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
-                            ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink2)
+                            ThemeIcon(symbol: Icon.listening, size: 15)
+                                .foregroundStyle(Theme.accent)
                                 .frame(width: 32, height: 32)
-                                .background(Theme.surface, in: Circle())
-                                .contentShape(Rectangle())
-                                .frame(minWidth: 44, minHeight: 44)
+                                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+                                .frame(minWidth: 40, minHeight: 40)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -488,36 +473,40 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.ink2)
+                                ProgressView().controlSize(.small).tint(Theme.onClay)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 16)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 15)
                             }
                         }
-                        .foregroundStyle(Theme.ink2)
-                        .frame(width: 32, height: 32)
-                        .background(Theme.surface, in: Circle())
-                        .contentShape(Rectangle())
-                        .frame(minWidth: 44, minHeight: 44)
+                        .foregroundStyle(Theme.onClay)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.clay, in: Circle())
+                        .frame(minWidth: 40, minHeight: 40)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
-                .padding(.leading, Theme.inset - 4)
-                .padding(.trailing, Theme.inset - 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, Theme.space3)
+                .padding(.vertical, 6)
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, Theme.space2)
-            .background(Theme.surface2)
-            .overlay(alignment: .top) { RowDivider() }
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                    .strokeBorder(Theme.line, lineWidth: Theme.rule)
+            }
             .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
-                    .padding(.horizontal, Theme.space4)
+                ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.accent, height: 2)
+                    .padding(.horizontal, Theme.space3)
+                    .padding(.bottom, 2)
                     .accessibilityHidden(true)
             }
+            .softCardShadow()
+            .padding(.horizontal, Theme.inset)
+            .padding(.bottom, Theme.space2)
         }
     }
     private var subtitle: String {
