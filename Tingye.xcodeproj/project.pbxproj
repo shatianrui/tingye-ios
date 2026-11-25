@@ -92,6 +92,11 @@
 		D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */; };
 		C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */; };
 		0FB11ED18F54D11464A42C8F /* Pow-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */; };
+		B15300000000000000000031 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000011 /* MarkdownUI */; };
+		B15300000000000000000032 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000012 /* Markdown */; };
+		B15300000000000000000041 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000021 /* MarkdownUI */; };
+		B15300000000000000000042 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000022 /* Markdown */; };
+		B15300000000000000000051 /* MarkdownSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15300000000000000000052 /* MarkdownSupport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -183,6 +188,7 @@
 		AE519586B1B4DDC9F7836692 /* ReadiumTextSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumTextSnapshotTests.swift"; sourceTree = "<group>"; };
 		04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumBackupSourceTests.swift"; sourceTree = "<group>"; };
 		5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Pow-LICENSE.txt"; sourceTree = "<group>"; };
+		B15300000000000000000052 /* MarkdownSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSupport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,6 +204,8 @@
 				C6445530EE283916136190B5 /* ReadiumZIPFoundation in Frameworks */,
 				5A1C0B2E8F4D6A7B9C3E1D22 /* SMBClient in Frameworks */,
 				0F1E2D3C4B5A69788796A501 /* Pow in Frameworks */,
+				B15300000000000000000031 /* MarkdownUI in Frameworks */,
+				B15300000000000000000032 /* Markdown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,6 +217,8 @@
 				A73403E3E1E62BB83CF8D78D /* ReadiumZIPFoundation in Frameworks */,
 				71F703DDB5BED7A3C54499E7 /* ReadiumShared in Frameworks */,
 				DA453AB3B8F3B62BC16CD003 /* Foundation.framework in Frameworks */,
+				B15300000000000000000041 /* MarkdownUI in Frameworks */,
+				B15300000000000000000042 /* Markdown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -282,6 +292,7 @@
 				162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */,
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
 				6AF95B5E4D9E43527996555A /* TingyeApp.swift */,
+				B15300000000000000000052 /* MarkdownSupport.swift */,
 				1BE9C5E15EF178E3AF247624 /* Resources */,
 			);
 			path = Tingye;
@@ -363,6 +374,8 @@
 				6FE489BB458EF17E5D382BBF /* ReadiumZIPFoundation */,
 				95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */,
 				7F2766429B7B9CC3B70F43A2 /* ReadiumShared */,
+				B15300000000000000000021 /* MarkdownUI */,
+				B15300000000000000000022 /* Markdown */,
 			);
 			name = TingyeTests;
 			productName = TingyeTests;
@@ -390,6 +403,8 @@
 				31276E7AB39C1785F675F44F /* ReadiumZIPFoundation */,
 				5A1C0B2E8F4D6A7B9C3E1D21 /* SMBClient */,
 				0F1E2D3C4B5A69788796A502 /* Pow */,
+				B15300000000000000000011 /* MarkdownUI */,
+				B15300000000000000000012 /* Markdown */,
 			);
 			productName = Tingye;
 			productReference = C7D54437CCEED905AA440076 /* Tingye.app */;
@@ -422,6 +437,8 @@
 				1E964A218AB648A323745C7F /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				5A1C0B2E8F4D6A7B9C3E1D20 /* XCRemoteSwiftPackageReference "SMBClient" */,
 				0F1E2D3C4B5A69788796A503 /* XCRemoteSwiftPackageReference "Pow" */,
+				B15300000000000000000001 /* XCRemoteSwiftPackageReference "MarkdownUI" */,
+				B15300000000000000000002 /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			productRefGroup = 6D8230328C08195A4C088D81 /* Products */;
 			projectDirPath = "";
@@ -536,6 +553,7 @@
 				3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */,
 				D92714EFB66508E9A82461EA /* Theme.swift in Sources */,
 				15CAE64644780454A9F20606 /* TingyeApp.swift in Sources */,
+				B15300000000000000000051 /* MarkdownSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -590,7 +608,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -675,7 +693,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -703,7 +721,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -782,7 +800,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -863,6 +881,8 @@
 		};
 		9132BE6BE3494C6A8D3F5E83 /* XCRemoteSwiftPackageReference "Readium" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/readium/swift-toolkit.git"; requirement = {kind = exactVersion; version = 3.11.1; }; };
 		11D452ADCA43E69068C7D770 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/scinfu/SwiftSoup.git"; requirement = {kind = exactVersion; version = 2.13.5; }; };
+		B15300000000000000000001 /* XCRemoteSwiftPackageReference "MarkdownUI" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/gonzalezreal/MarkdownUI.git"; requirement = {kind = exactVersion; version = 2.4.1; }; };
+		B15300000000000000000002 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/apple/swift-markdown.git"; requirement = {kind = exactVersion; version = 0.7.1; }; };
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -888,6 +908,10 @@
 		7F2766429B7B9CC3B70F43A2 /* ReadiumShared */ = {isa = XCSwiftPackageProductDependency; package = 9132BE6BE3494C6A8D3F5E83; productName = ReadiumShared; };
 		6FE489BB458EF17E5D382BBF /* ReadiumZIPFoundation */ = {isa = XCSwiftPackageProductDependency; package = 1E964A218AB648A323745C7F; productName = ReadiumZIPFoundation; };
 		95E9BE46D0556A43FED0CF94 /* ReadiumNavigator */ = {isa = XCSwiftPackageProductDependency; package = 9132BE6BE3494C6A8D3F5E83; productName = ReadiumNavigator; };
+		B15300000000000000000011 /* MarkdownUI */ = {isa = XCSwiftPackageProductDependency; package = B15300000000000000000001; productName = MarkdownUI; };
+		B15300000000000000000012 /* Markdown */ = {isa = XCSwiftPackageProductDependency; package = B15300000000000000000002; productName = Markdown; };
+		B15300000000000000000021 /* MarkdownUI */ = {isa = XCSwiftPackageProductDependency; package = B15300000000000000000001; productName = MarkdownUI; };
+		B15300000000000000000022 /* Markdown */ = {isa = XCSwiftPackageProductDependency; package = B15300000000000000000002; productName = Markdown; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 10A97ADF49E2D26FD1505CC9 /* Project object */;

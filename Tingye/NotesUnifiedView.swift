@@ -169,7 +169,8 @@ struct NotesUnifiedView: View {
                             Text(item.text).font(Theme.serif(16, relativeTo: .body))
                                 .lineSpacing(5).foregroundStyle(Theme.ink).lineLimit(5)
                             if let noteText = item.noteText {
-                                Text(noteText).font(Theme.sans(13.5)).foregroundStyle(Theme.ink2)
+                                MarkdownSupport.note(noteText)
+                                    .font(Theme.sans(13.5)).foregroundStyle(Theme.ink2)
                                     .padding(.horizontal, 10).padding(.vertical, 8)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
@@ -216,15 +217,23 @@ struct NotesUnifiedView: View {
     }
 
     /// 导出为 Markdown 文本：每条带类型、章节与日期（补齐 AllNotesView 旧导出的缺口）。
+    /// build 153：拼装后用 swift-markdown AST 只读复核标题层级，结构一致时附一条
+    /// Markdown 渲染不可见的结构摘要；可选依赖不可用时原样返回，导出文件名、编码
+    /// 与可访问性标识符不变，笔记与划线正文逐字保留。
     static func markdown(_ entry: ShelfEntry) -> String {
+        let items = unifiedItems(for: entry)
         var lines = ["# 《\(entry.title)》摘记", "", "\(entry.author)", ""]
-        for item in unifiedItems(for: entry) {
+        for item in items {
             lines.append("## \(item.kind.rawValue) · 第 \(item.chapter + 1) 章 · \(item.date.formatted(date: .abbreviated, time: .omitted))")
             lines.append("")
             lines.append("> \(item.text)")
             if let noteText = item.noteText { lines.append(""); lines.append(noteText) }
             lines.append("")
         }
-        return lines.joined(separator: "\n")
+        let raw = lines.joined(separator: "\n")
+        guard let structure = BookImporter.markdownStructure(raw),
+              structure.topLevel == 1,
+              structure.sections == items.count else { return raw }
+        return raw + "\n<!-- 结构化导出：\(structure.sections) 条摘记 · \(structure.topLevel) 个文档节 -->\n"
     }
 }
