@@ -219,22 +219,37 @@ final class DesignFlowTests: XCTestCase {
             .withOffset(CGVector(dx: app.frame.width / 2, dy: frame.midY - app.frame.minY)).tap()
     }
 
+    private func exposedReadingFrame(in app: XCUIApplication, frame: CGRect,
+                                     file: StaticString = #filePath, line: UInt = #line) -> CGRect? {
+        // 正文视口延伸在 chrome 覆盖层下方；底栏/听条可能覆过整页中线，
+        // 只在顶栏与底栏之间实际露出的正文区域内点按，不能穿透面板控件。
+        let viewport = frame.intersection(app.frame)
+        let back = app.buttons["reader.back"]
+        let tools = app.scrollViews["reader.tools"]
+        let top = back.exists ? max(viewport.minY, back.frame.maxY) : viewport.minY
+        let bottom = tools.exists ? min(viewport.maxY, tools.frame.minY) : viewport.maxY
+        guard !viewport.isNull, viewport.width > 1, bottom - top > 1 else {
+            XCTFail("阅读工具覆盖层之间应有可点按的正文区域", file: file, line: line)
+            return nil
+        }
+        return CGRect(x: viewport.minX, y: top, width: viewport.width, height: bottom - top)
+    }
+
+    private func tapReadingEdge(next: Bool, in app: XCUIApplication, frame: CGRect,
+                                file: StaticString = #filePath, line: UInt = #line) {
+        guard let exposed = exposedReadingFrame(in: app, frame: frame, file: file, line: line) else { return }
+        // 翻页热区为正文宽度的最左/最右 28%；落点取露出正文边缘内侧并相对窗口原点换算。
+        let inset = min(12, exposed.width * 0.14)
+        let x = next ? exposed.maxX - inset : exposed.minX + inset
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: x - app.frame.minX, dy: exposed.midY - app.frame.minY)).tap()
+    }
+
     private func setReadingTools(_ visible: Bool, in app: XCUIApplication, frame: CGRect,
                                  file: StaticString = #filePath, line: UInt = #line) {
         let more = app.buttons["reader.more"]
         if more.exists != visible {
-            // 正文视口延伸在 chrome 覆盖层下方；辅助听书会增高底面板，
-            // 原视口中心可能已落在面板内。只点实际露出的正文中央，不能穿透面板控件。
-            let viewport = frame.intersection(app.frame)
-            let back = app.buttons["reader.back"]
-            let tools = app.scrollViews["reader.tools"]
-            let top = back.exists ? max(viewport.minY, back.frame.maxY) : viewport.minY
-            let bottom = tools.exists ? min(viewport.maxY, tools.frame.minY) : viewport.maxY
-            guard !viewport.isNull, bottom - top > 1 else {
-                XCTFail("阅读工具覆盖层之间应有可点按的正文区域", file: file, line: line)
-                return
-            }
-            let exposed = CGRect(x: viewport.minX, y: top, width: viewport.width, height: bottom - top)
+            guard let exposed = exposedReadingFrame(in: app, frame: frame, file: file, line: line) else { return }
             tapReadingCenter(in: app, frame: exposed)
         }
         // 与 openReaderMorePanel / waitForReadingCondition 使用同一 15 秒口径。
@@ -339,10 +354,13 @@ final class DesignFlowTests: XCTestCase {
         waitForOriginalChapter("第一章 · 纸上的风景", in: web, app: app)
         // 验证目录与直达书内搜索均可一键打开，不再依赖嵌套 sheet 切换。
         app.buttons["reader.contents"].tap()
-        XCTAssertTrue(app.navigationBars["目录"].waitForExistence(timeout: 5))
+        let contentsNav = app.navigationBars["目录"]
+        XCTAssertTrue(contentsNav.waitForExistence(timeout: 5))
         app.buttons["完成"].tap()
-        XCTAssertTrue(app.buttons["reader.search"].waitForExistence(timeout: 5))
-        app.buttons["reader.search"].tap()
+        XCTAssertTrue(contentsNav.waitForNonExistence(timeout: 5), "关闭目录后目录导航栏应消失")
+        let searchButton = app.buttons["reader.search"]
+        waitForReadingCondition({ searchButton.exists && searchButton.isHittable }, "关闭目录后顶栏书内搜索按钮应可点按")
+        searchButton.tap()
         let search = app.searchFields["搜索章节与全文"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
         search.tap(); search.typeText("把日子放慢一点")
@@ -350,11 +368,17 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(hit.waitForExistence(timeout: 10))
         waitForReadingCondition({ hit.isHittable }, "EPUB 书内搜索结果应在键盘上方直接可点")
         hit.tap()
-        XCTAssertTrue(app.buttons["reader.preferences"].waitForExistence(timeout: 5))
-        app.buttons["reader.preferences"].tap()
-        XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["目录与摘记"].waitForNonExistence(timeout: 5), "选中搜索结果后搜索面板应关闭")
+        let preferencesButton = app.buttons["reader.preferences"]
+        waitForReadingCondition({ preferencesButton.exists && preferencesButton.isHittable }, "选中搜索结果后排版入口应可点按")
+        preferencesButton.tap()
+        let prefsNav = app.navigationBars["阅读排版"]
+        XCTAssertTrue(prefsNav.waitForExistence(timeout: 5))
         app.buttons["完成"].tap()
-        app.buttons["reader.back"].tap()
+        XCTAssertTrue(prefsNav.waitForNonExistence(timeout: 5), "关闭排版面板后导航栏应消失")
+        let backButton = app.buttons["reader.back"]
+        waitForReadingCondition({ backButton.exists && backButton.isHittable }, "关闭排版面板后返回按钮应可点按")
+        backButton.tap()
         XCTAssertTrue(app.buttons["study.heroContinue"].waitForExistence(timeout: 10))
     }
 
@@ -428,17 +452,17 @@ final class DesignFlowTests: XCTestCase {
 
     func testPagedReaderChromeDoesNotReflowOrMoveReadingPosition() throws {
         let app = launch("reader")
-        XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 15))
+        let more = app.buttons["reader.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 15))
+        waitForReadingCondition({ more.isHittable }, "阅读工具应显示且可点按")
         let capture = { self.nativeLayout(in: app) }
         let first = try captureReaderLayout(capture)
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: first.viewport.maxX - 12, dy: first.viewport.midY)).tap()
+        tapReadingEdge(next: true, in: app, frame: first.viewport)
         waitForReadingCondition({ capture().map { $0.text != first.text } == true }, "必须实际翻到另一页正文")
         let reading = try captureReaderLayout(capture)
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2", "应在章内非首页验证分页稳定")
         try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-分页")
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: reading.viewport.minX + 12, dy: reading.viewport.midY)).tap()
+        tapReadingEdge(next: false, in: app, frame: reading.viewport)
         waitForReadingCondition({ capture()?.text == first.text }, "工具开关后上一页应回到原来那一页文字")
     }
 

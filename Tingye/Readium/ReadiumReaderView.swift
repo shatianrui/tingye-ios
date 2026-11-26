@@ -127,6 +127,7 @@ struct ReadiumReaderView: View {
     @State private var chrome = true
     @State private var sheet: Sheet?
     @State private var pendingSheet: Sheet?
+    @State private var sheetPresented = false
     @State private var retry = UUID()
     @State private var request: EPUBNavigatorHost.Request?
     @State private var expectedLocation: ReadiumShared.Locator?
@@ -258,6 +259,7 @@ struct ReadiumReaderView: View {
         .task(id: retry) { await open() }
         .onDisappear {
             visible = false; updateVisibility(); persist(); model.readerClosed(book.id)
+            sheetPresented = false; pendingSheet = nil
             locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel()
             visibleEndTask?.cancel(); speechPageTask?.cancel(); locationGeneration = UUID()
             session.close()
@@ -271,7 +273,7 @@ struct ReadiumReaderView: View {
         .onChange(of: model.publicationGeneration[book.id]) { _, _ in
             locationTask?.cancel(); jumpTask?.cancel(); speechTask?.cancel(); startSpeechTask?.cancel(); searchTask?.cancel()
             visibleEndTask?.cancel(); speechPageTask?.cancel(); locationGeneration = UUID()
-            ready = false; sheet = nil; draft = nil; session.close(); retry = UUID()
+            ready = false; pendingSheet = nil; sheet = nil; draft = nil; session.close(); retry = UUID()
         }
         .onChange(of: convert) { _, _ in
             persist(); ready = false; session.close(); retry = UUID()
@@ -295,6 +297,7 @@ struct ReadiumReaderView: View {
             jumpTo(jump.target, explicit: true)
         }
         .sheet(item: $sheet, onDismiss: {
+            sheetPresented = false
             fonts = ReadiumFontProvider.files()
             updateVisibility()
             if let next = pendingSheet {
@@ -332,8 +335,20 @@ struct ReadiumReaderView: View {
                     }
                 }
             }
+            .onAppear { sheetPresented = true }
             .environmentObject(model).tint(Theme.accent)
             .presentationDetents([.large]).presentationDragIndicator(.visible)
+        }
+    }
+    /// 若已有弹层在展示或关闭过渡中，先排队等 onDismiss 完成后再打开，避免 SwiftUI 丢弃新弹层。
+    private func presentSheet(_ target: Sheet) {
+        if sheet == target { return }
+        if sheetPresented {
+            pendingSheet = target
+            if sheet != nil { sheet = nil }
+        } else {
+            pendingSheet = nil
+            sheet = target
         }
     }
     private var topBar: some View {
@@ -347,10 +362,11 @@ struct ReadiumReaderView: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
             Button {
                 following = false
-                sheet = .search
+                presentSheet(.search)
             } label: {
                 ThemeIcon(symbol: Icon.search, size: 21)
                     .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+                    .contentShape(Rectangle())
             }
             .disabled(!ready)
             .accessibilityLabel("书内搜索")
@@ -400,7 +416,7 @@ struct ReadiumReaderView: View {
         .foregroundStyle(Theme.ink)
     }
     @ViewBuilder private var bottomActions: some View {
-        chromeButton("目录", symbol: Icon.contents, selected: sheet == .contents) { sheet = .contents }.accessibilityIdentifier("reader.contents")
+        chromeButton("目录", symbol: Icon.contents, selected: sheet == .contents) { presentSheet(.contents) }.accessibilityIdentifier("reader.contents")
         chromeButton("听书", symbol: Icon.listen, enabled: mappedChapter, selected: audioActive) {
             startSpeech()
         }
@@ -422,7 +438,7 @@ struct ReadiumReaderView: View {
             }.accessibilityIdentifier("reader.returnToSpeech")
             .accessibilityValue(speechDecorations.isEmpty ? "无跟读高亮" : "跟读高亮")
         }
-        chromeButton("设置", symbol: Icon.typography, selected: sheet == .preferences) { sheet = .preferences }.accessibilityIdentifier("reader.preferences")
+        chromeButton("设置", symbol: Icon.typography, selected: sheet == .preferences) { presentSheet(.preferences) }.accessibilityIdentifier("reader.preferences")
     }
     private func chromeButton(_ title: LocalizedStringKey, symbol: String, enabled: Bool = true, selected: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -441,7 +457,7 @@ struct ReadiumReaderView: View {
     private var contentsView: some View {
         List {
             EditorialIntro(title: "目录与摘记", detail: book.title, eyebrow: "阅读导航")
-            Button("搜索书内文字") { following = false; pendingSheet = .search; sheet = nil }.accessibilityIdentifier("reader.contents.search")
+            Button("搜索书内文字") { following = false; presentSheet(.search) }.accessibilityIdentifier("reader.contents.search")
             SegmentedBar(options: [0, 1, 2], selection: contentsMode,
                          title: { ["目录", "书签", "摘记"][$0] }, onSelect: { contentsMode = $0 })
                 .listRowBackground(Color.clear)
@@ -641,14 +657,14 @@ struct ReadiumReaderView: View {
                                       locatorVersion: LocatorBridge.version, publicationRevision: bridge.revision,
                                       color: ReaderMark.newColor(UserDefaults.standard.string(forKey: "highlight.lastColor")),
                                       style: UserDefaults.standard.string(forKey: "highlight.lastStyle") ?? "background")
-                    sheet = action == .note ? .note : .annotation
+                    presentSheet(action == .note ? .note : .annotation)
                 }
             } catch { model.message = error.localizedDescription }
         }
     }
     private func activateDecoration(_ id: String) {
         guard let item = entry?.notes.first(where: { $0.id.uuidString == id }) else { return }
-        draft = item; sheet = .annotation
+        draft = item; presentSheet(.annotation)
     }
     @ViewBuilder private var annotationPanel: some View {
         if let draft {
@@ -657,8 +673,8 @@ struct ReadiumReaderView: View {
                            paper: Theme.surface, accent: Theme.clayDeep,
                            onMark: { color, style in var changed = draft; changed.color = color; changed.style = style; saveAnnotation(changed) },
                            onRemove: { model.removeHighlight(book.id, id: draft.id); sheet = nil },
-                           onNote: { sheet = .note },
-                           onListen: { model.startListening(book, showPlayer: false, from: .init(chapter: draft.chapter, position: draft.start)); sheet = .player },
+                           onNote: { presentSheet(.note) },
+                           onListen: { model.startListening(book, showPlayer: false, from: .init(chapter: draft.chapter, position: draft.start)); presentSheet(.player) },
                            onCopy: { UIPasteboard.general.string = draft.text }, onExtend: { _ in }, onClose: { sheet = nil })
         }
     }
@@ -680,7 +696,7 @@ struct ReadiumReaderView: View {
                 guard visible, session.bridge === bridge, sessionEpoch == model.publicationGeneration[book.id] else { return }
                 following = true
                 model.startListening(book, showPlayer: false, from: progress)
-                sheet = .player
+                presentSheet(.player)
             } catch is CancellationError {} catch { model.message = error.localizedDescription }
         }
     }
