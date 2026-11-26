@@ -1086,4 +1086,28 @@ extension DesignFlowTests {
         XCTAssertTrue(resultApp.buttons["study.openProfile"].waitForExistence(timeout: 10), "结果 sheet 应先关闭，再由根选择器接管")
         screenshot(resultApp, "结果重选-取消回书库")
     }
+
+    func testWarmTodayTabAndCapsuleNavigationRemainReachable() {
+        let app = launch("today")
+        XCTAssertTrue(app.buttons["today.importBook"].waitForExistence(timeout: 15), "今天页应显示温暖添书入口")
+        XCTAssertTrue(app.otherElements["today.goalCard"].exists || app.descendants(matching: .any)["today.goalCard"].exists)
+        XCTAssertTrue(app.buttons["today.continueReading"].exists, "今天页接着来大卡应可直接继续阅读")
+        XCTAssertTrue(app.buttons["navigation.listen"].exists, "底部胶囊栏中央应常驻圆形听书按钮")
+        screenshot(app, "暖页-今天陪伴首页")
+
+        let shelfTab = app.buttons["navigation.tab.shelf"]
+        XCTAssertTrue(shelfTab.exists)
+        shelfTab.tap()
+        XCTAssertTrue(app.buttons["import.book"].waitForExistence(timeout: 10), "切到书房页签应展现完整书库")
+
+        let notesTab = app.buttons["navigation.tab.notes"]
+        XCTAssertTrue(notesTab.exists)
+        notesTab.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '摘记'")).firstMatch.waitForExistence(timeout: 10))
+
+        let profileTab = app.buttons["navigation.tab.profile"]
+        XCTAssertTrue(profileTab.exists)
+        profileTab.tap()
+        XCTAssertTrue(app.buttons["profile.settings"].waitForExistence(timeout: 10), "切到我的页签应展现本地陪伴档案")
+    }
 }

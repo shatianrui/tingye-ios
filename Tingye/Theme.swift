@@ -2,65 +2,78 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 听页界面「简格 Linear Reader」：极净中性画布、1px 发丝线分层、单一靛蓝焦点。
+/// 听页界面「暖页」温暖治愈风：柔和暖米画布、五组治愈系柔色块、温润大圆角与陶土主色。
 /// 正文七种纸色的底与字独立保留，不跟界面一起变色。
 enum Theme {
-    static let bg = dynamic(0xFAFAFA, 0x0B0C0E)
-    static let surface = dynamic(0xFFFFFF, 0x121417)
-    static let surface2 = dynamic(0xF4F4F5, 0x1A1D23)
-    static let surfaceSunken = dynamic(0xF1F1F3, 0x101216)
-    static let ink = dynamic(0x09090B, 0xF4F4F5)
-    static let ink2 = dynamic(0x52525B, 0xA1A1AA)
-    static let ink3 = dynamic(0x6B6B75, 0xA1A1AA)
-    static let ink4 = dynamic(0xA1A1AA, 0x52525B)
-    static let line = dynamic(0xE4E4E7, 0x23262E)
+    static let bg = dynamic(0xFBF6EE, 0x1E1915)
+    static let surface = dynamic(0xFFFDF8, 0x2A231E)
+    static let surface2 = dynamic(0xF4ECDF, 0x231D19)
+    static let surfaceSunken = dynamic(0xF4ECDF, 0x231D19)
+    static let ink = dynamic(0x3A2E26, 0xF4EADF)
+    static let ink2 = dynamic(0x5F5044, 0xD6C8B9)
+    static let ink3 = dynamic(0x77685B, 0xB3A391)
+    static let ink4 = dynamic(0x9C8B7C, 0x7E6E5F)
+    static let line = dynamic(0xEADFCF, 0x3A3029)
     static let lineField = Color(UIColor { traits in
-        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF4F4F5 : 0x09090B)
+        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF4EADF : 0x3A2E26)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.14 : 0.10)
     })
-    /// 单一功能强调色（靛蓝）：小字与描边用 accent，实底主操作用 clay。
-    static let accent = dynamic(0x4F46E5, 0x818CF8)
+    /// 陶土与暖珊瑚焦点色：小字与描边用 accent，实底胶囊按钮用 clay。
+    static let accent = dynamic(0xA34A28, 0xF0A584)
     static let clayDeep = accent
-    static let accentSoft = dynamic(0xEEF2FF, 0x1E1F3A)
+    static let accentSoft = dynamic(0xFBE4D6, 0x43291F)
     static let claySoft = accentSoft
-    static let clay = dynamic(0x4F46E5, 0x818CF8)
-    static let onClay = dynamic(0xFFFFFF, 0x0B0C0E)
+    static let clay = dynamic(0xB4532F, 0xE8936F)
+    static let onClay = dynamic(0xFFFFFF, 0x2A1610)
     static let focus = clay
-    static let danger = dynamic(0xDC2626, 0xF87171)
-    static let dangerSoft = dynamic(0xFEF2F2, 0x2C1518)
-    /// 正向/完成状态微弱强调（用于连续天数、已读完等极克制场景）
-    static let success = dynamic(0x059669, 0x34D399)
-    static let successSoft = dynamic(0xECFDF5, 0x102720)
+    static let danger = dynamic(0xB83726, 0xF28473)
+    static let dangerSoft = dynamic(0xFCE8E5, 0x3E211D)
+
+    // MARK: - 暖页五组治愈柔色块（全部满足 WCAG AA >= 4.5 对比度）
+    static let peach = dynamic(0xFCE3D3, 0x4A3026)
+    static let peachInk = ink
+    static let sage = dynamic(0xDDEBD9, 0x2D3A2E)
+    static let sageInk = dynamic(0x3E6B4C, 0xB7D8BF)
+    static let butter = dynamic(0xFBEFC6, 0x433A22)
+    static let butterInk = dynamic(0x7A5A12, 0xEBD58F)
+    static let lav = dynamic(0xE9E3F4, 0x352F45)
+    static let lavInk = dynamic(0x5B4A86, 0xD3C8EE)
+    static let sky = dynamic(0xDCEBF3, 0x283A45)
+    static let skyInk = dynamic(0x2F5D78, 0xB5D5E8)
+
+    /// 正向/完成状态采用鼠尾草柔绿。
+    static let success = sageInk
+    static let successSoft = sage
 
     // 历史符号保留为语义别名，避免调用点断裂。
     static let rulePaint = line
     static let cardEdge = line
     static let onInk = bg
-    static let onAccent = dynamic(0xFFFFFF, 0x0B0C0E)
+    static let onAccent = onClay
     static let link = accent
     static let marker = clay
     static let onMarker = onClay
     static let readingHighlight = accentSoft
     static let hero = accentSoft
     static let heroInk = ink
-    static let forest = accent
-    static let onForest = onAccent
+    static let forest = sageInk
+    static let onForest = onClay
     static let wash = accentSoft
-    static let warm = surface2
-    static let onWarm = ink2
-    static let gold = onWarm
-    static let goldSoft = warm
-    static let jade = success
-    static let jadeSoft = successSoft
-    static let indigo = accent
-    static let indigoSoft = accentSoft
-    static let ochre = gold
-    static let plum = accent
+    static let warm = butter
+    static let onWarm = butterInk
+    static let gold = butterInk
+    static let goldSoft = butter
+    static let jade = sageInk
+    static let jadeSoft = sage
+    static let indigo = skyInk
+    static let indigoSoft = sky
+    static let ochre = butterInk
+    static let plum = lavInk
     static let amberOnDark = clay
 
-    static let auroraGradient = LinearGradient(colors: [accent, accent], startPoint: .top, endPoint: .bottom)
-    static let accentGradient = auroraGradient
-    static let heroGradient = LinearGradient(colors: [hero, hero], startPoint: .top, endPoint: .bottom)
+    static let auroraGradient = LinearGradient(colors: [peach, accentSoft], startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let accentGradient = LinearGradient(colors: [clay, accent], startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let heroGradient = LinearGradient(colors: [surface, accentSoft], startPoint: .topLeading, endPoint: .bottomTrailing)
     static let heroButtonInk = ink
 
     static let space1: CGFloat = 4
@@ -72,27 +85,27 @@ enum Theme {
     static let space7: CGFloat = 40
     static let inset: CGFloat = 16
     static let insetCompact: CGFloat = 16
-    static let cardInset: CGFloat = 14
+    static let cardInset: CGFloat = 16
     static let rowMinHeight: CGFloat = 48
-    static let sectionSpacing: CGFloat = 22
+    static let sectionSpacing: CGFloat = 20
     static let pageWidth: CGFloat = 720
-    /// Linear 紧致圆角刻度：卡片 14 / 弹层 20 / 按钮与输入框 10 / 徽章 6。
-    static let radius: CGFloat = 14
-    static let heroRadius: CGFloat = 20
-    static let buttonRadius: CGFloat = 10
-    static let radiusField: CGFloat = 10
-    static let radiusSmall: CGFloat = 6
+    /// 暖页温润圆角刻度：卡片 20 / 弹层与英雄卡 26 / 输入框 14 / 徽章 12，主次按钮采用胶囊形。
+    static let radius: CGFloat = 20
+    static let heroRadius: CGFloat = 26
+    static let buttonRadius: CGFloat = 22
+    static let radiusField: CGFloat = 14
+    static let radiusSmall: CGFloat = 12
     /// 全圆胶囊的兼容数值；组件实际使用 Capsule()。
     static let radiusPill: CGFloat = 9999
     static let buttonRadiusSmall = radiusSmall
-    static func coverRadius(_ width: CGFloat) -> CGFloat { min(7, max(4, width * 0.06)) }
-    static let buttonHeight: CGFloat = 44
+    static func coverRadius(_ width: CGFloat) -> CGFloat { min(12, max(6, width * 0.10)) }
+    static let buttonHeight: CGFloat = 46
     static let iconButtonSize: CGFloat = 40
     static let hairline: CGFloat = 1
-    static let progressHeight: CGFloat = 3
+    static let progressHeight: CGFloat = 6
     static let sealDotSize: CGFloat = 6
-    static let mastheadTracking: CGFloat = 1.2
-    static let pressedOpacity = 0.84
+    static let mastheadTracking: CGFloat = 0.8
+    static let pressedOpacity = 0.86
     static let disabledOpacity = 0.4
     static let ruleHeavy: CGFloat = 2
     static let ruleMedium: CGFloat = 1.5
@@ -100,11 +113,11 @@ enum Theme {
 
     // MARK: - 动效
 
-    static let pressSpring = Animation.spring(response: 0.32, dampingFraction: 0.86)
+    static let pressSpring = Animation.spring(response: 0.36, dampingFraction: 0.84)
     static let pressAnimation = Animation.easeOut(duration: 0.2)
     static let smoothSpring = pressSpring
 
-    // MARK: - 字体：界面使用系统字体；宋体用于书名、摘句与正文偏好
+    // MARK: - 字体：界面使用温润系统字体；宋体用于书名、摘句与正文偏好
 
     static let serifName = "NotoSerifCJKsc-Regular"
     static func serif(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
@@ -114,31 +127,48 @@ enum Theme {
     static func serifSemibold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         serif(size, relativeTo: style)
     }
-    /// v29：同 serifSemibold，不再合成粗体；层级靠字号、留白与发丝线建立。
+    /// v29：同 serifSemibold，不再合成粗体；层级靠字号、留白与柔色建立。
     static func serifBold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         serif(size, relativeTo: style)
     }
-    /// 界面字体：系统字体（真实字重、与 SF Symbols 基线对齐）。固定字号，不再随 relativeTo 缩放。
+    /// 界面字体：系统字体（真实字重、与 SF Symbols 基线对齐）。
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight)
     }
+    /// 温润圆体辅助字形，用于数字、时段与徽章。
+    static func rounded(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+        .system(size: size, weight: weight, design: .rounded)
+    }
     /// Font 不承载 tracking；配合 .mastheadStyle() 应用完整眉题样式。
-    static let masthead = Font.system(size: 12, weight: .semibold)
-    /// 统计数字采用紧凑系统半粗体 + 等宽数字，贴合 Linear 工具感。
+    static let masthead = Font.system(size: 12, weight: .semibold, design: .rounded)
+    /// 统计数字采用温润圆体半粗体 + 等宽数字，契合温暖治愈陪伴氛围。
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle) -> Font {
-        .system(size: size, weight: .semibold, design: .default)
+        .system(size: size, weight: .semibold, design: .rounded)
     }
     /// 栏目标签（同 masthead）。
     static let kicker = masthead
-    /// 页面/区块标题：简洁清晰的系统半粗体。
-    static func headline(_ size: CGFloat) -> Font { .system(size: size, weight: .semibold) }
+    /// 页面/区块标题：温润清晰的系统半粗体。
+    static func headline(_ size: CGFloat) -> Font { .system(size: size, weight: .semibold, design: .rounded) }
 
-    // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
+    // MARK: - 无图书籍的温暖柔色封面（真实书封始终优先，全色名双外观对比度 >= 9.4）
 
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
-    /// 占位封使用浅灰纸色，随日夜切换；真实导入书封不反色。
     static func coverUIColor(_ color: String) -> UIColor {
-        UIColor(surfaceSunken)
+        let pair: (UInt32, UInt32)
+        switch color.lowercased() {
+        case "green": pair = (0xDDEBD9, 0x2D3A2E)
+        case "red": pair = (0xFCE3D3, 0x4A3026)
+        case "vermilion": pair = (0xFBE4D6, 0x43291F)
+        case "purple": pair = (0xE9E3F4, 0x352F45)
+        case "blue": pair = (0xDCEBF3, 0x283A45)
+        case "gold": pair = (0xFBEFC6, 0x433A22)
+        case "ink": pair = (0xEADFCF, 0x3A3029)
+        case "cream": pair = (0xF4ECDF, 0x231D19)
+        default: pair = (0xF4ECDF, 0x231D19)
+        }
+        return UIColor { traits in
+            UIColor(hex: traits.userInterfaceStyle == .dark ? pair.1 : pair.0)
+        }
     }
     static func coverForeground(_ color: String) -> Color { ink }
 
@@ -459,20 +489,20 @@ enum Icon {
     static let privacy        = "hand.raised"
 }
 
-    /// 简格精简阴影：日间极轻 2% 投影，夜间纯靠 1px 发丝线分层。
+    /// 暖页柔和阴影：日间暖棕轻柔散射，夜间靠深浅纸面与柔边分层。
 struct SoftCardShadow: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     func body(content: Content) -> some View {
         if colorScheme == .dark { content }
-        else { content.shadow(color: .black.opacity(0.025), radius: 10, x: 0, y: 2) }
+        else { content.shadow(color: Color(hex: 0x3A2E26).opacity(0.055), radius: 16, x: 0, y: 6) }
     }
 }
 
 private struct FloatingPanelShadow: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     func body(content: Content) -> some View {
-        if colorScheme == .dark { content }
-        else { content.shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 6) }
+        if colorScheme == .dark { content.shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 8) }
+        else { content.shadow(color: Color(hex: 0x3A2E26).opacity(0.10), radius: 22, x: 0, y: 8) }
     }
 }
 
@@ -482,37 +512,37 @@ struct SealBadge: View {
     let text: String
     var color: Color = Theme.accent
     var background: Color? = nil
-    /// 保留旧参数兼容；v31 状态签统一淡底。
+    /// 保留旧参数兼容；暖页状态签统一圆润胶囊柔底。
     var filled: Bool = false
     var body: some View {
         Text(L(text))
-            .font(Theme.sans(11))
+            .font(Theme.rounded(11, weight: .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, Theme.space2)
-            .padding(.vertical, Theme.space1)
-            .background(background ?? Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(background ?? Theme.accentSoft, in: Capsule())
     }
 }
 
-// MARK: - 按钮（温润圆角，主次明确）
+// MARK: - 按钮（温润胶囊圆角，主次明确）
 
-/// 主操作是窗蓝实底。日间用深窗蓝配浅字，夜间用浅窗蓝配深字。
+/// 主操作为陶土实底胶囊，夜间为暖珊瑚配深咖字。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     var height: CGFloat = Theme.buttonHeight
-    var fill: Color = Theme.accent
-    var foreground: Color = Theme.onAccent
+    var fill: Color = Theme.clay
+    var foreground: Color = Theme.onClay
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Theme.sans(15, weight: .medium))
+            .font(Theme.sans(15, weight: .semibold))
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(foreground)
-            .background(fill, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .background(fill, in: Capsule())
             .modifier(PressFeedback(pressed: configuration.isPressed))
-            .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
+            .contentShape(Capsule())
             .opacity(isEnabled ? 1 : Theme.disabledOpacity)
     }
 }
@@ -528,11 +558,11 @@ struct SecondaryButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
             .frame(maxWidth: .infinity, minHeight: height)
-            .foregroundStyle(Theme.ink)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+            .foregroundStyle(emphasized ? Theme.accent : Theme.ink)
+            .background(emphasized ? Theme.accentSoft : Theme.surface2, in: Capsule())
+            .overlay { Capsule().strokeBorder(emphasized ? Theme.accent.opacity(0.25) : Theme.line, lineWidth: Theme.rule) }
             .modifier(PressFeedback(pressed: configuration.isPressed))
-            .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
+            .contentShape(Capsule())
             .opacity(isEnabled ? 1 : Theme.disabledOpacity)
     }
 }
@@ -544,12 +574,12 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 胶囊选中炭墨实底，未选白卡与 1px 发丝线；紧凑高度贴合工具栏筛选。
+/// 暖页筛选胶囊：选中陶土实底胶囊，未选暖白柔边。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             if selected {
                 Image(systemName: Icon.checkmark)
                     .font(.system(size: 11, weight: .semibold))
@@ -558,11 +588,11 @@ struct ChipPillStyle: ButtonStyle {
             configuration.label
         }
         .font(Theme.sans(13, weight: selected ? .semibold : .medium))
-        .foregroundStyle(selected ? Theme.bg : Theme.ink2)
-        .padding(.horizontal, 11)
-        .frame(minHeight: 32)
-        .background(selected ? Theme.ink : Theme.surface, in: Capsule())
-        .overlay { Capsule().strokeBorder(selected ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
+        .foregroundStyle(selected ? Theme.onClay : Theme.ink2)
+        .padding(.horizontal, 13)
+        .frame(minHeight: 34)
+        .background(selected ? Theme.clay : Theme.surface, in: Capsule())
+        .overlay { Capsule().strokeBorder(selected ? Theme.clay : Theme.line, lineWidth: Theme.rule) }
         .contentShape(Capsule())
         .modifier(PressFeedback(pressed: configuration.isPressed))
         .opacity(isEnabled ? 1 : Theme.disabledOpacity)

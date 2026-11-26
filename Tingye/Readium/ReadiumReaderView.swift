@@ -357,7 +357,7 @@ struct ReadiumReaderView: View {
                     HStack(spacing: 6) {
                         Text(book.title).font(Theme.sans(11.5)).foregroundStyle(Theme.ink3).lineLimit(1)
                         if mappedChapter, !book.chapters.isEmpty {
-                            Text("· CH \(String(format: "%02d", chapter + 1))/\(book.chapters.count)")
+                            Text("· 第 \(chapter + 1) / \(book.chapters.count) 章")
                                 .font(Theme.sans(11)).monospacedDigit().foregroundStyle(Theme.ink3)
                         }
                     }
@@ -383,8 +383,8 @@ struct ReadiumReaderView: View {
 
             if dualTrackHint, let listenChapter {
                 HStack(spacing: Theme.space2) {
-                    Image(systemName: Icon.listening).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.accent)
-                    Text("读 CH \(String(format: "%02d", chapter + 1)) · 听 CH \(String(format: "%02d", listenChapter + 1))")
+                    Image(systemName: Icon.listening).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.skyInk)
+                    Text("读至第 \(chapter + 1) 章 · 听至第 \(listenChapter + 1) 章")
                         .font(Theme.sans(11.5, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink2)
                     Spacer(minLength: Theme.space2)
                     Button("从此处听") {
@@ -394,7 +394,7 @@ struct ReadiumReaderView: View {
                     }
                     .font(Theme.sans(11.5, weight: .semibold))
                     .foregroundStyle(Theme.accent)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(Theme.accentSoft, in: Capsule())
                     .buttonStyle(.plain)
                 }

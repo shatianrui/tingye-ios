@@ -12,6 +12,8 @@ struct StatsView: View {
     /// 没有系统返回箭头，故由页眉自带返回按钮调用此闭包弹出导航栈；
     /// 为 nil 时不渲染返回按钮（独立统计页等既有用法行为不变）。
     var onBack: (() -> Void)? = nil
+    /// 二级页压栈状态回调（供 StudyRootView 自动收起底部胶囊栏）
+    var onSubpageActiveChange: ((Bool) -> Void)? = nil
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @AppStorage(ReadingReminder.enabledKey) private var reminderEnabled = false
     @AppStorage(ReadingReminder.minutesKey) private var reminderMinutes = ReadingReminder.defaultMinutes
@@ -93,6 +95,9 @@ struct StatsView: View {
                 .toolbar(.visible, for: .navigationBar)
                 .toolbar(.hidden, for: .tabBar)
         }
+        .onChange(of: showingStats) { _, _ in notifySubpageState() }
+        .onChange(of: showingSettings) { _, _ in notifySubpageState() }
+        .onChange(of: settingsRoute) { _, _ in notifySubpageState() }
         #if DEBUG
         .task {
             if let screen = UIReview.screen, settingsRoute == nil {
@@ -112,6 +117,10 @@ struct StatsView: View {
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
     }
 
+    private func notifySubpageState() {
+        onSubpageActiveChange?(showingStats || showingSettings || settingsRoute != nil)
+    }
+
     private var profileContent: some View {
         VStack(alignment: .leading, spacing: Theme.space4) {
             HStack(spacing: Theme.space2) {
@@ -119,9 +128,9 @@ struct StatsView: View {
                     Button { onBack() } label: {
                         ThemeIcon(symbol: Icon.back, size: 17, weight: .medium)
                             .foregroundStyle(Theme.ink2)
-                            .frame(width: 34, height: 34)
-                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                            .frame(width: 36, height: 36)
+                            .background(Theme.surface, in: Circle())
+                            .overlay { Circle().strokeBorder(Theme.line, lineWidth: Theme.rule) }
                             .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                             .contentShape(Rectangle())
                     }
@@ -129,20 +138,25 @@ struct StatsView: View {
                     .accessibilityLabel("返回")
                     .accessibilityIdentifier("study.profileBack")
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("我的").font(Theme.sans(22, weight: .semibold)).foregroundStyle(Theme.ink)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("我的")
+                        .font(Theme.rounded(24, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
-                    Text("本地优先 · 读听数据仅留在本机").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                    Text("无需账号 · 你的读与听安静留在本机")
+                        .font(Theme.sans(12))
+                        .foregroundStyle(Theme.ink3)
                 }
                 Spacer(minLength: 0)
                 Button { showingSettings = true } label: {
                     ThemeIcon(symbol: Icon.settings, size: 17)
                         .foregroundStyle(Theme.ink2)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(width: 36, height: 36)
+                        .background(Theme.surface, in: Circle())
+                        .overlay { Circle().strokeBorder(Theme.line, lineWidth: Theme.rule) }
                         .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                 }
+                .buttonStyle(PressButtonStyle())
                 .accessibilityLabel("设置")
                 .accessibilityIdentifier("profile.settings")
             }
@@ -162,17 +176,33 @@ struct StatsView: View {
             if model.visibleEntries.contains(where: { $0.local && !$0.isComic }) {
                 DailyQuoteCard(compact: true)
             } else {
-                PaperCard(padding: Theme.cardInset) {
-                    VStack(alignment: .leading, spacing: Theme.space2) {
-                        Text("今日摘句").font(Theme.sans(11, weight: .semibold)).foregroundStyle(Theme.accent)
-                        Text("把日子过慢一点，让喜欢的文字多停留一会儿。")
-                            .font(Theme.serif(17, relativeTo: .title3)).lineSpacing(6).foregroundStyle(Theme.ink)
-                        Text("听页 · 今日阅读寄语").font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .semibold))
+                            .accessibilityHidden(true)
+                        Text("今日寄语")
+                            .font(Theme.rounded(11.5, weight: .semibold))
                     }
+                    .foregroundStyle(Theme.butterInk)
+                    Text("把日子过慢一点，让喜欢的文字多停留一会儿。")
+                        .font(Theme.serif(17, relativeTo: .title3)).lineSpacing(6).foregroundStyle(Theme.ink)
+                    Text("听页 · 本地陪伴")
+                        .font(Theme.sans(12)).foregroundStyle(Theme.ink2)
                 }
+                .padding(Theme.cardInset)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.butter, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             }
-            Text("无需账号，你的书留在你的设备。")
-                .font(Theme.sans(12)).foregroundStyle(Theme.ink3)
+            HStack(spacing: 6) {
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.sageInk)
+                    .accessibilityHidden(true)
+                Text("无需注册登录，所有藏书与进度仅保存在你的设备。")
+                    .font(Theme.sans(12))
+                    .foregroundStyle(Theme.ink3)
+            }
         }
         .foregroundStyle(Theme.ink)
     }
@@ -185,36 +215,65 @@ struct StatsView: View {
         }
         let finished = model.visibleEntries.filter { $0.started && $0.readFraction >= 0.995 }.count
         let streak = AppModel.readingStreak(model.readingSeconds).current
+        let recentWeekSeconds: [Double] = (0..<14).reversed().map { daysAgo in
+            guard let d = calendar.date(byAdding: .day, value: -daysAgo, to: Date()) else { return 0 }
+            return model.readingSeconds[AppModel.dayKey(d)] ?? 0
+        }
         return Button { showingStats = true } label: {
-            PaperCard(padding: Theme.cardInset) {
-                VStack(alignment: .leading, spacing: Theme.space3) {
-                    HStack {
-                        Text("本月读听").font(Theme.sans(12, weight: .medium)).foregroundStyle(Theme.ink3)
-                        Spacer()
-                        HStack(spacing: 4) {
-                            Text("查看统计").font(Theme.sans(12, weight: .medium)).foregroundStyle(Theme.accent)
-                            ThemeIcon(symbol: Icon.disclosure, size: 12).foregroundStyle(Theme.accent)
-                        }
+            VStack(alignment: .leading, spacing: Theme.space3) {
+                HStack {
+                    HStack(spacing: 5) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.clay)
+                            .accessibilityHidden(true)
+                        Text("本月读听陪伴")
+                            .font(Theme.rounded(12.5, weight: .semibold))
+                            .foregroundStyle(Theme.ink2)
                     }
-                    Text(Self.preciseDuration(seconds))
-                        .font(Theme.display(30)).monospacedDigit()
-                        .minimumScaleFactor(0.6).lineLimit(1)
-                        .foregroundStyle(Theme.ink)
-                    RowDivider()
-                    ViewThatFits(in: .horizontal) {
-                        HStack {
-                            Text("累计读完 \(finished) 本").monospacedDigit()
-                            Spacer()
-                            Text("连续阅读 \(streak) 天").monospacedDigit().foregroundStyle(streak > 0 ? Theme.success : Theme.ink2)
-                        }
-                        VStack(alignment: .leading, spacing: Theme.space1) {
-                            Text("累计读完 \(finished) 本").monospacedDigit()
-                            Text("连续阅读 \(streak) 天").monospacedDigit()
-                        }
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("查看统计").font(Theme.rounded(12, weight: .semibold)).foregroundStyle(Theme.accent)
+                        ThemeIcon(symbol: Icon.disclosure, size: 12).foregroundStyle(Theme.accent)
                     }
-                    .font(Theme.sans(12.5)).foregroundStyle(Theme.ink2)
                 }
+                Text(Self.preciseDuration(seconds))
+                    .font(Theme.display(32)).monospacedDigit()
+                    .minimumScaleFactor(0.6).lineLimit(1)
+                    .foregroundStyle(Theme.ink)
+                if !typeSize.isAccessibilitySize {
+                    HStack(spacing: 5) {
+                        ForEach(Array(recentWeekSeconds.enumerated()), id: \.offset) { _, sec in
+                            let mins = sec / 60
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(mins >= 25 ? Theme.clay : mins >= 5 ? Theme.accentSoft : Theme.surface2)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 10)
+                        }
+                    }
+                    .accessibilityHidden(true)
+                }
+                RowDivider()
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Text("累计读完 \(finished) 本").monospacedDigit()
+                        Spacer()
+                        Text("连续陪伴 \(streak) 天").monospacedDigit().foregroundStyle(streak > 0 ? Theme.sageInk : Theme.ink2)
+                    }
+                    VStack(alignment: .leading, spacing: Theme.space1) {
+                        Text("累计读完 \(finished) 本").monospacedDigit()
+                        Text("连续陪伴 \(streak) 天").monospacedDigit()
+                    }
+                }
+                .font(Theme.rounded(12.5, weight: .medium)).foregroundStyle(Theme.ink2)
             }
+            .padding(Theme.cardInset + 2)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous)
+                    .strokeBorder(Theme.line, lineWidth: Theme.rule)
+            }
+            .softCardShadow()
         }
         .buttonStyle(PressButtonStyle())
         .accessibilityHint("查看完整阅读统计")
@@ -225,22 +284,28 @@ struct StatsView: View {
             ? AnyLayout(VStackLayout(spacing: Theme.space2))
             : AnyLayout(HStackLayout(spacing: Theme.space2))
         return kpiLayout {
-            kpiTile(value: "\(model.visibleEntries.count)", label: "藏书")
-            kpiTile(value: totalReadingText, label: "累计时长")
-            kpiTile(value: "\(AppModel.readingStreak(model.readingSeconds).current) 天", label: "连续阅读")
+            kpiTile(value: "\(model.visibleEntries.count)", label: "书房藏书", fill: Theme.peach, tint: Theme.accent)
+            kpiTile(value: totalReadingText, label: "累计陪伴", fill: Theme.butter, tint: Theme.butterInk)
+            kpiTile(value: "\(AppModel.readingStreak(model.readingSeconds).current) 天", label: "连续阅读", fill: Theme.sage, tint: Theme.sageInk)
         }
     }
 
-    private func kpiTile(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(Theme.sans(11.5, weight: .medium)).foregroundStyle(Theme.ink3)
-            Text(value).font(Theme.display(20)).monospacedDigit().foregroundStyle(Theme.ink)
-                .lineLimit(1).minimumScaleFactor(0.75)
+    private func kpiTile(value: String, label: String, fill: Color, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label)
+                .font(Theme.rounded(11.5, weight: .semibold))
+                .foregroundStyle(tint)
+            Text(value)
+                .font(Theme.display(20))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12).padding(.vertical, 12)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 13)
+        .background(fill, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
     }
 
     private func profileEntry(_ title: String, value: String, action: @escaping () -> Void) -> some View {

@@ -83,7 +83,7 @@ struct NotesUnifiedView: View {
 
     var body: some View {
         List {
-            Masthead(title: "留下的文字", subtitle: "划线、笔记与书签，按书收好，随时回到原文。", kicker: "摘记", titleSize: 28)
+            Masthead(title: "留下的文字", subtitle: "每一次心动与停驻，都为你按书轻轻收好。", kicker: "摘记卡片墙", titleSize: 28)
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.space2) {
@@ -107,12 +107,22 @@ struct NotesUnifiedView: View {
                     }
                 } header: {
                     HStack(spacing: Theme.space2) {
-                        BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 24)
+                        BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 26)
                         Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(Theme.ink).textCase(nil)
-                        SealBadge(text: "\(group.items.count) 条", color: Theme.ink3, background: Theme.surface2)
+                        SealBadge(text: "\(group.items.count) 条", color: Theme.butterInk, background: Theme.butter)
                         Spacer()
-                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.clayDeep).frame(minHeight: Theme.iconButtonSize) }
-                            .accessibilityLabel("导出《\(group.entry.title)》摘记")
+                        ShareLink(item: Self.markdown(group.entry)) {
+                            HStack(spacing: 4) {
+                                Image(systemName: Icon.share).font(.system(size: 11.5, weight: .semibold)).accessibilityHidden(true)
+                                Text("导出").font(Theme.rounded(12, weight: .semibold))
+                            }
+                            .foregroundStyle(Theme.accent)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Theme.accentSoft, in: Capsule())
+                            .frame(minHeight: Theme.iconButtonSize)
+                        }
+                        .accessibilityLabel("导出《\(group.entry.title)》摘记")
                     }
                 }
             }
@@ -147,59 +157,73 @@ struct NotesUnifiedView: View {
         return Theme.accent
     }
 
+    private func badgeStyle(for kind: Item.Kind) -> (fg: Color, bg: Color) {
+        switch kind {
+        case .note: return (Theme.lavInk, Theme.lav)
+        case .bookmark: return (Theme.skyInk, Theme.sky)
+        case .highlight: return (Theme.butterInk, Theme.butter)
+        }
+    }
+
     private func row(_ item: Item, entry: ShelfEntry) -> some View {
         let markColor = accentColor(for: item)
-        return PaperCard(padding: Theme.cardInset) {
-            VStack(alignment: .leading, spacing: Theme.space2) {
-                Button { model.open(entry, target: item.target) } label: {
-                    HStack(alignment: .top, spacing: Theme.space3) {
-                        Capsule().fill(markColor)
-                            .frame(width: 3)
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack(spacing: Theme.space2) {
-                                SealBadge(text: item.kind.rawValue,
-                                          color: item.kind == .note ? Theme.accent : Theme.ink2,
-                                          background: item.kind == .note ? Theme.accentSoft : Theme.surface2)
-                                Text("CH \(String(format: "%02d", item.chapter + 1))")
-                                    .font(Theme.sans(11, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink3)
-                                Spacer(minLength: 0)
-                                Text(item.date.formatted(date: .abbreviated, time: .shortened))
-                                    .font(Theme.sans(11)).monospacedDigit().foregroundStyle(Theme.ink3)
+        let badge = badgeStyle(for: item.kind)
+        return VStack(alignment: .leading, spacing: Theme.space2) {
+            Button { model.open(entry, target: item.target) } label: {
+                HStack(alignment: .top, spacing: Theme.space3) {
+                    Capsule().fill(markColor)
+                        .frame(width: 4)
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: Theme.space2) {
+                            HStack(spacing: 5) {
+                                Circle().fill(markColor).frame(width: 6.5, height: 6.5).accessibilityHidden(true)
+                                SealBadge(text: item.kind.rawValue, color: badge.fg, background: badge.bg)
                             }
-                            Text(item.text).font(Theme.serif(16, relativeTo: .body))
-                                .lineSpacing(5).foregroundStyle(Theme.ink).lineLimit(5)
-                            if let noteText = item.noteText {
-                                MarkdownSupport.note(noteText)
-                                    .font(Theme.sans(13.5)).foregroundStyle(Theme.ink2)
-                                    .padding(.horizontal, 10).padding(.vertical, 8)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-                                    .overlay { RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
-                            }
+                            Text("第 \(item.chapter + 1) 章")
+                                .font(Theme.rounded(11.5, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            Spacer(minLength: 0)
+                            Text(item.date.formatted(date: .abbreviated, time: .shortened))
+                                .font(Theme.rounded(11, weight: .regular)).monospacedDigit().foregroundStyle(Theme.ink3)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(item.text).font(Theme.serif(16.5, relativeTo: .body))
+                            .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
+                        if let noteText = item.noteText {
+                            MarkdownSupport.note(noteText)
+                                .font(Theme.sans(13.5)).foregroundStyle(Theme.ink2)
+                                .padding(.horizontal, 12).padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+                        }
                     }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading).contentShape(Rectangle())
-                }.buttonStyle(.plain)
-                RowDivider()
-                HStack(spacing: Theme.space3) {
-                    Button { model.open(entry, target: item.target) } label: {
-                        Label("回到原文", systemImage: Icon.read)
-                            .font(Theme.sans(12.5, weight: .medium))
-                            .frame(minHeight: 32)
-                    }.foregroundStyle(Theme.accent)
-                    Spacer(minLength: 0)
-                    Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
-                        Label(item.kind == .bookmark ? "移除书签" : "删除", systemImage: Icon.delete)
-                            .font(Theme.sans(12.5))
-                            .frame(minHeight: 32)
-                    }.foregroundStyle(Theme.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.borderless)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            RowDivider()
+            HStack(spacing: Theme.space3) {
+                Button { model.open(entry, target: item.target) } label: {
+                    Label("回到原文", systemImage: Icon.read)
+                        .font(Theme.rounded(12.5, weight: .semibold))
+                        .frame(minHeight: 32)
+                }.foregroundStyle(Theme.accent)
+                Spacer(minLength: 0)
+                Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
+                    Label(item.kind == .bookmark ? "移除书签" : "删除", systemImage: Icon.delete)
+                        .font(Theme.rounded(12.5, weight: .medium))
+                        .frame(minHeight: 32)
+                }.foregroundStyle(Theme.danger)
             }
+            .buttonStyle(.borderless)
         }
-        .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space1, trailing: 0))
+        .padding(Theme.cardInset)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                .strokeBorder(Theme.line, lineWidth: Theme.rule)
+        }
+        .softCardShadow()
+        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
         .listRowBackground(Color.clear).listRowSeparator(.hidden)
         .swipeActions(allowsFullSwipe: false) {
             Button(role: .destructive) { beginRemoval(item, entry: entry) } label: { Label("删除", systemImage: Icon.delete) }

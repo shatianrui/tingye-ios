@@ -97,6 +97,7 @@
 		B15300000000000000000041 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000021 /* MarkdownUI */; };
 		B15300000000000000000042 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = B15300000000000000000022 /* Markdown */; };
 		B15300000000000000000051 /* MarkdownSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15300000000000000000052 /* MarkdownSupport.swift */; };
+		B15400000000000000000001 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15400000000000000000002 /* TodayView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -189,6 +190,7 @@
 		04239F8D03EA0A09AC8735EF /* ReadiumBackupSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ReadiumBackupSourceTests.swift"; sourceTree = "<group>"; };
 		5C3CC94C0E572A1542C0B99F /* Pow-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Pow-LICENSE.txt"; sourceTree = "<group>"; };
 		B15300000000000000000052 /* MarkdownSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownSupport.swift; sourceTree = "<group>"; };
+		B15400000000000000000002 /* TodayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -293,6 +295,7 @@
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
 				6AF95B5E4D9E43527996555A /* TingyeApp.swift */,
 				B15300000000000000000052 /* MarkdownSupport.swift */,
+				B15400000000000000000002 /* TodayView.swift */,
 				1BE9C5E15EF178E3AF247624 /* Resources */,
 			);
 			path = Tingye;
@@ -554,6 +557,7 @@
 				D92714EFB66508E9A82461EA /* Theme.swift in Sources */,
 				15CAE64644780454A9F20606 /* TingyeApp.swift in Sources */,
 				B15300000000000000000051 /* MarkdownSupport.swift in Sources */,
+				B15400000000000000000001 /* TodayView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,7 +612,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 153;
+				CURRENT_PROJECT_VERSION = 154;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -693,7 +697,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 153;
+				CURRENT_PROJECT_VERSION = 154;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -721,7 +725,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 153;
+				CURRENT_PROJECT_VERSION = 154;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -800,7 +804,7 @@
 				CODE_SIGN_ENTITLEMENTS = Tingye/Tingye.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Tingye/Tingye-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 153;
+				CURRENT_PROJECT_VERSION = 154;
 				DEVELOPMENT_TEAM = H22S27JV83;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

@@ -161,15 +161,16 @@ struct PlayerView: View {
                 }
             }
         }
-        .padding(Theme.cardInset)
+        .padding(Theme.cardInset + 2)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .softCardShadow()
         .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space2)
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
 
-    // MARK: 紧凑书头（把视野还给可点击逐句转录字幕流）
+    // MARK: 暖页陪伴书头（轻柔呼吸书封 + 温润胶囊收起/更多按钮）
 
     private func hero(_ book: Book, coverWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
@@ -177,9 +178,9 @@ struct PlayerView: View {
                 Button { dismiss() } label: {
                     ThemeIcon(symbol: Icon.collapse, size: 17)
                         .foregroundStyle(Theme.ink2)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(width: 36, height: 36)
+                        .background(Theme.surface, in: Circle())
+                        .overlay { Circle().strokeBorder(Theme.line, lineWidth: Theme.rule) }
                         .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                         .contentShape(Rectangle())
                 }
@@ -187,11 +188,21 @@ struct PlayerView: View {
                 .accessibilityIdentifier("player.collapse")
 
                 Button { showingCover = true } label: {
-                    HStack(spacing: Theme.space2) {
-                        BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 34)
-                        VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 10) {
+                        ZStack {
+                            if player.playing && !player.buffering {
+                                Circle()
+                                    .fill(Theme.peach)
+                                    .frame(width: 48, height: 48)
+                                    .scaleEffect(reduceMotion ? 1.0 : 1.06)
+                                    .animation(reduceMotion ? nil : .easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: player.playing)
+                                    .accessibilityHidden(true)
+                            }
+                            BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 38)
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(book.title)
-                                .font(Theme.sans(14, weight: .semibold))
+                                .font(Theme.serif(15.5))
                                 .foregroundStyle(Theme.ink)
                                 .lineLimit(1)
                             HStack(spacing: 5) {
@@ -201,7 +212,7 @@ struct PlayerView: View {
                                 Text("· \(player.voiceLabel)")
                                     .lineLimit(1)
                             }
-                            .font(Theme.sans(11.5)).foregroundStyle(Theme.ink3)
+                            .font(Theme.rounded(11.5, weight: .medium)).foregroundStyle(Theme.ink3)
                         }
                         Spacer(minLength: 0)
                     }
@@ -224,9 +235,9 @@ struct PlayerView: View {
                 } label: {
                     ThemeIcon(symbol: Icon.more, size: 17)
                         .foregroundStyle(Theme.ink2)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                        .frame(width: 36, height: 36)
+                        .background(Theme.surface, in: Circle())
+                        .overlay { Circle().strokeBorder(Theme.line, lineWidth: Theme.rule) }
                         .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
                 }
                 .accessibilityLabel("更多听书操作")
@@ -246,10 +257,14 @@ struct PlayerView: View {
         HStack(spacing: 6) {
             if player.playing && !player.buffering {
                 Image(systemName: Icon.listening).symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
+            } else {
+                Circle().fill(player.buffering ? Theme.butterInk : Theme.ink3).frame(width: 6, height: 6)
             }
             Text(player.buffering ? "正在准备声音" : (player.playing ? "正在朗读" : "朗读已暂停"))
         }
-        .font(.caption2.weight(.medium)).foregroundStyle(Theme.accent)
+        .font(Theme.rounded(11.5, weight: .semibold)).foregroundStyle(Theme.accent)
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .background(Theme.accentSoft, in: Capsule())
         .accessibilityIdentifier("player.readingStatus")
     }
 
@@ -437,16 +452,20 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    /// 播放工具：线性图标在上、小字在下，无边框；开启状态转刊红加粗并加下划线。
+    /// 播放工具：温润胶囊图标文字按钮，激活态以薰衣草柔色高亮。
     private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
         Label { Text(L(title)).fixedSize(horizontal: false, vertical: true) }
-              icon: { ThemeIcon(symbol: symbol, size: 16) }
-            .font(Theme.sans(13))
-            .foregroundStyle(highlighted ? Theme.bg : Theme.ink2)
+              icon: { ThemeIcon(symbol: symbol, size: 15) }
+            .font(Theme.rounded(12.5, weight: highlighted ? .semibold : .medium))
+            .foregroundStyle(highlighted ? Theme.lavInk : Theme.ink2)
             .padding(.horizontal, Theme.space2)
             .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
-            .background(highlighted ? Theme.ink : Theme.surface, in: Capsule())
-            .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+            .background(highlighted ? Theme.lav : Theme.surface, in: Capsule())
+            .overlay {
+                if !highlighted {
+                    Capsule().strokeBorder(Theme.line, lineWidth: Theme.hairline)
+                }
+            }
             .contentShape(Capsule())
             .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
@@ -528,10 +547,11 @@ private struct SentenceProgressControl: View {
         VStack(alignment: .leading, spacing: Theme.space2) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    ProgressLine(value: progress, tint: Theme.ink2, height: Theme.progressHeight)
+                    ProgressLine(value: progress, track: Theme.surface2, tint: Theme.clay, height: Theme.progressHeight)
                         .accessibilityHidden(true)
-                    Circle().fill(Theme.ink2).frame(width: Theme.space3, height: Theme.space3)
-                        .position(x: min(max(5, geo.size.width * progress), max(5, geo.size.width - 5)), y: 22)
+                    Circle().fill(Theme.clay).frame(width: 14, height: 14)
+                        .overlay { Circle().strokeBorder(Theme.surface, lineWidth: 2) }
+                        .position(x: min(max(7, geo.size.width * progress), max(7, geo.size.width - 7)), y: 22)
                 }
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
