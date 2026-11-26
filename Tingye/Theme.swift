@@ -742,7 +742,7 @@ struct SectionTitle: View {
     }
 }
 
-/// 刊物精装报头（Editorial Monograph Masthead）：经典上下墨线、陶土眉题与宋体大标题。
+/// 刊物精装报头（Editorial Monograph Masthead）：顶线、陶土眉题与宋体大标题，紧凑不挤占首屏书架触控空间。
 struct PageMasthead: View {
     let title: String
     var subtitle: String? = nil
@@ -756,12 +756,8 @@ struct PageMasthead: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
             if rule {
-                VStack(spacing: 2) {
-                    Rectangle().fill(Theme.ink).frame(height: 1.5)
-                    Rectangle().fill(Theme.line).frame(height: Theme.hairline)
-                }
-                .padding(.bottom, Theme.space1)
-                .accessibilityHidden(true)
+                Rectangle().fill(Theme.ink).frame(height: 1.5)
+                    .accessibilityHidden(true)
             }
             if kicker != nil || issue != nil || actionTitle != nil {
                 HStack {
@@ -790,11 +786,6 @@ struct PageMasthead: View {
                     .font(Theme.sans(13))
                     .foregroundStyle(Theme.ink3)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            if rule {
-                Rectangle().fill(Theme.line).frame(height: 1)
-                    .padding(.top, Theme.space1)
-                    .accessibilityHidden(true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

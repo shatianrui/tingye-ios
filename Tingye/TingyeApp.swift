@@ -236,24 +236,17 @@ struct StudyRootView: View {
                             .accessibilityHidden(true)
                             Spacer()
                             NavigationLink(value: StudyRoute.me) {
-                                HStack(spacing: 6) {
-                                    ThemeIcon(symbol: Icon.profile, size: 16)
-                                    Text("我的")
-                                }
-                                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
-                                .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-                                .contentShape(Rectangle())
+                                Label("我的", systemImage: Icon.profile)
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(PressButtonStyle(scale: 0.92))
                             .accessibilityLabel("我的")
                             .accessibilityIdentifier("study.openProfile")
                         }
                         .padding(.horizontal, Theme.inset)
-                        .padding(.vertical, 4)
                         .background(Theme.bg)
-                        .overlay(alignment: .bottom) { RowDivider() }
                     }
                     .toolbarBackground(Theme.bg, for: .navigationBar)
             }

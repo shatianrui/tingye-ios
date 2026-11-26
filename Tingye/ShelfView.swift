@@ -381,23 +381,19 @@ struct ShelfView: View {
 
     /// 保留最新划线数据源，以刊物扉页引文呈现；不改变每日摘句的轮换规则。
     private func todayQuote(_ highlight: Highlight) -> some View {
-        VStack(alignment: .leading, spacing: Theme.space2) {
-            Text("FOLIO QUOTE · 摘录")
-                .font(Theme.masthead).tracking(Theme.mastheadTracking)
-                .foregroundStyle(Theme.accent)
-            Text(highlight.text).font(Theme.serif(19)).lineSpacing(5).foregroundStyle(Theme.ink)
-                .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
-            if let entry = model.visibleEntries.first(where: { ($0.highlights ?? []).contains(where: { $0.id == highlight.id }) }) {
-                Text("——《\(entry.title)》 · \(entry.author.isEmpty ? "佚名" : entry.author)")
-                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+        HStack(alignment: .top, spacing: Theme.space3) {
+            VStack(alignment: .leading, spacing: Theme.space2) {
+                Text(highlight.text).font(Theme.serif(19)).foregroundStyle(Theme.ink)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
+                if let entry = model.visibleEntries.first(where: { ($0.highlights ?? []).contains(where: { $0.id == highlight.id }) }) {
+                    Text("——《\(entry.title)》 · \(entry.author.isEmpty ? "佚名" : entry.author)")
+                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, Theme.space3)
-        .padding(.horizontal, Theme.space4)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: 4).accessibilityHidden(true) }
+        .padding(.leading, Theme.space4)
+        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
     }
 
     /// v29 导入收敛：唯一的「添书」入口，直接打开 ImportHub（含文件导入、传书方式与最近导入结果）。
