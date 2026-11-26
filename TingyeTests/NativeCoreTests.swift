@@ -1276,8 +1276,34 @@ final class ProgressAndBackupTests: XCTestCase {
     }
 
     func testCatalystEntitlementsIncludeKeyValueStore() throws {
-        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        for name in ["Tingye-macOS.entitlements", "Tingye.entitlements"] {
+        let fileURL = URL(fileURLWithPath: #filePath)
+        let cwdURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        let fm = FileManager.default
+        let names = ["Tingye-macOS.entitlements", "Tingye.entitlements"]
+
+        func findRoot(from start: URL) -> URL? {
+            var current = start
+            var isDir: ObjCBool = false
+            if fm.fileExists(atPath: current.path, isDirectory: &isDir), !isDir.boolValue {
+                current = current.deletingLastPathComponent()
+            }
+            for _ in 0...6 {
+                let tingyeDir = current.appendingPathComponent("Tingye")
+                let allExist = names.allSatisfy { fm.fileExists(atPath: tingyeDir.appendingPathComponent($0).path) }
+                if allExist { return current }
+                let parent = current.deletingLastPathComponent()
+                if parent.path == current.path { break }
+                current = parent
+            }
+            return nil
+        }
+
+        guard let root = findRoot(from: fileURL) ?? findRoot(from: cwdURL) else {
+            XCTFail("无法找到 Tingye/.entitlements 文件。已尝试锚点 #filePath: \(fileURL.path) 与 CWD: \(cwdURL.path)（各向上最多 6 级）。")
+            return
+        }
+
+        for name in names {
             let data = try Data(contentsOf: root.appendingPathComponent("Tingye/" + name))
             let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
             XCTAssertEqual(plist["com.apple.developer.ubiquity-kvstore-identifier"] as? String, "$(TeamIdentifierPrefix)$(CFBundleIdentifier)", name)

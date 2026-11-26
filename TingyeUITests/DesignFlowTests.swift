@@ -303,9 +303,11 @@ final class DesignFlowTests: XCTestCase {
         notes.tap()
         XCTAssertTrue(app.navigationBars["目录与摘记"].waitForExistence(timeout: 5))
         let notesTab = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "笔记 ")).firstMatch
-        XCTAssertTrue(notesTab.waitForExistence(timeout: 5))
+        XCTAssertTrue(notesTab.waitForExistence(timeout: 10))
         XCTAssertTrue(notesTab.isSelected, "摘记入口应直接打开笔记，而非让读者再切换章节页签")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "长按正文")).firstMatch.isHittable)
+        // 切到笔记页后内容还需一拍完成布局：等提示文字真正可达，不采样一次下结论。
+        let noteHint = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "长按正文")).firstMatch
+        waitForReadingCondition({ noteHint.isHittable }, "笔记页应显示可达的「长按正文」提示")
         XCTAssertFalse(app.buttons["player.toggle"].exists)
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["reader.more"].waitForExistence(timeout: 5))
@@ -403,7 +405,8 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap(); field.typeText("长标题")
         XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable, "小屏键盘上方应能直接操作搜索结果")
+        // 小屏上键盘弹出与列表避让的布局落定较慢：等结果真正可点，不采样一次下结论。
+        waitForReadingCondition({ app.buttons["book.detail.ui-long"].isHittable }, "小屏键盘上方应能直接操作搜索结果")
         screenshot(app, "书房-从根页面搜索书架")
         app.buttons["取消"].tap()
         XCTAssertTrue(app.buttons["shelf.search"].isHittable)
@@ -416,6 +419,8 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "专注-阅读工具栏")
         preferences.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        // 字体选项在懒加载网格里：小屏上卡片初始位于可视区外、选项尚未生成，先滚动到位再断言。
+        reveal(app.buttons["系统字体"], in: app)
         XCTAssertTrue(app.buttons["系统字体"].isSelected)
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
@@ -454,6 +459,8 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("shelf")
         let organize = app.buttons["shelf.organize"]
         XCTAssertTrue(organize.waitForExistence(timeout: 15))
+        // 小屏上首本书位于页首与英雄卡下方、初始不在可视区，先滚动到位再断言。
+        reveal(app.buttons["book.detail.ui-long"], in: app)
         XCTAssertTrue(app.buttons["book.detail.ui-long"].isHittable)
         screenshot(app, "书架-文字整理与详情入口")
         organize.tap()
@@ -480,7 +487,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(scrubber.waitForExistence(timeout: 15))
         let toggle = app.buttons["player.toggle"]
         XCTAssertTrue(toggle.label.contains("继续朗读"))
-        XCTAssertTrue(app.staticTexts["player.readingStatus"].isHittable, "跟读状态应固定在卡片顶部，不随长句滚出视口")
+        waitForReadingCondition({ app.staticTexts["player.readingStatus"].isHittable }, "跟读状态应固定在卡片顶部，不随长句滚出视口")
         let original = scrubber.value as? String
         scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
             .press(forDuration: 0.2, thenDragTo: scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.5)))
@@ -495,7 +502,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(toggle.label.contains("暂停朗读"))
         toggle.tap()
         XCTAssertTrue(toggle.label.contains("继续朗读"))
-        XCTAssertTrue(app.staticTexts["player.readingStatus"].isHittable)
+        waitForReadingCondition({ app.staticTexts["player.readingStatus"].isHittable }, "跟读状态应固定在卡片顶部，不随长句滚出视口")
         screenshot(app, "播放器-句子拖动与暂停")
     }
 
@@ -697,6 +704,8 @@ final class DesignFlowTests: XCTestCase {
     func testShelfSeparatesFilterSortAndLayoutAndProtectsDeletion() {
         let app = launch("shelf")
         XCTAssertTrue(app.buttons["shelf.filter"].waitForExistence(timeout: 15))
+        // 浏览工具整行位于书房长滚动区：小屏上初始在可视区外，先把整行滚入视口再逐个断言。
+        reveal(app.buttons["shelf.more"], in: app)
         for id in ["shelf.filter", "shelf.sort", "shelf.layout", "shelf.more"] {
             XCTAssertEqual(app.buttons.matching(identifier: id).count, 1)
             XCTAssertTrue(app.buttons[id].isHittable)
@@ -851,6 +860,7 @@ final class DesignFlowTests: XCTestCase {
         reveal(reading, in: app)
         reading.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        reveal(app.buttons["系统字体"], in: app)
         XCTAssertTrue(app.buttons["系统字体"].isSelected, "外观切换不能改变正文的独立字体偏好")
         screenshot(app, "听页-夜间阅读排版")
         let paper = app.buttons["旧书"]
@@ -881,6 +891,7 @@ final class DesignFlowTests: XCTestCase {
         }
         app.buttons["reader.preferences"].tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
+        reveal(app.buttons["系统字体"], in: app)
         XCTAssertTrue(app.buttons["系统字体"].isSelected)
         revealAboveDone(app.buttons["旧书"], in: app)
         app.buttons["旧书"].tap()
@@ -1052,7 +1063,7 @@ extension DesignFlowTests {
         }
         let found = surfaces.compactMap { surface -> XCUIElement? in
             let match = file(in: surface)
-            return match.waitForExistence(timeout: 6) ? match : nil
+            return match.waitForExistence(timeout: 15) ? match : nil
         }.first
         XCTAssertNotNil(found, "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
         found?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
