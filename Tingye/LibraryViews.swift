@@ -660,7 +660,7 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: "让听页，更合你的习惯。", subtitle: "窗边的光，清楚的字。选择适合此刻的界面。", titleSize: 28)
+                Masthead(title: "让听页，更合你的习惯。", subtitle: "象牙暖纸、炭墨正文与陶土印记。选择适合此刻的界面。", kicker: "外观主题", titleSize: 28)
                 VStack(spacing: Theme.space3) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
                     appearanceOption("light", title: "日间", subtitle: "冷灰纸面、墨色文字与窗蓝标记")
@@ -715,11 +715,15 @@ struct AppearanceView: View {
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
         return VStack(alignment: .leading, spacing: Theme.space2) {
-            Rectangle().fill(Theme.ink).frame(width: 40, height: Theme.progressHeight)
+            HStack(spacing: 4) {
+                Rectangle().fill(Theme.clay).frame(width: 8, height: 6)
+                Rectangle().fill(Theme.ink).frame(width: 32, height: 2)
+            }
             Rectangle().fill(Theme.surface).frame(height: Theme.space5)
                 .overlay(alignment: .leading) {
-                    Rectangle().fill(Theme.ink2).frame(width: Theme.space3, height: Theme.space4).padding(.leading, Theme.space2)
+                    Rectangle().fill(Theme.clay).frame(width: 3).padding(.vertical, 3)
                 }
+                .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
             Rectangle().fill(Theme.ink3).frame(width: 40, height: Theme.progressHeight)
             Rectangle().fill(Theme.line).frame(height: Theme.progressHeight)
         }
@@ -731,7 +735,7 @@ struct AppearanceView: View {
                     .overlay { ThemeIcon(symbol: Icon.nightBadge, size: 14).foregroundStyle(Theme.bg) }
             }
         }
-        .overlay(Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline))
+        .overlay(Rectangle().strokeBorder(Theme.line, lineWidth: Theme.rule))
         .environment(\.colorScheme, dark ? .dark : .light)
         .accessibilityHidden(true)
     }

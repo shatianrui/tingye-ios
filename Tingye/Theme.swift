@@ -2,35 +2,40 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 听页界面「临窗」：冷灰底、墨色正文、窗蓝只标记正在发生的事。
+/// 听页界面「刊 · Folio × Anthropic」：象牙暖纸 `#FAF9F5`、炭墨 `#141413`、Anthropic 官方陶土 `#D97757`。
+/// 结合精装文库本双线报头、微直角硬朗纸面与可无障碍缩放的排版体系。
 /// 正文七种纸色的底与字独立保留，不跟界面一起变色。
 enum Theme {
-    static let bg = dynamic(0xF4F6F8, 0x0E1216)
-    static let surface = dynamic(0xFFFFFF, 0x171C22)
-    static let surface2 = dynamic(0xE7ECF2, 0x232A33)
-    static let surfaceSunken = dynamic(0xEEF2F6, 0x12181F)
-    static let ink = dynamic(0x12161C, 0xF3F6F9)
-    static let ink2 = dynamic(0x3A4553, 0xC3CEDA)
-    static let ink3 = dynamic(0x465264, 0xB4C0CE)
-    static let ink4 = dynamic(0x8B95A3, 0x6E7A88)
-    static let line = dynamic(0xC3CCD6, 0x3A4450)
+    /// Anthropic Pampas 象牙暖纸 / 夜间 Slate 炭黑画布
+    static let bg = dynamic(0xFAF9F5, 0x141413)
+    /// 精装书页纯白卡面 / 夜间深炭纸面
+    static let surface = dynamic(0xFFFFFF, 0x1C1B19)
+    /// Anthropic Warm Sand 次级暖沙纸面 / 夜间抬升深灰暖面
+    static let surface2 = dynamic(0xF0EEE6, 0x262522)
+    static let surfaceSunken = dynamic(0xF3F1E9, 0x181715)
+    /// Anthropic Slate 炭墨正文 / 夜间象牙白字
+    static let ink = dynamic(0x141413, 0xFAF9F5)
+    static let ink2 = dynamic(0x3D3D3A, 0xD5D3CA)
+    static let ink3 = dynamic(0x595853, 0xABA89E)
+    static let ink4 = dynamic(0x87867F, 0x78756C)
+    static let line = dynamic(0xD8D4C8, 0x383631)
     static let lineField = Color(UIColor { traits in
-        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xF3F6F9 : 0x12161C)
+        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xFAF9F5 : 0x141413)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.16 : 0.14)
     })
-    /// 窗蓝字与窗蓝面分开：小字用 accent / clayDeep，实色面用 clay。
-    static let accent = dynamic(0x163E73, 0xA9C9F2)
+    /// Anthropic 官方陶土体系：小字采用满足 WCAG AA (≥4.5:1) 的深陶土/亮陶土，实色焦点块采用官方 Crail `#D97757`。
+    static let accent = dynamic(0xA6482B, 0xECA085)
     static let clayDeep = accent
-    static let accentSoft = dynamic(0xE3EDF8, 0x1A2C44)
+    static let accentSoft = dynamic(0xF8ECE6, 0x2E201B)
     static let claySoft = accentSoft
-    static let clay = dynamic(0x163E73, 0x8FB6E6)
-    static let onClay = dynamic(0xFFFFFF, 0x0E1622)
+    static let clay = dynamic(0xD97757, 0xD97757)
+    static let onClay = dynamic(0x141413, 0x141413)
     static let focus = clay
-    static let danger = dynamic(0x9B2C3C, 0xF5B3BC)
-    static let dangerSoft = dynamic(0xF4E8EA, 0x3A2428)
+    static let danger = dynamic(0x9E2A2B, 0xF4A6A3)
+    static let dangerSoft = dynamic(0xF9EAE8, 0x362020)
 
-    // 历史符号保留为 v31 语义别名，不再引入独立色板。
-    static let rulePaint = line
+    // 语义别名：浓墨主动作面与官方陶土焦点各司其职。
+    static let rulePaint = ink
     static let cardEdge = line
     static let onInk = bg
     static let onAccent = bg
@@ -73,21 +78,21 @@ enum Theme {
     static let rowMinHeight: CGFloat = 52
     static let sectionSpacing = space6
     static let pageWidth: CGFloat = 720
-    static let radius: CGFloat = 18
-    static let heroRadius: CGFloat = 28
-    static let buttonRadius: CGFloat = 14
-    static let radiusField: CGFloat = 12
-    static let radiusSmall: CGFloat = 6
-    /// 全圆胶囊的兼容数值；组件实际使用 Capsule()。
-    static let radiusPill: CGFloat = 9999
+    static let radius: CGFloat = 6
+    static let heroRadius: CGFloat = 8
+    static let buttonRadius: CGFloat = 4
+    static let radiusField: CGFloat = 4
+    static let radiusSmall: CGFloat = 3
+    /// 刊物微直角标签圆角兼容数值。
+    static let radiusPill: CGFloat = 4
     static let buttonRadiusSmall = radiusSmall
-    static func coverRadius(_ width: CGFloat) -> CGFloat { min(8, width * 0.06) }
+    static func coverRadius(_ width: CGFloat) -> CGFloat { min(4, max(2, width * 0.03)) }
     static let buttonHeight: CGFloat = 50
     static let iconButtonSize: CGFloat = 44
-    static let hairline: CGFloat = 0.5
+    static let hairline: CGFloat = 0.75
     static let progressHeight: CGFloat = 3
     static let sealDotSize: CGFloat = 6
-    static let mastheadTracking: CGFloat = 2.0
+    static let mastheadTracking: CGFloat = 2.2
     static let pressedOpacity = 0.88
     static let disabledOpacity = 0.4
     static let ruleHeavy: CGFloat = 3
@@ -455,20 +460,26 @@ enum Icon {
     static let privacy        = "hand.raised"
 }
 
-/// 夜间直接返回内容，描边由卡片/浮层表面负责。
+/// 精装刊物卡硬朗纸面投影：日间 3pt 炭黑微影，夜间克制深影。
 struct SoftCardShadow: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     func body(content: Content) -> some View {
-        if colorScheme == .dark { content }
-        else { content.shadow(color: .black.opacity(0.03), radius: 24, x: 0, y: 6) }
+        if colorScheme == .dark {
+            content.shadow(color: .black.opacity(0.32), radius: 0, x: 2, y: 2)
+        } else {
+            content.shadow(color: Color(hex: 0x141413).opacity(0.07), radius: 0, x: 3, y: 3)
+        }
     }
 }
 
 private struct FloatingPanelShadow: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     func body(content: Content) -> some View {
-        if colorScheme == .dark { content }
-        else { content.shadow(color: .black.opacity(0.06), radius: 20, x: 0, y: 8) }
+        if colorScheme == .dark {
+            content.shadow(color: .black.opacity(0.55), radius: 18, x: 0, y: 8)
+        } else {
+            content.shadow(color: Color(hex: 0x141413).opacity(0.14), radius: 20, x: 0, y: 8)
+        }
     }
 }
 
@@ -478,35 +489,44 @@ struct SealBadge: View {
     let text: String
     var color: Color = Theme.accent
     var background: Color? = nil
-    /// 保留旧参数兼容；v31 状态签统一淡底。
+    /// 保留旧参数兼容；刊物状态签采用微直角边框与陶土淡底。
     var filled: Bool = false
     var body: some View {
         Text(L(text))
-            .font(Theme.sans(11))
+            .font(Theme.sans(11, weight: .semibold))
+            .tracking(0.4)
             .foregroundStyle(color)
             .padding(.horizontal, Theme.space2)
             .padding(.vertical, Theme.space1)
             .background(background ?? Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                    .strokeBorder(color.opacity(0.24), lineWidth: Theme.hairline)
+            }
     }
 }
 
-// MARK: - 按钮（温润圆角，主次明确）
+// MARK: - 按钮（刊物微直角，浓墨主块 + 官方陶土焦点，主次分明）
 
-/// 主操作是窗蓝实底。日间用深窗蓝配浅字，夜间用浅窗蓝配深字。
+/// 主操作采用 Anthropic 炭墨实底 `#141413` 配象牙白字（夜间反转象牙实底配炭墨字），契合方案 C 刊物精装风格。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     var height: CGFloat = Theme.buttonHeight
-    var fill: Color = Theme.accent
-    var foreground: Color = Theme.onAccent
+    var fill: Color = Theme.ink
+    var foreground: Color = Theme.onInk
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Theme.sans(15, weight: .medium))
+            .font(Theme.sans(15, weight: .semibold))
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.center)
             .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
             .frame(maxWidth: .infinity, minHeight: height)
             .foregroundStyle(foreground)
             .background(fill, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                    .strokeBorder(Theme.ink.opacity(0.18), lineWidth: Theme.hairline)
+            }
             .modifier(PressFeedback(pressed: configuration.isPressed))
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : Theme.disabledOpacity)
@@ -524,9 +544,12 @@ struct SecondaryButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
             .frame(maxWidth: .infinity, minHeight: height)
-            .foregroundStyle(Theme.ink)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+            .foregroundStyle(emphasized ? Theme.accent : Theme.ink)
+            .background(emphasized ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                    .strokeBorder(emphasized ? Theme.clay : Theme.ink.opacity(0.28), lineWidth: Theme.rule)
+            }
             .modifier(PressFeedback(pressed: configuration.isPressed))
             .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius))
             .opacity(isEnabled ? 1 : Theme.disabledOpacity)
@@ -540,22 +563,23 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 胶囊选中墨底纸字，未选卡面与发丝线；勾号提供形状状态通道。
+/// 刊物筛选签：微直角矩形，选中态浓墨实底 + 顶部陶土细线提示，勾号提供形状状态通道。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
         HStack(spacing: Theme.space1) {
-            if selected { Image(systemName: Icon.checkmark).accessibilityHidden(true) }
+            if selected { Image(systemName: Icon.checkmark).font(.system(size: 12, weight: .bold)).accessibilityHidden(true) }
             configuration.label
         }
-        .font(Theme.sans(15))
+        .font(Theme.sans(14, weight: selected ? .semibold : .regular))
         .foregroundStyle(selected ? Theme.bg : Theme.ink)
         .padding(.horizontal, Theme.space3)
         .frame(minHeight: Theme.iconButtonSize)
-        .background(selected ? Theme.ink : Theme.surface, in: Capsule())
-        .overlay { Capsule().strokeBorder(selected ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
-        .contentShape(Capsule())
+        .background(selected ? Theme.ink : Theme.surface, in: shape)
+        .overlay { shape.strokeBorder(selected ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
+        .contentShape(shape)
         .modifier(PressFeedback(pressed: configuration.isPressed))
         .opacity(isEnabled ? 1 : Theme.disabledOpacity)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -688,7 +712,7 @@ struct InkRule: View {
     var body: some View { Rectangle().fill(color).frame(height: min(height, Theme.hairline)).accessibilityHidden(true) }
 }
 
-/// 纸质栏目标题：宽字距眉题（可带编号），陶土。
+/// 刊物栏目标题：左侧陶土微章标记 + 宋体标题 + 延伸细墨线。
 struct SectionTitle: View {
     let text: String
     var badge: String? = nil
@@ -702,7 +726,12 @@ struct SectionTitle: View {
     }
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
-            if let number { Text(number).mastheadStyle().foregroundStyle(Theme.accent) }
+            if let number {
+                Text(number).mastheadStyle(color: Theme.accent)
+            } else {
+                Rectangle().fill(Theme.clay).frame(width: 3, height: 14)
+                    .offset(y: 1).accessibilityHidden(true)
+            }
             Text(L(text)).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if let badge { SealBadge(text: badge) }
@@ -713,7 +742,7 @@ struct SectionTitle: View {
     }
 }
 
-/// 兼容既有调用点的 Masthead 外观。
+/// 刊物精装报头（Editorial Monograph Masthead）：经典上下墨线、陶土眉题与宋体大标题。
 struct PageMasthead: View {
     let title: String
     var subtitle: String? = nil
@@ -726,18 +755,31 @@ struct PageMasthead: View {
     var action: (() -> Void)? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
+            if rule {
+                VStack(spacing: 2) {
+                    Rectangle().fill(Theme.ink).frame(height: 1.5)
+                    Rectangle().fill(Theme.line).frame(height: Theme.hairline)
+                }
+                .padding(.bottom, Theme.space1)
+                .accessibilityHidden(true)
+            }
             if kicker != nil || issue != nil || actionTitle != nil {
                 HStack {
-                    if let kicker { Text(L(kicker)).foregroundStyle(Theme.accent) }
+                    if let kicker {
+                        HStack(spacing: 6) {
+                            Rectangle().fill(Theme.clay).frame(width: 8, height: 8).accessibilityHidden(true)
+                            Text(L(kicker).localUppercased).foregroundStyle(Theme.accent)
+                        }
+                    }
                     Spacer()
-                    if let issue { Text(L(issue)).foregroundStyle(Theme.ink2) }
+                    if let issue { Text(L(issue).localUppercased).foregroundStyle(Theme.ink2) }
                     if let actionTitle, let action { TextButton(actionTitle, action: action) }
                 }
                 .mastheadStyle()
             }
             Text(L(title))
                 .font(Theme.serif(titleSize, relativeTo: .largeTitle))
-                .lineSpacing(titleSize * 0.2)
+                .lineSpacing(titleSize * 0.16)
                 .minimumScaleFactor(min(1, 24 / titleSize))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -749,6 +791,11 @@ struct PageMasthead: View {
                     .foregroundStyle(Theme.ink3)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if rule {
+                Rectangle().fill(Theme.line).frame(height: 1)
+                    .padding(.top, Theme.space1)
+                    .accessibilityHidden(true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -756,14 +803,14 @@ struct PageMasthead: View {
 
 struct ProgressBar: View {
     var value: Double
-    var track: Color = Theme.line
+    var track: Color = Theme.surface2
     var tint: Color = Theme.clay
     var height: CGFloat = Theme.progressHeight
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(track)
-                Capsule().fill(tint).frame(width: max(0, min(1, value)) * geo.size.width)
+                Rectangle().fill(track)
+                Rectangle().fill(tint).frame(width: max(0, min(1, value)) * geo.size.width)
             }
         }
         .frame(height: height)
@@ -833,6 +880,9 @@ struct BookCoverView: View {
         let titleSize = min(24, max(11, width * 0.14))
         return ZStack(alignment: .leading) {
             Theme.coverColor(color)
+            Rectangle().fill(Theme.clay).frame(height: max(2.5, width * 0.028))
+                .frame(maxHeight: .infinity, alignment: .top)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(L(title))
                     .font(Theme.serifBold(titleSize)).foregroundStyle(fg).serifEmbolden(titleSize)
@@ -844,16 +894,16 @@ struct BookCoverView: View {
                         .padding(.top, max(3, width * 0.04))
                 }
                 Spacer(minLength: 0)
-                Rectangle().fill(fg).frame(height: 1).accessibilityHidden(true)
+                Rectangle().fill(fg.opacity(0.45)).frame(height: 1).accessibilityHidden(true)
                 if let index {
-                    Text(String(format: "%02d", index))
-                        .font(Theme.sans(max(8, width * 0.08))).monospacedDigit()
-                        .foregroundStyle(fg.opacity(0.75)).padding(.top, max(3, width * 0.04))
+                    Text(String(format: "NO.%02d", index))
+                        .font(Theme.sans(max(8, width * 0.075), weight: .semibold)).monospacedDigit()
+                        .foregroundStyle(Theme.accent).padding(.top, max(3, width * 0.04))
                 }
             }
             .padding(.leading, max(8, width * 0.12))
             .padding(.trailing, max(8, width * 0.1))
-            .padding(.vertical, max(9, width * 0.11))
+            .padding(.vertical, max(10, width * 0.12))
         }
         .frame(width: width, height: width / 0.75)
     }
@@ -941,7 +991,9 @@ struct SectionHeader: View {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.space3) {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
+            Rectangle().fill(Theme.clay).frame(width: 3, height: 14)
+                .offset(y: 1).accessibilityHidden(true)
             Text(L(title)).font(Theme.serif(20, relativeTo: .title3))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1198,8 +1250,8 @@ enum ReaderPaper: String, CaseIterable, Identifiable {
         let foreground: UInt32
         let secondary: UInt32
         let isDark: Bool
-        var highlight: UInt32 { isDark ? 0x1A2C44 : 0xE3EDF8 }
-        var accent: UInt32 { isDark ? 0xA9C9F2 : 0x163E73 }
+        var highlight: UInt32 { isDark ? 0x2E201B : 0xF8ECE6 }
+        var accent: UInt32 { isDark ? 0xECA085 : 0xA6482B }
     }
     func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
         let night = darkAppearance && !alwaysLight
@@ -1304,8 +1356,17 @@ struct EditorialIntro: View {
     var eyebrow: String? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
+            VStack(spacing: 2) {
+                Rectangle().fill(Theme.ink).frame(height: 1.5)
+                Rectangle().fill(Theme.line).frame(height: Theme.hairline)
+            }
+            .padding(.bottom, 2)
+            .accessibilityHidden(true)
             if let eyebrow {
-                Text(L(eyebrow)).mastheadStyle(color: Theme.accent).foregroundStyle(Theme.accent)
+                HStack(spacing: 6) {
+                    Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                    Text(L(eyebrow).localUppercased).mastheadStyle(color: Theme.accent).foregroundStyle(Theme.accent)
+                }
             }
             Text(L(title)).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)

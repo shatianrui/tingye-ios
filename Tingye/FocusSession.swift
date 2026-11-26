@@ -271,7 +271,7 @@ struct FocusStartView: View {
         ZStack {
             Circle().stroke(Theme.line, lineWidth: Theme.progressHeight)
             Circle().trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(Theme.clay.opacity(0.18), style: StrokeStyle(lineWidth: Theme.progressHeight, lineCap: .round))
+                .stroke(Theme.clay, style: StrokeStyle(lineWidth: Theme.progressHeight + 1, lineCap: .square))
                 .rotationEffect(.degrees(-90))
             Text(StatsView.clock(seconds)).font(Theme.serif(54, relativeTo: .largeTitle))
                 .monospacedDigit().foregroundStyle(Theme.ink)

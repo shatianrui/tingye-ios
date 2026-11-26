@@ -122,41 +122,54 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 刊式摘句卡：宣纸白、报头双线、靛蓝引号与题条。导出为图片分享，始终使用日间配色。
+/// 刊式摘句卡：Anthropic 象牙白 `#FAF9F5`、浓墨双线报头、官方陶土题条 `#D97757`。导出为图片分享，始终使用日间配色。
 struct QuoteShareCard: View {
     let text: String
     let title: String
     var author = ""
     var chapter = ""
     var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: 26) {
+            VStack(spacing: 4) {
+                Rectangle().fill(Color(hex: 0x141413)).frame(height: 3)
+                Rectangle().fill(Color(hex: 0xD8D4C8)).frame(height: 1)
+            }
             HStack(alignment: .firstTextBaseline) {
-                Text("听页 · 阅读摘句").font(.system(size: 18, weight: .medium))
+                HStack(spacing: 10) {
+                    Rectangle().fill(Color(hex: 0xD97757)).frame(width: 14, height: 14)
+                    Text("听页 · 刊选摘句").font(.system(size: 18, weight: .semibold)).tracking(2)
+                }
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
-                    .font(.system(size: 16))
-            }.foregroundStyle(Color(hex: 0x465264))
-            Capsule().fill(Color(hex: 0x163E73)).frame(width: 36, height: 3)
+                    .font(.system(size: 16)).monospacedDigit()
+            }.foregroundStyle(Color(hex: 0x595853))
+            Rectangle().fill(Color(hex: 0xD97757)).frame(width: 56, height: 4)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x12161C))
+                .foregroundStyle(Color(hex: 0x141413))
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x12161C))
+                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x141413))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x465264))
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x595853))
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Color(hex: 0xC3CCD6)).frame(height: 1)
-            Text("留一点时间，给喜欢的文字。")
-                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x465264))
+            Rectangle().fill(Color(hex: 0xD8D4C8)).frame(height: 1.5)
+            HStack {
+                Text("留一点时间，给喜欢的文字。")
+                    .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x595853))
+                Spacer()
+                Text("TINGYE · FOLIO")
+                    .font(.system(size: 14, weight: .semibold)).tracking(2.5)
+                    .foregroundStyle(Color(hex: 0xA6482B))
+            }
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xF4F6F8))
+        .background(Color(hex: 0xFAF9F5))
         .environment(\.colorScheme, .light)
     }
 

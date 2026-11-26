@@ -226,20 +226,34 @@ struct StudyRootView: View {
                     // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
                     // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
                     .safeAreaInset(edge: .top, spacing: 0) {
-                        HStack {
+                        HStack(spacing: Theme.space2) {
+                            HStack(spacing: 6) {
+                                Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                                Text("TINGYE · FOLIO")
+                                    .font(Theme.masthead).tracking(Theme.mastheadTracking)
+                                    .foregroundStyle(Theme.ink3)
+                            }
+                            .accessibilityHidden(true)
                             Spacer()
                             NavigationLink(value: StudyRoute.me) {
-                                Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
+                                HStack(spacing: 6) {
+                                    ThemeIcon(symbol: Icon.profile, size: 16)
+                                    Text("我的")
+                                }
+                                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
+                                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(PressButtonStyle(scale: 0.92))
                             .accessibilityLabel("我的")
                             .accessibilityIdentifier("study.openProfile")
                         }
                         .padding(.horizontal, Theme.inset)
+                        .padding(.vertical, 4)
                         .background(Theme.bg)
+                        .overlay(alignment: .bottom) { RowDivider() }
                     }
                     .toolbarBackground(Theme.bg, for: .navigationBar)
             }
@@ -473,9 +487,10 @@ struct MiniPlayer: View {
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
                             ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink2)
-                                .frame(width: 32, height: 32)
-                                .background(Theme.surface, in: Circle())
+                                .foregroundStyle(Theme.ink)
+                                .frame(width: 34, height: 34)
+                                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
                                 .contentShape(Rectangle())
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
@@ -488,14 +503,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.ink2)
+                                ProgressView().controlSize(.small).tint(Theme.onClay)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 16)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 15)
                             }
                         }
-                        .foregroundStyle(Theme.ink2)
-                        .frame(width: 32, height: 32)
-                        .background(Theme.surface, in: Circle())
+                        .foregroundStyle(Theme.onClay)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                         .contentShape(Rectangle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
@@ -511,10 +526,10 @@ struct MiniPlayer: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, Theme.space2)
-            .background(Theme.surface2)
-            .overlay(alignment: .top) { RowDivider() }
+            .background(Theme.surface)
+            .overlay(alignment: .top) { Rectangle().fill(Theme.ink).frame(height: 1.5).accessibilityHidden(true) }
             .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
+                ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 2.5)
                     .padding(.horizontal, Theme.space4)
                     .accessibilityHidden(true)
             }
@@ -555,6 +570,7 @@ private struct FeedbackOverlay: ViewModifier {
                 .padding(.horizontal, Theme.space4)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
                 .background(Theme.surface)
+                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: 4).accessibilityHidden(true) }
                 .overlay(alignment: .bottom) { RowDivider() }
             } else if model.busy {
                 EmptyState(title: model.activity, detail: "", state: .loading)

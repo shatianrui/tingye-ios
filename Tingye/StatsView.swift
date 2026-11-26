@@ -170,14 +170,18 @@ struct StatsView: View {
         let streak = AppModel.readingStreak(model.readingSeconds).current
         return Button { showingStats = true } label: {
             VStack(alignment: .leading, spacing: Theme.space4) {
-                Text("这个月，读听了").font(.caption)
+                HStack(spacing: 6) {
+                    Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                    Text("这个月，读听了").font(Theme.masthead).tracking(Theme.mastheadTracking).foregroundStyle(Theme.accent)
+                }
                 Text(Self.preciseDuration(seconds)).font(Theme.serif(36, relativeTo: .largeTitle))
                     .minimumScaleFactor(0.6).lineLimit(1).monospacedDigit()
+                Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true)
                 ViewThatFits(in: .horizontal) {
                     HStack { Text("累计读完 \(finished) 本"); Spacer(); Text("连续阅读 \(streak) 天") }
                     VStack(alignment: .leading, spacing: Theme.space2) { Text("累计读完 \(finished) 本"); Text("连续阅读 \(streak) 天") }
                 }
-                .font(.caption)
+                .font(.caption).foregroundStyle(Theme.ink2)
             }
             .foregroundStyle(Theme.ink)
             .paperPanel()

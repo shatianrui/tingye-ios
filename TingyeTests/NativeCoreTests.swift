@@ -5,28 +5,28 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// v31 §1 的动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
+    /// 「刊 · Folio × Anthropic」官方色板动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
     @MainActor func testV31PaletteResolvesToSpecifiedColors() {
         let tokens: [(String, Color, UInt32, UInt32)] = [
-            ("bg", Theme.bg, 0xF4F6F8, 0x0E1216),
-            ("surface", Theme.surface, 0xFFFFFF, 0x171C22),
-            ("surface2", Theme.surface2, 0xE7ECF2, 0x232A33),
-            ("surfaceSunken", Theme.surfaceSunken, 0xEEF2F6, 0x12181F),
-            ("ink", Theme.ink, 0x12161C, 0xF3F6F9),
-            ("ink2", Theme.ink2, 0x3A4553, 0xC3CEDA),
-            ("ink3", Theme.ink3, 0x465264, 0xB4C0CE),
-            ("ink4", Theme.ink4, 0x8B95A3, 0x6E7A88),
-            ("line", Theme.line, 0xC3CCD6, 0x3A4450),
-            ("clay", Theme.clay, 0x163E73, 0x8FB6E6),
-            ("accent", Theme.accent, 0x163E73, 0xA9C9F2),
-            ("clayDeep", Theme.clayDeep, 0x163E73, 0xA9C9F2),
-            ("accentSoft", Theme.accentSoft, 0xE3EDF8, 0x1A2C44),
-            ("claySoft", Theme.claySoft, 0xE3EDF8, 0x1A2C44),
-            ("onClay", Theme.onClay, 0xFFFFFF, 0x0E1622),
-            ("danger", Theme.danger, 0x9B2C3C, 0xF5B3BC),
-            ("dangerSoft", Theme.dangerSoft, 0xF4E8EA, 0x3A2428),
-            ("focus", Theme.focus, 0x163E73, 0x8FB6E6),
-            ("onInk", Theme.onInk, 0xF4F6F8, 0x0E1216)
+            ("bg", Theme.bg, 0xFAF9F5, 0x141413),
+            ("surface", Theme.surface, 0xFFFFFF, 0x1C1B19),
+            ("surface2", Theme.surface2, 0xF0EEE6, 0x262522),
+            ("surfaceSunken", Theme.surfaceSunken, 0xF3F1E9, 0x181715),
+            ("ink", Theme.ink, 0x141413, 0xFAF9F5),
+            ("ink2", Theme.ink2, 0x3D3D3A, 0xD5D3CA),
+            ("ink3", Theme.ink3, 0x595853, 0xABA89E),
+            ("ink4", Theme.ink4, 0x87867F, 0x78756C),
+            ("line", Theme.line, 0xD8D4C8, 0x383631),
+            ("clay", Theme.clay, 0xD97757, 0xD97757),
+            ("accent", Theme.accent, 0xA6482B, 0xECA085),
+            ("clayDeep", Theme.clayDeep, 0xA6482B, 0xECA085),
+            ("accentSoft", Theme.accentSoft, 0xF8ECE6, 0x2E201B),
+            ("claySoft", Theme.claySoft, 0xF8ECE6, 0x2E201B),
+            ("onClay", Theme.onClay, 0x141413, 0x141413),
+            ("danger", Theme.danger, 0x9E2A2B, 0xF4A6A3),
+            ("dangerSoft", Theme.dangerSoft, 0xF9EAE8, 0x362020),
+            ("focus", Theme.focus, 0xD97757, 0xD97757),
+            ("onInk", Theme.onInk, 0xFAF9F5, 0x141413)
         ]
         for style in [UIUserInterfaceStyle.light, .dark] {
             for contrast in [UIAccessibilityContrast.normal, .high] {
@@ -34,7 +34,7 @@ final class NativeCoreTests: XCTestCase {
                     UITraitCollection(userInterfaceStyle: style),
                     UITraitCollection(accessibilityContrast: contrast)
                 ])
-                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x12161C, 0xF3F6F9)
+                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x141413, 0xFAF9F5)
                 for (name, color, light, dark) in tokens + [field] {
                     let hex = style == .dark ? dark : light
                     let expected = [CGFloat((hex >> 16) & 255) / 255,
@@ -2530,8 +2530,8 @@ extension NativeCoreTests {
                     let darkPaper = paper.dark || (style == .dark && !alwaysLight)
 
                     let highlight = preferences.highlight.resolvedColor(with: traits)
-                    XCTAssertEqual(highlight, UIColor(hex: darkPaper ? 0x1A2C44 : 0xE3EDF8),
-                                   "\(paper.rawValue) 的跟读底应随纸面解析浅窗蓝")
+                    XCTAssertEqual(highlight, UIColor(hex: darkPaper ? 0x2E201B : 0xF8ECE6),
+                                   "\(paper.rawValue) 的跟读底应随纸面解析浅陶土暖底")
                     XCTAssertEqual(highlight.cgColor.alpha, 1, accuracy: 0.001)
                     let foreground = UIColor(preferences.foreground).resolvedColor(with: traits)
                     XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: highlight), 4.5, paper.rawValue)

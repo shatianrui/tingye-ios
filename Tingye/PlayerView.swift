@@ -422,17 +422,18 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    /// 播放工具：线性图标在上、小字在下，无边框；开启状态转刊红加粗并加下划线。
+    /// 播放工具：微直角刊物格，选中态采用浓墨实底配象牙字。
     private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
-        Label { Text(L(title)).fixedSize(horizontal: false, vertical: true) }
+        let shape = RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+        return Label { Text(L(title)).fixedSize(horizontal: false, vertical: true) }
               icon: { ThemeIcon(symbol: symbol, size: 16) }
-            .font(Theme.sans(13))
+            .font(Theme.sans(13, weight: highlighted ? .semibold : .regular))
             .foregroundStyle(highlighted ? Theme.bg : Theme.ink2)
             .padding(.horizontal, Theme.space2)
             .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
-            .background(highlighted ? Theme.ink : Theme.surface, in: Capsule())
-            .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-            .contentShape(Capsule())
+            .background(highlighted ? Theme.ink : Theme.surface, in: shape)
+            .overlay { shape.strokeBorder(highlighted ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
+            .contentShape(shape)
             .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 
