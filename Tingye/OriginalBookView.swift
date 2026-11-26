@@ -270,6 +270,30 @@ enum OriginalReadingPosition {
     }
     static func restore(_ position: Int) -> String { "window.__tyReading ? window.__tyReading.goTo(\(max(0, position))) : -1" }
     static func read(page: Int) -> String { "window.__tyReading ? window.__tyReading.position(\(max(0, page))) : -1" }
+    /// 按 DOM/CSS 分页宽（`innerWidth` / `100vw` 栏宽）计算并即时翻页，同步返回目标偏移与新页首句位置。
+    static func turn(by delta: Int) -> String {
+        """
+        (() => {
+            const doc = document.documentElement;
+            const root = document.getElementById('ty-reader-book');
+            const col = root ? parseFloat(getComputedStyle(root).columnWidth) : 0;
+            const w = (Number.isFinite(innerWidth) && innerWidth > 1) ? innerWidth
+                : ((Number.isFinite(col) && col > 1) ? col : (doc ? doc.clientWidth : 0));
+            if (!(w > 1)) return JSON.stringify({fallback: true});
+            const total = Math.max(doc ? doc.scrollWidth : 0, document.body ? document.body.scrollWidth : 0, w);
+            const last = Math.max(0, total - w);
+            const maxPage = Math.max(0, Math.round(last / w));
+            const current = Math.min(maxPage, Math.max(0, Math.round((window.scrollX || 0) / w)));
+            const target = (current + \(delta)) * w;
+            if (target < -0.5 || target > last + 0.5) return JSON.stringify({edge: true});
+            const x = Math.min(Math.max(0, target), last);
+            const page = Math.max(0, Math.round(x / w));
+            window.scrollTo({left: x, behavior: 'instant'});
+            const position = window.__tyReading ? window.__tyReading.position(page) : -1;
+            return JSON.stringify({edge: false, x, page, position});
+        })()
+        """
+    }
 }
 
 /// 阅读工具和设备方向改变可用视口时，重排完成后仍停在当前阅读句。
@@ -410,7 +434,25 @@ struct OriginalBookView: UIViewRepresentable {
         var pendingPosition: Int?
         private var manualRevision = 0
         private var viewportRevision = 0
+        private var viewportWorkItem: DispatchWorkItem?
+        private var settleWorkItem: DispatchWorkItem?
+        private var stabilizeWorkItem: DispatchWorkItem?
         var onPositionChange: ((Int) -> Void)?
+        func cancelPendingWork() {
+            viewportWorkItem?.cancel(); viewportWorkItem = nil
+            settleWorkItem?.cancel(); settleWorkItem = nil
+            stabilizeWorkItem?.cancel(); stabilizeWorkItem = nil
+            spokenSubscription?.cancel(); spokenSubscription = nil
+            manualRevision += 1
+            viewportRevision += 1
+            pendingPosition = nil
+            loaded = false
+        }
+        deinit {
+            viewportWorkItem?.cancel()
+            settleWorkItem?.cancel()
+            stabilizeWorkItem?.cancel()
+        }
         func requestPosition(_ position: Int, revision: Int) {
             readingPosition = position
             if positionRevision != revision { positionRevision = revision; pendingPosition = position }
@@ -423,17 +465,20 @@ struct OriginalBookView: UIViewRepresentable {
         }
         func viewportDidChange(_ view: WKWebView) {
             viewportRevision += 1
+            viewportWorkItem?.cancel()
             guard loaded else { return }
             let viewport = viewportRevision, documentKey = key, manual = manualRevision, revision = positionRevision
             let position = readingPosition
-            // 一次工具栏动画会经历多次布局；只在最终尺寸稳定后恢复，避免中途跳页。
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self, weak view] in
+            let work = DispatchWorkItem { [weak self, weak view] in
                 guard let self, let view, self.loaded, self.viewportRevision == viewport,
                       self.key == documentKey, self.manualRevision == manual,
                       self.positionRevision == revision else { return }
                 self.pendingPosition = position
                 self.apply(view)
             }
+            viewportWorkItem = work
+            // 一次工具栏动画会经历多次布局；只在最终尺寸稳定后恢复，避免中途跳页。
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
         }
         private var lastFollow: (Int, Bool)?
         private var spokenSubscription: AnyCancellable?
@@ -487,11 +532,14 @@ struct OriginalBookView: UIViewRepresentable {
                     }
                 }
                 // 等分页吸附动画落定再读页码。
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self, weak view] in
+                settleWorkItem?.cancel()
+                let work = DispatchWorkItem { [weak self, weak view] in
                     guard let self, let view else { return }
                     let page = self.currentPage(view)
                     if page != self.dragStartPage { self.settled(on: page) }
                 }
+                settleWorkItem = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: work)
             default: break
             }
         }
@@ -514,21 +562,60 @@ struct OriginalBookView: UIViewRepresentable {
         }
         private func page(by delta: Int) {
             guard let view else { return }
+            manualRevision += 1
+            pendingPosition = nil
+            let documentKey = key, revision = manualRevision, requestedRevision = positionRevision
+            // 页宽和翻页目标以 DOM/CSS 分页（innerWidth / 100vw）为准，再用同一目标 x 同步 UIKit，
+            // 避免 bounds.width 与 100vw 暂不一致或单边 setContentOffset 未同步到 DOM 时错页。
+            view.evaluateJavaScript(OriginalReadingPosition.turn(by: delta), in: nil, in: .defaultClient) { [weak self, weak view] result in
+                guard let self, let view, self.key == documentKey,
+                      self.manualRevision == revision,
+                      self.positionRevision == requestedRevision else { return }
+                guard case .success(let value) = result,
+                      let json = value as? String,
+                      let data = json.data(using: .utf8),
+                      let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      payload["fallback"] as? Bool != true else {
+                    self.pageWithScrollViewMetrics(view, delta: delta, documentKey: documentKey, revision: revision, requestedRevision: requestedRevision)
+                    return
+                }
+                if payload["edge"] as? Bool == true {
+                    self.onEdgeTurn?(delta)
+                    return
+                }
+                guard let xNumber = payload["x"] as? NSNumber else { return }
+                let x = CGFloat(xNumber.doubleValue)
+                self.follow = false
+                self.onManualPage?()
+                view.scrollView.setContentOffset(CGPoint(x: x, y: 0), animated: false)
+                if let posNumber = payload["position"] as? NSNumber, posNumber.intValue >= 0 {
+                    let position = posNumber.intValue
+                    self.readingPosition = position
+                    self.onPositionChange?(position)
+                }
+            }
+        }
+        private func pageWithScrollViewMetrics(_ view: WKWebView, delta: Int, documentKey: String, revision: Int, requestedRevision: Int?) {
             let scroll = view.scrollView
             let width = max(1, scroll.bounds.width)
-            // 锁定整页边界，避免上一次滚动尚有亚像素偏移时累积到下一页。
             let target = CGFloat(currentPage(view) + delta) * width
             let last = max(0, scroll.contentSize.width - width)
             if target < -0.5 || target > last + 0.5 {
-                manualRevision += 1; pendingPosition = nil
-                onEdgeTurn?(delta); return
+                onEdgeTurn?(delta)
+                return
             }
             let x = min(max(0, target), last)
-            settled(on: Int((x / width).rounded()))
-            // 尚未挂入窗口的 WebView 没有可靠的滚动动画时钟；直接提交页码。
-            // 实际可见页面继续使用原生动画，并尊重系统「减少动态效果」。
-            let animates = view.window != nil && !UIAccessibility.isReduceMotionEnabled
-            scroll.setContentOffset(CGPoint(x: x, y: 0), animated: animates)
+            let targetPage = Int((x / width).rounded())
+            follow = false
+            onManualPage?()
+            scroll.setContentOffset(CGPoint(x: x, y: 0), animated: false)
+            view.evaluateJavaScript("window.scrollTo({left: \(Double(x)), behavior: 'instant'}); \(OriginalReadingPosition.read(page: targetPage))", in: nil, in: .defaultClient) { [weak self] result in
+                guard let self, self.key == documentKey, self.manualRevision == revision,
+                      self.positionRevision == requestedRevision, !self.follow,
+                      case .success(let value) = result, let position = value as? Int, position >= 0 else { return }
+                self.readingPosition = position
+                self.onPositionChange?(position)
+            }
         }
         func apply(_ view: WKWebView) {
             lastFollow = (spoken, follow)
@@ -555,13 +642,16 @@ struct OriginalBookView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             loaded = true; apply(webView)
             let documentKey = key, manual = manualRevision, revision = positionRevision
-            // 布局稳定（尺寸 / 字体 / 图片落定）后再对齐一次整页边界，修正加载早期的错位。
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak webView] in
+            stabilizeWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self, weak webView] in
                 guard let self, let webView, self.loaded, self.key == documentKey,
                       self.manualRevision == manual, self.positionRevision == revision else { return }
                 self.pendingPosition = self.readingPosition
                 self.apply(webView)
             }
+            stabilizeWorkItem = work
+            // 布局稳定（尺寸 / 字体 / 图片落定）后再对齐一次整页边界，修正加载早期的错位。
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
         }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             guard let url = navigationAction.request.url else { decisionHandler(.cancel); return }

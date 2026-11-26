@@ -1883,19 +1883,39 @@ extension NativeCoreTests {
     }
 
     @MainActor func testOriginalReaderRestoresSavesAndJumpsWithoutSpeech() async throws {
+        let viewport = CGRect(x: 0, y: 0, width: 390, height: 480)
+        let window = UIWindow(frame: viewport)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.isHidden = false
+        host.view.frame = window.bounds
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
         config.websiteDataStore = .nonPersistent()
-        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 480), configuration: config)
+        let web = WKWebView(frame: viewport, configuration: config)
+        web.autoresizingMask = []
+        web.scrollView.contentInsetAdjustmentBehavior = .never
+        host.view.addSubview(web)
+        window.layoutIfNeeded()
+        host.view.layoutIfNeeded()
+        web.layoutIfNeeded()
         let coordinator = OriginalBookView.Coordinator()
         coordinator.view = web
         defer {
-            coordinator.onPositionChange = nil
-            coordinator.loaded = false
-            coordinator.key = "disposed"
-            coordinator.view = nil
             web.stopLoading()
+            web.scrollView.setContentOffset(web.scrollView.contentOffset, animated: false)
+            coordinator.cancelPendingWork()
+            coordinator.onPositionChange = nil
+            coordinator.onManualPage = nil
+            coordinator.onEdgeTurn = nil
+            coordinator.onToggleChrome = nil
+            coordinator.key = "disposed"
+            web.removeFromSuperview()
+            window.rootViewController = nil
+            window.isHidden = true
             web.navigationDelegate = nil
+            web.uiDelegate = nil
+            coordinator.view = nil
         }
         enum WaitError: Error { case timedOut(String) }
         @MainActor func waitUntil(_ description: String, condition: @MainActor () async throws -> Bool) async throws {
@@ -1987,9 +2007,22 @@ extension NativeCoreTests {
         await fulfillment(of: [saved], timeout: 5)
         XCTAssertGreaterThan(savedPosition, 80)
         try await waitUntil("manual page in DOM and UIKit") {
-            let domPage = try await page()
-            let nativePage = Int((web.scrollView.contentOffset.x / web.scrollView.bounds.width).rounded())
-            return domPage == initialPage + 1 && nativePage == domPage
+            guard let json = try await web.evaluateJavaScript(
+                "JSON.stringify({page: Math.round(scrollX / innerWidth), x: scrollX, width: innerWidth})",
+                in: nil, contentWorld: .defaultClient
+            ) as? String,
+                  let state = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+                  let domPage = (state["page"] as? NSNumber)?.intValue,
+                  let scrollXNumber = state["x"] as? NSNumber,
+                  let widthNumber = state["width"] as? NSNumber else { return false }
+            let scrollX = CGFloat(scrollXNumber.doubleValue)
+            // UIKit 页码必须按与 DOM 相同的栏宽（innerWidth / 100vw）计算；
+            // 用 bounds.width 会在两者暂不一致时误判，而这正是本用例在大屏上失败的原因。
+            let pageWidth = max(1, CGFloat(widthNumber.doubleValue))
+            let nativePage = Int((web.scrollView.contentOffset.x / pageWidth).rounded())
+            return domPage == initialPage + 1 &&
+                nativePage == domPage &&
+                abs(web.scrollView.contentOffset.x - scrollX) < 1
         }
         let manualPage: Int? = try await page()
         XCTAssertEqual(manualPage, initialPage + 1)
@@ -2018,7 +2051,7 @@ extension NativeCoreTests {
         // and restore requests before checking the stale callback's guard.
         _ = try await web.evaluateJavaScript("0", in: nil, contentWorld: .defaultClient)
         XCTAssertEqual(coordinator.readingPosition, 260)
-        withExtendedLifetime(coordinator) {}
+        withExtendedLifetime((window, host, coordinator)) {}
     }
 
     @MainActor func testOriginalReadingPositionSurvivesRepeatedTextAndSpeechMarkup() async throws {
