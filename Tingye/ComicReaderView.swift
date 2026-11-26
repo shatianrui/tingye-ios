@@ -102,7 +102,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(Theme.space3)
-                .background(Theme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
                 Spacer(minLength: 8)
                 ScrollView {
@@ -160,7 +160,7 @@ struct ComicReaderView: View {
                             .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, Theme.space2)
                     }
                     .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
-                    .background(Theme.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                     .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
                 }
                 .scrollBounceBehavior(.basedOnSize)
