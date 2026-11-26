@@ -1275,6 +1275,10 @@ struct LocalBookPicker: UIViewControllerRepresentable {
     }
     func makeDocumentPicker(delegate: Coordinator) -> UIDocumentPickerViewController {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: true)
+        #if DEBUG
+        // Open the provider directory containing the fixture on every simulator.
+        if let directory = UIReview.fileImportDirectory { picker.directoryURL = directory }
+        #endif
         picker.allowsMultipleSelection = multiple
         picker.delegate = delegate
         picker.view.accessibilityIdentifier = "import.documentPicker"

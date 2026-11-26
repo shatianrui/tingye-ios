@@ -52,6 +52,10 @@ struct TingyeApp: App {
 enum UIReview {
     static var isolated: Bool { ProcessInfo.processInfo.arguments.contains("-ui-fixture") }
     static var showcase: Bool { isolated && ProcessInfo.processInfo.arguments.contains("-ui-showcase") }
+    static var fileImportDirectory: URL? {
+        guard isolated, screen == "sources-file-import" else { return nil }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+    }
     /// UI 回归只写临时书库，不修改用户书籍，也不连接云语音 / iCloud。
     @MainActor static func makeFixture() throws -> AppModel? {
         guard isolated else { return nil }
@@ -96,9 +100,8 @@ enum UIReview {
         let defaults = UserDefaults(suiteName: "ui-review.offline")!
         defaults.set(false, forKey: ProgressSync.enabledKey)
         let model = AppModel(disk: disk, progressSync: ProgressSync(defaults: defaults, account: { false }))
-        if screen == "sources-file-import" {
-            // A real Files-provider fixture, not a bypass of the system picker delegate.
-            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        if let documents = fileImportDirectory {
+            // Files publishes this folder as the app's local documents location.
             try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
             try Data("从系统文件选择器导入成功。第二句。".utf8)
                 .write(to: documents.appendingPathComponent("听页导入回归.txt"), options: .atomic)

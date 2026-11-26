@@ -2,7 +2,7 @@ import SwiftUI
 import AVFoundation
 
 /// 正在听：居中书封、白卡跟读与陶土圆形播放控制；句序号与定位始终真实。
-/// 大字号或低高度窗口改为整页滚动，确保控制区始终可达。
+/// 矮屏并排显示书封与标题。大字号或更矮窗口可整页滚动，播放控制固定。
 struct PlayerView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
@@ -31,11 +31,13 @@ struct PlayerView: View {
             Theme.bg.ignoresSafeArea()
             if let book = player.book {
                 GeometryReader { geometry in
-                    if typeSize.isAccessibilitySize || geometry.size.height < 700 {
+                    let height = geometry.size.height
+                    let coverWidth: CGFloat = height < 800 ? 112 : 144
+                    if typeSize.isAccessibilitySize || height < 580 {
                         VStack(spacing: 0) {
                             ScrollView {
                                 VStack(spacing: 0) {
-                                    hero(book, coverWidth: geometry.size.height < 800 ? 112 : 144)
+                                    hero(book, coverWidth: coverWidth)
                                     VStack(spacing: Theme.space3) {
                                         SentenceProgressControl(player: player)
                                         footer
@@ -57,8 +59,9 @@ struct PlayerView: View {
                         }
                         // 大字号时不自动抢走滚动位置。
                     } else {
+                        let compact = height < 700
                         VStack(spacing: 0) {
-                            hero(book, coverWidth: geometry.size.height < 800 ? 112 : 144)
+                            hero(book, coverWidth: compact ? 72 : coverWidth, compact: compact)
                             followingReadingContent
                             controls
                         }
@@ -131,7 +134,7 @@ struct PlayerView: View {
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
 
-    /// 只滚动正文；状态与圆角卡片始终留在视口外，换句不会把卡片顶部一起滚走。
+    /// 只滚动正文，换句不会把卡片顶部的状态一起滚走。
     private var followingReadingContent: some View {
         VStack(alignment: .leading, spacing: Theme.space1) {
             readingStatus
@@ -170,8 +173,9 @@ struct PlayerView: View {
 
     // MARK: 紧凑书名栏
 
-    private func hero(_ book: Book, coverWidth: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: Theme.space3) {
+    private func hero(_ book: Book, coverWidth: CGFloat, compact: Bool = false) -> some View {
+        let coverLayout = compact ? AnyLayout(HStackLayout(spacing: Theme.space3)) : AnyLayout(VStackLayout(spacing: Theme.space3))
+        return VStack(alignment: .leading, spacing: compact ? Theme.space2 : Theme.space3) {
             HStack {
                 Button { dismiss() } label: {
                     HStack(spacing: Theme.space2) {
@@ -206,7 +210,7 @@ struct PlayerView: View {
                 Text("辅助朗读").font(.caption)
             }.font(.subheadline).foregroundStyle(Theme.ink2)
             RowDivider().padding(.vertical, Theme.space1)
-            VStack(spacing: Theme.space3) {
+            coverLayout {
                 Button { showingCover = true } label: {
                     BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: coverWidth)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
@@ -215,17 +219,19 @@ struct PlayerView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("查看《\(book.title)》封面")
                 .accessibilityIdentifier("player.cover")
-                Text(book.title)
-                    .font(Theme.serif(22, relativeTo: .title2))
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                    .multilineTextAlignment(.center)
-                Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
-                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                    .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
-                    .accessibilityIdentifier("player.currentChapter")
+                VStack(alignment: compact ? .leading : .center, spacing: compact ? Theme.space1 : Theme.space3) {
+                    Text(book.title)
+                        .font(Theme.serif(22, relativeTo: .title2))
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                        .multilineTextAlignment(compact ? .leading : .center)
+                    Text(player.chapterTitle.isEmpty ? "第 \(player.chapter + 1) 章" : player.chapterTitle)
+                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                        .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
+                        .accessibilityIdentifier("player.currentChapter")
+                }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)
 
         }
         .foregroundStyle(content)

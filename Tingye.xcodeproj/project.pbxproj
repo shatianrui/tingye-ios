@@ -19,6 +19,8 @@
 		28F78F0A9FC4C2BE75B014E7 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D6639CBAAFE961F7F6D147 /* Library.swift */; };
 		3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */; };
 		36892EC415D1296C7AD84679 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = A839E16D3CC3AB497E0E251A /* Fixtures */; };
+		A176AE6528664B24BBFAC296 /* Tingye.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = F0FC7B9BB7E54A04A498992A /* Tingye.entitlements */; };
+		412A32B8BE6E4D9EA24DE606 /* Tingye-macOS.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = B276805479DE453491C3A04A /* Tingye-macOS.entitlements */; };
 		3A3585E4BA3A02D48C9CF7FB /* ZIPFoundation-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 266F9903D721064C5690ACCF /* ZIPFoundation-LICENSE.txt */; };
 		5A1C0B2E8F4D6A7B9C3E1D26 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0B2E8F4D6A7B9C3E1D25 /* Localizable.xcstrings */; };
 		5A1C0B2E8F4D6A7B9C3E1D24 /* SMBClient-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0B2E8F4D6A7B9C3E1D23 /* SMBClient-LICENSE.txt */; };
@@ -107,6 +109,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F0FC7B9BB7E54A04A498992A /* Tingye.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tingye.entitlements; sourceTree = "<group>"; };
+		B276805479DE453491C3A04A /* Tingye-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Tingye-macOS.entitlements"; sourceTree = "<group>"; };
 		D35100000000000000000002 /* DesignFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignFlowTests.swift; sourceTree = "<group>"; };
 		D35100000000000000000004 /* TingyeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = TingyeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechPlayer.swift; sourceTree = "<group>"; };
@@ -285,6 +289,8 @@
 				162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */,
 				16CECC27AA836CF92CEA7F18 /* Theme.swift */,
 				6AF95B5E4D9E43527996555A /* TingyeApp.swift */,
+				F0FC7B9BB7E54A04A498992A /* Tingye.entitlements */,
+				B276805479DE453491C3A04A /* Tingye-macOS.entitlements */,
 				1BE9C5E15EF178E3AF247624 /* Resources */,
 			);
 			path = Tingye;
@@ -444,6 +450,8 @@
 			files = (
 				0FB11ED18F54D11464A42C8F /* Pow-LICENSE.txt in Resources */,
 				36892EC415D1296C7AD84679 /* Fixtures in Resources */,
+				A176AE6528664B24BBFAC296 /* Tingye.entitlements in Resources */,
+				412A32B8BE6E4D9EA24DE606 /* Tingye-macOS.entitlements in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -588,7 +588,16 @@ struct ReaderView: View {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .focus: PlayerView(player: player, fromReader: true)
-                case .contents, .notes, .search: NavigationStack { ContentsView(book: book, chapters: chapters, currentChapter: chapter, listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [], initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in following = false; jump(chapter: c, position: p); sheet = nil } }.presentationDetents(value == .search ? [.large] : [.medium, .large]).presentationDragIndicator(.visible)
+                case .contents, .notes, .search:
+                    NavigationStack {
+                        ContentsView(book: book, chapters: chapters, currentChapter: chapter,
+                                     listeningChapter: active ? player.chapter : nil, bookmarks: entry?.bookmarks ?? [],
+                                     initialMode: value == .notes ? 3 : 0, startsSearching: value == .search) { c, p in
+                            following = false; jump(chapter: c, position: p); sheet = nil
+                        }
+                    }
+                    .presentationDetents(value == .contents ? [.medium, .large] : [.large])
+                    .presentationDragIndicator(.visible)
                 }
             }.environmentObject(model).tint(Theme.accent)
         }
@@ -1829,10 +1838,11 @@ struct ContentsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var query = ""
     @State private var hits: [ReaderSearch.Match]? = nil
-    @State private var mode = 0
+    @State private var selectedMode: Int?
     @State private var searchPresented = false
     @State private var bookmarkToRemove: Bookmark?
     @EnvironmentObject var model: AppModel
+    private var mode: Int { selectedMode ?? initialMode }
     private var noteCount: Int { model.entries.first { $0.id == book.id }?.notes.count ?? 0 }
     var body: some View {
         ScrollViewReader { proxy in
@@ -1845,7 +1855,7 @@ struct ContentsView: View {
                     case 2: return "插图"
                     default: return "章节"
                     }
-                }, onSelect: { mode = $0 })
+                }, onSelect: { selectedMode = $0 })
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space3, trailing: 0))
                 if mode == 0 {
@@ -1915,7 +1925,7 @@ struct ContentsView: View {
             .task(id: query) {
                 let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !keyword.isEmpty else { hits = nil; return }
-                mode = 0
+                selectedMode = 0
                 hits = nil
                 do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
                 let snapshot = UncheckedBox(value: chapters)
@@ -1934,7 +1944,6 @@ struct ContentsView: View {
                 Button("取消", role: .cancel) { bookmarkToRemove = nil }
             } message: { _ in Text("正文与阅读进度会保留。") }
             .onAppear {
-                mode = initialMode
                 if initialMode == 0 { proxy.scrollTo("chapter:\(currentChapter)", anchor: .center) }
                 searchPresented = startsSearching
             }

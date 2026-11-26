@@ -404,11 +404,22 @@ final class DesignFlowTests: XCTestCase {
         let field = app.textFields["shelf.search-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap(); field.typeText("长标题")
-        XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5))
-        // 小屏上键盘弹出与列表避让的布局落定较慢：等结果真正可点，不采样一次下结论。
-        waitForReadingCondition({ app.buttons["book.detail.ui-long"].isHittable }, "小屏键盘上方应能直接操作搜索结果")
+        let result = app.buttons["book.detail.ui-long"]
+        XCTAssertTrue(result.waitForExistence(timeout: 5))
+        let shelf = app.scrollViews.firstMatch
+        // 向上滚动把结果带到键盘上方，避免下拉手势交互式收起键盘。
+        for _ in 0..<6 {
+            if result.isHittable { break }
+            shelf.swipeUp()
+        }
+        XCTAssertTrue(result.isHittable, "小屏键盘上方应能直接操作搜索结果")
         screenshot(app, "书房-从根页面搜索书架")
-        app.buttons["取消"].tap()
+        let cancel = app.buttons["取消"]
+        for _ in 0..<6 {
+            if cancel.isHittable { break }
+            shelf.swipeDown()
+        }
+        cancel.tap()
         XCTAssertTrue(app.buttons["shelf.search"].isHittable)
     }
 
@@ -466,6 +477,7 @@ final class DesignFlowTests: XCTestCase {
         organize.tap()
         XCTAssertTrue(app.buttons["取消整理"].waitForExistence(timeout: 5))
         app.buttons["取消整理"].tap()
+        reveal(app.buttons["book.detail.ui-long"], in: app)
         app.buttons["book.detail.ui-long"].tap()
         let reading = app.buttons["detail.reading"]
         XCTAssertTrue(reading.waitForExistence(timeout: 5))
@@ -703,12 +715,22 @@ final class DesignFlowTests: XCTestCase {
 
     func testShelfSeparatesFilterSortAndLayoutAndProtectsDeletion() {
         let app = launch("shelf")
-        XCTAssertTrue(app.buttons["shelf.filter"].waitForExistence(timeout: 15))
-        // 浏览工具整行位于书房长滚动区：小屏上初始在可视区外，先把整行滚入视口再逐个断言。
-        reveal(app.buttons["shelf.more"], in: app)
-        for id in ["shelf.filter", "shelf.sort", "shelf.layout", "shelf.more"] {
-            XCTAssertEqual(app.buttons.matching(identifier: id).count, 1)
-            XCTAssertTrue(app.buttons[id].isHittable)
+        // SwiftUI Menu 可出现在快照的 Button 或 PopUpButton 下。
+        func tools(_ id: String) -> XCUIElementQuery {
+            app.descendants(matching: .any).matching(identifier: id)
+        }
+        let filter = tools("shelf.filter").firstMatch
+        let sort = tools("shelf.sort").firstMatch
+        let layout = tools("shelf.layout").firstMatch
+        XCTAssertTrue(filter.waitForExistence(timeout: 15))
+        // 「更多」在分类栏，筛选、排序和视图在下一行。分别滚动到每个目标再检查。
+        for id in ["shelf.more", "shelf.filter", "shelf.sort", "shelf.layout"] {
+            let query = tools(id)
+            let control = query.firstMatch
+            reveal(control, in: app)
+            XCTAssertEqual(query.count, 1, id)
+            XCTAssertTrue(control.elementType == .button || control.elementType == .popUpButton, id)
+            XCTAssertTrue(control.isHittable, id)
         }
         // 新版添加入口位于书目末尾，浏览工具仍固定在列表前。
         XCTAssertEqual(app.buttons.matching(identifier: "import.book").count, 1)
@@ -716,22 +738,26 @@ final class DesignFlowTests: XCTestCase {
         reveal(add, in: app)
         XCTAssertTrue(add.isHittable)
         for _ in 0..<10 {
-            if app.buttons["shelf.filter"].isHittable { break }
+            if filter.isHittable { break }
             app.swipeDown()
         }
-        XCTAssertTrue(app.buttons["shelf.filter"].isHittable)
-        app.buttons["shelf.filter"].tap()
+        XCTAssertTrue(filter.isHittable)
+        filter.tap()
         app.buttons["待读"].tap()
         XCTAssertTrue(app.buttons["shelf.clearFilters"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["book.detail.ui-long"].exists)
-        XCTAssertEqual(app.buttons.matching(identifier: "shelf.sort").count, 1, "筛选后不能复制一份浏览工具")
-        app.buttons["shelf.clearFilters"].tap()
-        app.buttons["shelf.sort"].tap()
+        XCTAssertEqual(tools("shelf.sort").count, 1, "筛选后不能复制一份浏览工具")
+        let clear = app.buttons["shelf.clearFilters"]
+        reveal(clear, in: app)
+        clear.tap()
+        reveal(sort, in: app)
+        sort.tap()
         app.buttons["书名"].tap()
-        XCTAssertTrue(app.buttons["shelf.sort"].label.contains("书名"))
-        app.buttons["shelf.layout"].tap()
+        XCTAssertTrue(sort.label.contains("书名"))
+        reveal(layout, in: app)
+        layout.tap()
         app.buttons["封面网格"].tap()
-        XCTAssertTrue(app.buttons["shelf.layout"].label.contains("网格"))
+        XCTAssertTrue(layout.label.contains("网格"))
         screenshot(app, "功能键-书架筛选排序与显示分层")
         app.buttons["shelf.organize"].tap()
         XCTAssertFalse(app.buttons["shelf.delete"].isEnabled)
@@ -741,6 +767,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["删除本机副本"].waitForExistence(timeout: 5))
         cancelConfirmation(in: app)
         app.buttons["shelf.finishOrganizing"].tap()
+        reveal(app.buttons["book.detail.ui-long"], in: app)
         XCTAssertTrue(app.buttons["book.detail.ui-long"].waitForExistence(timeout: 5), "取消删除应保留书籍")
     }
 
@@ -891,7 +918,6 @@ final class DesignFlowTests: XCTestCase {
         }
         app.buttons["reader.preferences"].tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
-        reveal(app.buttons["系统字体"], in: app)
         XCTAssertTrue(app.buttons["系统字体"].isSelected)
         revealAboveDone(app.buttons["旧书"], in: app)
         app.buttons["旧书"].tap()
@@ -1038,35 +1064,39 @@ extension DesignFlowTests {
         let single = app.buttons["sources.importFile"]
         XCTAssertTrue(single.waitForExistence(timeout: 15))
         single.tap()
-        // 选择器内容可能在宿主里，也可能在系统文件进程里。先等它出现，再按位置点进去。
-        let cancel = app.buttons.matching(NSPredicate(format: "label == '取消' OR label == 'Cancel'")).firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 12), "系统文件选择器应已打开")
+        // 选择器可能在宿主里，也可能在打开后才出现的系统文件进程里。
         let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
-        let surfaces = [app] + (files.state == .notRunning ? [] : [files])
-        func file(in surface: XCUIApplication) -> XCUIElement {
-            surface.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '听页导入回归'")).firstMatch
-        }
-        func tap(_ format: String, timeout: TimeInterval) {
-            for surface in surfaces {
-                let element = surface.descendants(matching: .any).matching(NSPredicate(format: format)).firstMatch
-                guard element.waitForExistence(timeout: timeout) else { continue }
-                let frame = element.frame
-                guard frame.width > 1, frame.height > 1 else { continue }
-                element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-                return
+        func pickerElement(_ format: String, type: XCUIElement.ElementType = .any, timeout: TimeInterval) -> XCUIElement? {
+            let predicate = NSPredicate(format: format)
+            let deadline = Date().addingTimeInterval(timeout)
+            while Date() < deadline {
+                let surfaces = [app] + (files.state == .notRunning ? [] : [files])
+                for surface in surfaces {
+                    let match = surface.descendants(matching: type).matching(predicate).firstMatch
+                    guard match.exists else { continue }
+                    let frame = match.frame
+                    if frame.width > 1, frame.height > 1 { return match }
+                }
+                RunLoop.current.run(until: Date().addingTimeInterval(0.25))
             }
+            return nil
         }
-        if !surfaces.contains(where: { file(in: $0).waitForExistence(timeout: 2) }) {
-            tap("label == '浏览' OR label == 'Browse' OR identifier == 'Browse'", timeout: 4)
-            tap("identifier BEGINSWITH 'DOC.sidebar.item.On My' OR identifier BEGINSWITH 'DOC.sidebar.item.我的' OR label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'", timeout: 4)
-            tap("label == '听页' OR label == 'Tingye'", timeout: 4)
+        func tap(_ element: XCUIElement?) {
+            element?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         }
-        let found = surfaces.compactMap { surface -> XCUIElement? in
-            let match = file(in: surface)
-            return match.waitForExistence(timeout: 15) ? match : nil
-        }.first
+        let cancel = pickerElement("label == '取消' OR label == 'Cancel'", type: .button, timeout: 12)
+        XCTAssertTrue(cancel != nil, "系统文件选择器应已打开")
+        let file = "label CONTAINS '听页导入回归'"
+        var found = pickerElement(file, timeout: 2)
+        if found == nil {
+            // 系统未采用指定目录时，经本地提供方进入应用的 Documents。
+            tap(pickerElement("label == '浏览' OR label == 'Browse' OR identifier == 'Browse'", timeout: 4))
+            tap(pickerElement("identifier BEGINSWITH 'DOC.sidebar.item.On My' OR identifier BEGINSWITH 'DOC.sidebar.item.我的' OR label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'", timeout: 4))
+            tap(pickerElement("label == '听页' OR label == 'Tingye'", timeout: 4))
+            found = pickerElement(file, timeout: 15)
+        }
         XCTAssertNotNil(found, "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
-        found?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        tap(found)
         let results = app.buttons["import.results"]
         XCTAssertTrue(results.waitForExistence(timeout: 20), "选择文件后应出现明确的导入反馈")
         results.tap()
