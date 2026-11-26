@@ -32,7 +32,7 @@ enum BookImporter {
             // Open from the file so PDFKit streams pages instead of holding a second in-memory
             // copy of the whole document next to `data` (which is only kept for the base64 payload).
             guard let document = PDFDocument(url: url), !document.isLocked, document.pageCount > 0 else { throw ReaderError.message("PDF 无法读取或已加密。") }
-            let chapters = (0..<document.pageCount).map { Chapter(title: "第 \($0 + 1) 页", text: document.page(at: $0)?.string ?? "") }
+            let chapters = PDFLayoutExtractor.chapters(from: document)
             return Imported(book: try Book(title: title, format: "PDF", chapters: chapters, extras: ["pdf": .string(data.base64EncodedString())]).validated())
         }
         if ext == "json" {
@@ -143,6 +143,214 @@ enum BookImporter {
         }
         guard !text.isEmpty else { throw ReaderError.message("DOCX 中未找到文字。") }
         return Book(title: title, format: "DOCX", chapters: splitText(text, title: title))
+    }
+}
+
+// MARK: - PDF 版面提取
+
+/// PDFKit 的 `page.string` 是内容流原始顺序：双栏串栏、页眉页脚页码混入正文、逐行硬断、
+/// 连字符断词原样保留，导入后排版全乱。这里按行几何重排（构建 157）：
+/// 行矩形 → 双栏识别 → 阅读顺序排序 → 跨页重复的页眉/页脚/页码剔除 → 断行合并与段落重建。
+/// 章节仍是一页一章（标题与计数和旧行为一致），元数据与 extras 不变；
+/// 几何提取为空的页回退该页的 `page.string`，与旧行为等价。
+enum PDFLayoutExtractor {
+    private struct Line {
+        var text: String
+        var rect: CGRect
+        var column = 0
+    }
+    private struct PageLines {
+        var bounds: CGRect
+        var lines: [Line]
+        var fallback: String
+    }
+
+    static func chapters(from document: PDFDocument) -> [Chapter] {
+        let pages = (0..<document.pageCount).map { index in
+            autoreleasepool { extract(document.page(at: index)) }
+        }
+        let running = runningHeads(in: pages)
+        return pages.enumerated().map { index, page in
+            Chapter(title: "第 \(index + 1) 页", text: pageText(page, dropping: running))
+        }
+    }
+
+    private static func extract(_ page: PDFPage?) -> PageLines {
+        guard let page else { return PageLines(bounds: .zero, lines: [], fallback: "") }
+        let bounds = page.bounds(for: .cropBox)
+        let fallback = page.string ?? ""
+        guard let selection = page.selection(for: bounds) else {
+            return PageLines(bounds: bounds, lines: [], fallback: fallback)
+        }
+        let byLine = selection.selectionsByLine()
+        var lines: [Line] = []
+        for line in byLine {
+            let text = (line.string ?? "")
+                .replacingOccurrences(of: " +", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespaces)
+            let rect = line.bounds(for: page)
+            guard !text.isEmpty, rect.width > 0, rect.height > 0 else { continue }
+            lines.append(Line(text: text, rect: rect))
+        }
+        return PageLines(bounds: bounds, lines: order(lines), fallback: fallback)
+    }
+
+    /// 阅读顺序：先按栏（通栏行归第一栏，靠 y 落位），栏内按视觉行自上而下、同行按 x。
+    /// PDF 坐标原点在左下，y 大者在页的上方。
+    private static func order(_ lines: [Line]) -> [Line] {
+        var lines = lines
+        if let gutter = gutter(in: lines) {
+            let center = (gutter.lowerBound + gutter.upperBound) / 2
+            for index in lines.indices {
+                let rect = lines[index].rect
+                let spans = rect.minX < gutter.lowerBound && rect.maxX > gutter.upperBound
+                lines[index].column = spans ? 0 : (rect.midX < center ? 0 : 1)
+            }
+        }
+        let heights = lines.map(\.rect.height).sorted()
+        let median = heights.isEmpty ? 0 : heights[heights.count / 2]
+        var result: [Line] = []
+        for column in [0, 1] {
+            let group = lines.filter { $0.column == column }.sorted { $0.rect.maxY > $1.rect.maxY }
+            var row: [Line] = []
+            var rowTop: CGFloat?
+            func flush() { result += row.sorted { $0.rect.minX < $1.rect.minX }; row = [] }
+            for line in group {
+                if let top = rowTop, top - line.rect.maxY > max(median * 0.6, 2) { flush(); rowTop = nil }
+                if rowTop == nil { rowTop = line.rect.maxY }
+                row.append(line)
+            }
+            flush()
+        }
+        return result
+    }
+
+    /// 栏间空带：内容区中段里没有任何一行跨越的竖直空带，且两侧各有足够行数才认定双栏。
+    private static func gutter(in lines: [Line]) -> ClosedRange<CGFloat>? {
+        guard lines.count >= 6 else { return nil }
+        let minX = lines.map(\.rect.minX).min() ?? 0
+        let maxX = lines.map(\.rect.maxX).max() ?? 0
+        guard maxX - minX > 140 else { return nil }
+        let low = minX + (maxX - minX) * 0.22, high = maxX - (maxX - minX) * 0.22
+        var best: ClosedRange<CGFloat>?
+        var runStart: CGFloat?
+        var x = low
+        while x <= high {
+            let crossed = lines.contains { $0.rect.minX < x - 1 && $0.rect.maxX > x + 1 }
+            if crossed {
+                if let start = runStart, x - start >= 12, best == nil || (x - start) > (best!.upperBound - best!.lowerBound) { best = start...x }
+                runStart = nil
+            } else if runStart == nil { runStart = x }
+            x += 3
+        }
+        if let start = runStart, high - start >= 12, best == nil || (high - start) > (best!.upperBound - best!.lowerBound) { best = start...high }
+        guard let best else { return nil }
+        let center = (best.lowerBound + best.upperBound) / 2
+        let left = lines.filter { $0.rect.maxX <= center }.count
+        let right = lines.filter { $0.rect.minX >= center }.count
+        return left >= 3 && right >= 3 ? best : nil
+    }
+
+    /// 页眉/页脚：落在页顶/页底边距带、且在过半页面重复出现的行（数字归一化后比对，
+    /// 使「书名 · 12」「书名 · 13」算同一条）；边距带里的纯页码行无论是否重复都剔除。
+    private static func runningHeads(in pages: [PageLines]) -> Set<String> {
+        guard pages.count >= 3 else { return [] }
+        var counts: [String: Int] = [:]
+        for page in pages {
+            var seen: Set<String> = []
+            for line in page.lines where isMarginLine(line, in: page.bounds) {
+                seen.insert(normalized(line.text))
+            }
+            for key in seen { counts[key, default: 0] += 1 }
+        }
+        let threshold = max(2, Int((Double(pages.count) * 0.5).rounded(.up)))
+        return Set(counts.filter { $0.value >= threshold }.map(\.key))
+    }
+
+    private static func isMarginLine(_ line: Line, in bounds: CGRect) -> Bool {
+        guard bounds.height > 0 else { return false }
+        return line.rect.minY >= bounds.minY + bounds.height * 0.90
+            || line.rect.maxY <= bounds.minY + bounds.height * 0.10
+    }
+
+    private static func normalized(_ text: String) -> String {
+        text.replacingOccurrences(of: "[0-9]+", with: "#", options: .regularExpression)
+            .replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+    }
+
+    private static func isPageNumber(_ text: String) -> Bool {
+        let stripped = text.replacingOccurrences(of: "[\\s\\-—·/]", with: "", options: .regularExpression)
+        return !stripped.isEmpty && stripped.allSatisfy(\.isNumber)
+    }
+
+    private static func pageText(_ page: PageLines, dropping running: Set<String>) -> String {
+        let kept = page.lines.filter { line in
+            guard isMarginLine(line, in: page.bounds) else { return true }
+            if isPageNumber(line.text) { return false }
+            return !running.contains(normalized(line.text))
+        }
+        let text = rebuildParagraphs(kept).joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? page.fallback : text
+    }
+
+    /// 段落重建：栏内用行距突增、短行收尾、首行缩进、标题行高四种启发式断段；
+    /// 段内断行合并——连字符断词按下一行首字母大小写决定去留，CJK 直连，西文以空格连。
+    private static func rebuildParagraphs(_ lines: [Line]) -> [String] {
+        guard !lines.isEmpty else { return [] }
+        let heights = lines.map(\.rect.height).sorted()
+        let medianH = heights[heights.count / 2]
+        var paragraphs: [String] = []
+        var current = ""
+        func flush() { if !current.isEmpty { paragraphs.append(current); current = "" } }
+        for column in [0, 1] {
+            let group = lines.filter { $0.column == column }
+            guard !group.isEmpty else { continue }
+            flush()
+            let left = group.map(\.rect.minX).min() ?? 0
+            let width = group.map(\.rect.width).max() ?? 0
+            var previous: Line?
+            for line in group {
+                let heading = line.rect.height > medianH * 1.3 && line.text.count <= 60
+                if let prev = previous {
+                    let gap = prev.rect.minY - line.rect.maxY
+                    let shortPrev = width > 0 && prev.rect.width < width * 0.55
+                    let indented = line.rect.minX > left + medianH * 0.9
+                    if heading || gap > medianH * 0.85
+                        || (shortPrev && (indented || endsSentence(prev.text)))
+                        || (indented && endsSentence(prev.text)) {
+                        flush()
+                    }
+                }
+                current = current.isEmpty ? line.text : join(current, line.text)
+                if heading { flush() }
+                previous = line
+            }
+        }
+        flush()
+        return paragraphs
+    }
+
+    private static func endsSentence(_ text: String) -> Bool {
+        guard let last = text.last else { return false }
+        return "。！？.!?…".contains(last)
+    }
+
+    private static func join(_ head: String, _ tail: String) -> String {
+        if head.hasSuffix("-") || head.hasSuffix("‐") {
+            // 断词连字符：下一行小写开头才去掉连字符直连；大写（专名）保留连字符。
+            if let first = tail.first, first.isLowercase { return String(head.dropLast()) + tail }
+            return head + tail
+        }
+        if isCJK(head.last) || isCJK(tail.first) { return head + tail }
+        return head + " " + tail
+    }
+
+    private static func isCJK(_ character: Character?) -> Bool {
+        guard let scalar = character?.unicodeScalars.first else { return false }
+        return (0x2E80...0x9FFF).contains(scalar.value)
+            || (0xAC00...0xD7AF).contains(scalar.value)
+            || (0xF900...0xFAFF).contains(scalar.value)
+            || (0xFF00...0xFF60).contains(scalar.value)
     }
 }
 

@@ -300,6 +300,9 @@ struct ReaderView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.scenePhase) var scenePhase
     @StateObject private var document: ReaderDocument
+    /// PDF 书的阅读表面：false = 原版页面（PDFView），true = 文字阅读（重排正文）。
+    /// 按书记忆、默认原版（与旧行为一致）；文字模式走 textContent，与 EPUB/TXT 共用同一套跟读机制。
+    @State private var pdfTextMode = false
     @State private var chapter = 0
     @State private var sentencePosition = 0
     @State private var jumpRevision = 0
@@ -359,6 +362,14 @@ struct ReaderView: View {
     init(book: Book, player: SpeechPlayer) {
         self.book = book; self.player = player
         _document = StateObject(wrappedValue: ReaderDocument(book: book))
+        _pdfTextMode = State(initialValue: UserDefaults.standard.bool(forKey: "reader.pdfText." + book.id))
+    }
+    /// 正在显示 PDF 原版页面（文字模式下为 false，跟读/翻页按文字书处理）。
+    private var showsPDFPages: Bool { document.isPDF && !pdfTextMode }
+    private func setPDFTextMode(_ enabled: Bool) {
+        pdfTextMode = enabled
+        UserDefaults.standard.set(enabled, forKey: "reader.pdfText." + book.id)
+        if enabled { ready = false }
     }
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
@@ -412,14 +423,14 @@ struct ReaderView: View {
     var body: some View {
         let showsListeningStrip = active && (!chrome || selection != nil)
         ZStack(alignment: .bottom) {
-            (document.isPDF ? Theme.bg : prefs.background).ignoresSafeArea()
+            (showsPDFPages ? Theme.bg : prefs.background).ignoresSafeArea()
             GeometryReader { geometry in
                 // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
                 Group {
-                    if let pdf = document.pdf {
-                        PDFReader(data: pdf, page: $chapter)
+                    if let pdf = document.pdf, !pdfTextMode {
+                        PDFReader(data: pdf, bookID: book.id, page: $chapter)
                             .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
                             .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
                     } else {
@@ -855,9 +866,13 @@ struct ReaderView: View {
     private var morePanelRows: some View {
         moreSectionHeader("查找与整理")
         moreRow(Icon.search, "书内搜索", identifier: "reader.search") { sheet = .search }
+        if document.isPDF {
+            moreSectionHeader("PDF 阅读")
+            moreRow(Icon.readingDirection, pdfTextMode ? "切回原版页面" : "文字阅读（可跟随朗读）", identifier: "reader.pdfTextMode") { setPDFTextMode(!pdfTextMode) }
+        }
         moreSectionHeader("阅读外观")
         moreRow(Icon.dayNight(isDark: isDarkPaper), isDarkPaper ? "切换日间纸色" : "切换夜间纸色", identifier: "reader.dayNight") { toggleNightMode() }
-        if !document.isPDF && !scrolling {
+        if !showsPDFPages && !scrolling {
             moreSectionHeader("阅读方式")
             moreRow(Icon.autoTurn, "自动翻页", trailing: autoTurn == 0 ? "关闭" : "每 \(autoTurn) 秒", closesPanel: false) { moreShowsAutoTurn = true }
         }
@@ -1315,10 +1330,10 @@ struct ReaderView: View {
     private func turn(_ delta: Int) {
         following = false
         turnDelta = delta
-        if document.isPDF || scrolling {
-            // 最后一章（PDF 为最后一页）再向前翻 = 翻过全书末尾，触发读完收尾；
+        if showsPDFPages || scrolling {
+            // 最后一章（PDF 原版为最后一页）再向前翻 = 翻过全书末尾，触发读完收尾；
             // 滚动模式还要求已经读到本章最后一句，避免章中误触。
-            if delta > 0, chapter == chapters.count - 1, document.isPDF || sentencePosition >= max(0, sentences.count - 1) { requestFinish() }
+            if delta > 0, chapter == chapters.count - 1, showsPDFPages || sentencePosition >= max(0, sentences.count - 1) { requestFinish() }
             jump(chapter: chapter + delta, position: 0); return
         }
         let next = pageIndex + delta * (doublePage ? 2 : 1)
@@ -1650,8 +1665,20 @@ private final class ReviewPDFView: PDFView {
 }
 #endif
 
+/// PDF 页面的内容边界（版心）：整页文字选区的并集；无文字的页（扫描图）回退裁切框。
+enum PDFContentBounds {
+    static func rect(for page: PDFPage) -> CGRect {
+        let box = page.bounds(for: .cropBox)
+        guard let selection = page.selection(for: box), let text = selection.string, !text.isEmpty else { return box }
+        let rect = selection.bounds(for: page)
+        guard rect.width > 10, rect.height > 10 else { return box }
+        return rect.insetBy(dx: -6, dy: -6).intersection(box)
+    }
+}
+
 struct PDFReader: UIViewRepresentable {
     let data: Data
+    let bookID: String
     @Binding var page: Int
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PDFView {
@@ -1665,26 +1692,80 @@ struct PDFReader: UIViewRepresentable {
 #else
         let view = PDFView()
 #endif
-        view.document = PDFDocument(data: data); view.autoScales = true
+        view.document = PDFDocument(data: data)
+        // 不再 autoScales 整页适宽：整页连大白边一起塞进屏宽正是原版模式字小的主因。
+        // 改为手动管理缩放：默认按内容边界适宽（裁掉白边、放大版心），见 Coordinator.applyInitialScale。
+        view.autoScales = false
         view.displayMode = .singlePageContinuous; view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         view.backgroundColor = UIColor(Theme.bg)
+        let doubleTap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        view.addGestureRecognizer(doubleTap)
         context.coordinator.observer = NotificationCenter.default.addObserver(forName: .PDFViewPageChanged, object: view, queue: .main) { [weak coordinator = context.coordinator] _ in
             guard let coordinator, let current = view.currentPage, let doc = view.document else { return }
             let index = doc.index(for: current)
             if coordinator.parent.page != index { coordinator.parent.page = index }
+        }
+        context.coordinator.scaleObserver = NotificationCenter.default.addObserver(forName: Notification.Name("PDFViewScaleChangedNotification"), object: view, queue: .main) { [weak coordinator = context.coordinator] _ in
+            guard let coordinator, view.scaleFactor > 0 else { return }
+            UserDefaults.standard.set(Double(view.scaleFactor), forKey: coordinator.scaleKey)
         }
         return view
     }
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
         view.backgroundColor = UIColor(Theme.bg)
+        context.coordinator.applyInitialScale(to: view)
         if let doc = view.document, let target = doc.page(at: page), view.currentPage !== target { view.go(to: target) }
     }
-    final class Coordinator {
-        var parent: PDFReader; var observer: NSObjectProtocol?
+    final class Coordinator: NSObject {
+        var parent: PDFReader; var observer: NSObjectProtocol?; var scaleObserver: NSObjectProtocol?
+        private var didApplyInitialScale = false
         init(_ parent: PDFReader) { self.parent = parent }
-        deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+        var scaleKey: String { "reader.pdfScale." + parent.bookID }
+        deinit {
+            if let observer { NotificationCenter.default.removeObserver(observer) }
+            if let scaleObserver { NotificationCenter.default.removeObserver(scaleObserver) }
+        }
+        /// 首次布局完成时定初始缩放（只做一次，之后不与读者的手动缩放相争）：
+        /// 有按书记忆的缩放就恢复记忆；否则按当前页内容边界适宽，并把版心左上角送到视口左上。
+        func applyInitialScale(to view: PDFView) {
+            guard !didApplyInitialScale, view.bounds.width > 10,
+                  let document = view.document, let first = document.page(at: parent.page) else { return }
+            let fit = view.scaleFactorForSizeToFit
+            guard fit > 0 else { return }
+            didApplyInitialScale = true
+            view.minScaleFactor = fit * 0.5
+            view.maxScaleFactor = fit * 6
+            if let saved = UserDefaults.standard.object(forKey: scaleKey) as? Double, saved > 0 {
+                view.scaleFactor = CGFloat(saved)
+                return
+            }
+            let content = PDFContentBounds.rect(for: first)
+            let pageWidth = first.bounds(for: .cropBox).width
+            guard content.width > 10, pageWidth > 0 else { view.scaleFactor = fit; return }
+            view.scaleFactor = fit * pageWidth / content.width
+            view.go(to: PDFDestination(page: first, at: CGPoint(x: content.minX, y: content.maxY)))
+        }
+        /// 双击缩放：在「内容适宽」与「2.2 倍内容适宽（以点击处为中心）」之间切换；
+        /// 结果经 PDFViewScaleChangedNotification 落入按书记忆。
+        @objc func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+            guard let view = gesture.view as? PDFView, view.document != nil else { return }
+            let point = gesture.location(in: view)
+            guard let page = view.page(for: point, nearest: true) else { return }
+            let fit = view.scaleFactorForSizeToFit
+            let content = PDFContentBounds.rect(for: page)
+            let pageWidth = page.bounds(for: .cropBox).width
+            let contentFit = content.width > 10 && pageWidth > 0 ? fit * pageWidth / content.width : fit
+            if view.scaleFactor > contentFit * 1.15 {
+                view.scaleFactor = contentFit
+                view.go(to: PDFDestination(page: page, at: CGPoint(x: content.minX, y: content.maxY)))
+            } else {
+                view.scaleFactor = min(contentFit * 2.2, fit * 6)
+                view.go(to: PDFDestination(page: page, at: view.convert(point, to: page)))
+            }
+        }
     }
 }
 

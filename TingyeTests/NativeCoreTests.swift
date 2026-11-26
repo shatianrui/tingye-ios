@@ -1531,6 +1531,43 @@ final class ExtendedReadingTests: XCTestCase {
         XCTAssertTrue(imported.chapters[1].text.contains("Page 2"))
         XCTAssertEqual(imported.pdf, data)
     }
+    /// 版面提取（构建 157）：跨页重复页眉与页脚页码被剔除；双栏按栏序重排（绘制顺序故意先右后左）。
+    @MainActor func testPDFImportDropsRunningHeadsAndOrdersColumns() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".pdf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 14)]
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600))
+        let data = renderer.pdfData { context in
+            for page in 1...3 {
+                context.beginPage()
+                ("测试页眉标题" as NSString).draw(at: CGPoint(x: 30, y: 16), withAttributes: attributes)
+                ("\(page)" as NSString).draw(at: CGPoint(x: 195, y: 566), withAttributes: attributes)
+                if page == 1 {
+                    // 先画右栏再画左栏：内容流顺序是乱的，只能靠几何分栏纠正。
+                    for (index, y) in [116.0, 148.0, 180.0].enumerated() {
+                        ("右栏第\(["一", "二", "三"][index])行文字" as NSString).draw(at: CGPoint(x: 250, y: y), withAttributes: attributes)
+                    }
+                    for (index, y) in [100.0, 132.0, 164.0].enumerated() {
+                        ("左栏第\(["一", "二", "三"][index])行文字" as NSString).draw(at: CGPoint(x: 30, y: y), withAttributes: attributes)
+                    }
+                } else {
+                    ("第\(page)页正文内容。" as NSString).draw(at: CGPoint(x: 30, y: 100), withAttributes: attributes)
+                }
+            }
+        }
+        try data.write(to: url)
+        let imported = try await BookImporter.read(url).book
+        XCTAssertEqual(imported.chapters.count, 3)
+        for (index, chapter) in imported.chapters.enumerated() {
+            XCTAssertFalse(chapter.text.contains("测试页眉标题"), "页眉应被剔除：\(chapter.text)")
+            XCTAssertFalse(chapter.text.split(separator: "\n").contains("\(index + 1)"), "页脚页码应被剔除：\(chapter.text)")
+        }
+        let first = imported.chapters[0].text
+        let leftEnd = try XCTUnwrap(first.range(of: "左栏第三行文字"))
+        let rightStart = try XCTUnwrap(first.range(of: "右栏第一行文字"))
+        XCTAssertTrue(leftEnd.lowerBound < rightStart.lowerBound, "双栏应先读完左栏再读右栏：\(first)")
+        XCTAssertTrue(imported.chapters[1].text.contains("第2页正文内容。"))
+    }
     func testMarkdownAndBackupFileImportAndInvalidJSON() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
