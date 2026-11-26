@@ -133,7 +133,7 @@ struct BookFinishView: View {
             }
         }
         .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
+        .overlay(alignment: .leading) { Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
         .foregroundStyle(Theme.ink)
     }
 

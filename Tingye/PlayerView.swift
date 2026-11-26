@@ -53,7 +53,7 @@ struct PlayerView: View {
                             transportRow
                                 .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space2)
                                 .background(Theme.bg)
-                                .overlay(alignment: .top) { InkRule(height: 1.5) }
+                                .overlay(alignment: .top) { RowDivider() }
                                 .accessibilityElement(children: .contain)
                                 .accessibilitySortPriority(1)
                         }
@@ -166,7 +166,8 @@ struct PlayerView: View {
         .padding(Theme.cardInset)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+        .softCardShadow()
         .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space2)
         .frame(maxWidth: 600, alignment: .leading).frame(maxWidth: .infinity)
     }
@@ -174,13 +175,13 @@ struct PlayerView: View {
     // MARK: 紧凑书名栏
 
     private func hero(_ book: Book, coverWidth: CGFloat, compact: Bool = false) -> some View {
-        let coverLayout = compact ? AnyLayout(HStackLayout(spacing: Theme.space3)) : AnyLayout(VStackLayout(spacing: Theme.space3))
-        return VStack(alignment: .leading, spacing: compact ? Theme.space2 : Theme.space3) {
+        let coverLayout = compact ? AnyLayout(HStackLayout(spacing: Theme.space4)) : AnyLayout(VStackLayout(spacing: Theme.space3))
+        return VStack(alignment: .leading, spacing: compact ? Theme.space2 : Theme.space4) {
             HStack {
                 Button { dismiss() } label: {
                     HStack(spacing: Theme.space2) {
-                        Text("正在听").font(Theme.serif(28, relativeTo: .title))
-                        ThemeIcon(symbol: Icon.collapse, size: 20)
+                        Text("正在听").font(Theme.serif(24, relativeTo: .title2))
+                        ThemeIcon(symbol: Icon.collapse, size: 18).foregroundStyle(Theme.ink3)
                     }
                     .frame(minHeight: 44).contentShape(Rectangle())
                 }
@@ -198,28 +199,21 @@ struct PlayerView: View {
                     Button(role: .destructive) { endingListening = true } label: { Label("结束听书", systemImage: Icon.stopListening) }
                         .accessibilityIdentifier("player.endListening")
                 } label: {
-                    ThemeIcon(symbol: Icon.more, size: 24).frame(width: 44, height: 44)
+                    ThemeIcon(symbol: Icon.more, size: 22).foregroundStyle(Theme.ink2).frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("更多听书操作")
                 .accessibilityIdentifier("player.more")
             }
             .buttonStyle(.plain)
-            HStack {
-                Label(player.voiceLabel, systemImage: Icon.voice)
-                Spacer(minLength: 8)
-                Text("辅助朗读").font(.caption)
-            }.font(.subheadline).foregroundStyle(Theme.ink2)
-            RowDivider().padding(.vertical, Theme.space1)
             coverLayout {
                 Button { showingCover = true } label: {
                     BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: coverWidth)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
                         .softCardShadow()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("查看《\(book.title)》封面")
                 .accessibilityIdentifier("player.cover")
-                VStack(alignment: compact ? .leading : .center, spacing: compact ? Theme.space1 : Theme.space3) {
+                VStack(alignment: compact ? .leading : .center, spacing: Theme.space1) {
                     Text(book.title)
                         .font(Theme.serif(22, relativeTo: .title2))
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
@@ -229,6 +223,9 @@ struct PlayerView: View {
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                         .accessibilityLabel("第 \(player.chapter + 1) / \(max(1, player.chapterCount)) 章")
                         .accessibilityIdentifier("player.currentChapter")
+                    Label(player.voiceLabel, systemImage: Icon.voice)
+                        .font(Theme.sans(12)).foregroundStyle(Theme.ink4)
+                        .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)
@@ -428,17 +425,17 @@ struct PlayerView: View {
         .buttonStyle(.plain)
     }
 
-    /// 播放工具：微直角刊物格，选中态采用浓墨实底配象牙字。
+    /// 播放工具：柔和胶囊按钮，选中态深炭墨实底配象牙字。
     private func footerItem(_ symbol: String, _ title: String, highlighted: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
         return Label { Text(L(title)).fixedSize(horizontal: false, vertical: true) }
               icon: { ThemeIcon(symbol: symbol, size: 16) }
-            .font(Theme.sans(13, weight: highlighted ? .semibold : .regular))
+            .font(Theme.sans(13, weight: highlighted ? .medium : .regular))
             .foregroundStyle(highlighted ? Theme.bg : Theme.ink2)
             .padding(.horizontal, Theme.space2)
             .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
             .background(highlighted ? Theme.ink : Theme.surface, in: shape)
-            .overlay { shape.strokeBorder(highlighted ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
+            .overlay { shape.strokeBorder(highlighted ? Color.clear : Theme.line, lineWidth: Theme.rule) }
             .contentShape(shape)
             .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
@@ -520,10 +517,12 @@ private struct SentenceProgressControl: View {
         VStack(alignment: .leading, spacing: Theme.space2) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    ProgressLine(value: progress, tint: Theme.ink2, height: Theme.progressHeight)
+                    ProgressLine(value: progress, track: Theme.line, tint: Theme.clay, height: 4)
                         .accessibilityHidden(true)
-                    Circle().fill(Theme.ink2).frame(width: Theme.space3, height: Theme.space3)
-                        .position(x: min(max(5, geo.size.width * progress), max(5, geo.size.width - 5)), y: 22)
+                    Circle().fill(Theme.surface)
+                        .overlay { Circle().strokeBorder(Theme.ink, lineWidth: 2) }
+                        .frame(width: 14, height: 14)
+                        .position(x: min(max(7, geo.size.width * progress), max(7, geo.size.width - 7)), y: 22)
                 }
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -944,8 +943,7 @@ struct VoiceSettingsView: View {
                     ThemeIcon(symbol: Icon.checkmark, size: 16).foregroundStyle(Theme.clayDeep)
                 }
                 .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space2)
-                .background(Theme.claySoft)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleMedium) }
+                .background(Theme.claySoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
             }
             .listRowInsets(EdgeInsets())
             voicePicker

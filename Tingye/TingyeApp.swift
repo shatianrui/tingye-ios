@@ -20,7 +20,7 @@ struct TingyeApp: App {
         let navigation = UINavigationBarAppearance()
         navigation.configureWithOpaqueBackground()
         navigation.backgroundColor = UIColor(Theme.bg)
-        navigation.shadowColor = UIColor(Theme.line)
+        navigation.shadowColor = .clear
         navigation.titleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
         navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
         UINavigationBar.appearance().standardAppearance = navigation
@@ -226,29 +226,29 @@ struct StudyRootView: View {
                         // 页眉返回按钮清空编程式导航路径，回到书库根页面。
                         StatsView(ji: true, onBack: { path = [] })
                     }
-                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
-                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
+                    // 顶部轻盈导航条：左侧静谧宋体字标，右侧柔和「我的」入口。
                     .safeAreaInset(edge: .top, spacing: 0) {
                         HStack(spacing: Theme.space2) {
-                            HStack(spacing: 6) {
-                                Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                                Text("TINGYE · FOLIO")
-                                    .font(Theme.masthead).tracking(Theme.mastheadTracking)
-                                    .foregroundStyle(Theme.ink3)
-                            }
-                            .accessibilityHidden(true)
+                            Text("听页")
+                                .font(Theme.serif(18))
+                                .foregroundStyle(Theme.ink3)
+                                .accessibilityHidden(true)
                             Spacer()
                             NavigationLink(value: StudyRoute.me) {
                                 Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
+                                    .font(Theme.sans(14, weight: .medium)).foregroundStyle(Theme.ink)
+                                    .padding(.horizontal, Theme.space3)
+                                    .frame(minHeight: Theme.iconButtonSize)
+                                    .background(Theme.surface, in: Capsule())
+                                    .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                                    .contentShape(Capsule())
                             }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
+                            .buttonStyle(PressButtonStyle())
                             .accessibilityLabel("我的")
                             .accessibilityIdentifier("study.openProfile")
                         }
                         .padding(.horizontal, Theme.inset)
+                        .padding(.vertical, Theme.space2)
                         .background(Theme.bg)
                     }
                     .toolbarBackground(Theme.bg, for: .navigationBar)
@@ -491,15 +491,13 @@ struct MiniPlayer: View {
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
                             ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink)
-                                .frame(width: 34, height: 34)
-                                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-                                .contentShape(Rectangle())
+                                .foregroundStyle(Theme.ink2)
+                                .frame(width: 36, height: 36)
+                                .background(Theme.surface2, in: Circle())
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(PressButtonStyle(scale: 0.88))
+                        .buttonStyle(PressButtonStyle())
                         .accessibilityLabel("回到朗读处：第 \(player.chapter + 1) 章")
                         .accessibilityIdentifier("miniPlayer.returnToSpeech")
                     }
@@ -513,13 +511,12 @@ struct MiniPlayer: View {
                             }
                         }
                         .foregroundStyle(Theme.onClay)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                        .contentShape(Rectangle())
+                        .frame(width: 36, height: 36)
+                        .background(Theme.clay, in: Circle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(PressButtonStyle(scale: 0.88))
+                    .buttonStyle(PressButtonStyle())
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
@@ -531,7 +528,7 @@ struct MiniPlayer: View {
             }
             .padding(.vertical, Theme.space2)
             .background(Theme.surface)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.ink).frame(height: 1.5).accessibilityHidden(true) }
+            .overlay(alignment: .top) { RowDivider().accessibilityHidden(true) }
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 2.5)
                     .padding(.horizontal, Theme.space4)
@@ -572,10 +569,13 @@ private struct FeedbackOverlay: ViewModifier {
                     }
                 }
                 .padding(.horizontal, Theme.space4)
-                .frame(maxWidth: 760).frame(maxWidth: .infinity)
-                .background(Theme.surface)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: 4).accessibilityHidden(true) }
-                .overlay(alignment: .bottom) { RowDivider() }
+                .frame(maxWidth: 720).frame(maxWidth: .infinity)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                .softCardShadow()
+                .padding(.horizontal, Theme.insetCompact)
+                .padding(.vertical, Theme.space2)
+                .background(Theme.bg)
             } else if model.busy {
                 EmptyState(title: model.activity, detail: "", state: .loading)
                     .background(Theme.bg)

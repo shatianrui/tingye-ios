@@ -200,12 +200,11 @@ struct SelectionPanel: View {
             }
         }
         .foregroundStyle(Theme.ink)
-        .padding(.horizontal, Theme.space4)
-        .padding(.top, Theme.space2)
-        .padding(.bottom, Theme.space4)
+        .padding(.horizontal, Theme.space5)
+        .padding(.top, Theme.space4)
+        .padding(.bottom, Theme.space5)
         .frame(maxWidth: 520)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .floatingPanel()
+        .floatingPanel(cornerRadius: Theme.heroRadius)
     }
 
     private var markTools: some View {

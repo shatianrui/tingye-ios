@@ -270,9 +270,7 @@ struct ShelfView: View {
     }
 
     private var shelfHeader: some View {
-        Masthead(title: "书房", subtitle: todayReadingText,
-                 kicker: "\(todayDateText) · 书刊", issue: "\(model.visibleEntries.count) VOL.",
-                 actionTitle: "搜索", action: startSearch)
+        Masthead(title: "书房", subtitle: todayReadingText, kicker: todayDateText)
     }
 
     /// 「书房」页眉副行：日期 · 星期 + 今日已读时长。
@@ -315,24 +313,30 @@ struct ShelfView: View {
     }
 
     private func heroCard(_ entry: ShelfEntry) -> some View {
-        PaperCard {
+        PaperCard(padding: Theme.space5, cornerRadius: Theme.heroRadius) {
             VStack(alignment: .leading, spacing: Theme.space4) {
                 HStack(alignment: .firstTextBaseline) {
-                    SectionHeader(title: "正在读")
+                    Text("正在读")
+                        .font(Theme.sans(12, weight: .medium))
+                        .tracking(1.0)
+                        .foregroundStyle(Theme.ink3)
                     Spacer(minLength: Theme.space2)
-                    SealBadge(text: entry.format.uppercased())
+                    Text(entry.format.uppercased())
+                        .font(Theme.sans(11, weight: .medium))
+                        .tracking(0.6)
+                        .foregroundStyle(Theme.ink4)
                 }
-                // 封面宽度是书封排版尺寸，沿用详情页的 104pt。
                 let layout = typeSize.isAccessibilitySize
                     ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
                     : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))
                 layout {
-                    CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
+                    CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 96)
                     VStack(alignment: .leading, spacing: Theme.space2) {
                         Text(entry.title)
                             .accessibilityIdentifier("study.heroTitle")
                             .accessibilityLabel(entry.title)
-                            .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                            .font(Theme.serif(21)).foregroundStyle(Theme.ink)
+                            .lineSpacing(4)
                             .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                         Text(entry.author.isEmpty ? entry.format : entry.author)
                             .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
@@ -346,7 +350,7 @@ struct ShelfView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 adaptiveRow {
-                    PrimaryButton(entry.started ? "继续阅读" : "开始阅读") {
+                    ClayButton(entry.started ? "继续阅读" : "开始阅读") {
                         Haptics.light()
                         model.open(entry)
                     }
@@ -365,35 +369,37 @@ struct ShelfView: View {
 
     @ViewBuilder
     private func heroProgress(_ entry: ShelfEntry) -> some View {
-        ProgressLine(value: entry.started ? entry.readFraction : 0)
+        ProgressLine(value: entry.started ? entry.readFraction : 0, height: 4)
+            .padding(.top, Theme.space1)
         if !entry.started {
             Text("还没开始读").font(.caption).foregroundStyle(Theme.ink3)
         } else if entry.readFraction >= 0.995 {
             Text("已读完").font(.caption).foregroundStyle(Theme.accent)
         } else {
-            HStack(spacing: Theme.space2) {
-                Text(entry.percentText)
-                    .font(.caption2).foregroundStyle(Theme.ink2).monospacedDigit()
-            }
-            .padding(.top, Theme.space1)
+            Text(entry.percentText)
+                .font(.caption2).foregroundStyle(Theme.ink3).monospacedDigit()
         }
     }
 
-    /// 保留最新划线数据源，以刊物扉页引文呈现；不改变每日摘句的轮换规则。
+    /// 保留最新划线数据源，以开阔暖纸引文呈现；不改变每日摘句的轮换规则。
     private func todayQuote(_ highlight: Highlight) -> some View {
-        HStack(alignment: .top, spacing: Theme.space3) {
-            VStack(alignment: .leading, spacing: Theme.space2) {
-                Text(highlight.text).font(Theme.serif(19)).foregroundStyle(Theme.ink)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
-                if let entry = model.visibleEntries.first(where: { ($0.highlights ?? []).contains(where: { $0.id == highlight.id }) }) {
-                    Text("——《\(entry.title)》 · \(entry.author.isEmpty ? "佚名" : entry.author)")
-                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                }
+        VStack(alignment: .leading, spacing: Theme.space2) {
+            Text(highlight.text)
+                .font(Theme.serif(19))
+                .lineSpacing(6)
+                .foregroundStyle(Theme.ink)
+                .lineLimit(typeSize.isAccessibilitySize ? nil : 3)
+            if let entry = model.visibleEntries.first(where: { ($0.highlights ?? []).contains(where: { $0.id == highlight.id }) }) {
+                Text("——《\(entry.title)》 · \(entry.author.isEmpty ? "佚名" : entry.author)")
+                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, Theme.space4)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
+        .padding(.vertical, Theme.space1)
+        .overlay(alignment: .leading) {
+            Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy)
+        }
     }
 
     /// v29 导入收敛：唯一的「添书」入口，直接打开 ImportHub（含文件导入、传书方式与最近导入结果）。
@@ -412,22 +418,22 @@ struct ShelfView: View {
 
     private var searchEntry: some View {
         Button(action: startSearch) {
-            HStack(spacing: Theme.space2) {
-                ThemeIcon(symbol: Icon.search, size: 19)
-                    .foregroundStyle(Theme.ink2)
+            HStack(spacing: Theme.space3) {
+                ThemeIcon(symbol: Icon.search, size: 17)
+                    .foregroundStyle(Theme.ink3)
                 Text(searchText.isEmpty ? "搜索书名、作者或分组" : searchText)
-                    .font(.subheadline)
+                    .font(Theme.sans(15))
                     .foregroundStyle(Theme.ink3)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Theme.space4)
             .frame(minHeight: Theme.rowMinHeight)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
-            .contentShape(Rectangle())
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressButtonStyle())
         .accessibilityLabel("搜索所有分组中的\(kind == "comics" ? "漫画" : "书籍")")
         .accessibilityIdentifier("shelf.search")
     }
@@ -588,14 +594,14 @@ struct ShelfView: View {
 
     private func optionLabel(_ icon: String, _ text: String) -> some View {
         HStack(spacing: Theme.space1) {
-            ThemeIcon(symbol: icon).accessibilityHidden(true)
+            ThemeIcon(symbol: icon, size: 15).accessibilityHidden(true)
             Text(L(text))
         }
-        .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+        .font(Theme.sans(13, weight: .medium)).foregroundStyle(Theme.ink2)
         .padding(.horizontal, Theme.space3).frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.line, lineWidth: Theme.rule) }
-        .contentShape(Rectangle())
+        .background(Theme.surface, in: Capsule())
+        .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .contentShape(Capsule())
     }
 
     private var libraryOptions: some View {
@@ -642,15 +648,15 @@ struct ShelfView: View {
         }
     }
 
+    /// 搜索态直接置顶输入框，不堆页首介绍，确保小屏键盘上方直接露出可点击结果。
     private var shelfSearchBar: some View {
-        VStack(alignment: .leading, spacing: Theme.space4) {
-            EditorialIntro(title: "搜索书库", detail: "在所有分组中查找书名、作者与分类", eyebrow: "查找")
+        VStack(alignment: .leading, spacing: Theme.space2) {
             HStack(spacing: Theme.space2) {
                 HStack(spacing: Theme.space2) {
-                    ThemeIcon(symbol: Icon.search, size: 22)
+                    ThemeIcon(symbol: Icon.search, size: 18)
                         .foregroundStyle(Theme.ink3)
                     TextField("书名、作者、分类或分组", text: $query)
-                        .font(.subheadline)
+                        .font(Theme.sans(15))
                         .foregroundStyle(Theme.ink)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -661,7 +667,7 @@ struct ShelfView: View {
                         .accessibilityIdentifier("shelf.search-field")
                     if !query.isEmpty {
                         Button { query = ""; searchFocused = true } label: {
-                            ThemeIcon(symbol: Icon.clearText)
+                            ThemeIcon(symbol: Icon.clearText, size: 18)
                                 .foregroundStyle(Theme.ink3)
                                 .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
                         }
@@ -672,14 +678,18 @@ struct ShelfView: View {
                 .padding(.leading, Theme.space4)
                 .padding(.trailing, query.isEmpty ? Theme.space4 : 0)
                 .frame(minHeight: Theme.rowMinHeight)
-                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.lineField, lineWidth: Theme.rule) }
                 Button("取消", action: cancelSearch)
-                    .font(.subheadline)
+                    .font(Theme.sans(15))
+                    .foregroundStyle(Theme.accent)
                     .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
             }
-            Text(kind == "comics" ? "搜索所有分组中的漫画" : "搜索所有分组中的书籍")
-                .font(.caption)
-                .foregroundStyle(Theme.ink3)
+            if searchText.isEmpty {
+                Text(kind == "comics" ? "搜索所有分组中的漫画" : "搜索所有分组中的书籍")
+                    .font(.caption)
+                    .foregroundStyle(Theme.ink3)
+            }
         }
         .frame(maxWidth: .infinity)
         .onAppear { searchFocused = true }
@@ -1111,8 +1121,8 @@ struct ShelfView: View {
                 }.accessibilityIdentifier("shelf.delete")
             }
         }
-        .padding(Theme.space3)
-        .floatingPanel(cornerRadius: Theme.radius)
+        .padding(Theme.space4)
+        .floatingPanel(cornerRadius: Theme.heroRadius)
         .padding(.horizontal, Theme.space4)
         .padding(.bottom, Theme.space2)
         .transition(.move(edge: .bottom).combined(with: .opacity))

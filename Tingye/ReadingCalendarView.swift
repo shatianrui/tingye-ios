@@ -58,9 +58,9 @@ struct ReadingCalendarView: View {
     }
 
     private var grid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1), count: 7), spacing: Theme.space1) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                if let date { dayCell(date) } else { Color.clear.frame(height: Theme.space7).overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) } }
+                if let date { dayCell(date) } else { Color.clear.frame(height: Theme.space7) }
             }
         }
     }
@@ -70,19 +70,19 @@ struct ReadingCalendarView: View {
         let isSelected = calendar.isDate(date, inSameDayAs: selected)
         let future = date > Date()
         let today = calendar.isDateInToday(date)
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
         return Button { selected = date } label: {
             VStack(spacing: Theme.space1) {
                 Text("\(calendar.component(.day, from: date))")
-                    .font(Theme.sans(15)).monospacedDigit()
-                Rectangle().fill(minutes >= goalMinutes ? Theme.ink : .clear).frame(width: Theme.space3, height: Theme.ruleMedium)
+                    .font(Theme.sans(15, weight: today || isSelected ? .medium : .regular)).monospacedDigit()
+                Circle().fill(minutes >= goalMinutes ? Theme.clay : .clear).frame(width: 4, height: 4)
             }
             .foregroundStyle(future ? Theme.ink4 : Theme.ink)
             .frame(maxWidth: .infinity, minHeight: Theme.space7)
-            .background(minutes > 0 ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-            .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-            .overlay { if today { Circle().strokeBorder(Theme.clay, lineWidth: Theme.rule).padding(Theme.space1) } }
-            .overlay { if isSelected { RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.ink2, lineWidth: Theme.rule) } }
-            .contentShape(Rectangle())
+            .background(minutes > 0 ? Theme.claySoft : .clear, in: shape)
+            .overlay { if today { shape.strokeBorder(Theme.clay, lineWidth: Theme.ruleMedium) } }
+            .overlay { if isSelected { shape.strokeBorder(Theme.ink, lineWidth: Theme.ruleMedium) } }
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
         .disabled(future)

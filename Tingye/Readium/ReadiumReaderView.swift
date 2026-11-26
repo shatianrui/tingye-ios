@@ -126,6 +126,7 @@ struct ReadiumReaderView: View {
     @State private var visible = false
     @State private var chrome = true
     @State private var sheet: Sheet?
+    @State private var pendingSheet: Sheet?
     @State private var retry = UUID()
     @State private var request: EPUBNavigatorHost.Request?
     @State private var expectedLocation: ReadiumShared.Locator?
@@ -218,25 +219,18 @@ struct ReadiumReaderView: View {
                 }
             }
             if session.loading {
-                VStack(spacing: 12) {
-                    ProgressView().controlSize(.large)
-                    Text("正在打开 EPUB…").font(.headline)
-                    Text("正在准备原书与阅读位置").font(.subheadline)
-                }.padding(24).background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 12))
-                .accessibilityElement(children: .combine)
+                EmptyState(title: "正在打开 EPUB…", detail: "正在准备原书与阅读位置", state: .loading)
+                    .frame(maxWidth: 340)
+                    .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                    .padding(Theme.inset)
             }
             if let error = session.error {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle").font(.title2).accessibilityHidden(true)
-                    Text("EPUB 打开失败").font(.title3.weight(.semibold))
-                    Text(error).font(.callout).multilineTextAlignment(.center)
-                    Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
-                        .font(.footnote).foregroundStyle(Color(hex: palette.secondary))
-                    Button("重试") { persist(); ready = false; retry = UUID() }.buttonStyle(.borderedProminent)
+                EmptyState(title: "EPUB 打开失败", detail: error + "\n阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。", state: .error, actionTitle: "重试") {
+                    persist(); ready = false; retry = UUID()
                 }
-                .padding(24).frame(maxWidth: 500)
-                .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 18))
-                .padding(20)
+                .frame(maxWidth: 460)
+                .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+                .padding(Theme.inset)
             }
         }
         .overlay(alignment: .topLeading) {
@@ -303,6 +297,10 @@ struct ReadiumReaderView: View {
         .sheet(item: $sheet, onDismiss: {
             fonts = ReadiumFontProvider.files()
             updateVisibility()
+            if let next = pendingSheet {
+                pendingSheet = nil
+                sheet = next
+            }
         }) { value in
             Group {
                 switch value {
@@ -339,8 +337,8 @@ struct ReadiumReaderView: View {
         }
     }
     private var topBar: some View {
-        HStack(spacing: Theme.space3) {
-            Button { persist(); dismiss() } label: { ThemeIcon(symbol: Icon.back).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
+        HStack(spacing: Theme.space2) {
+            Button { persist(); dismiss() } label: { ThemeIcon(symbol: Icon.back, size: 22).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
                 .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
             VStack(alignment: .leading, spacing: Theme.space1) {
                 Text(title).accessibilityIdentifier("reader.currentTitle")
@@ -348,12 +346,22 @@ struct ReadiumReaderView: View {
                 Text(book.title).font(Theme.sans(13)).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
             }.frame(maxWidth: .infinity, alignment: .leading)
             Button {
+                following = false
+                sheet = .search
+            } label: {
+                ThemeIcon(symbol: Icon.search, size: 21)
+                    .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
+            }
+            .disabled(!ready)
+            .accessibilityLabel("书内搜索")
+            .accessibilityIdentifier("reader.search")
+            Button {
                 let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
                 model.bookmark(book.id, chapter: chapter, position: position, excerpt: text,
                                locator: originalLocation, revision: session.bridge?.revision, generation: sessionEpoch)
             } label: {
                 let marked = entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true
-                ThemeIcon(symbol: Icon.bookmark(marked))
+                ThemeIcon(symbol: Icon.bookmark(marked), size: 22)
                     .foregroundStyle(marked ? Color(hex: palette.accent) : Color(hex: palette.foreground))
                     .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
             }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
@@ -433,7 +441,7 @@ struct ReadiumReaderView: View {
     private var contentsView: some View {
         List {
             EditorialIntro(title: "目录与摘记", detail: book.title, eyebrow: "阅读导航")
-            Button("搜索书内文字") { following = false; sheet = .search }.accessibilityIdentifier("reader.search")
+            Button("搜索书内文字") { following = false; pendingSheet = .search; sheet = nil }.accessibilityIdentifier("reader.contents.search")
             SegmentedBar(options: [0, 1, 2], selection: contentsMode,
                          title: { ["目录", "书签", "摘记"][$0] }, onSelect: { contentsMode = $0 })
                 .listRowBackground(Color.clear)

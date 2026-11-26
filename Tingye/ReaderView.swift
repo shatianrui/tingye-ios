@@ -331,11 +331,7 @@ struct ReaderView: View {
     @ObservedObject private var focusStore = FocusSessionStore.shared
     @State private var focusPresented = false
     @State private var finishPresented = false
-    /// 「更多」工具面板（自制 popover，替代系统 Menu 以便跟随阅读纸面配色）；子页为自动翻页选项。
-    @State private var morePresented = false
-    @State private var moreShowsAutoTurn = false
-    /// 面板条目的待执行动作：先等 popover 完全收起再执行，避免在同一步里
-    /// 既收 popover 又 present sheet（书内搜索等），两个呈现抢同一时机导致 App 失去响应/断连。
+    /// 从「更多」面板切到其他 sheet/弹窗时，先收起「更多」再在 onDismiss 里执行，避免同一步抢占呈现。
     @State private var pendingMoreAction: (() -> Void)?
     @State private var didAutoPresentFinish = false
     /// 长按选中的句区间（划线 / 笔记 / 从这句听）
@@ -582,12 +578,21 @@ struct ReaderView: View {
             }
         }
         #endif
-        .sheet(item: $sheet) { value in
+        .sheet(item: $sheet, onDismiss: {
+            if let action = pendingMoreAction {
+                pendingMoreAction = nil
+                action()
+            }
+        }) { value in
             Group {
                 switch value {
                 case .preferences: NavigationStack { ReadingPreferencesView() }.presentationDetents([.large]).presentationDragIndicator(.visible)
                 case .voice: NavigationStack { VoiceSettingsView() }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
                 case .focus: PlayerView(player: player, fromReader: true)
+                case .more:
+                    NavigationStack { moreSheetContent }
+                        .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
+                        .presentationDragIndicator(.visible)
                 case .contents, .notes, .search:
                     NavigationStack {
                         ContentsView(book: book, chapters: chapters, currentChapter: chapter,
@@ -735,7 +740,7 @@ struct ReaderView: View {
     // MARK: 导航、章节进度与阅读操作
 
     private var topBar: some View {
-        HStack(spacing: Theme.space3) {
+        HStack(spacing: Theme.space2) {
             Button { dismiss() } label: { barIcon(Icon.back) }
                 .accessibilityLabel("返回书架")
                 .accessibilityIdentifier("reader.back")
@@ -746,13 +751,16 @@ struct ReaderView: View {
                     .lineLimit(2)
                 Text(chapterSubheading)
                     .font(.caption2)
+                    .monospacedDigit()
                     .foregroundStyle(prefs.secondary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            // 专注入口上台面：与「更多」菜单里的开始专注共用同一面板（focusPresented）。
-            if focusEnabled { focusQuickButton }
-            // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
+            // 书内搜索直接置顶一键直达，不经过二级面板，也不影响播放状态。
+            Button { sheet = .search } label: { barIcon(Icon.search) }
+                .accessibilityLabel("书内搜索")
+                .accessibilityIdentifier("reader.search")
+            // 书签针对当前位置，放在顶栏随手可点。
             Button {
                 Haptics.selection()
                 model.bookmark(book.id, chapter: chapter, position: sentencePosition, excerpt: sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].text : String(current.text.prefix(80)))
@@ -776,7 +784,7 @@ struct ReaderView: View {
     }
 
     private func barIcon(_ name: String) -> some View {
-        ThemeIcon(symbol: name, size: 24)
+        ThemeIcon(symbol: name, size: 22)
             .frame(width: 44, height: 44).contentShape(Rectangle())
     }
 
@@ -831,124 +839,108 @@ struct ReaderView: View {
         .foregroundStyle(Theme.ink)
     }
 
-    /// 「更多」工具面板（构建 136）：原为系统 Menu，弹层底色/圆角由系统外观决定，
-    /// 与阅读纸面脱节（浅纸上弹出深灰大圆角层）。改为自制 popover：容器跟随 chrome 纸面
-    /// （readerPanelPaper，与底部面板同色）、圆角 Theme.radius、Theme.line 描边；
-    /// 分区、条目、动作与无障碍标识与原 Menu 逐一一致，仅呈现容器不同。
+    /// 「更多」阅读工具面板：改用原生底部 sheet，替代原先容易在小屏/大字号下裁切的 300pt popover，
+    /// 自动翻页改为页内直接点选芯片，减少嵌套子页与弹层竞争。
     private var moreMenu: some View {
-        Button { morePresented = true } label: { readerActionLabel(Icon.more, "更多") }
+        Button { sheet = .more } label: { readerActionLabel(Icon.more, "更多", selected: sheet == .more) }
             .buttonStyle(.plain)
             .accessibilityLabel("更多阅读操作")
             .accessibilityIdentifier("reader.more")
-            .popover(isPresented: $morePresented, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
-                morePanel
-                    .presentationCompactAdaptation(.popover)
-                    .onDisappear {
-                        moreShowsAutoTurn = false
-                        let action = pendingMoreAction
-                        pendingMoreAction = nil
-                        action?()
-                    }
-            }
     }
 
-    private var morePanel: some View {
+    private var moreSheetContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(moreShowsAutoTurn ? "自动翻页" : "阅读工具")
-                    .font(Theme.serif(20)).foregroundStyle(Theme.ink)
-                    .padding(.horizontal, 16).padding(.vertical, 12).accessibilityAddTraits(.isHeader)
-                Divider().overlay(Theme.ink3.opacity(0.3))
-                if moreShowsAutoTurn { autoTurnPanelRows } else { morePanelRows }
+            VStack(alignment: .leading, spacing: Theme.space5) {
+                moreCardGroup("查找与外观") {
+                    moreRow(Icon.search, "书内搜索", identifier: "reader.more.search", deferred: true) { sheet = .search }
+                    if document.isPDF {
+                        moreRow(Icon.readingDirection, pdfTextMode ? "切回原版页面" : "文字阅读（可跟随朗读）", identifier: "reader.pdfTextMode") { setPDFTextMode(!pdfTextMode) }
+                    }
+                    moreRow(Icon.dayNight(isDark: isDarkPaper), isDarkPaper ? "切换日间纸色" : "切换夜间纸色", identifier: "reader.dayNight", showsDivider: false) { toggleNightMode() }
+                }
+
+                moreCardGroup("辅助听书") {
+                    moreRow(Icon.listen, "从当前阅读位置听", identifier: "reader.startListening", showsDivider: active) { startReadingAloud() }
+                    if active {
+                        moreRow(Icon.listening, "跟随朗读位置") { following = true; followSpeech() }
+                        moreRow(Icon.listen, "听书设置与控制", identifier: "reader.openPlayer", deferred: true) { sheet = .focus }
+                        moreRow(Icon.stopListening, "结束辅助听书", showsDivider: false, deferred: true) { endingListening = true }
+                    }
+                }
+
+                if !showsPDFPages && !scrolling {
+                    VStack(alignment: .leading, spacing: Theme.space3) {
+                        SectionHeader(title: "自动翻页")
+                        PaperCard(padding: Theme.space4) {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: Theme.space2) {
+                                    ForEach([0, 10, 20, 30, 45, 60], id: \.self) { seconds in
+                                        Chip(title: seconds == 0 ? "关闭" : "\(seconds) 秒", selected: autoTurn == seconds) {
+                                            autoTurn = seconds
+                                            sheet = nil
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                moreCardGroup("书房与书籍") {
+                    if focusEnabled {
+                        moreRow(Icon.sleepTimer, focusStore.phase == .running && focusStore.bookID == book.id ? "查看专注会话" : "开始专注", identifier: "reader.focusSession", deferred: true) { focusPresented = true }
+                    }
+                    moreRow(Icon.checkmark, "读完收尾", identifier: "reader.finish", deferred: true) { presentFinish() }
+                    moreRow(Icon.share, "导出备份", showsDivider: false, deferred: true) { shareBook() }
+                }
             }
-            .padding(.vertical, 8)
+            .padding(.horizontal, Theme.inset)
+            .padding(.vertical, Theme.space4)
+            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
-        .frame(width: 300)
-        .frame(maxHeight: 540)
-        .background(readerPanelPaper)
+        .accessibilityIdentifier("reader.moreSheet")
+        .paperBackground()
         .foregroundStyle(Theme.ink)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: 1) }
-    }
-
-    @ViewBuilder
-    private var morePanelRows: some View {
-        moreSectionHeader("查找与整理")
-        moreRow(Icon.search, "书内搜索", identifier: "reader.search") { sheet = .search }
-        if document.isPDF {
-            moreSectionHeader("PDF 阅读")
-            moreRow(Icon.readingDirection, pdfTextMode ? "切回原版页面" : "文字阅读（可跟随朗读）", identifier: "reader.pdfTextMode") { setPDFTextMode(!pdfTextMode) }
-        }
-        moreSectionHeader("阅读外观")
-        moreRow(Icon.dayNight(isDark: isDarkPaper), isDarkPaper ? "切换日间纸色" : "切换夜间纸色", identifier: "reader.dayNight") { toggleNightMode() }
-        if !showsPDFPages && !scrolling {
-            moreSectionHeader("阅读方式")
-            moreRow(Icon.autoTurn, "自动翻页", trailing: autoTurn == 0 ? "关闭" : "每 \(autoTurn) 秒", closesPanel: false) { moreShowsAutoTurn = true }
-        }
-        moreSectionHeader("辅助听书")
-        moreRow(Icon.listen, "从当前阅读位置听", identifier: "reader.startListening") { startReadingAloud() }
-        if active {
-            moreRow(Icon.listening, "跟随朗读位置") { following = true; followSpeech() }
-            moreRow(Icon.listen, "听书设置与控制", identifier: "reader.openPlayer") { sheet = .focus }
-            moreRow(Icon.stopListening, "结束辅助听书") { endingListening = true }
-        }
-        moreSectionHeader("书房")
-        if focusEnabled {
-            moreRow(Icon.sleepTimer, focusStore.phase == .running && focusStore.bookID == book.id ? "查看专注会话" : "开始专注", identifier: "reader.focusSession") { focusPresented = true }
-        }
-        moreRow(Icon.checkmark, "读完收尾", identifier: "reader.finish") { presentFinish() }
-        moreSectionHeader("书籍")
-        moreRow(Icon.share, "导出备份") { shareBook() }
-    }
-
-    /// 自动翻页子页：与主列表同一容器，选项行以陶土对勾标记当前值，选定后关面板。
-    @ViewBuilder
-    private var autoTurnPanelRows: some View {
-        Button { moreShowsAutoTurn = false } label: {
-            HStack(spacing: 8) {
-                ThemeIcon(symbol: Icon.back, size: 16)
-                Text("自动翻页").font(.subheadline.weight(.medium))
+        .navigationTitle("阅读工具")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("完成") { sheet = nil }
             }
-            .foregroundStyle(Theme.ink)
-            .padding(.horizontal, 16).padding(.vertical, 6).frame(minHeight: 48).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("返回更多面板")
-        ForEach([0, 10, 20, 30, 45, 60], id: \.self) { seconds in
-            moreRow(Icon.autoTurn, seconds == 0 ? "关闭" : "每 \(seconds) 秒翻一页", checkmarked: autoTurn == seconds) { autoTurn = seconds }
         }
     }
 
-    private func moreSectionHeader(_ title: String) -> some View {
-        Text(L(title))
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.ink3)
-            .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 6)
-            .accessibilityAddTraits(.isHeader)
+    private func moreCardGroup<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: Theme.space3) {
+            SectionHeader(title: title)
+            PaperCard(padding: Theme.space3) {
+                VStack(alignment: .leading, spacing: 0) { content() }
+            }
+        }
     }
 
     @ViewBuilder
-    private func moreRow(_ icon: String, _ title: String, identifier: String? = nil, checkmarked: Bool = false, trailing: String? = nil, closesPanel: Bool = true, action: @escaping () -> Void) -> some View {
+    private func moreRow(_ icon: String, _ title: String, identifier: String? = nil, showsDivider: Bool = true, deferred: Bool = false, action: @escaping () -> Void) -> some View {
         let row = Button {
-            if closesPanel {
+            if deferred {
                 pendingMoreAction = action
-                morePresented = false
-            } else { action() }
-        } label: {
-            HStack(spacing: 12) {
-                ThemeIcon(symbol: icon, size: 18).frame(width: 22)
-                Text(L(title)).font(.subheadline)
-                Spacer()
-                if let trailing {
-                    Text(trailing).font(.caption).foregroundStyle(Theme.ink3)
-                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink3)
-                }
-                if checkmarked {
-                    ThemeIcon(symbol: Icon.checkmark, size: 16).foregroundStyle(Theme.accent)
-                }
+                sheet = nil
+            } else {
+                action()
+                sheet = nil
             }
-            .foregroundStyle(Theme.ink)
-            .padding(.horizontal, 16).frame(minHeight: 44).contentShape(Rectangle())
+        } label: {
+            HairlineRow(showsDivider: showsDivider) {
+                HStack(spacing: Theme.space3) {
+                    ThemeIcon(symbol: icon, size: 19).foregroundStyle(Theme.ink2).frame(width: 24)
+                    Text(L(title)).font(Theme.sans(15)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: Theme.space2)
+                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4)
+                }
+                .padding(.horizontal, Theme.space2)
+                .contentShape(Rectangle())
+            }
         }
         .buttonStyle(.plain)
         if let identifier { row.accessibilityIdentifier(identifier) } else { row }
@@ -968,47 +960,6 @@ struct ReaderView: View {
     private func readerAction(_ icon: String, _ title: String, selected: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) { readerActionLabel(icon, title, selected: selected) }
             .buttonStyle(.plain)
-    }
-
-    /// 顶栏专注快捷按钮（书签旁）：未开始显示「专注」；本书专注进行中显示剩余时间；
-    /// 已完成显示「专注完成」。点按一律打开既有专注面板，剩余时间数据源与正文页眉的
-    /// 专注状态小字相同（focusStore.remaining(at:)），不在此另造计时。
-    @ViewBuilder
-    private var focusQuickButton: some View {
-        if focusStore.bookID == book.id, focusStore.phase == .running {
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                Button { focusPresented = true } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: Icon.sleepTimer)
-                        Text(focusQuickLabel(at: context.date))
-                    }
-                    .font(.caption2.weight(.medium))
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).foregroundStyle(readerAccent)
-                .accessibilityLabel("正在专注，查看专注会话")
-                .accessibilityIdentifier("reader.focusQuick")
-                .onChange(of: context.date) { _, _ in focusStore.completeIfDue(currentChapter: chapter) }
-            }
-        } else {
-            let finished = focusStore.bookID == book.id && focusStore.phase == .finished
-            Button { focusPresented = true } label: {
-                Text(finished ? "专注完成" : "专注")
-                    .font(.caption.weight(.medium))
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain).foregroundStyle(readerAccent)
-            .accessibilityLabel(finished ? "专注完成，查看小结" : "开始专注")
-            .accessibilityIdentifier("reader.focusQuick")
-        }
-    }
-
-    private func focusQuickLabel(at date: Date) -> String {
-        let seconds = focusStore.remaining(at: date)
-        if seconds <= 60 { return "还剩不足 1 分钟" }
-        return "还剩 \(Int(ceil(seconds / 60))) 分钟"
     }
 
     /// 专注状态小字（正文页眉右侧，工具层收起时可见）：进行中显示剩余时间，
@@ -1052,10 +1003,10 @@ struct ReaderView: View {
     /// 阅读中的听条只承担播放状态与切换；精细控制统一在听书页。
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
-            .padding(Theme.space2)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
-            .overlay(alignment: .top) { RowDivider() }
-            .contentShape(Rectangle())
+            .padding(.horizontal, Theme.space3)
+            .padding(.vertical, Theme.space2)
+            .floatingPanel(cornerRadius: Theme.radius)
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             .onTapGesture { }
     }
 
@@ -1066,7 +1017,7 @@ struct ReaderView: View {
                 Button { sheet = .focus } label: {
                     HStack(spacing: 8) {
                         listeningStatus
-                        ThemeIcon(symbol: Icon.expandUp, size: 18)
+                        ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(Theme.ink3)
                     }.contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("展开听书页")
@@ -1074,18 +1025,18 @@ struct ReaderView: View {
             } else { listeningStatus }
             Button { togglePlayback() } label: {
                 ZStack {
-                    Circle().fill(Theme.ink.opacity(0.07))
-                    if player.buffering { ProgressView().tint(Theme.ink) }
-                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.ink) }
+                    Circle().fill(Theme.clay)
+                    if player.buffering { ProgressView().tint(Theme.onClay) }
+                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.onClay) }
                 }
-                .frame(width: 46, height: 46)
+                .frame(width: 44, height: 44)
             }
-            .buttonStyle(PressButtonStyle(scale: 0.94))
+            .buttonStyle(PressButtonStyle())
             .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
             .accessibilityIdentifier("reader.toggle")
         }
         .foregroundStyle(Theme.ink)
-        .padding(.horizontal, 8).padding(.vertical, 4).frame(minHeight: 52)
+        .padding(.horizontal, 6).padding(.vertical, 4).frame(minHeight: 52)
         .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
             if value.translation.height < -24 { sheet = .focus }
         })
@@ -1376,7 +1327,7 @@ struct ReaderView: View {
     }
 }
 private struct RebuildKey: Equatable { let chapter: Int; let size: CGSize; let prefs: ReaderPreferences; let automaticDouble: Bool }
-enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice, focus; var id: String { rawValue } }
+enum ReaderSheet: String, Identifiable { case contents, notes, search, preferences, voice, focus, more; var id: String { rawValue } }
 
 final class CoreTextPageView: UIView {
     var onSelect: ((Int) -> Void)?
@@ -1966,8 +1917,15 @@ struct ContentsView: View {
                     SealDot(text: "在读")
                 }
             }
-            .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius))
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay {
+                if index != currentChapter {
+                    RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                        .strokeBorder(Theme.line, lineWidth: Theme.hairline)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -2048,12 +2006,17 @@ struct ChapterScrubber: View {
             let maximum = Double(max(1, count - 1))
             let value = dragging ? draft : Double(chapter)
             let fraction = min(1, max(0, value / maximum))
+            let knobSize: CGFloat = 16
+            let knobRadius = knobSize / 2
             // 滑块中心在轨道内缩一个半径行程，填充宽度正好到达滑块中心。
-            let knobCenter = 9 + fraction * max(0, width - 18)
+            let knobCenter = knobRadius + fraction * max(0, width - knobSize)
             ZStack(alignment: .leading) {
-                ProgressLine(value: width > 0 ? knobCenter / width : 0, height: Theme.ruleHeavy * 2)
+                ProgressLine(value: width > 0 ? knobCenter / width : 0, height: 4)
                     .accessibilityHidden(true)
-                Circle().fill(Theme.ink).frame(width: Theme.radius, height: Theme.radius).offset(x: knobCenter - 9)
+                Circle().fill(Theme.surface)
+                    .overlay { Circle().strokeBorder(Theme.ink, lineWidth: 2) }
+                    .frame(width: knobSize, height: knobSize)
+                    .offset(x: knobCenter - knobRadius)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -2159,7 +2122,8 @@ struct ReadingPreferencesView: View {
                         .foregroundStyle(ReaderPreferences(paper: paper).foreground)
                         .padding(Theme.cardInset)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                        .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
                         .accessibilityLabel("排版预览")
                 }
 
@@ -2276,20 +2240,20 @@ struct ReadingPreferencesView: View {
                 }
 
                 NavigationLink { MoreTypographyView() } label: {
-                    HStack(spacing: Theme.space3) {
-                        ThemeIcon(symbol: Icon.moreTypography, size: 24)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("更多排版").font(.body.weight(.medium))
-                            Text("行距、段距、页边距与简繁转换")
-                                .font(.caption).foregroundStyle(Theme.ink3)
+                    PaperCard(padding: Theme.space4) {
+                        HStack(spacing: Theme.space3) {
+                            ThemeIcon(symbol: Icon.moreTypography, size: 22).foregroundStyle(Theme.ink2)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("更多排版").font(Theme.sans(15, weight: .medium))
+                                Text("行距、段距、页边距与简繁转换")
+                                    .font(.caption).foregroundStyle(Theme.ink3)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            ThemeIcon(symbol: Icon.disclosure, size: 15).foregroundStyle(Theme.ink4)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        ThemeIcon(symbol: Icon.disclosure, size: 18)
+                        .foregroundStyle(Theme.ink)
+                        .frame(minHeight: Theme.iconButtonSize)
                     }
-                    .foregroundStyle(Theme.ink)
-                    .padding(Theme.space4)
-                    .frame(minHeight: 64)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
                 }
                 .buttonStyle(.plain)
             }

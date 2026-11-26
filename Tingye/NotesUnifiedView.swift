@@ -146,11 +146,11 @@ struct NotesUnifiedView: View {
             VStack(alignment: .leading, spacing: Theme.space3) {
                 Button { model.open(entry, target: item.target) } label: {
                     HStack(alignment: .top, spacing: Theme.space3) {
-                        Rectangle().fill(
+                        Capsule().fill(
                             item.highlight.map { Color(uiColor: ReaderMark.uiColor($0.color)) }
                             ?? (item.kind == .bookmark ? Theme.line : Theme.clay)
                         )
-                        .frame(width: item.kind == .bookmark ? 2 : 3.5)
+                        .frame(width: item.kind == .bookmark ? 2 : 3)
                         VStack(alignment: .leading, spacing: Theme.space2) {
                             SealBadge(text: item.kind.rawValue, color: Theme.ink3, background: Theme.surface2)
                             Text(item.text).font(Theme.serif(17, relativeTo: .body))

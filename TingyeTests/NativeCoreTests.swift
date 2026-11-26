@@ -5,7 +5,7 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// 「刊 · Folio × Anthropic」官方色板动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
+    /// 「暖纸 · Warm Paper」色板动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
     @MainActor func testV31PaletteResolvesToSpecifiedColors() {
         let tokens: [(String, Color, UInt32, UInt32)] = [
             ("bg", Theme.bg, 0xFAF9F5, 0x141413),
@@ -16,7 +16,7 @@ final class NativeCoreTests: XCTestCase {
             ("ink2", Theme.ink2, 0x3D3D3A, 0xD5D3CA),
             ("ink3", Theme.ink3, 0x595853, 0xABA89E),
             ("ink4", Theme.ink4, 0x87867F, 0x78756C),
-            ("line", Theme.line, 0xD8D4C8, 0x383631),
+            ("line", Theme.line, 0xE6E3D9, 0x2E2C29),
             ("clay", Theme.clay, 0xD97757, 0xD97757),
             ("accent", Theme.accent, 0xA6482B, 0xECA085),
             ("clayDeep", Theme.clayDeep, 0xA6482B, 0xECA085),

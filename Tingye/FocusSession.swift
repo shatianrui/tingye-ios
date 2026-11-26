@@ -271,7 +271,7 @@ struct FocusStartView: View {
         ZStack {
             Circle().stroke(Theme.line, lineWidth: Theme.progressHeight)
             Circle().trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(Theme.clay, style: StrokeStyle(lineWidth: Theme.progressHeight + 1, lineCap: .square))
+                .stroke(Theme.clay, style: StrokeStyle(lineWidth: Theme.progressHeight + 1, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(StatsView.clock(seconds)).font(Theme.serif(54, relativeTo: .largeTitle))
                 .monospacedDigit().foregroundStyle(Theme.ink)
@@ -330,7 +330,7 @@ struct FocusSummaryView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
+            .overlay(alignment: .leading) { Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
             .foregroundStyle(Theme.ink)
             Button { store.dismissSummary(); onContinue() } label: { Text("继续读") }
                 .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
