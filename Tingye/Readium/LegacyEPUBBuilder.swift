@@ -60,7 +60,10 @@ struct LegacyEPUBBuilder {
         let paths = state.filesWritten.sorted()
         for path in ["mimetype"] + paths.filter({ $0 != "mimetype" }) {
             try Task.checkCancellation()
-            let data = try Data(contentsOf: files.appendingPathComponent(path))
+            // Mapped, not materialized: image entries can be tens of MB each and the archive
+            // provider below is fed chunk by chunk, so resident memory stays near one chunk
+            // plus the largest page instead of the largest whole file.
+            let data = try Data(contentsOf: files.appendingPathComponent(path), options: .mappedIfSafe)
             try await archive.addEntry(with: path, type: .file, uncompressedSize: Int64(data.count),
                                        modificationDate: Date(timeIntervalSince1970: 315532800),
                                        compressionMethod: path == "mimetype" ? .none : .deflate) { position, size in
@@ -146,16 +149,25 @@ private final class BuildState {
         }
         for key in book.resourceMap.keys.sorted() {
             try Task.checkCancellation()
-            if let uri = book.resourceMap[key]?.string, let path = try image(uri, chapter: nil) { resourcePaths["tingye-resource:" + key] = path }
-            else { loss("resource-invalid", "资源 \(key) 不是可还原的图片 data URI。") }
+            // Each pass builds CGImageSource/UIImage temporaries; without a pool they pile up
+            // until the detached task ends, which for hundreds of images is the peak-memory
+            // difference between finishing and being jetsammed mid-rebuild.
+            try autoreleasepool {
+                if let uri = book.resourceMap[key]?.string, let path = try image(uri, chapter: nil) { resourcePaths["tingye-resource:" + key] = path }
+                else { loss("resource-invalid", "资源 \(key) 不是可还原的图片 data URI。") }
+            }
         }
         let cover = try book.fields["cover"]?.string.flatMap { try resource($0, chapter: nil) }
         if book.fields["cover"] != nil && cover == nil { loss("cover-missing", "已有封面引用无法还原，不将首图充作封面。") }
         for (index, chapter) in book.chapters.enumerated() {
             try Task.checkCancellation()
-            documents.append(try chapterDocument(chapter, index: index))
-            let css = try cleanCSS(chapter.fields["document"]?.object?["css"]?.string ?? "", chapter: index)
-            try write(String(format: "EPUB/styles/ch-%06d.css", index + 1), Data((css + "\n" + (bodyStyles[index] ?? "")).utf8))
+            // Same pool discipline as the resource pass: XMLParser/SwiftSoup temporaries from
+            // one chapter are released before the next chapter is normalized.
+            try autoreleasepool {
+                documents.append(try chapterDocument(chapter, index: index))
+                let css = try cleanCSS(chapter.fields["document"]?.object?["css"]?.string ?? "", chapter: index)
+                try write(String(format: "EPUB/styles/ch-%06d.css", index + 1), Data((css + "\n" + (bodyStyles[index] ?? "")).utf8))
+            }
         }
         try validateFragments()
         for (index, doc) in documents.enumerated() {

@@ -24,9 +24,15 @@ enum EPUBTextSnapshotBuilder {
             let type = link.mediaType?.string ?? ""
             if ["image/png", "image/jpeg", "image/gif", "image/webp"].contains(type), images[path] == nil {
                 let bytes = try await resource.read().get(), key = "r\(resources.count)"
-                resources[key] = .string("data:\(type);base64," + bytes.base64EncodedString()); images[path] = key
-            } else if type == "text/css" {
-                styles[path] = try BookImporter.decode(try await resource.read().get())
+                // Base64 over a whole image library is the import's heaviest CPU work. The
+                // Publication calls stay on the main actor; the encoding does not have to.
+                let encoded = await Task.detached(priority: .userInitiated) { bytes.base64EncodedString() }.value
+                resources[key] = .string("data:\(type);base64," + encoded); images[path] = key
+            } else if type == "text/css", styles[path] == nil {
+                // Reading order and the resource list overlap; decode each stylesheet once,
+                // off the main actor like the chapter text below.
+                let bytes = try await resource.read().get()
+                styles[path] = try await Task.detached(priority: .userInitiated) { try BookImporter.decode(bytes) }.value
             }
         }
         var chapters: [Chapter] = []
@@ -38,10 +44,13 @@ enum EPUBTextSnapshotBuilder {
             guard ["application/xhtml+xml", "text/html", "image/svg+xml"].contains(link.mediaType?.string ?? "") else {
                 throw ReaderError.message("EPUB 正文不是可提取文字的 HTML：\(link.href)")
             }
-            let html = try BookImporter.decode(try await resource.read().get())
+            let bytes = try await resource.read().get()
             let title = toc.first { PublicationMap.normalized($0.href) == path }?.title ?? link.title ?? "第 \(chapters.count + 1) 章"
             let imageMap = images, cssMap = styles
-            let chapter = await Task.detached(priority: .userInitiated) {
+            let chapter = try await Task.detached(priority: .userInitiated) {
+                // Decoding (encoding sniffing + newline normalization over the full chapter)
+                // is part of the per-chapter CPU work and runs here, not on the main actor.
+                let html = try BookImporter.decode(bytes)
                 var chapter = HTMLText.chapter(html, title: title)
                 // Publication TOC/resource titles take precedence over a heading in the body.
                 chapter.fields["title"] = .string(title)
@@ -69,7 +78,9 @@ enum EPUBTextSnapshotBuilder {
         var extras: [String: JSONValue] = ["resources": .object(resources), "description": .string(metadata.description ?? ""),
             "category": .string(metadata.subjects.first?.name ?? "其他"), "language": .string(metadata.languages.first ?? "und")]
         if let cover = try await publication.cover().get(), let bytes = cover.pngData() {
-            let key = "r\(resources.count)"; resources[key] = .string("data:image/png;base64," + bytes.base64EncodedString())
+            let key = "r\(resources.count)"
+            let encoded = await Task.detached(priority: .userInitiated) { bytes.base64EncodedString() }.value
+            resources[key] = .string("data:image/png;base64," + encoded)
             extras["resources"] = .object(resources); extras["cover"] = .string("tingye-resource:" + key)
         }
         let authors = metadata.authors.map(\.name).joined(separator: "、")

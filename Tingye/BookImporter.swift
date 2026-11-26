@@ -25,9 +25,13 @@ enum BookImporter {
         if ext == "docx" { return Imported(book: try docx(url, title: title).validated()) }
         if ["mobi", "azw", "azw3", "prc"].contains(ext) { return Imported(book: try MobiReader.book(url, fallbackTitle: title).validated()) }
         if ["cbz", "zip"].contains(ext) { return Imported(book: try ComicImporter.book(url, title: title).validated()) }
-        let data = try Data(contentsOf: url)
+        // Mapped when possible: decoding/JSON parsing below fault pages in on demand instead of
+        // charging the whole file to resident memory up front (matters for 100 MB+ books).
+        let data = try Data(contentsOf: url, options: .mappedIfSafe)
         if ext == "pdf" {
-            guard let document = PDFDocument(data: data), !document.isLocked, document.pageCount > 0 else { throw ReaderError.message("PDF 无法读取或已加密。") }
+            // Open from the file so PDFKit streams pages instead of holding a second in-memory
+            // copy of the whole document next to `data` (which is only kept for the base64 payload).
+            guard let document = PDFDocument(url: url), !document.isLocked, document.pageCount > 0 else { throw ReaderError.message("PDF 无法读取或已加密。") }
             let chapters = (0..<document.pageCount).map { Chapter(title: "第 \($0 + 1) 页", text: document.page(at: $0)?.string ?? "") }
             return Imported(book: try Book(title: title, format: "PDF", chapters: chapters, extras: ["pdf": .string(data.base64EncodedString())]).validated())
         }
@@ -161,6 +165,35 @@ final class SafeArchive {
             let buffer = ArchiveBuffer()
             _ = try await reader.extract(entry) { chunk in await buffer.append(chunk) }
             return await buffer.data
+        }
+    }
+    /// Batch extraction for page archives (CBZ): one path index and one bridged async pass
+    /// instead of a semaphore round-trip plus an O(n) entry scan per file, which made
+    /// thousand-page books quadratic in bookkeeping before any bytes were decoded.
+    /// Missing or non-file paths throw the same error as `data(_:)`.
+    func data(for paths: [String]) throws -> [String: Data] {
+        var index: [String: Entry] = [:]
+        index.reserveCapacity(archive.count)
+        for entry in archive where index[entry.path] == nil { index[entry.path] = entry }
+        var entries: [(path: String, entry: Entry)] = []
+        entries.reserveCapacity(paths.count)
+        for path in paths {
+            guard let entry = index[path], entry.type == .file else {
+                throw ReaderError.message("压缩书籍缺少资源：\(path)")
+            }
+            entries.append((path, entry))
+        }
+        let reader = reader
+        return try Self.blocking {
+            var result: [String: Data] = [:]
+            result.reserveCapacity(entries.count)
+            for (path, entry) in entries {
+                try Task.checkCancellation()
+                let buffer = ArchiveBuffer()
+                _ = try await reader.extract(entry) { chunk in await buffer.append(chunk) }
+                result[path] = await buffer.data
+            }
+            return result
         }
     }
     /// Only the legacy synchronous API uses this bridge; new Readium code uses async directly.

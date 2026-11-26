@@ -287,13 +287,22 @@ enum ComicImporter {
         guard !images.isEmpty else { throw ReaderError.message("压缩包里没有图片；ZIP 只支持漫画 / 图集（CBZ）。") }
         var resources: [String: JSONValue] = [:]
         var chapters: [Chapter] = []
-        for (index, path) in images.enumerated() {
-            let data = try zip.data(path)
-            let ext = (path as NSString).pathExtension.lowercased()
-            let type = ext == "jpg" ? "image/jpeg" : "image/" + ext
-            let key = "p\(index)"
-            resources[key] = .string("data:\(type);base64," + data.base64EncodedString())
-            chapters.append(Chapter(title: "第 \(index + 1) 页", text: "", extras: ["nativeImages": .array([.string("tingye-resource:" + key)])]))
+        // Extract in bounded batches through one bridged pass per batch: per-page calls made
+        // thousand-page books pay a semaphore round-trip and an O(n) entry scan for every page,
+        // while holding every page at once would spike memory on top of the base64 payloads.
+        let batchSize = 16
+        for start in stride(from: 0, to: images.count, by: batchSize) {
+            let slice = Array(images[start..<min(start + batchSize, images.count)])
+            let payloads = try zip.data(for: slice)
+            for (offset, path) in slice.enumerated() {
+                let index = start + offset
+                guard let data = payloads[path] else { throw ReaderError.message("压缩书籍缺少资源：\(path)") }
+                let ext = (path as NSString).pathExtension.lowercased()
+                let type = ext == "jpg" ? "image/jpeg" : "image/" + ext
+                let key = "p\(index)"
+                resources[key] = .string("data:\(type);base64," + data.base64EncodedString())
+                chapters.append(Chapter(title: "第 \(index + 1) 页", text: "", extras: ["nativeImages": .array([.string("tingye-resource:" + key)])]))
+            }
         }
         return Book(title: title, author: "佚名", format: "CBZ", chapters: chapters,
                     extras: ["resources": .object(resources), "cover": .string("tingye-resource:p0"), "comic": .bool(true), "category": .string("漫画")])
