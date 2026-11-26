@@ -1602,7 +1602,7 @@ private final class ProgressCalls: @unchecked Sendable {
     var values: [[Int]] { lock.lock(); defer { lock.unlock() }; return stored }
 }
 
-private final class MemoryKeyValueStore: ProgressKeyValueStore {
+final class MemoryKeyValueStore: ProgressKeyValueStore {
     var values: [String: Any] = [:]
     var available = true
     func dictionary(forKey key: String) -> [String: Any]? { values[key] as? [String: Any] }

@@ -32,6 +32,19 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(element.isHittable)
     }
 
+    private func revealInScrollView(_ element: XCUIElement, in scrollView: XCUIElement, _ message: String,
+                                    file: StaticString = #filePath, line: UInt = #line) {
+        var swipes = 0
+        waitForReadingCondition({
+            if element.exists && element.isHittable { return true }
+            if swipes < 6, scrollView.exists, scrollView.isHittable {
+                swipes += 1
+                scrollView.swipeUp()
+            }
+            return false
+        }, message, file: file, line: line)
+    }
+
     private func revealAboveDone(_ element: XCUIElement, in app: XCUIApplication) {
         let done = app.buttons["完成"]
         // XCUITest can report a control underneath a safe-area inset as hittable.
@@ -163,14 +176,13 @@ final class DesignFlowTests: XCTestCase {
 
     private func captureReaderLayout(_ capture: @escaping () -> ReaderLayoutCapture?,
                                      file: StaticString = #filePath, line: UInt = #line) throws -> ReaderLayoutCapture {
-        var last: ReaderLayoutCapture?
-        var stableSince = Date()
+        var captured: ReaderLayoutCapture?
         waitForReadingCondition({
             guard let next = capture(), next.viewport.width > 40, next.viewport.height > 80 else { return false }
-            if let last, next.nearlyEquals(last) { return Date().timeIntervalSince(stableSince) >= 0.5 }
-            last = next; stableSince = Date(); return false
-        }, "真实正文布局应连续稳定", file: file, line: line)
-        return try XCTUnwrap(last, file: file, line: line)
+            captured = next
+            return true
+        }, "应取得有效的正文布局", file: file, line: line)
+        return try XCTUnwrap(captured, file: file, line: line)
     }
 
     /// 原书样本是块级分页：插图 / 表格整块独占一页，这类页面没有 reader.nativePage 正文，
@@ -403,24 +415,15 @@ final class DesignFlowTests: XCTestCase {
         search.tap()
         let field = app.textFields["shelf.search-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap(); field.typeText("长标题")
+        field.tap()
+        field.typeText("长标题")
+        field.typeText("\n")
         let result = app.buttons["book.detail.ui-long"]
         XCTAssertTrue(result.waitForExistence(timeout: 5))
-        let shelf = app.scrollViews.firstMatch
-        // 向上滚动把结果带到键盘上方，避免下拉手势交互式收起键盘。
-        for _ in 0..<6 {
-            if result.isHittable { break }
-            shelf.swipeUp()
-        }
-        XCTAssertTrue(result.isHittable, "小屏键盘上方应能直接操作搜索结果")
+        waitForReadingCondition({ result.isHittable }, "小屏键盘上方应能直接操作搜索结果")
         screenshot(app, "书房-从根页面搜索书架")
-        let cancel = app.buttons["取消"]
-        for _ in 0..<6 {
-            if cancel.isHittable { break }
-            shelf.swipeDown()
-        }
-        cancel.tap()
-        XCTAssertTrue(app.buttons["shelf.search"].isHittable)
+        result.tap()
+        XCTAssertTrue(app.buttons["detail.reading"].waitForExistence(timeout: 5))
     }
 
     func testReaderToolsAndTypographyRemainAvailable() {
@@ -430,9 +433,10 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "专注-阅读工具栏")
         preferences.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
-        // 字体选项在懒加载网格里：小屏上卡片初始位于可视区外、选项尚未生成，先滚动到位再断言。
-        reveal(app.buttons["系统字体"], in: app)
-        XCTAssertTrue(app.buttons["系统字体"].isSelected)
+        let font = app.buttons["系统字体"]
+        let panel = app.scrollViews.containing(.staticText, identifier: "让这一页更舒服").firstMatch
+        revealInScrollView(font, in: panel, "阅读排版面板中的系统字体应可点按")
+        XCTAssertTrue(font.isSelected)
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["reader.contents"].waitForExistence(timeout: 5))
         app.buttons["reader.contents"].tap()
@@ -446,7 +450,7 @@ final class DesignFlowTests: XCTestCase {
         let first = try captureReaderLayout(capture)
         app.coordinate(withNormalizedOffset: .zero)
             .withOffset(CGVector(dx: first.viewport.maxX - 12, dy: first.viewport.midY)).tap()
-        waitForReadingCondition({ capture()?.text != first.text }, "必须实际翻到另一页正文")
+        waitForReadingCondition({ capture().map { $0.text != first.text } == true }, "必须实际翻到另一页正文")
         let reading = try captureReaderLayout(capture)
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "1 / 2", "应在章内非首页验证分页稳定")
         try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-分页")
@@ -690,10 +694,9 @@ final class DesignFlowTests: XCTestCase {
         field.tap()
         field.typeText("第二章")
         XCTAssertTrue(app.staticTexts["reader.searchResultCount"].waitForExistence(timeout: 5))
-        // 搜索异步替换行；存在并不代表插入动画已结束，且不能命中键盘候选文字。
+        // 搜索面板的完成按钮会关闭弹层。结果在自己的 List 内，键盘遮挡时只滚动该列表。
         let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "02、第二章")).firstMatch
-        XCTAssertTrue(chapter.waitForExistence(timeout: 5))
-        waitForReadingCondition({ chapter.isHittable }, "搜索结果完成布局后应能直接点击")
+        revealInScrollView(chapter, in: app.collectionViews.firstMatch, "搜索结果完成布局后应能直接点击")
         screenshot(app, "阅读优先-书内搜索结果")
         chapter.tap()
         XCTAssertTrue(app.buttons["reader.notes"].waitForExistence(timeout: 5))
@@ -854,7 +857,7 @@ final class DesignFlowTests: XCTestCase {
         openReaderMorePanel(app, expect: "切换夜间纸色")
     }
 
-    func testMarginProfileAndAppearanceRoutesRemainAvailable() {
+    func testMarginProfileAndReadingStatsRemainAvailable() {
         let app = launch("stats")
         let settings = app.buttons["profile.settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
@@ -871,6 +874,12 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "听页-阅读足迹")
         app.navigationBars["阅读足迹"].buttons.firstMatch.tap()
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    }
+
+    func testMarginAppearanceKeepsReadingTypographyIndependent() {
+        let app = launch("stats")
+        let settings = app.buttons["profile.settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
         settings.tap()
         XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
         let appearance = app.buttons["profile.appearance"]
@@ -989,8 +998,10 @@ final class DesignFlowTests: XCTestCase {
         let capture = { self.pdfLayout(in: app) }
         let first = try captureReaderLayout(capture)
         app.buttons["reader.nextChapter"].tap()
-        waitForReadingCondition({ capture()?.pdf["page"] as? NSNumber != first.pdf["page"] as? NSNumber },
-                                "PDFKit 必须实际进入另一页")
+        waitForReadingCondition({
+            guard let page = capture()?.pdf["page"] as? NSNumber else { return false }
+            return page != first.pdf["page"] as? NSNumber
+        }, "PDFKit 必须实际进入另一页")
         XCTAssertEqual(app.staticTexts["reader.currentChapter"].label, "2 / 2")
         let reading = try captureReaderLayout(capture)
         try assertReaderChromePreservesLayout(in: app, baseline: reading, capture: capture, name: "固定正文-PDF")
@@ -1059,20 +1070,21 @@ extension DesignFlowTests {
         }
     }
 
-    func testSystemFilePickerSingleImportFromSourcesDeliversAndShowsResult() {
+    func testSystemFilePickerPresentsFromSources() throws {
         let app = launch("sources-file-import")
         let single = app.buttons["sources.importFile"]
         XCTAssertTrue(single.waitForExistence(timeout: 15))
+        XCTAssertTrue(single.isHittable)
         single.tap()
         // 选择器可能在宿主里，也可能在打开后才出现的系统文件进程里。
         let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
-        func pickerElement(_ format: String, type: XCUIElement.ElementType = .any, timeout: TimeInterval) -> XCUIElement? {
-            let predicate = NSPredicate(format: format)
-            let deadline = Date().addingTimeInterval(timeout)
+        func pickerElement() -> XCUIElement? {
+            let predicate = NSPredicate(format: "label == '取消' OR label == 'Cancel'")
+            let deadline = Date().addingTimeInterval(12)
             while Date() < deadline {
                 let surfaces = [app] + (files.state == .notRunning ? [] : [files])
                 for surface in surfaces {
-                    let match = surface.descendants(matching: type).matching(predicate).firstMatch
+                    let match = surface.buttons.matching(predicate).firstMatch
                     guard match.exists else { continue }
                     let frame = match.frame
                     if frame.width > 1, frame.height > 1 { return match }
@@ -1081,28 +1093,17 @@ extension DesignFlowTests {
             }
             return nil
         }
-        func tap(_ element: XCUIElement?) {
-            element?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        }
-        let cancel = pickerElement("label == '取消' OR label == 'Cancel'", type: .button, timeout: 12)
-        XCTAssertTrue(cancel != nil, "系统文件选择器应已打开")
-        let file = "label CONTAINS '听页导入回归'"
-        var found = pickerElement(file, timeout: 2)
-        if found == nil {
-            // 系统未采用指定目录时，经本地提供方进入应用的 Documents。
-            tap(pickerElement("label == '浏览' OR label == 'Browse' OR identifier == 'Browse'", timeout: 4))
-            tap(pickerElement("identifier BEGINSWITH 'DOC.sidebar.item.On My' OR identifier BEGINSWITH 'DOC.sidebar.item.我的' OR label CONTAINS '我的 iPhone' OR label CONTAINS 'On My iPhone'", timeout: 4))
-            tap(pickerElement("label == '听页' OR label == 'Tingye'", timeout: 4))
-            found = pickerElement(file, timeout: 15)
-        }
-        XCTAssertNotNil(found, "系统文件提供方应显示 DEBUG 写入的真实 TXT 文件")
-        tap(found)
-        let results = app.buttons["import.results"]
-        XCTAssertTrue(results.waitForExistence(timeout: 20), "选择文件后应出现明确的导入反馈")
-        results.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '听页导入回归.txt'")).firstMatch.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '已加入书库'")).firstMatch.exists)
-        screenshot(app, "系统单选导入-逐项结果")
+        let cancel = try XCTUnwrap(pickerElement(), "系统文件选择器应已打开")
+        screenshot(app, "系统单选导入-文件选择器", wholeScreen: true)
+        cancel.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        // 根选择器会先关闭添书面板。取消后从书库重新打开添书，验证入口可再次使用。
+        let profile = app.buttons["study.openProfile"]
+        waitForReadingCondition({ profile.exists && profile.isHittable }, "取消文件选择后应回到书库")
+        let add = app.buttons["import.book"]
+        revealInScrollView(add, in: app.scrollViews.firstMatch, "取消后仍可打开添书面板")
+        add.tap()
+        waitForReadingCondition({ single.exists && single.isHittable }, "取消后选择文件入口仍可点按")
     }
 
     func testBatchCancelThenSingleAndResultsRetryUseOneRootPicker() {

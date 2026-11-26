@@ -352,7 +352,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
 
     @Published private(set) var sleepUntil: Date?
     var onProgress: ((String, Int, Int) -> Void)?
-    private let synth = AVSpeechSynthesizer()
+    private var synth: AVSpeechSynthesizer?
     private var audio: AVAudioPlayer?
     private var utterance: AVSpeechUtterance?
     private var task: Task<Void, Never>?
@@ -395,7 +395,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         case "system":
             let id = options.voice
             if id.isEmpty { return "默认中文声音" }
-            return AVSpeechSynthesisVoice(identifier: id)?.name ?? "系统声音"
+            return SpeechVoiceCache.name(for: id) ?? "系统声音"
         case "glm":
             let map = ["tongtong": "彤彤", "chuichui": "锤锤", "xiaochen": "小陈", "jam": "动动", "kazi": "卡子", "douji": "豆吉", "luodo": "洛多"]
             return map[options.voice] ?? options.voice
@@ -421,7 +421,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
 
     override init() {
-        super.init(); synth.delegate = self
+        super.init()
         let commands = MPRemoteCommandCenter.shared()
         commands.playCommand.addTarget { [weak self] _ in Task { @MainActor in self?.resume() }; return .success }
         commands.pauseCommand.addTarget { [weak self] _ in Task { @MainActor in self?.pause() }; return .success }
@@ -453,22 +453,33 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         })
     }
     func start(book: Book, chapter: Int, position: Int) {
+        guard prepare(book: book, chapter: chapter, position: position) else { return }
+        playing = true; playSentence()
+    }
+    #if DEBUG
+    func preparePausedForUIReview(book: Book, chapter: Int, position: Int) {
+        guard prepare(book: book, chapter: chapter, position: position) else { return }
+        onProgress?(book.id, self.chapter, self.position)
+        updateNowPlaying()
+    }
+    #endif
+    private func prepare(book: Book, chapter: Int, position: Int) -> Bool {
         // 先在阅读页设了定时再开始听，换书重建朗读时保留剩余时间。
         let pendingSleep = sleepUntil
         stop(); if let pendingSleep { setSleep(until: pendingSleep) }
         self.book = book; options = .load(); chapterList = book.chapters
-        guard !chapterList.isEmpty else { self.book = nil; return }
+        guard !chapterList.isEmpty else { self.book = nil; return false }
         self.chapter = min(max(chapter, 0), chapterList.count - 1)
         sentences = Sentence.split(chapterList[self.chapter].text)
         self.position = min(max(position, 0), max(0, sentences.count - 1))
-        playing = true; playSentence()
+        return true
     }
     func toggle() { playing ? pause() : resume() }
     func pause() {
         if systemSlice != nil, systemPausedAt == nil { systemPausedAt = Date() }
         playing = false; buffering = false; generation = UUID(); task?.cancel(); task = nil
         prefetchTask?.cancel(); prefetchTask = nil; cloudRequests.retainOnly()
-        if synth.isSpeaking { synth.pauseSpeaking(at: .immediate) }
+        if let synth, synth.isSpeaking { synth.pauseSpeaking(at: .immediate) }
         audio?.pause(); updateNowPlaying()
     }
     func resume() {
@@ -476,7 +487,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         audioSessionReady = false
         guard prepareAudioSession() else { return }
         error = nil; playing = true; resumeAfterInterruption = false
-        if synth.isPaused {
+        if let synth, synth.isPaused {
             if let paused = systemPausedAt, let slice = systemSlice {
                 systemSlice = (slice.utterance, slice.range, slice.started.addingTimeInterval(Date().timeIntervalSince(paused)))
             }
@@ -503,7 +514,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     func stop() {
         generation = UUID(); task?.cancel(); task = nil; utterance = nil; audio?.delegate = nil
-        synth.stopSpeaking(at: .immediate); queued = [:]; audio?.stop(); audio = nil
+        synth?.stopSpeaking(at: .immediate); queued = [:]; audio?.stop(); audio = nil
         playing = false; buffering = false; error = nil; book = nil; sentences = []; chapterList = []; wordRange = nil; spokenOffset = 0; resumeAfterInterruption = false
         clockTask?.cancel(); prefetchTask?.cancel(); cloudWords = []; systemSlice = nil; systemPausedAt = nil; audioCache = [:]; cacheOrder = []
         cloudRequests.retainOnly(); lengths = nil; preparedAudio = nil; stopAt = nil; nextChapterSplit = nil; audioSessionReady = false
@@ -514,7 +525,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     func seek(_ index: Int) {
         guard let book else { return }
         let chapters = chapterList
-        generation = UUID(); task?.cancel(); utterance = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
+        generation = UUID(); task?.cancel(); utterance = nil; synth?.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
         prefetchTask?.cancel(); prefetchTask = nil
         if index >= sentences.count {
             if chapter + 1 < chapters.count { chapter += 1; sentences = split(chapter); position = 0 }
@@ -541,7 +552,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         let wasPlaying = playing
         if let range = wordRange, let sentenceRange { spokenOffset = max(0, range.location - sentenceRange.location) }
         generation = UUID(); task?.cancel(); prefetchTask?.cancel(); clockTask?.cancel()
-        utterance = nil; systemSlice = nil; systemPausedAt = nil; synth.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
+        utterance = nil; systemSlice = nil; systemPausedAt = nil; synth?.stopSpeaking(at: .immediate); queued = [:]; audio?.delegate = nil; audio?.stop(); audio = nil
         preparedAudio = nil; stopAt = nil; buffering = false; playing = wasPlaying
         if wasPlaying { playSentence() } else { cloudRequests.retainOnly() }
     }
@@ -595,8 +606,11 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
             let offset = min(spokenOffset, max(0, (currentText as NSString).length - 1))
             spokenOffset = offset; timingLabel = "句子同步"
             let line = makeUtterance((currentText as NSString).substring(from: offset), sentence: position)
+            if !options.voice.isEmpty, let voice = line.voice, voice.identifier == options.voice {
+                SpeechVoiceCache.rememberName(voice.name, for: options.voice)
+            }
             queued = [ObjectIdentifier(line): (line, position)]; lastQueued = position
-            utterance = line; synth.speak(line); buffering = false
+            utterance = line; systemSynthesizer().speak(line); buffering = false
             enqueueAhead()
         } else {
             let offset = min(spokenOffset, max(0, (currentText as NSString).length - 1))
@@ -828,6 +842,14 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     /// 第 index 句的角色（未开启分角色时一律旁白）
     private func role(_ index: Int) -> DialogueRole { options.roles ? DialogueRoles.role(index, in: sentences) : .narrator }
+    private func systemSynthesizer() -> AVSpeechSynthesizer {
+        if let synth { return synth }
+        let synthesizer = AVSpeechSynthesizer()
+        synthesizer.delegate = self
+        synth = synthesizer
+        return synthesizer
+    }
+
     private func makeUtterance(_ text: String, sentence index: Int) -> AVSpeechUtterance {
         let line = AVSpeechUtterance(string: text)
         let voice = options.forRole(role(index)).voice
@@ -837,7 +859,7 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     /// 在当前句之后补足预排的句子（只排本章内的；跨章仍走 skip 重建）。
     private func enqueueAhead() {
-        guard playing, options.provider == "system" else { return }
+        guard playing, options.provider == "system", let synth else { return }
         while lastQueued < position + Self.lookahead, sentences.indices.contains(lastQueued + 1) {
             lastQueued += 1
             let line = makeUtterance(sentences[lastQueued].text, sentence: lastQueued)
@@ -933,29 +955,45 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
 }
 
-/// 系统音色缓存：`AVSpeechSynthesisVoice.speechVoices()` 首次枚举可达数百毫秒，
-/// 声音设置页若在每次重绘时同步枚举会明显卡顿。全局只枚举一次并缓存，
-/// 设置页经后台任务取用；筛选（中 / 英）与排序口径与设置页原逻辑一致。
+/// 只将可显示的音色资料传回主线程，所有请求共享同一次后台枚举。
+@MainActor
 enum SpeechVoiceCache {
-    private static let lock = NSLock()
-    private static var storage: [AVSpeechSynthesisVoice]?
-
-    /// 已缓存的音色列表；尚未枚举过时为 nil。
-    static var cached: [AVSpeechSynthesisVoice]? {
-        lock.lock()
-        defer { lock.unlock() }
-        return storage
+    struct Voice: Sendable {
+        let identifier: String
+        let name: String
+        let language: String
     }
 
-    /// 命中缓存直接返回，否则枚举一次并写缓存。可在任意线程调用（枚举本身耗时，勿在主线程首调）。
-    static func load() -> [AVSpeechSynthesisVoice] {
+    private(set) static var cached: [Voice]?
+    private static var inFlight: Task<[Voice], Never>?
+
+    static func name(for identifier: String) -> String? {
+        cached?.first(where: { $0.identifier == identifier })?.name
+            ?? UserDefaults.standard.string(forKey: "voice.label.system." + identifier)
+    }
+
+    static func rememberName(_ name: String, for identifier: String) {
+        let key = "voice.label.system." + identifier
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: key) != name { defaults.set(name, forKey: key) }
+    }
+
+    static func load() async -> [Voice] {
         if let cached { return cached }
-        let list = AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix("zh") || $0.language.hasPrefix("en") }
-            .sorted { $0.language + $0.name < $1.language + $1.name }
-        lock.lock()
-        storage = list
-        lock.unlock()
-        return list
+        if let inFlight { return await inFlight.value }
+        let task = Task {
+            let list = await Task.detached(priority: .userInitiated) {
+                AVSpeechSynthesisVoice.speechVoices()
+                    .filter { $0.language.hasPrefix("zh") || $0.language.hasPrefix("en") }
+                    .map { Voice(identifier: $0.identifier, name: $0.name, language: $0.language) }
+                    .sorted { $0.language + $0.name < $1.language + $1.name }
+            }.value
+            // 服务暂时返回空列表时保留现有缓存，稍后进入选择页可重试。
+            if !list.isEmpty { cached = list }
+            inFlight = nil
+            return cached ?? []
+        }
+        inFlight = task
+        return await task.value
     }
 }

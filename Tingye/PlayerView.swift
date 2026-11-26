@@ -696,9 +696,8 @@ struct ChapterListView: View {
 struct VoiceSettingsView: View {
     @EnvironmentObject var app: AppModel
     @State private var fetchedVoices: [CloudVoice] = []
-    /// 系统音色异步加载（SpeechVoiceCache 全局只枚举一次），页面打开不再同步枚举卡顿。
-    @State private var systemVoices: [AVSpeechSynthesisVoice] = SpeechVoiceCache.cached ?? []
-    @State private var voicesLoaded = SpeechVoiceCache.cached != nil
+    @State private var voices: [SpeechVoiceCache.Voice] = []
+    @State private var voicesLoaded = false
     @State private var notice = ""
     typealias CloudVoice = CloudSpeech.Voice
     @Environment(\.dismiss) var dismiss
@@ -715,7 +714,7 @@ struct VoiceSettingsView: View {
     @State private var apiKey = ""
     @State private var error: String?
     @State private var preview: AVAudioPlayer?
-    @State private var systemPreview = AVSpeechSynthesizer()
+    @State private var systemPreview: AVSpeechSynthesizer?
     @State private var previewTask: Task<Void, Never>?
     @State private var previewing = false
     @State private var pausedBookForPreview = false
@@ -724,9 +723,6 @@ struct VoiceSettingsView: View {
     @State private var drafts: [String: Draft] = [:]
     @State private var loadedProvider = ""
     private struct Draft { var voice: String; var model: String; var key: String; var male: String; var female: String }
-    /// 只读已异步加载的系统音色（见 body 的 .task 与 SpeechVoiceCache）；不再同步枚举。
-    private var voices: [AVSpeechSynthesisVoice] { systemVoices }
-
     var body: some View {
         Form {
             EditorialIntro(title: "让文字有自己的声音", detail: "先试听，再保存。声音设置与阅读进度分开保留。")
@@ -738,6 +734,7 @@ struct VoiceSettingsView: View {
             Section {
                 NavigationLink {
                     voiceDetail("选择音色") { voiceSection }
+                        .task { await loadSystemVoices() }
                 } label: { voiceSettingLabel("音色", value: currentVoiceName) }
             }
             .listRowBackground(Theme.surface)
@@ -750,6 +747,7 @@ struct VoiceSettingsView: View {
             Section {
                 NavigationLink {
                     voiceDetail("分角色配音") { roleSection }
+                        .task { await loadSystemVoices() }
                 } label: { voiceSettingLabel("分角色配音", value: roles ? "Beta · 已开启" : "Beta · 关闭") }
             }
             .listRowBackground(Theme.surface)
@@ -800,8 +798,13 @@ struct VoiceSettingsView: View {
         }
         .feedbackOverlay()
         .respectReducedMotion()
-        .onAppear { if loadedProvider.isEmpty { load(provider) } }
-        .task { await loadSystemVoices() }
+        .onAppear {
+            if loadedProvider.isEmpty { load(provider) }
+            if let cached = SpeechVoiceCache.cached {
+                voices = cached
+                voicesLoaded = true
+            }
+        }
         .onDisappear { stopPreview() }
     }
 
@@ -852,6 +855,7 @@ struct VoiceSettingsView: View {
         }
         .editorialList()
         .navigationTitle("连接云语音").navigationBarTitleDisplayMode(.inline)
+        .task(id: provider) { await loadSystemVoices() }
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: Theme.space3) {
                 Button { previewing ? stopPreview() : testVoice() } label: {
@@ -1002,6 +1006,9 @@ struct VoiceSettingsView: View {
                 ForEach(voices, id: \.identifier) { v in
                     Text("\(v.name) · \(v.language)").tag(v.identifier)
                 }
+                if !voice.isEmpty, !voices.contains(where: { $0.identifier == voice }) {
+                    Text(currentVoiceName).tag(voice)
+                }
             }
         } else if provider == "glm" {
             Picker("音色", selection: $voice) {
@@ -1107,7 +1114,7 @@ struct VoiceSettingsView: View {
     private var currentVoiceName: String {
         if provider == "system" {
             if voice.isEmpty { return "默认中文声音" }
-            return voices.first(where: { $0.identifier == voice })?.name ?? "默认中文声音"
+            return SpeechVoiceCache.name(for: voice) ?? "系统声音"
         }
         if provider == "glm" {
             return glmVoices.first(where: { $0.value == voice })?.label ?? voice
@@ -1150,7 +1157,7 @@ struct VoiceSettingsView: View {
 
     private func stopPreview() {
         previewRevision = UUID(); previewTask?.cancel(); previewTask = nil
-        preview?.stop(); preview = nil; systemPreview.stopSpeaking(at: .immediate); previewing = false
+        preview?.stop(); preview = nil; systemPreview?.stopSpeaking(at: .immediate); previewing = false
     }
 
     private func testVoice() {
@@ -1164,15 +1171,18 @@ struct VoiceSettingsView: View {
         previewTask = Task { @MainActor in
             defer { if previewRevision == revision { previewing = false } }
             do {
+                try Task.checkCancellation()
                 try SpeechAudioSession.activate()
                 let sample = "你好，这是听页的试听。选一种声音，让阅读慢慢继续。"
                 if config.0 == "system" {
                     let line = AVSpeechUtterance(string: sample)
                     line.voice = config.2.isEmpty ? AVSpeechSynthesisVoice(language: "zh-CN") : AVSpeechSynthesisVoice(identifier: config.2)
                     line.rate = min(AVSpeechUtteranceMaximumSpeechRate, max(AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * Float(speed)))
-                    systemPreview.speak(line)
+                    let synthesizer = systemPreview ?? AVSpeechSynthesizer()
+                    systemPreview = synthesizer
+                    synthesizer.speak(line)
                     try await Task.sleep(for: .milliseconds(300))
-                    while systemPreview.isSpeaking { try await Task.sleep(for: .milliseconds(150)) }
+                    while synthesizer.isSpeaking { try await Task.sleep(for: .milliseconds(150)) }
                 } else {
                     let result = try await CloudSpeech.synthesize(sample, provider: config.0, model: config.1, voice: config.2, key: config.3, groupID: config.4)
                     try Task.checkCancellation()
@@ -1187,16 +1197,22 @@ struct VoiceSettingsView: View {
         }
     }
 
-    /// 系统音色只在首次进入时于后台枚举一次；再次进入直接命中 SpeechVoiceCache。
     private func loadSystemVoices() async {
+        guard provider == "system" else { return }
         if let cached = SpeechVoiceCache.cached {
-            systemVoices = cached
+            voices = cached
             voicesLoaded = true
-            return
+        } else {
+            voicesLoaded = false
         }
-        let list = await Task.detached(priority: .userInitiated) { SpeechVoiceCache.load() }.value
-        systemVoices = list
+        let list = await SpeechVoiceCache.load()
+        guard !Task.isCancelled else { return }
+        voices = list
         voicesLoaded = true
+        if let savedVoice = UserDefaults.standard.string(forKey: VoiceOptions.voiceKey("system")),
+           let saved = list.first(where: { $0.identifier == savedVoice }) {
+            SpeechVoiceCache.rememberName(saved.name, for: saved.identifier)
+        }
     }
 
     /// 读取某个服务商自己的模型、音色与密钥（与播放器同一套键），有未保存的草稿时优先用草稿。
@@ -1226,6 +1242,9 @@ struct VoiceSettingsView: View {
         for (target, draft) in drafts {
             let chosen = VoiceOptions.sanitized(provider: target, model: draft.model, voice: draft.voice)
             d.set(chosen.voice, forKey: VoiceOptions.voiceKey(target))
+            if target == "system", let selected = voices.first(where: { $0.identifier == chosen.voice }) {
+                SpeechVoiceCache.rememberName(selected.name, for: selected.identifier)
+            }
             if target != "system" { d.set(chosen.model, forKey: VoiceOptions.modelKey(target)) }
             d.set(VoiceOptions.sanitizedRoleVoice(provider: target, voice: draft.male), forKey: VoiceOptions.roleKey("male", target))
             d.set(VoiceOptions.sanitizedRoleVoice(provider: target, voice: draft.female), forKey: VoiceOptions.roleKey("female", target))

@@ -357,9 +357,8 @@ struct StudyRootView: View {
         }
         if screen == "now-listening", UIReview.isolated {
             if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
-                model.run("正在准备辅助听书") { [model] in
-                    model.startListening(try model.book(entry.id), showPlayer: false)
-                    model.player.pause()
+                model.run("正在准备辅助听书") {
+                    try preparePausedReviewPlayer(entry, showPlayer: false)
                 }
             }
             return
@@ -399,11 +398,20 @@ struct StudyRootView: View {
         } else if screen == "miniplayer" {
             model.run("正在打开") { [model] in model.startListening(try model.book(entry.id), showPlayer: false) }
         } else if screen.hasPrefix("player") {
-            model.run("正在打开") { [model] in
-                model.startListening(try model.book(entry.id))
-                if UIReview.isolated { model.player.pause() }
+            model.run("正在打开") {
+                if UIReview.isolated { try preparePausedReviewPlayer(entry, showPlayer: true) }
+                else { model.startListening(try model.book(entry.id)) }
             }
         }
+    }
+
+    private func preparePausedReviewPlayer(_ entry: ShelfEntry, showPlayer: Bool) throws {
+        let book = try model.book(entry.id)
+        let stored = entry.listeningProgress ?? entry.progress
+        let target = LocatorBridge.textTarget(.init(stored), in: book).0
+        model.recordActivity(.listening, for: book.id)
+        model.player.preparePausedForUIReview(book: book, chapter: target.chapter, position: target.position)
+        model.showingPlayer = showPlayer
     }
     #endif
 }

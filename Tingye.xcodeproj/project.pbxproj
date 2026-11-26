@@ -36,6 +36,7 @@
 		ABD0A0EB593581E053F4B0F9 /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15A38E84FB682C79AE6A338 /* ShelfView.swift */; };
 		AE75465C480DC32013DD5422 /* Noto-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 19276B899D183EF8BB8323BF /* Noto-OFL.txt */; };
 		B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */; };
+		47B5941B92C44693BD26A26D /* ImportPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A85DF9CD44642A4E77B24 /* ImportPipelineTests.swift */; };
 		BA57495726CA809E81AA3395 /* NotoSerifCJKsc-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = CDE03B62D068FC7E20501AFD /* NotoSerifCJKsc-Regular.otf */; };
 		BEEF202610220001 /* NotoSansCJKsc-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = BEEF202610220002 /* NotoSansCJKsc-Regular.otf */; };
 		BEEF202610220005 /* LXGWNeoXiHei.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BEEF202610220006 /* LXGWNeoXiHei.ttf */; };
@@ -133,6 +134,7 @@
 		77B7B44EE7FAEF491B3B2936 /* Sources.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Sources.swift; sourceTree = "<group>"; };
 		7A96F10061380F5BBA4FB87B /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeCoreTests.swift; sourceTree = "<group>"; };
+		5A6A85DF9CD44642A4E77B24 /* ImportPipelineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImportPipelineTests.swift; sourceTree = "<group>"; };
 		7E8E361E43EA7D18829ABAAB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		83D6639CBAAFE961F7F6D147 /* Library.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
 		921F5AEFBF09987B82FBB36B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -306,6 +308,7 @@
 				E0BE24F677BBC6E6003A765E /* ReadiumPreferencesTests.swift */,
 				00FFF9AECE6193CFC6B548C4 /* ReadiumPublicationTests.swift */,
 				7C449FA0D833452AFBC72DFF /* NativeCoreTests.swift */,
+				5A6A85DF9CD44642A4E77B24 /* ImportPipelineTests.swift */,
 				A839E16D3CC3AB497E0E251A /* Fixtures */,
 			);
 			path = TingyeTests;
@@ -490,6 +493,7 @@
 				6F8494E81BC623EB4698103A /* ReadiumPreferencesTests.swift in Sources */,
 				80EE7426B420AD1363C1B66C /* ReadiumPublicationTests.swift in Sources */,
 				B98242C06DF6DF5D521BDE65 /* NativeCoreTests.swift in Sources */,
+				47B5941B92C44693BD26A26D /* ImportPipelineTests.swift in Sources */,
 				C3569B488CA380F6274581A7 /* ReadiumBackupSourceTests.swift in Sources */,
 				D5A24B35262CBB9B835A8729 /* ReadiumTextSnapshotTests.swift in Sources */,
 			);
