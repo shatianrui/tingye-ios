@@ -694,9 +694,10 @@ final class DesignFlowTests: XCTestCase {
         field.tap()
         field.typeText("第二章")
         XCTAssertTrue(app.staticTexts["reader.searchResultCount"].waitForExistence(timeout: 5))
-        // 搜索面板的完成按钮会关闭弹层。结果在自己的 List 内，键盘遮挡时只滚动该列表。
+        // 搜索态收起页首介绍与分栏，首条结果直接落在键盘上方；避免对被键盘覆盖的列表做 swipeUp 误触键盘。
         let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "02、第二章")).firstMatch
-        revealInScrollView(chapter, in: app.collectionViews.firstMatch, "搜索结果完成布局后应能直接点击")
+        XCTAssertTrue(chapter.waitForExistence(timeout: 5))
+        waitForReadingCondition({ chapter.isHittable }, "搜索结果完成布局后应能直接点击")
         screenshot(app, "阅读优先-书内搜索结果")
         chapter.tap()
         XCTAssertTrue(app.buttons["reader.notes"].waitForExistence(timeout: 5))

@@ -1843,27 +1843,13 @@ struct ContentsView: View {
     @State private var bookmarkToRemove: Bookmark?
     @EnvironmentObject var model: AppModel
     private var mode: Int { selectedMode ?? initialMode }
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var noteCount: Int { model.entries.first { $0.id == book.id }?.notes.count ?? 0 }
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                EditorialIntro(title: book.title, detail: "共 \(chapters.count) 章 · 阅读到第 \(currentChapter + 1) 章", eyebrow: "目录与摘记")
-                SegmentedBar(options: [0, 1, 3, 2], selection: mode, title: { value in
-                    switch value {
-                    case 1: return "书签 \(bookmarks.count)"
-                    case 3: return "笔记 \(noteCount)"
-                    case 2: return "插图"
-                    default: return "章节"
-                    }
-                }, onSelect: { selectedMode = $0 })
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space3, trailing: 0))
-                if mode == 0 {
-                    if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        ForEach(Array(chapters.enumerated()), id: \.offset) { index, chapter in
-                            chapterRow(index: index, chapter: chapter, snippet: nil, matchOffset: nil)
-                        }
-                    } else if let hits {
+                if !trimmedQuery.isEmpty {
+                    if let hits {
                         if !hits.isEmpty {
                             Text(hits.count >= 200 ? "显示前 200 处匹配，可输入更完整的词句缩小范围。" : "找到 \(hits.count) 处匹配")
                                 .font(.caption).foregroundStyle(Theme.ink2)
@@ -1875,55 +1861,72 @@ struct ContentsView: View {
                                 chapterRow(index: hit.index, chapter: chapters[hit.index], snippet: hit.snippet, matchOffset: hit.offset)
                             }
                         }
-                    }
-                    if hits == nil && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if hits.isEmpty {
+                            ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
+                        }
+                    } else {
                         EditorialNotice(title: "正在搜索原文…", kind: .working)
                             .accessibilityIdentifier("reader.searchLoading")
                     }
-                    if hits?.isEmpty == true && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        ContentUnavailableView.search(text: query).listRowBackground(Color.clear)
-                    }
-                } else if mode == 3 {
-                    NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in openTarget(.init(note)) }
-                } else if mode == 1 {
-                    if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
-                    ForEach(bookmarks.sorted { ($0.chapter, $0.position) < ($1.chapter, $1.position) }) { bookmark in
-                        // 构建 142：跳转用锚点解析后的目标；下方移除仍用存储原坐标匹配切换。
-                        HStack(spacing: 10) {
-                            Button { openTarget(.init(bookmark)) } label: {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text(chapters.indices.contains(bookmark.chapter) ? chapters[bookmark.chapter].title : "第 \(bookmark.chapter + 1) 章")
-                                        .font(.body).foregroundStyle(Theme.ink)
-                                    Text(bookmark.excerpt).font(.caption).lineLimit(3).foregroundStyle(Theme.ink2)
-                                    Label("回到此处", systemImage: Icon.jumpHere)
-                                        .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading).contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("打开书签，\(bookmark.excerpt)")
-                            Menu {
-                                Button { openTarget(.init(bookmark)) } label: { Label("回到此处", systemImage: Icon.read) }
-                                Button(role: .destructive) { bookmarkToRemove = bookmark } label: { Label("移除书签", systemImage: Icon.removeBookmark) }
-                            } label: {
-                                Image(systemName: Icon.more).frame(width: 44, height: 44).contentShape(Rectangle())
-                            }
-                            .accessibilityLabel("书签的更多操作")
-                        }
-                        .padding(.vertical, 6).listRowBackground(Theme.surface)
-                    }
                 } else {
-                    let refs = imageRefs
-                    if refs.isEmpty { Text("本章没有可显示的插图。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
-                    ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref) }
+                    EditorialIntro(title: book.title, detail: "共 \(chapters.count) 章 · 阅读到第 \(currentChapter + 1) 章", eyebrow: "目录与摘记")
+                    SegmentedBar(options: [0, 1, 3, 2], selection: mode, title: { value in
+                        switch value {
+                        case 1: return "书签 \(bookmarks.count)"
+                        case 3: return "笔记 \(noteCount)"
+                        case 2: return "插图"
+                        default: return "章节"
+                        }
+                    }, onSelect: { selectedMode = $0 })
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: Theme.space1, leading: 0, bottom: Theme.space3, trailing: 0))
+                    if mode == 0 {
+                        ForEach(Array(chapters.enumerated()), id: \.offset) { index, chapter in
+                            chapterRow(index: index, chapter: chapter, snippet: nil, matchOffset: nil)
+                        }
+                    } else if mode == 3 {
+                        NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in openTarget(.init(note)) }
+                    } else if mode == 1 {
+                        if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
+                        ForEach(bookmarks.sorted { ($0.chapter, $0.position) < ($1.chapter, $1.position) }) { bookmark in
+                            // 构建 142：跳转用锚点解析后的目标；下方移除仍用存储原坐标匹配切换。
+                            HStack(spacing: 10) {
+                                Button { openTarget(.init(bookmark)) } label: {
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Text(chapters.indices.contains(bookmark.chapter) ? chapters[bookmark.chapter].title : "第 \(bookmark.chapter + 1) 章")
+                                            .font(.body).foregroundStyle(Theme.ink)
+                                        Text(bookmark.excerpt).font(.caption).lineLimit(3).foregroundStyle(Theme.ink2)
+                                        Label("回到此处", systemImage: Icon.jumpHere)
+                                            .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent)
+                                    }
+                                    .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("打开书签，\(bookmark.excerpt)")
+                                Menu {
+                                    Button { openTarget(.init(bookmark)) } label: { Label("回到此处", systemImage: Icon.read) }
+                                    Button(role: .destructive) { bookmarkToRemove = bookmark } label: { Label("移除书签", systemImage: Icon.removeBookmark) }
+                                } label: {
+                                    Image(systemName: Icon.more).frame(width: 44, height: 44).contentShape(Rectangle())
+                                }
+                                .accessibilityLabel("书签的更多操作")
+                            }
+                            .padding(.vertical, 6).listRowBackground(Theme.surface)
+                        }
+                    } else {
+                        let refs = imageRefs
+                        if refs.isEmpty { Text("本章没有可显示的插图。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
+                        ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref) }
+                    }
                 }
             }
             .editorialList()
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
             // 半高弹层里默认搜索抽屉没有有效点击区域。书内搜索改成展开的导航栏抽屉，并只用全高弹层。
             .searchable(text: $query, isPresented: $searchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索章节与全文")
             .task(id: query) {
-                let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                let keyword = trimmedQuery
                 guard !keyword.isEmpty else { hits = nil; return }
                 selectedMode = 0
                 hits = nil
