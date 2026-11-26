@@ -86,7 +86,7 @@ enum SourceStore {
 
 /// 可以直接导入的扩展名
 enum ImportableFile {
-    static let extensions: Set<String> = ["epub", "txt", "text", "pdf", "html", "htm", "xhtml", "md", "markdown", "docx", "json", "mobi", "azw3", "azw", "cbz", "zip"]
+    static let extensions: Set<String> = ["epub", "txt", "text", "pdf", "html", "htm", "xhtml", "md", "markdown", "docx", "json", "mobi", "azw3", "azw", "cbz", "cbt", "cbr", "cb7", "zip"]
     static func accepts(_ name: String) -> Bool { extensions.contains((name as NSString).pathExtension.lowercased()) }
 }
 
@@ -172,7 +172,7 @@ struct SourcesView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                Text("支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ 等格式。")
+                Text("支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ、CBT 等格式。")
                     .font(.caption).foregroundStyle(Theme.ink2)
                 if let report = model.importReport {
                     NavigationLink { ImportResultsView() } label: {
@@ -663,7 +663,8 @@ struct OPDSEntry: Identifiable, Sendable {
     struct Link: Sendable { let url: URL; let type: String; let rel: String
         var fileExtension: String {
             let map = ["application/epub+zip": "epub", "application/pdf": "pdf", "text/plain": "txt", "application/x-mobipocket-ebook": "mobi",
-                       "application/vnd.amazon.ebook": "azw3", "application/x-mobi8-ebook": "azw3", "application/vnd.comicbook+zip": "cbz", "application/x-cbz": "cbz", "application/zip": "zip"]
+                       "application/vnd.amazon.ebook": "azw3", "application/x-mobi8-ebook": "azw3", "application/vnd.comicbook+zip": "cbz", "application/x-cbz": "cbz",
+                       "application/vnd.comicbook+tar": "cbt", "application/x-cbt": "cbt", "application/vnd.comicbook+rar": "cbr", "application/x-cbr": "cbr", "application/x-cb7": "cb7", "application/zip": "zip"]
             if let ext = map[type.components(separatedBy: ";").first ?? type] { return ext }
             let ext = url.pathExtension.lowercased()
             return ext.isEmpty ? "epub" : ext
@@ -1096,7 +1097,7 @@ private final class TransferConnection: @unchecked Sendable {
     </style></head><body><main>
     <header><div class="eyebrow">TINGYE FOLIO · 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
     <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
-    <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
+    <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · CBT · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
     <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
     <script>
     const drop=document.getElementById('drop'),list=document.getElementById('list'),pick=document.getElementById('pick'),clear=document.getElementById('clear');

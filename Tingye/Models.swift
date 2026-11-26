@@ -243,8 +243,9 @@ struct ShelfEntry: Codable, Identifiable, Sendable {
     }
     var isHidden: Bool { hidden == true }
     var notes: [Highlight] { highlights ?? [] }
-    /// 漫画：CBZ / 图片压缩包导入的书，在书库「漫画」页显示，以图片翻页阅读
-    var isComic: Bool { format.uppercased() == "CBZ" }
+    /// 漫画：CBZ / CBT 等图片压缩包导入的书，在书库「漫画」页显示，以图片翻页阅读
+    /// （CBR / CB7 已登记识别，解码接入后导入的书同样按此归类）
+    var isComic: Bool { ["CBZ", "CBT", "CBR", "CB7"].contains(format.uppercased()) }
 }
 
 enum ReadingActivity: String, Codable, Sendable { case reading, listening }

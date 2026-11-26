@@ -269,22 +269,24 @@ final class HuffCDIC {
     }
 }
 
-// MARK: - 漫画（CBZ / 图片 ZIP）
+// MARK: - 漫画（CBZ / CBT / 图片压缩包）
 
 /// 每张图是一「页」（一个章节，正文为空），进度、同步、统计沿用「章 + 句」坐标。
+/// 归档后端由 ComicArchive 按扩展名分发：CBZ / ZIP 走 SafeArchive，CBT 走
+/// TarArchive；CBR / CB7 在分发处给出明确的未支持报错。
 enum ComicImporter {
     static func book(_ url: URL, title: String) throws -> Book {
-        let zip = try SafeArchive(url: url)
-        let images = zip.archive
-            .filter { entry in
-                let path = entry.path
+        let archive = try ComicArchive.open(url: url)
+        let images = archive.filePaths
+            .filter { path in
                 let ext = (path as NSString).pathExtension.lowercased()
-                return entry.type == .file && ["jpg", "jpeg", "png", "webp", "gif", "heic"].contains(ext)
-                    && !path.contains("__MACOSX") && !(path as NSString).lastPathComponent.hasPrefix(".")
+                let name = (path as NSString).lastPathComponent
+                return ["jpg", "jpeg", "png", "webp", "gif", "heic"].contains(ext)
+                    && !path.contains("__MACOSX") && !name.hasPrefix(".")
+                    && name != "Thumbs.db" && name != ".DS_Store"
             }
-            .map(\.path)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        guard !images.isEmpty else { throw ReaderError.message("压缩包里没有图片；ZIP 只支持漫画 / 图集（CBZ）。") }
+        guard !images.isEmpty else { throw ReaderError.message("压缩包里没有图片；仅支持以图片组成的漫画包（CBZ / CBT）。") }
         var resources: [String: JSONValue] = [:]
         var chapters: [Chapter] = []
         // Extract in bounded batches through one bridged pass per batch: per-page calls made
@@ -293,7 +295,7 @@ enum ComicImporter {
         let batchSize = 16
         for start in stride(from: 0, to: images.count, by: batchSize) {
             let slice = Array(images[start..<min(start + batchSize, images.count)])
-            let payloads = try zip.data(for: slice)
+            let payloads = try archive.data(for: slice)
             for (offset, path) in slice.enumerated() {
                 let index = start + offset
                 guard let data = payloads[path] else { throw ReaderError.message("压缩书籍缺少资源：\(path)") }
@@ -304,7 +306,9 @@ enum ComicImporter {
                 chapters.append(Chapter(title: "第 \(index + 1) 页", text: "", extras: ["nativeImages": .array([.string("tingye-resource:" + key)])]))
             }
         }
-        return Book(title: title, author: "佚名", format: "CBZ", chapters: chapters,
+        // 图片 ZIP 沿用历史的 CBZ 标记；其余格式按扩展名记（CBT 等），isComic 一并认。
+        let format = url.pathExtension.lowercased() == "zip" ? "CBZ" : url.pathExtension.uppercased()
+        return Book(title: title, author: "佚名", format: format, chapters: chapters,
                     extras: ["resources": .object(resources), "cover": .string("tingye-resource:p0"), "comic": .bool(true), "category": .string("漫画")])
     }
 }

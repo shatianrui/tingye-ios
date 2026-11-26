@@ -745,10 +745,10 @@ struct ShelfView: View {
         if !searchText.isEmpty {
             EmptyState(title: "没有符合条件的书", detail: "换个关键词，或调整筛选。")
         } else if kind == "comics" && isRoot && visibleKindEntries.isEmpty {
-            EmptyState(title: "还没有漫画", detail: "导入 CBZ 或图片 ZIP 压缩包，会在这里以漫画模式阅读。",
+            EmptyState(title: "还没有漫画", detail: "导入 CBZ、CBT 或图片 ZIP 压缩包，会在这里以漫画模式阅读。",
                        actionTitle: "导入漫画") { showingSources = true }
         } else if model.entries.isEmpty {
-            EmptyState(title: "从第一本书开始", detail: "支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ 与听页备份，也可使用 WiFi 传书、WebDAV 或 OPDS。",
+            EmptyState(title: "从第一本书开始", detail: "支持 EPUB、TXT、PDF、MOBI、AZW3、CBZ、CBT 与听页备份，也可使用 WiFi 传书、WebDAV 或 OPDS。",
                        actionTitle: "导入书籍") { showingSources = true }
         } else {
             EmptyState(title: isRoot ? "没有符合条件的书" : "这个分组是空的",
