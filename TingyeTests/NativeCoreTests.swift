@@ -5,28 +5,39 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// v31 §1 的动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
+    /// 「暖页」温暖治愈风动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
     @MainActor func testV31PaletteResolvesToSpecifiedColors() {
+        /// 「暖页」界面令牌契约（v33）：暖日/温夜各一套，高对比度外观沿用同一组值。
+        /// 注意：阅读器内部纸色与跟读高亮由 ReaderPaper.Palette 独立定义，不在此表内。
         let tokens: [(String, Color, UInt32, UInt32)] = [
-            ("bg", Theme.bg, 0xF4F6F8, 0x0E1216),
-            ("surface", Theme.surface, 0xFFFFFF, 0x171C22),
-            ("surface2", Theme.surface2, 0xE7ECF2, 0x232A33),
-            ("surfaceSunken", Theme.surfaceSunken, 0xEEF2F6, 0x12181F),
-            ("ink", Theme.ink, 0x12161C, 0xF3F6F9),
-            ("ink2", Theme.ink2, 0x3A4553, 0xC3CEDA),
-            ("ink3", Theme.ink3, 0x465264, 0xB4C0CE),
-            ("ink4", Theme.ink4, 0x8B95A3, 0x6E7A88),
-            ("line", Theme.line, 0xC3CCD6, 0x3A4450),
-            ("clay", Theme.clay, 0x163E73, 0x8FB6E6),
-            ("accent", Theme.accent, 0x163E73, 0xA9C9F2),
-            ("clayDeep", Theme.clayDeep, 0x163E73, 0xA9C9F2),
-            ("accentSoft", Theme.accentSoft, 0xE3EDF8, 0x1A2C44),
-            ("claySoft", Theme.claySoft, 0xE3EDF8, 0x1A2C44),
-            ("onClay", Theme.onClay, 0xFFFFFF, 0x0E1622),
-            ("danger", Theme.danger, 0x9B2C3C, 0xF5B3BC),
-            ("dangerSoft", Theme.dangerSoft, 0xF4E8EA, 0x3A2428),
-            ("focus", Theme.focus, 0x163E73, 0x8FB6E6),
-            ("onInk", Theme.onInk, 0xF4F6F8, 0x0E1216)
+            ("bg", Theme.bg, 0xFBF6EE, 0x1E1915),
+            ("surface", Theme.surface, 0xFFFDF8, 0x2A231E),
+            ("surface2", Theme.surface2, 0xF4ECDF, 0x231D19),
+            ("surfaceSunken", Theme.surfaceSunken, 0xF4ECDF, 0x231D19),
+            ("ink", Theme.ink, 0x3A2E26, 0xF4EADF),
+            ("ink2", Theme.ink2, 0x5F5044, 0xD6C8B9),
+            ("ink3", Theme.ink3, 0x77685B, 0xB3A391),
+            ("ink4", Theme.ink4, 0x9C8B7C, 0x7E6E5F),
+            ("line", Theme.line, 0xEADFCF, 0x3A3029),
+            ("clay", Theme.clay, 0xB4532F, 0xE8936F),
+            ("accent", Theme.accent, 0xA34A28, 0xF0A584),
+            ("clayDeep", Theme.clayDeep, 0xA34A28, 0xF0A584),
+            ("accentSoft", Theme.accentSoft, 0xFBE4D6, 0x43291F),
+            ("claySoft", Theme.claySoft, 0xFBE4D6, 0x43291F),
+            ("onClay", Theme.onClay, 0xFFFFFF, 0x2A1610),
+            ("danger", Theme.danger, 0xB83726, 0xF28473),
+            ("dangerSoft", Theme.dangerSoft, 0xFCE8E5, 0x3E211D),
+            ("focus", Theme.focus, 0xB4532F, 0xE8936F),
+            ("onInk", Theme.onInk, 0xFBF6EE, 0x1E1915),
+            ("peach", Theme.peach, 0xFCE3D3, 0x4A3026),
+            ("sage", Theme.sage, 0xDDEBD9, 0x2D3A2E),
+            ("sageInk", Theme.sageInk, 0x3E6B4C, 0xB7D8BF),
+            ("butter", Theme.butter, 0xFBEFC6, 0x433A22),
+            ("butterInk", Theme.butterInk, 0x7A5A12, 0xEBD58F),
+            ("lav", Theme.lav, 0xE9E3F4, 0x352F45),
+            ("lavInk", Theme.lavInk, 0x5B4A86, 0xD3C8EE),
+            ("sky", Theme.sky, 0xDCEBF3, 0x283A45),
+            ("skyInk", Theme.skyInk, 0x2F5D78, 0xB5D5E8)
         ]
         for style in [UIUserInterfaceStyle.light, .dark] {
             for contrast in [UIAccessibilityContrast.normal, .high] {
@@ -34,7 +45,7 @@ final class NativeCoreTests: XCTestCase {
                     UITraitCollection(userInterfaceStyle: style),
                     UITraitCollection(accessibilityContrast: contrast)
                 ])
-                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x12161C, 0xF3F6F9)
+                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x3A2E26, 0xF4EADF)
                 for (name, color, light, dark) in tokens + [field] {
                     let hex = style == .dark ? dark : light
                     let expected = [CGFloat((hex >> 16) & 255) / 255,
@@ -44,7 +55,7 @@ final class NativeCoreTests: XCTestCase {
                     for (actual, expected) in zip([r, g, b], expected) {
                         XCTAssertEqual(actual, expected, accuracy: 0.0001, "\(name), \(style), \(contrast)")
                     }
-                    let alpha: CGFloat = name == "lineField" ? (style == .dark ? 0.16 : 0.14) : 1
+                    let alpha: CGFloat = name == "lineField" ? (style == .dark ? 0.14 : 0.10) : 1
                     XCTAssertEqual(a, alpha, accuracy: 0.0001, name)
                 }
             }
@@ -57,7 +68,9 @@ final class NativeCoreTests: XCTestCase {
             let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
                 (Theme.accent, Theme.bg), (Theme.onClay, Theme.clay), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
                 (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
-                (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
+                (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker),
+                (Theme.peachInk, Theme.peach), (Theme.sageInk, Theme.sage), (Theme.butterInk, Theme.butter),
+                (Theme.lavInk, Theme.lav), (Theme.skyInk, Theme.sky), (Theme.danger, Theme.dangerSoft)]
             for (text, background) in pairs {
                 XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5,
                     "Text \(UIColor(text).resolvedColor(with: traits)) on \(UIColor(background).resolvedColor(with: traits)), appearance \(style)")

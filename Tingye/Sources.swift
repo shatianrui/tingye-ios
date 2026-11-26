@@ -847,7 +847,7 @@ struct WiFiTransferView: View {
     private func finishTransfer(goToShelf: Bool) {
         server.stop()
         dismiss()
-        if goToShelf { model.tab = 0 }
+        if goToShelf { model.tab = 1 }
     }
 }
 

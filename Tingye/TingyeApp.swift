@@ -189,23 +189,24 @@ enum UIReview {
 }
 #endif
 
-/// StudyRootView 的编程式导航目标。目前只有「我的」一层；
-/// 统计、书摘与设置目录都在 StatsView(ji: true) 内，子页面由 StatsView 自行路由。
-enum StudyRoute: Hashable { case me }
+/// StudyRootView 的兼容路由枚举。
+enum StudyRoute: Hashable { case me, notes }
 
-/// v29「书房」根视图：单一 NavigationStack，书库（ShelfView 本体）为根页面，
-/// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
-/// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
+/// 「暖页」温暖治愈风根视图：
+/// 四一级页签（0 今天 / 1 书房 / 2 摘记 / 3 我的）+ 底部悬浮胶囊栏正中央凸起常驻「听」圆钮，
+/// 上方承托温润胶囊形 MiniPlayer，阅读器与听书页弹层互斥门控完整保留。
 struct StudyRootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var navigationHidden = false
     @State private var didAutoOpenOnLaunch = false
-    @State private var path: [StudyRoute] = []
+    @State private var notesPath = NavigationPath()
+    @State private var profilePushedSubpage = false
     @State private var readerImportToken = UUID()
     @State private var playerImportToken = UUID()
 
-    /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径，根页面需停在书库。
+    /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径。
     private var autoOpenAllowed: Bool {
         #if DEBUG
         return UIReview.screen == nil
@@ -214,52 +215,82 @@ struct StudyRootView: View {
         #endif
     }
 
+    private var shouldHideBottomChrome: Bool {
+        navigationHidden || (model.tab == 3 && profilePushedSubpage) || (model.tab == 2 && !notesPath.isEmpty)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            NavigationStack(path: $path) {
-                ShelfView()
-                    .navigationDestination(for: StudyRoute.self) { _ in
-                        // ji 版自带隐藏导航栏、无系统返回箭头，故传入返回动作：
-                        // 页眉返回按钮清空编程式导航路径，回到书库根页面。
-                        StatsView(ji: true, onBack: { path = [] })
+            ZStack {
+                switch model.tab {
+                case 0:
+                    NavigationStack {
+                        TodayView()
+                            .toolbarBackground(Theme.bg, for: .navigationBar)
                     }
-                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
-                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        HStack {
-                            Spacer()
-                            NavigationLink(value: StudyRoute.me) {
-                                Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
-                            .accessibilityLabel("我的")
-                            .accessibilityIdentifier("study.openProfile")
-                        }
-                        .padding(.horizontal, Theme.inset)
-                        .background(Theme.bg)
+                    .transition(.opacity)
+                case 1:
+                    NavigationStack {
+                        ShelfView(
+                            onOpenNotes: { model.tab = 2 },
+                            onOpenProfile: { model.tab = 3 }
+                        )
+                        .toolbarBackground(Theme.bg, for: .navigationBar)
                     }
-                    .toolbarBackground(Theme.bg, for: .navigationBar)
+                    .transition(.opacity)
+                case 2:
+                    NavigationStack(path: $notesPath) {
+                        NotesUnifiedView()
+                            .toolbarBackground(Theme.bg, for: .navigationBar)
+                    }
+                    .transition(.opacity)
+                default:
+                    NavigationStack {
+                        StatsView(
+                            ji: true,
+                            onBack: { model.tab = 1 },
+                            onSubpageActiveChange: { profilePushedSubpage = $0 }
+                        )
+                        .toolbarBackground(Theme.bg, for: .navigationBar)
+                    }
+                    .transition(.opacity)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.bg)
-            // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
-            // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
-            if !navigationHidden {
-                MiniPlayer(player: model.player)
+
+            if !shouldHideBottomChrome {
+                VStack(spacing: 6) {
+                    MiniPlayer(player: model.player)
+                    WarmTabBar(
+                        selectedTab: $model.tab,
+                        player: model.player,
+                        onTapListen: triggerQuickListen
+                    )
+                }
+                .padding(.top, 2)
+                .background(
+                    LinearGradient(
+                        colors: [Theme.bg.opacity(0), Theme.bg.opacity(0.92), Theme.bg],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea(edges: .bottom)
+                )
             }
         }
         .disabled(model.restoringLibrary)
         .paperBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
+        .onChange(of: model.tab) { _, newTab in
+            if newTab != 1 { navigationHidden = false }
+            if newTab != 3 { profilePushedSubpage = false }
+        }
         .onChange(of: model.entries.count, initial: true) { _, count in
             // 书架首次载入后只自动打开一次；之后回前台、切页都不再自动打开。
             guard !didAutoOpenOnLaunch, count > 0 else { return }
             didAutoOpenOnLaunch = true
             guard autoOpenAllowed, model.selectedBook == nil else { return }
-            // 焦点书：最近阅读过的书优先，其次第一本本地非漫画书；
-            // 漫画按现行规则不自动打开。无书时停在书库根页面（书房空态沿用 ShelfView 现有空态）。
             let focus = model.lastReadingBook
                 ?? model.visibleEntries.first { $0.local && !$0.isComic }
                 ?? model.visibleEntries.first { $0.local }
@@ -284,7 +315,6 @@ struct StudyRootView: View {
         #if DEBUG
         .task {
             if UIReview.screen != nil {
-                // 等导航栈就绪后再编程式到达走查场景（旧页签根同样等待 350ms）。
                 try? await Task.sleep(for: .milliseconds(350))
                 driveUIReview()
             }
@@ -298,7 +328,6 @@ struct StudyRootView: View {
         }
         .onChange(of: model.fileImportRequested) { _, requested in
             guard requested else { return }
-            // Close outer reading/listening surfaces as well; their onDismiss releases the gate.
             model.selectedBook = nil
             model.showingPlayer = false
             model.presentRequestedFileImport()
@@ -331,14 +360,36 @@ struct StudyRootView: View {
         .respectReducedMotion()
     }
 
+    private func triggerQuickListen() {
+        Haptics.light()
+        if model.player.book != nil {
+            model.showingPlayer = true
+            return
+        }
+        let target = model.visibleEntries.first { $0.local && !$0.isComic && $0.hasListened == true }
+            ?? model.lastReadingBook.flatMap { !$0.isComic ? $0 : nil }
+            ?? model.visibleEntries.first { $0.local && !$0.isComic }
+        if let target {
+            model.listen(target.id)
+        } else {
+            model.notify("书房里还没有可以朗读的书籍，先导入一本吧。")
+        }
+    }
+
     #if DEBUG
-    /// UI 走查到达路径（替代旧页签根的同名驱动）：原先靠切页签的场景改走新结构——
-    /// now = 根页面打开专注书；stats / profile / settings / privacy / appearance / backup = 编程式推「我的」页
-    /// （子场景由 StatsView 自身的走查路由继续处理）；shelf 系场景根页面即书库，ShelfView 自行处理。
+    /// UI 走查到达路径（支持暖页四 Tab + 全量历史回归场景）：
     private func driveUIReview() {
         guard let screen = UIReview.screen else { return }
+        if screen == "today" {
+            model.tab = 0
+            return
+        }
+        if screen == "notes" {
+            model.tab = 2
+            return
+        }
         if screen == "now" {
-            // 与启动自动打开同一选书口径（自动打开在走查时被抑制，故此处显式打开）。
+            model.tab = 1
             let focus = model.lastReadingBook
                 ?? model.visibleEntries.first { $0.local && !$0.isComic }
                 ?? model.visibleEntries.first { $0.local }
@@ -346,6 +397,7 @@ struct StudyRootView: View {
             return
         }
         if screen == "now-listening", UIReview.isolated {
+            model.tab = 1
             if let entry = model.entries.first(where: { $0.id == "ui-recent" }) {
                 model.run("正在准备辅助听书") { [model] in
                     model.startListening(try model.book(entry.id), showPlayer: false)
@@ -355,6 +407,7 @@ struct StudyRootView: View {
             return
         }
         if screen == "import-results", UIReview.isolated {
+            model.tab = 1
             model.run("正在导入书籍") {
                 let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -366,11 +419,15 @@ struct StudyRootView: View {
             }
             return
         }
-        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") { return }
-        if screen.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(screen) {
-            path = [.me]
+        if screen.hasPrefix("shelf") || screen == "detail" || screen == "chapters" || screen.hasPrefix("sources") {
+            model.tab = 1
             return
         }
+        if screen.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(screen) {
+            model.tab = 3
+            return
+        }
+        model.tab = 1
         if screen == "comic", let comic = model.entries.first(where: \.isComic) { model.open(comic); return }
         guard let entry = model.lastBook ?? model.entries.first(where: \.local) else { return }
         if screen == "reader-original" {
@@ -396,6 +453,89 @@ struct StudyRootView: View {
         }
     }
     #endif
+}
+
+// MARK: - 暖页底部悬浮胶囊导航栏（今天 · 书房 · [常驻听] · 摘记 · 我的）
+
+struct WarmTabBar: View {
+    @Binding var selectedTab: Int
+    @ObservedObject var player: SpeechPlayer
+    let onTapListen: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var isListeningActive: Bool { player.book != nil }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            tabItem(index: 0, title: "今天", symbol: "sun.max", activeSymbol: "sun.max.fill", id: "navigation.tab.today")
+            tabItem(index: 1, title: "书房", symbol: "books.vertical", activeSymbol: "books.vertical.fill", id: "navigation.tab.shelf")
+            centerListenButton
+            tabItem(index: 2, title: "摘记", symbol: "quote.bubble", activeSymbol: "quote.bubble.fill", id: "navigation.tab.notes")
+            tabItem(index: 3, title: "我的", symbol: "person.crop.circle", activeSymbol: "person.crop.circle.fill", id: "navigation.tab.profile")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: 460)
+        .background(Theme.surface, in: Capsule())
+        .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.rule) }
+        .softCardShadow()
+        .padding(.horizontal, Theme.inset)
+        .padding(.bottom, 6)
+    }
+
+    private func tabItem(index: Int, title: String, symbol: String, activeSymbol: String, id: String) -> some View {
+        let selected = selectedTab == index
+        return Button {
+            Haptics.selection()
+            selectedTab = index
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: selected ? activeSymbol : symbol)
+                    .font(.system(size: 17, weight: selected ? .semibold : .regular))
+                    .accessibilityHidden(true)
+                if !typeSize.isAccessibilitySize {
+                    Text(title)
+                        .font(Theme.rounded(11, weight: selected ? .semibold : .medium))
+                        .lineLimit(1)
+                }
+            }
+            .foregroundStyle(selected ? Theme.accent : Theme.ink3)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(selected ? Theme.accentSoft : .clear, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(PressButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier(id)
+    }
+
+    private var centerListenButton: some View {
+        Button(action: onTapListen) {
+            ZStack {
+                Circle()
+                    .fill(Theme.clay)
+                    .frame(width: 46, height: 46)
+                Image(systemName: player.playing ? Icon.listening : Icon.listen)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.onClay)
+                    .accessibilityHidden(true)
+            }
+            .overlay {
+                if isListeningActive {
+                    Circle()
+                        .strokeBorder(Theme.accentSoft, lineWidth: 2)
+                        .frame(width: 46, height: 46)
+                        .accessibilityHidden(true)
+                }
+            }
+            .frame(minWidth: 52, minHeight: 46)
+            .contentShape(Circle())
+        }
+        .buttonStyle(PressButtonStyle(scale: 0.92))
+        .accessibilityLabel(player.playing ? "正在听书，打开播放器" : "随手听书")
+        .accessibilityIdentifier("navigation.listen")
+    }
 }
 
 #if DEBUG
@@ -472,12 +612,11 @@ struct MiniPlayer: View {
 
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
-                            ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink2)
+                            ThemeIcon(symbol: Icon.listening, size: 15)
+                                .foregroundStyle(Theme.accent)
                                 .frame(width: 32, height: 32)
-                                .background(Theme.surface, in: Circle())
-                                .contentShape(Rectangle())
-                                .frame(minWidth: 44, minHeight: 44)
+                                .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+                                .frame(minWidth: 40, minHeight: 40)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(PressButtonStyle(scale: 0.88))
@@ -488,36 +627,40 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.ink2)
+                                ProgressView().controlSize(.small).tint(Theme.onClay)
                             } else {
-                                ThemeIcon(symbol: Icon.playback(player.playing), size: 16)
+                                ThemeIcon(symbol: Icon.playback(player.playing), size: 15)
                             }
                         }
-                        .foregroundStyle(Theme.ink2)
-                        .frame(width: 32, height: 32)
-                        .background(Theme.surface, in: Circle())
-                        .contentShape(Rectangle())
-                        .frame(minWidth: 44, minHeight: 44)
+                        .foregroundStyle(Theme.onClay)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.clay, in: Circle())
+                        .frame(minWidth: 40, minHeight: 40)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(PressButtonStyle(scale: 0.88))
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
-                .padding(.leading, Theme.inset - 4)
-                .padding(.trailing, Theme.inset - 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, Theme.space3)
+                .padding(.vertical, 6)
                 .frame(maxWidth: 560)
                 .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, Theme.space2)
-            .background(Theme.surface2)
-            .overlay(alignment: .top) { RowDivider() }
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(Theme.line, lineWidth: Theme.rule)
+            }
             .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.line, tint: Theme.ink3, height: 2)
+                ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 3)
                     .padding(.horizontal, Theme.space4)
+                    .padding(.bottom, 3)
                     .accessibilityHidden(true)
             }
+            .softCardShadow()
+            .padding(.horizontal, Theme.inset)
+            .padding(.bottom, 2)
         }
     }
     private var subtitle: String {

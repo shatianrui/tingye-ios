@@ -715,49 +715,82 @@ struct ReaderView: View {
     // MARK: 导航、章节进度与阅读操作
 
     private var topBar: some View {
-        HStack(spacing: Theme.space3) {
-            Button { dismiss() } label: { barIcon(Icon.back) }
-                .accessibilityLabel("返回书架")
-                .accessibilityIdentifier("reader.back")
-            VStack(alignment: .leading, spacing: Theme.space1) {
-                Text(chapterHeading)
-                    .font(Theme.serif(17, relativeTo: .headline))
-                    .foregroundStyle(prefs.foreground)
-                    .lineLimit(2)
-                Text(chapterSubheading)
-                    .font(.caption2)
-                    .foregroundStyle(prefs.secondary)
-                    .lineLimit(1)
+        let listenChapter = entry?.listeningProgress.map { $0.chapter }
+        let dualTrackHint: Bool = {
+            guard !document.isPDF, let listenChapter, entry?.hasListened == true else { return false }
+            return listenChapter != chapter
+        }()
+        return VStack(spacing: Theme.space2) {
+            HStack(spacing: Theme.space2) {
+                Button { dismiss() } label: { barIcon(Icon.back) }
+                    .accessibilityLabel("返回书架")
+                    .accessibilityIdentifier("reader.back")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(chapterHeading)
+                        .font(Theme.sans(14, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                    Text(chapterSubheading)
+                        .font(Theme.sans(11.5))
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.ink3)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if focusEnabled { focusQuickButton }
+                Button {
+                    Haptics.selection()
+                    model.bookmark(book.id, chapter: chapter, position: sentencePosition, excerpt: sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].text : String(current.text.prefix(80)))
+                } label: {
+                    barIcon(Icon.bookmark(marked))
+                        .foregroundStyle(marked ? Theme.accent : Theme.ink2)
+                        .id(marked)
+                        .transition(marked ? .movingParts.pop(Theme.accent) : .identity)
+                        .animation(.easeOut(duration: 0.25), value: marked)
+                }
+                .accessibilityLabel(marked ? "移除当前位置的书签" : "为当前位置添加书签")
+                .accessibilityAddTraits(marked ? .isSelected : [])
+                .accessibilityIdentifier("reader.bookmark")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // 专注入口上台面：与「更多」菜单里的开始专注共用同一面板（focusPresented）。
-            if focusEnabled { focusQuickButton }
-            // 书签只针对当前位置，放在顶栏随手可点；底栏留给打开面板类的操作
-            Button {
-                Haptics.selection()
-                model.bookmark(book.id, chapter: chapter, position: sentencePosition, excerpt: sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].text : String(current.text.prefix(80)))
-            } label: {
-                barIcon(Icon.bookmark(marked))
-                    .foregroundStyle(marked ? readerAccent : prefs.foreground)
-                    .id(marked)
-                    .transition(marked ? .movingParts.pop(readerAccent) : .identity)
-                    .animation(.easeOut(duration: 0.25), value: marked)
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.ink)
+            .padding(.horizontal, Theme.space2)
+            .padding(.vertical, 4)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+            .softCardShadow()
+
+            if dualTrackHint, let listenChapter {
+                HStack(spacing: Theme.space2) {
+                    Image(systemName: Icon.listening).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.skyInk)
+                    Text("读至第 \(chapter + 1) 章 · 听至第 \(listenChapter + 1) 章")
+                        .font(Theme.sans(11.5, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink2)
+                    Spacer(minLength: Theme.space2)
+                    Button("从此处听") {
+                        Haptics.light()
+                        model.startListening(book, showPlayer: false, from: .init(chapter: chapter, position: sentencePosition))
+                        following = true
+                    }
+                    .font(Theme.sans(11.5, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Theme.accentSoft, in: Capsule())
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Theme.space3).padding(.vertical, 6)
+                .background(Theme.surface, in: Capsule())
+                .overlay { Capsule().strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                .softCardShadow()
             }
-            .accessibilityLabel(marked ? "移除当前位置的书签" : "为当前位置添加书签")
-            .accessibilityAddTraits(marked ? .isSelected : [])
-            .accessibilityIdentifier("reader.bookmark")
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(prefs.foreground)
-        .padding(.horizontal, Theme.insetCompact)
-        .padding(.vertical, Theme.space2)
+        .padding(.horizontal, Theme.inset)
+        .padding(.top, Theme.space2)
         .frame(maxWidth: 760)
-        .padding(.top, Theme.space1)
     }
 
     private func barIcon(_ name: String) -> some View {
-        ThemeIcon(symbol: name, size: 24)
-            .frame(width: 44, height: 44).contentShape(Rectangle())
+        ThemeIcon(symbol: name, size: 17)
+            .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize).contentShape(Rectangle())
     }
 
     /// 顶栏居中两行：第一行章节标题；第二行「第 X 章 · 全书 %」，

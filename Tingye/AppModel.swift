@@ -27,7 +27,22 @@ final class AppModel: ObservableObject {
     private var listeningObserver: AnyCancellable?
     @Published var busy = false
     @Published var activity = ""
-    @Published var tab = 1
+    /// 「暖页」四一级页签：0 今天 / 1 书房 / 2 摘记 / 3 我的
+    @Published var tab: Int = {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uireview") {
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-uireview"), args.indices.contains(i + 1) {
+                let s = args[i + 1]
+                if s == "today" { return 0 }
+                if s == "notes" { return 2 }
+                if s.hasPrefix("stats") || ["profile", "settings", "privacy", "appearance", "backup"].contains(s) { return 3 }
+                return 1
+            }
+        }
+        #endif
+        return 0
+    }()
     /// 首页搜索交给书架处理，沿用同一套跨分组搜索，不建立第二份查询状态。
     @Published var shelfSearchRequested = false
     /// 书架排序方式:recent 最近阅读 / title 书名 / author 作者 / added 添加时间

@@ -122,7 +122,7 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 刊式摘句卡：宣纸白、报头双线、靛蓝引号与题条。导出为图片分享，始终使用日间配色。
+/// 暖页摘句卡：奶油暖纸、陶土题条与温润衬线。导出为图片分享，始终使用暖日配色。
 struct QuoteShareCard: View {
     let text: String
     let title: String
@@ -131,32 +131,32 @@ struct QuoteShareCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
             HStack(alignment: .firstTextBaseline) {
-                Text("听页 · 阅读摘句").font(.system(size: 18, weight: .medium))
+                Text("听页 · 今日一句").font(.system(size: 18, weight: .semibold, design: .rounded))
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
-                    .font(.system(size: 16))
-            }.foregroundStyle(Color(hex: 0x465264))
-            Capsule().fill(Color(hex: 0x163E73)).frame(width: 36, height: 3)
+                    .font(.system(size: 16, design: .rounded))
+            }.foregroundStyle(Color(hex: 0x5F5044))
+            Capsule().fill(Color(hex: 0xB4532F)).frame(width: 42, height: 4)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x12161C))
+                .foregroundStyle(Color(hex: 0x3A2E26))
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x12161C))
+                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x3A2E26))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x465264))
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x5F5044))
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Color(hex: 0xC3CCD6)).frame(height: 1)
+            Rectangle().fill(Color(hex: 0xEADFCF)).frame(height: 1)
             Text("留一点时间，给喜欢的文字。")
-                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x465264))
+                .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x5F5044))
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xF4F6F8))
+        .background(Color(hex: 0xFBF6EE))
         .environment(\.colorScheme, .light)
     }
 

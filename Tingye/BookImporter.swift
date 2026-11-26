@@ -2,6 +2,11 @@ import Foundation
 import CoreFoundation
 import PDFKit
 import ReadiumZIPFoundation
+// build 153：仅此文件引入 swift-markdown。其模块名 `Markdown` 与 MarkdownUI 的
+// `Markdown` View 类型同名，故绝不与 MarkdownUI 同处一个文件；内部一律用模块限定名。
+#if canImport(Markdown)
+import Markdown
+#endif
 
 enum BookImporter {
     struct Imported: Sendable { let book: Book; var progress = ReadingProgress(); var source: EPUBSourceStaging? = nil }
@@ -108,6 +113,28 @@ enum BookImporter {
         var text = source.replacingOccurrences(of: #"\A(?:\uFEFF)?---\s*\n[\s\S]*?\n(?:---|\.\.\.)\s*(?:\n|$)"#, with: "", options: .regularExpression)
         for (pattern, template) in [(#"!\[([^\]]*)\]\([^)]*\)"#, "$1"), (#"\[([^\]]+)\]\([^)]*\)"#, "$1"), (#"(?m)^\s*```[^\n]*\n?"#, ""), (#"\*\*(.*?)\*\*"#, "$1"), (#"`([^`]+)`"#, "$1"), (#"(?m)^>\s?"#, "")] { text = text.replacingOccurrences(of: pattern, with: template, options: .regularExpression) }
         return text
+    }
+    /// build 153：Markdown 结构化解析增强（独立于上面的纯文本清洗路径）。
+    /// 用 swift-markdown AST 读出标题层级大纲，供目录/大纲等结构化场景使用；
+    /// 不参与 `read()` 的章节生成，因此不改变任何既有导入结果与单元测试契约。
+    /// 可选依赖不可用时返回空数组。
+    static func markdownOutline(_ source: String) -> [Int] {
+        #if canImport(Markdown)
+        let document = Markdown.Document(parsing: source)
+        return document.children.compactMap { ($0 as? Markdown.Heading)?.level }
+        #else
+        return []
+        #endif
+    }
+    /// build 153：导出侧的 AST 结构校验，返回一级 / 二级标题数。
+    /// 只读结构、不改写任何导出文本；可选依赖不可用时返回 nil。
+    static func markdownStructure(_ raw: String) -> (topLevel: Int, sections: Int)? {
+        #if canImport(Markdown)
+        let levels = markdownOutline(raw)
+        return (levels.filter { $0 == 1 }.count, levels.filter { $0 == 2 }.count)
+        #else
+        return nil
+        #endif
     }
     /// 给章节补上与正文同源的原书文档（Markdown 等没有出版物 HTML 的格式）；
     /// 构建 141 起它只作 ChapterBlockParser 的块解析来源（图片/表格定位），不再单独渲染。

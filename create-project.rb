@@ -64,6 +64,20 @@ pow_package.repositoryURL = 'https://github.com/EmergeTools/Pow.git'
 pow_package.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.0.6' }
 project.root_object.package_references << pow_package
 link_product(project, app, pow_package, 'Pow')
+# A 档轻量增强（build 153）：摘记富文本渲染 + Markdown 结构化解析。
+# app 与 test target 都链接，保证 @testable import Tingye 时模块可解析。
+markdown_ui = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+markdown_ui.repositoryURL = 'https://github.com/gonzalezreal/MarkdownUI.git'
+markdown_ui.requirement = { 'kind' => 'exactVersion', 'version' => '2.4.1' }
+project.root_object.package_references << markdown_ui
+link_product(project, app, markdown_ui, 'MarkdownUI')
+link_product(project, test, markdown_ui, 'MarkdownUI')
+swift_markdown = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+swift_markdown.repositoryURL = 'https://github.com/apple/swift-markdown.git'
+swift_markdown.requirement = { 'kind' => 'exactVersion', 'version' => '0.7.1' }
+project.root_object.package_references << swift_markdown
+link_product(project, app, swift_markdown, 'Markdown')
+link_product(project, test, swift_markdown, 'Markdown')
 project.build_configurations.each do |config|
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
@@ -71,7 +85,7 @@ project.build_configurations.each do |config|
 end
 [app, test, ui_test].each do |target|
   target.build_configurations.each do |config|
-    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '143', 'MARKETING_VERSION' => '1.26.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
+    config.build_settings.merge!({ 'SWIFT_VERSION' => '5.0', 'DEVELOPMENT_TEAM' => 'H22S27JV83', 'CODE_SIGN_STYLE' => 'Automatic', 'CURRENT_PROJECT_VERSION' => '154', 'MARKETING_VERSION' => '1.26.0', 'TARGETED_DEVICE_FAMILY' => '1,2', 'ENABLE_USER_SCRIPT_SANDBOXING' => 'YES' })
   end
 end
 app.build_configurations.each do |config|

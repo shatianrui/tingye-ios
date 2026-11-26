@@ -93,26 +93,76 @@ struct BookDetailView: View {
 
     /// 封面宽 104pt 是既有书封排版尺寸；大字号时改为纵排，仍保留封面。
     private func hero(_ entry: ShelfEntry) -> some View {
-        (typeSize.isAccessibilitySize
-         ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
-         : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space5))) {
-            CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: Theme.space3) {
-                Text(entry.title).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("\(entry.author.isEmpty ? "佚名" : entry.author) · \(entry.format) · \(max(1, entry.chapterCount)) \(chapterUnit(entry))")
-                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
-                Text(entry.local ? (entry.started ? (entry.readFraction >= 0.995 ? "已读完" : "阅读中 · " + entry.percentText) : "待读") : "iCloud 藏书")
-                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.clayDeep)
-                if entry.local && entry.started {
-                    Text("读至第 \(entry.progress.chapter + 1) \(chapterUnit(entry))")
+        let listenPos = entry.listeningProgress
+        let listenCh = listenPos.map { min(max(1, $0.chapter + 1), max(1, entry.chapterCount)) }
+        let dualDiverged: Bool = {
+            guard entry.local, !entry.isComic, entry.hasListened == true, let lp = listenPos else { return false }
+            return lp.chapter != entry.progress.chapter || abs(lp.position - entry.progress.position) >= 2
+        }()
+        return VStack(alignment: .leading, spacing: Theme.space3) {
+            (typeSize.isAccessibilitySize
+             ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
+             : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))) {
+                CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    Text(entry.title).font(Theme.serif(26, relativeTo: .title)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("\(entry.author.isEmpty ? "佚名" : entry.author) · \(entry.format) · \(max(1, entry.chapterCount)) \(chapterUnit(entry))")
                         .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
-                        .accessibilityIdentifier("detail.readingProgress")
+                    HStack(spacing: 6) {
+                        Text(entry.local ? (entry.started ? (entry.readFraction >= 0.995 ? "已读完" : "阅读中 · " + entry.percentText) : "待读") : "iCloud 藏书")
+                            .font(Theme.rounded(12, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(entry.readFraction >= 0.995 ? Theme.sageInk : Theme.accent)
+                            .padding(.horizontal, 9).padding(.vertical, 3)
+                            .background(entry.readFraction >= 0.995 ? Theme.sage : Theme.accentSoft, in: Capsule())
+                        if let listenCh, !entry.isComic, entry.hasListened == true {
+                            HStack(spacing: 3) {
+                                Image(systemName: Icon.listen).font(.system(size: 10, weight: .semibold)).accessibilityHidden(true)
+                                Text("听至第 \(listenCh) 章").font(Theme.rounded(11.5, weight: .semibold)).monospacedDigit()
+                            }
+                            .foregroundStyle(Theme.skyInk)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Theme.sky, in: Capsule())
+                        }
+                    }
+                    if entry.local && entry.started {
+                        Text("读至第 \(entry.progress.chapter + 1) \(chapterUnit(entry))")
+                            .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            .accessibilityIdentifier("detail.readingProgress")
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if dualDiverged, let lp = listenPos {
+                Button {
+                    Haptics.light()
+                    model.saveProgress(entry.id, chapter: lp.chapter, position: lp.position)
+                    model.open(entry, chapter: lp.chapter, position: lp.position)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: Icon.jumpHere).font(.system(size: 13, weight: .semibold)).accessibilityHidden(true)
+                        Text("读跟上听 · 跳到听书第 \(lp.chapter + 1) 章继续看")
+                            .font(Theme.rounded(12.5, weight: .semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: Icon.disclosure).font(.system(size: 11, weight: .semibold)).accessibilityHidden(true)
+                    }
+                    .foregroundStyle(Theme.skyInk)
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 38)
+                    .background(Theme.sky, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
                 }
-            }.frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(PressButtonStyle())
+                .accessibilityIdentifier("detail.syncReadToListen")
+            }
         }
+        .padding(Theme.cardInset + 2)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous)
+                .strokeBorder(Theme.line, lineWidth: Theme.rule)
+        }
+        .softCardShadow()
     }
 
     /// 逐书累计时长使用既有会话记录；不把按日总时长误当作该书时长。
@@ -120,21 +170,32 @@ struct BookDetailView: View {
         let seconds = model.visibleSessions.filter { $0.bookID == entry.id }.reduce(0) { $0 + $1.seconds }
         let minutes = Int(seconds / 60)
         let duration = minutes >= 60 ? "\(minutes / 60)小时\(minutes % 60)分" : "\(minutes)分"
-        return ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: Theme.space5) {
-                StatBlock(value: entry.percentText, label: "进度").frame(maxWidth: .infinity, alignment: .leading)
-                StatBlock(value: duration, label: "累计时长").frame(maxWidth: .infinity, alignment: .leading)
-                StatBlock(value: "\(entry.notes.count)", label: "摘记数").frame(maxWidth: .infinity, alignment: .leading)
-            }
-            VStack(alignment: .leading, spacing: Theme.space5) {
-                StatBlock(value: entry.percentText, label: "进度")
-                StatBlock(value: duration, label: "累计时长")
-                StatBlock(value: "\(entry.notes.count)", label: "摘记数")
-            }
+        let statLayout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space2))
+            : AnyLayout(HStackLayout(spacing: Theme.space2))
+        return statLayout {
+            detailStatPill(value: entry.percentText, label: "阅读进度", fill: Theme.peach, tint: Theme.accent)
+            detailStatPill(value: duration, label: "累计陪伴", fill: Theme.butter, tint: Theme.butterInk)
+            detailStatPill(value: "\(entry.notes.count)", label: "摘记与划线", fill: Theme.lav, tint: Theme.lavInk)
         }
-        .padding(.vertical, Theme.space4)
-        .overlay(alignment: .top) { RowDivider() }
-        .overlay(alignment: .bottom) { RowDivider() }
+    }
+
+    private func detailStatPill(value: String, label: String, fill: Color, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(Theme.rounded(11.5, weight: .semibold))
+                .foregroundStyle(tint)
+            Text(value)
+                .font(Theme.display(20))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(fill, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
     }
 
     private func chapterUnit(_ entry: ShelfEntry) -> String {
