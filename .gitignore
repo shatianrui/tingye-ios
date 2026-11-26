@@ -8,3 +8,6 @@ xcuserdata/
 
 # Local source-validation scripts
 __pycache__/
+
+# App Store Connect API 私钥。只在本机保存，不要提交。
+*.p8

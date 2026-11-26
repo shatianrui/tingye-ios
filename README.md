@@ -110,6 +110,10 @@ xcodebuild -project Tingye.xcodeproj -scheme Tingye -configuration Debug \
   -destination 'generic/platform=macOS,variant=Mac Catalyst' CODE_SIGNING_ALLOWED=NO build
 ```
 
+### Xcode Cloud
+
+`scripts/asc/xcode_cloud.py` 通过 App Store Connect API 查看听页的 Xcode Cloud 产品、`Tests` 工作流和某一次构建，也可以按分支启动手动构建。Issuer ID、Key ID 和 `.p8` 只放在本机环境变量里，不要提交。用法见 [scripts/asc/README.md](scripts/asc/README.md)。
+
 - `TingyeTests/NativeCoreTests.swift`：导入、存储、备份恢复、进度合并、语音、文字安全、主题对比度、动作语义和导入反馈；原书图文还覆盖字体与纸色、图片比例、分页、阅读位置恢复和视口变化后的句子可见性。
 - `TingyeUITests/DesignFlowTests.swift`：首页首屏与搜索、书库整理 / 详情 / 独立筛选排序、播放器句子拖动与暂停、朗读状态、最大字号与横屏、混合导入、阅读四键 / 日夜、读听定位分离、迷你播放器与结束确认、设置返回路由。原书用例等待 WebView 内的真实章节标题、段落和插图图注可见后再检查排版与跳章。
 - UI 测试通过 `-ui-fixture` 使用临时书库、关闭同步并强制系统声音，**不改用户书库、不调用付费接口**。这些入口只编译到 Debug。
