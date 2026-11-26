@@ -24,7 +24,7 @@ enum BookImporter {
         }
         if ext == "docx" { return Imported(book: try docx(url, title: title).validated()) }
         if ["mobi", "azw", "azw3", "prc"].contains(ext) { return Imported(book: try MobiReader.book(url, fallbackTitle: title).validated()) }
-        if ["cbz", "zip"].contains(ext) { return Imported(book: try ComicImporter.book(url, title: title).validated()) }
+        if ["cbz", "zip", "cbt", "cbr", "cb7"].contains(ext) { return Imported(book: try ComicImporter.book(url, title: title).validated()) }
         // Mapped when possible: decoding/JSON parsing below fault pages in on demand instead of
         // charging the whole file to resident memory up front (matters for 100 MB+ books).
         let data = try Data(contentsOf: url, options: .mappedIfSafe)
@@ -48,7 +48,7 @@ enum BookImporter {
         // Markdown 的原书文档由正文同源生成（构建 141 后仅作块解析来源），保证句级高亮与进度一致。
         else if ["md", "markdown"].contains(ext) { chapters = splitText(markdown(text), title: title).map(withOriginalDocument) }
         else if ["txt", "text", ""].contains(ext) { chapters = splitTextWithUserRules(text, title: title) }
-        else { throw ReaderError.message("支持 EPUB、MOBI、AZW3、TXT、PDF、HTML、Markdown、DOCX、CBZ 和听页备份 JSON。") }
+        else { throw ReaderError.message("支持 EPUB、MOBI、AZW3、TXT、PDF、HTML、Markdown、DOCX、CBZ、CBT 和听页备份 JSON。") }
         guard chapters.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else { throw ReaderError.message("未找到可阅读的文字。") }
         return Imported(book: try Book(title: title, format: ext.uppercased(), chapters: chapters).validated())
     }

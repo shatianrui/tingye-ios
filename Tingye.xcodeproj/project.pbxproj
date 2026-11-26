@@ -15,6 +15,7 @@
 		1A042B7B53782BCC1951F854 /* BookImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D28899BC5DC659673464017 /* BookImporter.swift */; };
 		1F1BD62CD72614B99CA1CF74 /* ComicReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFB1F2F5AE3E65F32A73D18 /* ComicReaderView.swift */; };
 		222B4F7BD5B00F226427FA65 /* MobiReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4305A23D2945C6E717F6482 /* MobiReader.swift */; };
+		C7A01B2C3D4E5F60718293A5 /* ComicArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A01B2C3D4E5F60718293A4 /* ComicArchive.swift */; };
 		28F78F0A9FC4C2BE75B014E7 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D6639CBAAFE961F7F6D147 /* Library.swift */; };
 		3354972A2291F173916C442F /* SpeechPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162E18902DAA19DBE7F6872F /* SpeechPlayer.swift */; };
 		36892EC415D1296C7AD84679 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = A839E16D3CC3AB497E0E251A /* Fixtures */; };
@@ -155,6 +156,7 @@
 		591A6DB88E0CE2DCBFF065D9 /* NotesUnifiedView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotesUnifiedView.swift; sourceTree = "<group>"; };
 		DE7CF5A6B4A45A1A191F2AE0 /* DailyQuoteCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyQuoteCard.swift; sourceTree = "<group>"; };
 		F4305A23D2945C6E717F6482 /* MobiReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MobiReader.swift; sourceTree = "<group>"; };
+		C7A01B2C3D4E5F60718293A4 /* ComicArchive.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ComicArchive.swift; sourceTree = "<group>"; };
 		FA30DD38307FD4F000C4C5F7 /* Lucide-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Lucide-LICENSE.txt"; sourceTree = "<group>"; };
 		FB162FC79480EE85CABD24A7 /* Typography.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		7488EEE807736709DBD5BA84 /* Readium-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Readium-LICENSE.txt"; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				51C3F7942CC71A1C3377A6D5 /* DialogueRoles.swift */,
 				CEFB1F2F5AE3E65F32A73D18 /* ComicReaderView.swift */,
 				F4305A23D2945C6E717F6482 /* MobiReader.swift */,
+				C7A01B2C3D4E5F60718293A4 /* ComicArchive.swift */,
 				FB162FC79480EE85CABD24A7 /* Typography.swift */,
 				BFFE534536161AFC801B0359 /* ReaderAnnotations.swift */,
 				77B7B44EE7FAEF491B3B2936 /* Sources.swift */,
@@ -518,6 +521,7 @@
 				DAE5B4213231C01F0F740FF0 /* DialogueRoles.swift in Sources */,
 				1F1BD62CD72614B99CA1CF74 /* ComicReaderView.swift in Sources */,
 				222B4F7BD5B00F226427FA65 /* MobiReader.swift in Sources */,
+				C7A01B2C3D4E5F60718293A5 /* ComicArchive.swift in Sources */,
 				BCF3BAC600CD04C4DB63EAB9 /* Typography.swift in Sources */,
 				D4A124753E28AB40F12D83E0 /* ReaderAnnotations.swift in Sources */,
 				03EAA6CEB910BB6DF821D3CA /* Sources.swift in Sources */,
