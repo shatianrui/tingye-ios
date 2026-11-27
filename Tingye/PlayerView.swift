@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 
-/// 正在听：居中书封、白卡跟读与陶土圆形播放控制；句序号与定位始终真实。
+/// 正在听：深靛封面区与独立跟读卡；句序号与定位始终真实。
 /// 矮屏并排显示书封与标题。大字号或更矮窗口可整页滚动，播放控制固定。
 struct PlayerView: View {
     @EnvironmentObject var model: AppModel
@@ -232,6 +232,10 @@ struct PlayerView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)
+            .padding(Theme.space2)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+            .foregroundStyle(Theme.ink)
+            .environment(\.colorScheme, .dark)
 
         }
         .foregroundStyle(content)

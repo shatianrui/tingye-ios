@@ -203,19 +203,9 @@ struct StudyRootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var navigationHidden = false
-    @State private var didAutoOpenOnLaunch = false
     @State private var path: [StudyRoute] = []
     @State private var readerImportToken = UUID()
     @State private var playerImportToken = UUID()
-
-    /// UI 走查（-uireview）时不自动开书：走查场景自带到达路径，根页面需停在书库。
-    private var autoOpenAllowed: Bool {
-        #if DEBUG
-        return UIReview.screen == nil
-        #else
-        return true
-        #endif
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -232,7 +222,7 @@ struct StudyRootView: View {
                         HStack(spacing: Theme.space2) {
                             HStack(spacing: 6) {
                                 Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                                Text("TINGYE · FOLIO")
+                                Text("TINGYE · COVER ROOM")
                                     .font(Theme.masthead).tracking(Theme.mastheadTracking)
                                     .foregroundStyle(Theme.ink3)
                             }
@@ -263,18 +253,7 @@ struct StudyRootView: View {
         .disabled(model.restoringLibrary)
         .paperBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
-        .onChange(of: model.entries.count, initial: true) { _, count in
-            // 书架首次载入后只自动打开一次；之后回前台、切页都不再自动打开。
-            guard !didAutoOpenOnLaunch, count > 0 else { return }
-            didAutoOpenOnLaunch = true
-            guard autoOpenAllowed, model.selectedBook == nil else { return }
-            // 焦点书：最近阅读过的书优先，其次第一本本地非漫画书；
-            // 漫画按现行规则不自动打开。无书时停在书库根页面（书房空态沿用 ShelfView 现有空态）。
-            let focus = model.lastReadingBook
-                ?? model.visibleEntries.first { $0.local && !$0.isComic }
-                ?? model.visibleEntries.first { $0.local }
-            if let focus, !focus.isComic { model.open(focus) }
-        }
+        // 启动停在书库，由读者选择续读或换书。
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 model.refreshProgressSync()

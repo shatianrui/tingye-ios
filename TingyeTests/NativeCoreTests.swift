@@ -5,28 +5,28 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// 「刊 · Folio × Anthropic」官方色板动态色契约：同时检查日夜、提高对比度外观和输入框透明度。
+    /// 校验放映厅色板的日夜外观、提高对比度外观及输入框透明度。
     @MainActor func testV31PaletteResolvesToSpecifiedColors() {
         let tokens: [(String, Color, UInt32, UInt32)] = [
-            ("bg", Theme.bg, 0xFAF9F5, 0x141413),
-            ("surface", Theme.surface, 0xFFFFFF, 0x1C1B19),
-            ("surface2", Theme.surface2, 0xF0EEE6, 0x262522),
-            ("surfaceSunken", Theme.surfaceSunken, 0xF3F1E9, 0x181715),
-            ("ink", Theme.ink, 0x141413, 0xFAF9F5),
-            ("ink2", Theme.ink2, 0x3D3D3A, 0xD5D3CA),
-            ("ink3", Theme.ink3, 0x595853, 0xABA89E),
-            ("ink4", Theme.ink4, 0x87867F, 0x78756C),
-            ("line", Theme.line, 0xD8D4C8, 0x383631),
-            ("clay", Theme.clay, 0xD97757, 0xD97757),
-            ("accent", Theme.accent, 0xA6482B, 0xECA085),
-            ("clayDeep", Theme.clayDeep, 0xA6482B, 0xECA085),
-            ("accentSoft", Theme.accentSoft, 0xF8ECE6, 0x2E201B),
-            ("claySoft", Theme.claySoft, 0xF8ECE6, 0x2E201B),
-            ("onClay", Theme.onClay, 0x141413, 0x141413),
+            ("bg", Theme.bg, 0xF8F6FB, 0x181827),
+            ("surface", Theme.surface, 0xFFFFFF, 0x232340),
+            ("surface2", Theme.surface2, 0xEEEAF4, 0x302F49),
+            ("surfaceSunken", Theme.surfaceSunken, 0xF2EFF6, 0x1E1E32),
+            ("ink", Theme.ink, 0x232340, 0xFAF7FF),
+            ("ink2", Theme.ink2, 0x423F59, 0xDED9EA),
+            ("ink3", Theme.ink3, 0x59566D, 0xBFBBCE),
+            ("ink4", Theme.ink4, 0x655F76, 0xAAA4BB),
+            ("line", Theme.line, 0xD5CFDF, 0x49475F),
+            ("clay", Theme.clay, 0xFFDF97, 0xFFDF97),
+            ("accent", Theme.accent, 0x232340, 0xFFDF97),
+            ("clayDeep", Theme.clayDeep, 0x232340, 0xFFDF97),
+            ("accentSoft", Theme.accentSoft, 0xF7EBDD, 0x393344),
+            ("claySoft", Theme.claySoft, 0xF7EBDD, 0x393344),
+            ("onClay", Theme.onClay, 0x232340, 0x232340),
             ("danger", Theme.danger, 0x9E2A2B, 0xF4A6A3),
             ("dangerSoft", Theme.dangerSoft, 0xF9EAE8, 0x362020),
-            ("focus", Theme.focus, 0xD97757, 0xD97757),
-            ("onInk", Theme.onInk, 0xFAF9F5, 0x141413)
+            ("focus", Theme.focus, 0x232340, 0xFFDF97),
+            ("onInk", Theme.onInk, 0xF8F6FB, 0x181827)
         ]
         for style in [UIUserInterfaceStyle.light, .dark] {
             for contrast in [UIAccessibilityContrast.normal, .high] {
@@ -34,7 +34,7 @@ final class NativeCoreTests: XCTestCase {
                     UITraitCollection(userInterfaceStyle: style),
                     UITraitCollection(accessibilityContrast: contrast)
                 ])
-                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x141413, 0xFAF9F5)
+                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x232340, 0xFAF7FF)
                 for (name, color, light, dark) in tokens + [field] {
                     let hex = style == .dark ? dark : light
                     let expected = [CGFloat((hex >> 16) & 255) / 255,

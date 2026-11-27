@@ -8,6 +8,7 @@ struct ShelfView: View {
     var group: String? = nil
     @EnvironmentObject var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var projectedID: String?
     @State private var query = ""
     @State private var filter = "全部"
     @State private var category: String?
@@ -108,14 +109,13 @@ struct ShelfView: View {
                     Masthead(title: title, subtitle: shelfSubtitle, titleSize: 28)
                         .padding(.bottom, Theme.space5)
                 }
-                // 「书房」首页（仅根目录、非搜索、非整理）：正在读大卡 + 今日一句，位于搜索入口之上。
-                if isRoot && !searching && !editing, let heroEntry {
-                    heroCard(heroEntry).padding(.top, Theme.sectionSpacing)
-                    if let latestHighlight { todayQuote(latestHighlight).padding(.top, Theme.sectionSpacing) }
+                if isRoot && !searching && !editing && !showingGroups && !hasFilters {
+                    let books = sorted.filter(\.local)
+                    if !books.isEmpty { filmStage(books).padding(.top, Theme.space3) }
                 }
                 if !editing {
                     if searching { shelfSearchBar }
-                    else { searchEntry.padding(.top, isRoot ? Theme.space5 : 0) }
+                    else { adaptiveRow { searchEntry; addBooksMenu }.padding(.top, isRoot ? Theme.space4 : 0) }
                 }
                 if isRoot && !editing && !searching { kindSelector.padding(.top, Theme.space4) }
                 shelfControls.padding(.top, editing ? Theme.space4 : Theme.space2)
@@ -126,10 +126,8 @@ struct ShelfView: View {
                     if useList || editing || searching { bookList.padding(.top, Theme.space3) } else { bookGrid.padding(.top, Theme.space2) }
                 }
                 if searching { recentSearches.padding(.top, Theme.cardInset) }
-                if !editing && !searching {
-                    Button { showingSources = true } label: { Label { Text("添书") } icon: { ThemeIcon(symbol: Icon.add) } }
-                        .buttonStyle(SecondaryButtonStyle()).padding(.top, Theme.cardInset)
-                        .accessibilityIdentifier("import.book")
+                if isRoot && !editing && !searching && !showingGroups && !hasFilters, let latestHighlight {
+                    todayQuote(latestHighlight).padding(.top, Theme.cardInset)
                 }
             }
             .padding(.horizontal, Theme.inset)
@@ -314,53 +312,59 @@ struct ShelfView: View {
         model.visibleEntries.flatMap { $0.highlights ?? [] }.max { $0.date < $1.date }
     }
 
-    private func heroCard(_ entry: ShelfEntry) -> some View {
-        PaperCard {
-            VStack(alignment: .leading, spacing: Theme.space4) {
-                HStack(alignment: .firstTextBaseline) {
-                    SectionHeader(title: "正在读")
-                    Spacer(minLength: Theme.space2)
-                    SealBadge(text: entry.format.uppercased())
-                }
-                // 封面宽度是书封排版尺寸，沿用详情页的 104pt。
-                let layout = typeSize.isAccessibilitySize
-                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space4))
-                    : AnyLayout(HStackLayout(alignment: .top, spacing: Theme.space4))
-                layout {
-                    CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
-                    VStack(alignment: .leading, spacing: Theme.space2) {
-                        Text(entry.title)
-                            .accessibilityIdentifier("study.heroTitle")
-                            .accessibilityLabel(entry.title)
-                            .font(Theme.serif(20)).foregroundStyle(Theme.ink)
-                            .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
-                        Text(entry.author.isEmpty ? entry.format : entry.author)
-                            .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                        if entry.started, entry.chapterCount > 0 {
-                            let chapter = "第 \(min(max(1, entry.progress.chapter + 1), max(1, entry.chapterCount))) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")"
-                            Text(chapter).font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
-                                .accessibilityIdentifier("study.heroChapter").accessibilityLabel(chapter)
-                        }
-                        heroProgress(entry)
+    private func filmStage(_ books: [ShelfEntry]) -> some View {
+        let preferred = projectedID ?? model.lastReadingBook?.id
+        let index = books.firstIndex { $0.id == preferred } ?? 0
+        let entry = books[index]
+        let gold = Theme.clay
+        return VStack(spacing: 8) {
+            Text("封面放映厅 · \(index + 1) / \(books.count)").font(.caption.monospacedDigit()).foregroundStyle(gold)
+            ZStack {
+                RoundedRectangle(cornerRadius: 4).fill(Color(red: 0.74, green: 0.72, blue: 0.90)).frame(width: 112, height: 146).rotationEffect(.degrees(-9)).offset(x: -8)
+                RoundedRectangle(cornerRadius: 4).fill(Color(red: 0.52, green: 0.49, blue: 0.65)).frame(width: 112, height: 146).rotationEffect(.degrees(7)).offset(x: 8)
+                TabView(selection: Binding(get: { entry.id }, set: { projectedID = $0 })) {
+                    ForEach(books, id: \.id) { book in
+                        Group {
+                            if let image = model.covers[book.id] {
+                                Image(uiImage: image).resizable().scaledToFit()
+                            } else {
+                                BookCoverView(title: book.title, color: book.color, image: nil, width: 114)
+                            }
+                        }.frame(maxWidth: .infinity, maxHeight: .infinity).tag(book.id)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                }.tabViewStyle(.page(indexDisplayMode: .never)).accessibilityHidden(true)
+                HStack {
+                    reelArrow("上一本", "chevron.left", enabled: index > 0) { projectedID = books[index - 1].id }
+                    Spacer()
+                    reelArrow("下一本", "chevron.right", enabled: index + 1 < books.count) { projectedID = books[index + 1].id }
                 }
-                adaptiveRow {
-                    PrimaryButton(entry.started ? "继续阅读" : "开始阅读") {
-                        Haptics.light()
-                        model.open(entry)
-                    }
-                    .accessibilityIdentifier("study.heroContinue")
-                    SecondaryButton("开始专注") {
-                        // 漫画沿用直接打开行为，不写专注直达键。
-                        if !entry.isComic { UserDefaults.standard.set(entry.id, forKey: "study.openFocus.bookID") }
-                        Haptics.light()
-                        model.open(entry)
-                    }
-                    .accessibilityIdentifier("study.heroFocus")
-                }
+            }.frame(height: 156)
+            Text(entry.title).font(.title3.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("study.heroTitle")
+            Text(entry.author.isEmpty ? "作者未注明" : entry.author).font(.subheadline)
+            if entry.started && entry.chapterCount > 0 {
+                Text("第 \(min(max(1, entry.progress.chapter + 1), entry.chapterCount)) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
+                    .font(.caption).accessibilityIdentifier("study.heroChapter")
+            }
+            adaptiveRow {
+                Button { Haptics.light(); model.open(entry) } label: {
+                    Text(entry.started ? "继续阅读" : "开始阅读").font(.headline).padding(.horizontal, 18)
+                        .frame(minHeight: 44).foregroundStyle(.black).background(gold, in: Capsule())
+                }.accessibilityIdentifier("study.heroContinue")
+                Button("开始专注") {
+                    if !entry.isComic { UserDefaults.standard.set(entry.id, forKey: "study.openFocus.bookID") }
+                    Haptics.light(); model.open(entry)
+                }.frame(minHeight: 44).accessibilityIdentifier("study.heroFocus")
             }
         }
+        .buttonStyle(.plain).multilineTextAlignment(.center).foregroundStyle(.white)
+        .padding(12).frame(maxWidth: .infinity)
+        .background(Theme.onClay, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func reelArrow(_ label: String, _ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol).frame(width: 44, height: 44).contentShape(Rectangle()) }
+            .disabled(!enabled).opacity(enabled ? 1 : 0.3).accessibilityLabel(label)
     }
 
     @ViewBuilder

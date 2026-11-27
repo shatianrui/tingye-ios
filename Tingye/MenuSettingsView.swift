@@ -48,7 +48,7 @@ struct MenuSettingsView: View {
                                     }
                                 }
                             }
-                            .tint(Theme.clay)
+                            .tint(Theme.accent)
                             .accessibilityIdentifier("menu.tool.\(tool.rawValue)")
                         }
                     }.listRowSeparator(.hidden).listRowBackground(Color.clear)

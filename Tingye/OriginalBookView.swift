@@ -28,7 +28,7 @@ enum OriginalDocument {
         html.replacingOccurrences(of: #"(?i)<(?!(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)[\s/>])([a-z][a-z0-9:-]*)(\s[^<>]*?)?\s*/>"#, with: "<$1$2></$1>", options: .regularExpression)
     }
     /// `paper` 是阅读页纸色（WebView 透明，露出纸色）：页面脚本据此修正书籍样式写死的低对比文字颜色。
-    static func html(_ source: String, css: String, color: String = "#17233A", background: String = "#F6F0E4", paper: String = "#F6F0E4", preferences: ReaderPreferences = .init(), accent: String = "#A84A28") -> String {
+    static func html(_ source: String, css: String, color: String = "#17233A", background: String = "#F6F0E4", paper: String = "#F6F0E4", preferences: ReaderPreferences = .init(), accent: String = "currentColor") -> String {
         var html = source.replacingOccurrences(of: #"(?is)<(script|iframe|object|embed|form|base)\b[^>]*>.*?</\1\s*>|<(script|iframe|object|embed|form|base|meta)\b[^>]*\/?>"#, with: "", options: .regularExpression)
         html = html.replacingOccurrences(of: #"(?i)\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)"#, with: "", options: .regularExpression)
         html = closingSelfClosedTags(html)

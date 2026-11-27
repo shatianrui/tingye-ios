@@ -2,35 +2,29 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 听页界面「刊 · Folio × Anthropic」：象牙暖纸 `#FAF9F5`、炭墨 `#141413`、Anthropic 官方陶土 `#D97757`。
-/// 结合精装文库本双线报头、微直角硬朗纸面与可无障碍缩放的排版体系。
-/// 正文七种纸色的底与字独立保留，不跟界面一起变色。
+/// 封面放映厅：午夜靛蓝与暖金灯光。正文七种纸色独立于界面。
 enum Theme {
-    /// Anthropic Pampas 象牙暖纸 / 夜间 Slate 炭黑画布
-    static let bg = dynamic(0xFAF9F5, 0x141413)
-    /// 精装书页纯白卡面 / 夜间深炭纸面
-    static let surface = dynamic(0xFFFFFF, 0x1C1B19)
-    /// Anthropic Warm Sand 次级暖沙纸面 / 夜间抬升深灰暖面
-    static let surface2 = dynamic(0xF0EEE6, 0x262522)
-    static let surfaceSunken = dynamic(0xF3F1E9, 0x181715)
-    /// Anthropic Slate 炭墨正文 / 夜间象牙白字
-    static let ink = dynamic(0x141413, 0xFAF9F5)
-    static let ink2 = dynamic(0x3D3D3A, 0xD5D3CA)
-    static let ink3 = dynamic(0x595853, 0xABA89E)
-    static let ink4 = dynamic(0x87867F, 0x78756C)
-    static let line = dynamic(0xD8D4C8, 0x383631)
+    static let bg = dynamic(0xF8F6FB, 0x181827)
+    static let surface = dynamic(0xFFFFFF, 0x232340)
+    static let surface2 = dynamic(0xEEEAF4, 0x302F49)
+    static let surfaceSunken = dynamic(0xF2EFF6, 0x1E1E32)
+    static let ink = dynamic(0x232340, 0xFAF7FF)
+    static let ink2 = dynamic(0x423F59, 0xDED9EA)
+    static let ink3 = dynamic(0x59566D, 0xBFBBCE)
+    static let ink4 = dynamic(0x655F76, 0xAAA4BB)
+    static let line = dynamic(0xD5CFDF, 0x49475F)
     static let lineField = Color(UIColor { traits in
-        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xFAF9F5 : 0x141413)
+        UIColor(hex: traits.userInterfaceStyle == .dark ? 0xFAF7FF : 0x232340)
             .withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.16 : 0.14)
     })
-    /// Anthropic 官方陶土体系：小字采用满足 WCAG AA (≥4.5:1) 的深陶土/亮陶土，实色焦点块采用官方 Crail `#D97757`。
-    static let accent = dynamic(0xA6482B, 0xECA085)
+    // 日间小字用深靛；暖金实底始终配深靛文字。
+    static let accent = dynamic(0x232340, 0xFFDF97)
     static let clayDeep = accent
-    static let accentSoft = dynamic(0xF8ECE6, 0x2E201B)
+    static let accentSoft = dynamic(0xF7EBDD, 0x393344)
     static let claySoft = accentSoft
-    static let clay = dynamic(0xD97757, 0xD97757)
-    static let onClay = dynamic(0x141413, 0x141413)
-    static let focus = clay
+    static let clay = Color(hex: 0xFFDF97)
+    static let onClay = Color(hex: 0x232340)
+    static let focus = accent
     static let danger = dynamic(0x9E2A2B, 0xF4A6A3)
     static let dangerSoft = dynamic(0xF9EAE8, 0x362020)
 
@@ -137,11 +131,15 @@ enum Theme {
     // MARK: - 无图书籍的低饱和封面（真实书封始终优先）
 
     static func coverColor(_ color: String) -> Color { Color(uiColor: coverUIColor(color)) }
-    /// 占位封使用浅灰纸色，随日夜切换；真实导入书封不反色。
+    /// 海报底色不随外观反转，始终搭配深靛字。
     static func coverUIColor(_ color: String) -> UIColor {
-        UIColor(surfaceSunken)
+        switch color {
+        case "red", "vermilion": return UIColor(hex: 0xF4BEA6)
+        case "gold", "cream": return UIColor(hex: 0xFFDF97)
+        default: return UIColor(hex: 0xD8CEF0)
+        }
     }
-    static func coverForeground(_ color: String) -> Color { ink }
+    static func coverForeground(_ color: String) -> Color { onClay }
 
     /// 纯色色块（保留渐变签名，便于沿用调用处）。
     static func coverGradient(_ color: String) -> LinearGradient {
@@ -489,26 +487,23 @@ struct SealBadge: View {
     let text: String
     var color: Color = Theme.accent
     var background: Color? = nil
-    /// 保留旧参数兼容；刊物状态签采用微直角边框与陶土淡底。
     var filled: Bool = false
     var body: some View {
-        Text(L(text))
-            .font(Theme.sans(11, weight: .semibold))
-            .tracking(0.4)
-            .foregroundStyle(color)
-            .padding(.horizontal, Theme.space2)
-            .padding(.vertical, Theme.space1)
-            .background(background ?? Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                    .strokeBorder(color.opacity(0.24), lineWidth: Theme.hairline)
-            }
+        HStack(spacing: Theme.space1) {
+            Image(systemName: "ticket").accessibilityHidden(true)
+            Text(L(text))
+        }
+        .font(Theme.sans(11, weight: .semibold))
+        .foregroundStyle(color)
+        .padding(.horizontal, Theme.space2)
+        .padding(.vertical, Theme.space1)
+        .background(background ?? Theme.accentSoft, in: Capsule())
     }
 }
 
 // MARK: - 按钮（刊物微直角，浓墨主块 + 官方陶土焦点，主次分明）
 
-/// 主操作采用 Anthropic 炭墨实底 `#141413` 配象牙白字（夜间反转象牙实底配炭墨字），契合方案 C 刊物精装风格。
+/// 主按钮采用与界面外观对应的高对比实底。
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     var height: CGFloat = Theme.buttonHeight
@@ -742,7 +737,20 @@ struct SectionTitle: View {
     }
 }
 
-/// 刊物精装报头（Editorial Monograph Masthead）：顶线、陶土眉题与宋体大标题，紧凑不挤占首屏书架触控空间。
+/// 放映前导灯带，兼作标题区的装饰分隔。
+private struct MarqueeLights: View {
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<3) { _ in Circle().fill(Theme.clay).frame(width: 4, height: 4) }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8).frame(height: 9)
+        .background(Theme.onClay, in: Capsule())
+        .accessibilityHidden(true)
+    }
+}
+
+/// 放映厅场次标题。
 struct PageMasthead: View {
     let title: String
     var subtitle: String? = nil
@@ -755,10 +763,7 @@ struct PageMasthead: View {
     var action: (() -> Void)? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
-            if rule {
-                Rectangle().fill(Theme.ink).frame(height: 1.5)
-                    .accessibilityHidden(true)
-            }
+            if rule { MarqueeLights() }
             if kicker != nil || issue != nil || actionTitle != nil {
                 HStack {
                     if let kicker {
@@ -795,7 +800,7 @@ struct PageMasthead: View {
 struct ProgressBar: View {
     var value: Double
     var track: Color = Theme.surface2
-    var tint: Color = Theme.clay
+    var tint: Color = Theme.focus
     var height: CGFloat = Theme.progressHeight
     var body: some View {
         GeometryReader { geo in
@@ -844,14 +849,6 @@ struct BookCoverView: View {
         // 封面是固定比例的书籍图像；可缩放的完整书名由外部标题及无障碍标签提供。
         .dynamicTypeSize(.medium)
         .frame(width: width, height: width / 0.75)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.coverRadius(width), style: .continuous)
-                .inset(by: Theme.hairline)
-                .strokeBorder(Color.white.opacity(0.35), lineWidth: Theme.rule)
-                .allowsHitTesting(false)
-        }
         .accessibilityElement()
         .accessibilityLabel("《\(title)》封面")
     }
@@ -871,30 +868,36 @@ struct BookCoverView: View {
         let titleSize = min(24, max(11, width * 0.14))
         return ZStack(alignment: .leading) {
             Theme.coverColor(color)
-            Rectangle().fill(Theme.clay).frame(height: max(2.5, width * 0.028))
-                .frame(maxHeight: .infinity, alignment: .top)
-                .accessibilityHidden(true)
+            Canvas { context, size in
+                let band = CGRect(x: 0, y: size.height * 0.68, width: size.width, height: size.height * 0.32)
+                context.fill(Path(band), with: .color(Theme.onClay))
+                let diameter = band.height * 0.66
+                let lamp = CGRect(x: band.width * 0.62, y: band.minY + band.height * 0.16,
+                                  width: diameter, height: diameter)
+                context.fill(Path(ellipseIn: lamp), with: .color(Theme.clay))
+            }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(L(title))
                     .font(Theme.serifBold(titleSize)).foregroundStyle(fg).serifEmbolden(titleSize)
-                    .lineLimit(3).minimumScaleFactor(0.72).multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(width < 72 ? 2 : 3).minimumScaleFactor(0.72).multilineTextAlignment(.leading)
                 if width >= 72 && !author.isEmpty {
                     Text(author).font(.system(size: max(8, width * 0.075)))
-                        .foregroundStyle(fg.opacity(0.75)).lineLimit(1)
+                        .foregroundStyle(fg).lineLimit(1)
                         .padding(.top, max(3, width * 0.04))
                 }
-                Spacer(minLength: 0)
-                Rectangle().fill(fg.opacity(0.45)).frame(height: 1).accessibilityHidden(true)
-                if let index {
-                    Text(String(format: "NO.%02d", index))
-                        .font(Theme.sans(max(8, width * 0.075), weight: .semibold)).monospacedDigit()
-                        .foregroundStyle(Theme.accent).padding(.top, max(3, width * 0.04))
-                }
             }
-            .padding(.leading, max(8, width * 0.12))
-            .padding(.trailing, max(8, width * 0.1))
-            .padding(.vertical, max(10, width * 0.12))
+            .padding(.horizontal, max(5, width * 0.08))
+            .frame(width: width, height: width / 0.75 * 0.68, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .top)
+            if let index {
+                Text(String(format: "%02d", index))
+                    .font(Theme.sans(max(8, width * 0.075), weight: .semibold)).monospacedDigit()
+                    .foregroundStyle(Theme.clay)
+                    .padding(.leading, width * 0.08)
+                    .frame(height: width / 0.75 * 0.32)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+            }
         }
         .frame(width: width, height: width / 0.75)
     }
@@ -1347,12 +1350,7 @@ struct EditorialIntro: View {
     var eyebrow: String? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
-            VStack(spacing: 2) {
-                Rectangle().fill(Theme.ink).frame(height: 1.5)
-                Rectangle().fill(Theme.line).frame(height: Theme.hairline)
-            }
-            .padding(.bottom, 2)
-            .accessibilityHidden(true)
+            MarqueeLights()
             if let eyebrow {
                 HStack(spacing: 6) {
                     Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)

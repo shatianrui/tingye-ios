@@ -1067,21 +1067,21 @@ private final class TransferConnection: @unchecked Sendable {
     <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>听页 · WiFi 传书</title>
     <style>
-    :root{--bg:#FAF9F5;--card:#FFFFFF;--ink:#141413;--ink3:#595853;--accent:#A6482B;--clay:#D97757;--soft:#F8ECE6;--danger:#9E2A2B;--line:#D8D4C8}
-    @media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1C1B19;--ink:#FAF9F5;--ink3:#ABA89E;--accent:#ECA085;--clay:#D97757;--soft:#2E201B;--danger:#F4A6A3;--line:#383631}}
+    :root{color-scheme:light dark;--bg:#F8F6FB;--card:#FFFFFF;--ink:#232340;--ink3:#59566D;--accent:#232340;--marker:#FFDF97;--soft:#F7EBDD;--danger:#9E2A2B;--line:#D5CFDF}
+    @media (prefers-color-scheme:dark){:root{--bg:#181827;--card:#232340;--ink:#FAF7FF;--ink3:#BFBBCE;--accent:#FFDF97;--soft:#393344;--danger:#F4A6A3;--line:#49475F}}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px "Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:48px}
     main{max-width:1000px;margin:0 auto}
-    header{border-top:2px solid var(--ink);border-bottom:1px solid var(--line);padding:16px 0 22px;margin-bottom:24px}
+    header{background:#232340;color:#FAF7FF;border-radius:16px;padding:24px;margin-bottom:24px}header .eyebrow{color:var(--marker)}header .intro{color:#DED9EA}
     .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;margin:0 0 16px;display:flex;align-items:center;gap:8px}
-    .eyebrow::before{content:"";width:8px;height:8px;background:var(--clay);display:inline-block}
+    .eyebrow::before{content:"";width:8px;height:8px;background:var(--marker);display:inline-block}
     h1{font:400 clamp(30px,4vw,46px)/1.35 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 14px}
     p{color:var(--ink3);margin:0;line-height:1.7}.intro{margin-bottom:4px}
     .steps{padding:0 0 0 22px;margin:0 0 28px;color:var(--ink3)}.steps li{display:list-item;background:none;border:0;min-height:0;padding:4px 0;margin:0;font-size:15px}.steps li::before{display:none}
     #drop{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:40px 24px;text-align:center;box-shadow:3px 3px 0 rgba(20,20,19,.06);transition:.2s}
-    #drop.over{border-color:var(--clay);background:var(--soft)}
+    #drop.over{border-color:var(--accent);background:var(--soft)}
     h2{font:400 26px/1.5 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 12px}.formats{font-size:12px;letter-spacing:.05em}
     button{min-height:48px;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:4px;padding:12px 24px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer}
-    button:focus-visible,#drop:focus-visible{outline:3px solid var(--clay);outline-offset:4px}
+    button:focus-visible,#drop:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
     button:disabled{opacity:.45;cursor:default}#choose{min-width:240px;margin-top:18px}
     button.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);margin:0;min-height:44px}
     .queue-title{font:400 20px/1.4 "Noto Serif SC","Songti SC",serif;border-bottom:1px solid var(--line);padding-bottom:12px;margin:28px 0 18px}
@@ -1090,12 +1090,12 @@ private final class TransferConnection: @unchecked Sendable {
     li>div{min-width:0;overflow-wrap:anywhere}li>div:first-of-type{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,1fr);align-items:center;gap:24px}
     .result{flex-basis:18%;max-width:34%;text-align:right;font-size:12px;color:var(--accent)}.result span{display:block;overflow-wrap:anywhere}.result button{margin-top:8px;padding:6px 12px}
     #clear{margin-top:16px}.footnote{font-size:12px;margin-top:24px}
-    .ok{color:var(--accent);font-weight:600}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:0;overflow:hidden}.bar i{display:block;height:100%;background:var(--clay);width:0}
+    .ok{color:var(--accent);font-weight:600}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:0;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0}
     @media(prefers-contrast:more){:root{--line:#595853}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
     @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
     @media(max-width:600px){body{padding:28px 20px}h1{font-size:28px}#drop{padding:28px 16px}#choose{min-width:0;width:100%}#list li{gap:12px;padding:16px 12px}li>div:first-of-type{display:block}.bar{margin-top:10px}.result{flex-basis:30%;max-width:45%}.steps li{padding-right:8px}}
     </style></head><body><main>
-    <header><div class="eyebrow">TINGYE FOLIO · 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
+    <header><div class="eyebrow">TINGYE · 封面放映厅 / 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
     <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
     <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · CBT · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
     <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
