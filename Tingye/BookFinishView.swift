@@ -8,6 +8,7 @@ import SwiftUI
 /// （挂在今日一句的位置上），其 id 指针存 @AppStorage 同名键以便回读与修改；
 /// 当既没有划线也没有可定位的句子时，降级为 @AppStorage 按书存纯文本。
 struct BookFinishView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -90,10 +91,10 @@ struct BookFinishView: View {
             BookCoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 84)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Theme.space2) {
-                Text("全书读完").font(.caption).foregroundStyle(Theme.clayDeep)
-                Text(entry.title).font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(Theme.ink)
-                Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(Theme.ink2)
-                Text(statsLine).font(.caption).foregroundStyle(Theme.ink2)
+                Text("全书读完").font(.caption).foregroundStyle(appTheme.accent)
+                Text(entry.title).font(Theme.serif(23, relativeTo: .title2)).foregroundStyle(appTheme.ink)
+                Text(entry.author.isEmpty ? L("佚名") : entry.author).font(.caption).foregroundStyle(appTheme.ink2)
+                Text(statsLine).font(.caption).foregroundStyle(appTheme.ink2)
                     .accessibilityIdentifier("finish.statsLine")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -117,7 +118,7 @@ struct BookFinishView: View {
                 .fixedSize(horizontal: false, vertical: true)
             (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.space3)) : AnyLayout(HStackLayout(spacing: Theme.space4))) {
                 Text("《\(entry.title)》" + (quoteChapterLabel.isEmpty ? "" : " · \(quoteChapterLabel)"))
-                    .font(.caption).foregroundStyle(Theme.ink3)
+                    .font(.caption).foregroundStyle(appTheme.ink3)
                 Spacer()
                 if let quote = currentQuote, let chapter = quote.chapter, let position = quote.position {
                     Button("回到原文") {
@@ -133,8 +134,8 @@ struct BookFinishView: View {
             }
         }
         .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
-        .foregroundStyle(Theme.ink)
+        .overlay(alignment: .leading) { Rectangle().fill(appTheme.accent).frame(width: Theme.progressHeight) }
+        .foregroundStyle(appTheme.ink)
     }
 
     private var finishNoteSection: some View {
@@ -144,8 +145,8 @@ struct BookFinishView: View {
                 .font(.body).scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
                 .padding(Theme.space2)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField, style: .continuous).strokeBorder(Theme.lineField, lineWidth: Theme.hairline) }
+                .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radiusField, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: appTheme.radiusField, style: .continuous).strokeBorder(appTheme.lineField, lineWidth: Theme.hairline) }
                 .onChange(of: finishNote) { _, _ in noteSaved = false }
                 .accessibilityLabel("读完感")
             HStack {
@@ -154,7 +155,7 @@ struct BookFinishView: View {
                     .disabled(finishNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !hasSavedNote)
                     .accessibilityIdentifier("finish.note.save")
                 Spacer()
-                Text("会存进本书摘记").font(.caption2).foregroundStyle(Theme.ink2)
+                Text("会存进本书摘记").font(.caption2).foregroundStyle(appTheme.ink2)
             }
         }
     }
@@ -168,8 +169,8 @@ struct BookFinishView: View {
                     BookCoverView(title: next.title, color: next.color, author: next.author, image: model.covers[next.id], width: 56)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: Theme.space1) {
-                        Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
-                        Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(Theme.ink2)
+                        Text(next.title).font(.subheadline.weight(.medium)).foregroundStyle(appTheme.ink).lineLimit(2)
+                        Text(next.author.isEmpty ? L("佚名") : next.author).font(.caption).foregroundStyle(appTheme.ink2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }

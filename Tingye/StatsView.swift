@@ -5,6 +5,7 @@ import UserNotifications
 /// 统计（参照 PureLibro）：日 / 周 / 月 / 年 / 总；概览数字、阅读目标、时长图表、阅读时段、按书排行。
 /// 按日的总时长来自 `readingSeconds`（旧版本也有）；时段与排行来自 1.14 起记录的 `sessions`。
 struct StatsView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     /// 我的概览与独立阅读统计共用数据；设置保留单独的导航层级。
     var ji = false
@@ -108,7 +109,7 @@ struct StatsView: View {
         .task { if UIReview.screen == "stats-goal" { editGoal() } }
         #endif
         .sheet(isPresented: $editingGoal) { goalEditor }
-        .sheet(isPresented: $showingCalendar) { ReadingCalendarView().environmentObject(model).tint(Theme.clayDeep) }
+        .sheet(isPresented: $showingCalendar) { ReadingCalendarView().environmentObject(model).tint(appTheme.accent) }
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
     }
 
@@ -118,7 +119,7 @@ struct StatsView: View {
                 if let onBack {
                     Button { onBack() } label: {
                         ThemeIcon(symbol: Icon.back, size: 20, weight: .medium)
-                            .foregroundStyle(Theme.ink)
+                            .foregroundStyle(appTheme.ink)
                             .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
                             .contentShape(Rectangle())
                     }
@@ -147,17 +148,17 @@ struct StatsView: View {
                     Text("今日摘句").font(.caption2.weight(.medium))
                     Text("把日子过慢一点，\n让喜欢的文字多停留一会儿。")
                         .font(Theme.serif(20, relativeTo: .title3)).lineSpacing(7)
-                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(Theme.ink3)
+                    Text("听页 · 今日阅读寄语").font(.caption).foregroundStyle(appTheme.ink3)
                 }
-                .foregroundStyle(Theme.ink3)
+                .foregroundStyle(appTheme.ink3)
                 .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
+                .overlay(alignment: .leading) { Rectangle().fill(appTheme.accent).frame(width: Theme.progressHeight) }
             }
             profileEntry("设置", value: "阅读 · 声音 · 数据") { showingSettings = true }
             Text("无需账号，你的书留在你的设备。")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(appTheme.ink2)
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
     }
 
     private var monthlyFootprint: some View {
@@ -171,19 +172,19 @@ struct StatsView: View {
         return Button { showingStats = true } label: {
             VStack(alignment: .leading, spacing: Theme.space4) {
                 HStack(spacing: 6) {
-                    Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                    Text("这个月，读听了").font(Theme.masthead).tracking(Theme.mastheadTracking).foregroundStyle(Theme.accent)
+                    Rectangle().fill(appTheme.accent).frame(width: 7, height: 7).accessibilityHidden(true)
+                    Text("这个月，读听了").font(Theme.masthead).tracking(Theme.mastheadTracking).foregroundStyle(appTheme.accent)
                 }
                 Text(Self.preciseDuration(seconds)).font(Theme.serif(36, relativeTo: .largeTitle))
                     .minimumScaleFactor(0.6).lineLimit(1).monospacedDigit()
-                Rectangle().fill(Theme.line).frame(height: 1).accessibilityHidden(true)
+                Rectangle().fill(appTheme.line).frame(height: 1).accessibilityHidden(true)
                 ViewThatFits(in: .horizontal) {
                     HStack { Text("累计读完 \(finished) 本"); Spacer(); Text("连续阅读 \(streak) 天") }
                     VStack(alignment: .leading, spacing: Theme.space2) { Text("累计读完 \(finished) 本"); Text("连续阅读 \(streak) 天") }
                 }
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(appTheme.ink2)
             }
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(appTheme.ink)
             .paperPanel()
         }
         .buttonStyle(.plain)
@@ -247,21 +248,21 @@ struct StatsView: View {
         let unclassified = max(0, totalSeconds - reading - listening)
         return VStack(alignment: .leading, spacing: Theme.space2) {
             Text(period == .day && offset == 0 ? "今天读听时长" : "本期读听时长")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(appTheme.ink2)
             Text(Self.preciseDuration(totalSeconds))
                 .font(Theme.serif(durationSize, relativeTo: .largeTitle)).monospacedDigit()
                 .minimumScaleFactor(0.6).lineLimit(1)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(appTheme.ink)
             summaryLayout {
                 Text("阅读 " + Self.preciseDuration(reading))
                 Text("听书 " + Self.preciseDuration(listening))
             }
-            .font(.caption).foregroundStyle(Theme.ink2)
+            .font(.caption).foregroundStyle(appTheme.ink2)
             if unclassified >= 60 {
                 Text("另有 \(Int(unclassified / 60)) 分钟旧版记录未区分阅读与听书")
-                    .font(.caption2).foregroundStyle(Theme.ink2)
+                    .font(.caption2).foregroundStyle(appTheme.ink2)
             }
-            if period == .all { Text(intervalLabel).font(.caption).foregroundStyle(Theme.ink2) }
+            if period == .all { Text(intervalLabel).font(.caption).foregroundStyle(appTheme.ink2) }
         }
         .padding(.vertical, Theme.space1)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -286,7 +287,7 @@ struct StatsView: View {
             .accessibilityLabel("下一" + unit)
             .disabled(offset >= 0).opacity(offset >= 0 ? 0.3 : 1)
         }
-        .buttonStyle(.plain).foregroundStyle(Theme.ink2)
+        .buttonStyle(.plain).foregroundStyle(appTheme.ink2)
         .padding(.vertical, -Theme.space2)
     }
 
@@ -347,10 +348,10 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: Theme.space2) {
             HStack(spacing: Theme.space2) { ThemeIcon(symbol: icon, size: 16); Text(L(title)) }
                 .font(.caption)
-                .foregroundStyle(Theme.ink2)
+                .foregroundStyle(appTheme.ink2)
             HStack(alignment: .firstTextBaseline, spacing: Theme.space1) {
-                Text("\(value)").font(Theme.serif(30, relativeTo: .title2)).monospacedDigit().foregroundStyle(Theme.ink)
-                Text(L(unit)).font(.caption).foregroundStyle(Theme.ink3)
+                Text("\(value)").font(Theme.serif(30, relativeTo: .title2)).monospacedDigit().foregroundStyle(appTheme.ink)
+                Text(L(unit)).font(.caption).foregroundStyle(appTheme.ink3)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -376,9 +377,9 @@ struct StatsView: View {
                         Text(fraction >= 1 ? "已完成 ✓" : "\(Int(fraction * 100))%")
                             .font(.caption).monospacedDigit()
                     }
-                    ProgressLine(value: fraction, track: Theme.line, tint: Theme.clay, height: Theme.progressHeight)
+                    ProgressLine(value: fraction, track: appTheme.line, tint: appTheme.accent, height: Theme.progressHeight)
                 }
-                .foregroundStyle(Theme.ink3)
+                .foregroundStyle(appTheme.ink3)
                 .paperPanel()
             }
             .buttonStyle(.plain)
@@ -415,13 +416,13 @@ struct StatsView: View {
                 SettingsGroup(footer: reminderDenied ? "通知权限未开启，请在系统设置 › 通知 › 听页中允许。" : "当天读够目标就不再提醒。提醒只在本机生成。") {
                     HairlineRow(showsDivider: reminderDraft) {
                         Toggle("每日阅读提醒", isOn: $reminderDraft.animation(Theme.pressSpring))
-                            .tint(Theme.clay).accessibilityIdentifier("goal.reminder")
+                            .tint(appTheme.accent).accessibilityIdentifier("goal.reminder")
                     }
                     if reminderDraft {
                         HairlineRow(showsDivider: false) { DatePicker("提醒时间", selection: $reminderTime, displayedComponents: .hourAndMinute) }
                     }
                     if reminderDenied {
-                        SealBadge(text: "通知权限未开启", color: Theme.danger, background: Theme.dangerSoft)
+                        SealBadge(text: "通知权限未开启", color: appTheme.danger, background: appTheme.dangerSoft)
                     }
                 }
                 SettingsGroup(title: "常用") {
@@ -473,21 +474,21 @@ struct StatsView: View {
         }()
         return VStack(alignment: .leading, spacing: Theme.space3) {
             HStack(alignment: .lastTextBaseline) {
-                Text("阅读节奏").font(.caption.weight(.medium)).foregroundStyle(Theme.ink2)
+                Text("阅读节奏").font(.caption.weight(.medium)).foregroundStyle(appTheme.ink2)
                 Text(period == .day ? (offset == 0 ? "本周 · 分钟" : "所在周 · 分钟") : unit == .day ? "分钟 / 天" : "分钟 / 月")
-                    .font(.caption2).foregroundStyle(Theme.ink2)
+                    .font(.caption2).foregroundStyle(appTheme.ink2)
                     .fixedSize()
             }
             Chart(points, id: \.date) { point in
                 BarMark(x: .value("日期", point.date, unit: unit), y: .value("分钟", point.minutes))
-                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? Theme.ink2 : Theme.surface2)
-                    .cornerRadius(Theme.radiusSmall)
+                    .foregroundStyle(calendar.isDate(point.date, inSameDayAs: period == .day ? interval.start : Date()) ? appTheme.ink2 : appTheme.surface2)
+                    .cornerRadius(appTheme.radiusSmall)
             }
             .chartXScale(domain: displayed.start...displayed.end)
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
-                AxisValueLabel().foregroundStyle(Theme.ink2)
+                AxisValueLabel().foregroundStyle(appTheme.ink2)
             } }
-            .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(Theme.ink2) } }
+            .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(appTheme.ink2) } }
             .frame(height: 150)
             .overlay {
                 if points.allSatisfy({ $0.minutes == 0 }) {
@@ -520,15 +521,15 @@ struct StatsView: View {
                         let entry = model.entries.first { $0.id == session.bookID }
                         HStack(spacing: Theme.space3) {
                             ThemeIcon(symbol: session.listening ? Icon.listen : Icon.read, size: 24)
-                                .foregroundStyle(Theme.ink).accessibilityHidden(true)
+                                .foregroundStyle(appTheme.ink).accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: Theme.space1) {
-                                Text(session.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).lineLimit(2)
+                                Text(session.title).font(.subheadline.weight(.medium)).foregroundStyle(appTheme.ink).lineLimit(2)
                                 Text((session.listening ? "听书 " : "阅读 ") + "\(max(1, Int(session.seconds / 60))) 分钟 · " + timeRange(session))
-                                    .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
+                                    .font(.caption).monospacedDigit().foregroundStyle(appTheme.ink2)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             if let entry {
-                                Text(entry.percentText).font(.caption).monospacedDigit().foregroundStyle(Theme.clayDeep)
+                                Text(entry.percentText).font(.caption).monospacedDigit().foregroundStyle(appTheme.accent)
                                     .accessibilityLabel("全书进度 " + entry.percentText)
                             }
                         }
@@ -562,11 +563,11 @@ struct StatsView: View {
                         let entry = model.entries.first { $0.id == row.key }
                         HStack(spacing: Theme.space3) {
                             Text(String(format: "%02d", index + 1)).font(Theme.serif(30, relativeTo: .largeTitle)).monospacedDigit()
-                                .foregroundStyle(index == 0 ? Theme.clayDeep : Theme.ink).frame(width: 34, alignment: .leading)
+                                .foregroundStyle(index == 0 ? appTheme.accent : appTheme.ink).frame(width: 34, alignment: .leading)
                             BookCoverView(title: entry?.title ?? row.value.title, color: entry?.color ?? "gray", image: model.covers[row.key], width: 34)
                             Text(entry?.title ?? row.value.title).font(Theme.serif(17)).lineLimit(1)
                             Spacer(minLength: 8)
-                            Text(Self.durationText(row.value.seconds)).font(.system(size: 13, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.ink2)
+                            Text(Self.durationText(row.value.seconds)).font(.system(size: 13, weight: .semibold)).monospacedDigit().foregroundStyle(appTheme.ink2)
                         }
                         .frame(minHeight: 72)
                         RowDivider()
@@ -612,13 +613,11 @@ struct StatsView: View {
 /// 设置目录独立持有下一层路由，返回外观或阅读排版时仍停留在目录。
 /// 不能复用「我的」的 destination state，否则 SwiftUI 会替换设置目录这一层。
 private struct SettingsDirectoryView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
-    @AppStorage("app.appearance") private var appearance = "system"
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
     @State private var importHubToken = UUID()
-
-    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
 
     var body: some View {
         SettingsPage(title: "设置", detail: "阅读、声音与数据，各有自己的位置。") {
@@ -644,13 +643,13 @@ private struct SettingsDirectoryView: View {
                     .accessibilityIdentifier("profile.storage")
             }
             SettingsGroup(title: "通用") {
-                settingsEntry(icon: Icon.appearance, title: "外观", value: appearanceName) { settingsRoute = .appearance }
+                settingsEntry(icon: Icon.appearance, title: "外观", value: appTheme.title) { settingsRoute = .appearance }
                     .accessibilityIdentifier("profile.appearance")
                 settingsEntry(icon: Icon.settings, title: "通用设置", subtitle: "启动续读、目标提示、震动反馈") { settingsRoute = .general }
                     .accessibilityIdentifier("profile.general")
                 settingsEntry(icon: Icon.settings, title: "隐私与关于", subtitle: "应用锁、隐藏书籍、隐私与版本") { settingsRoute = .profile }
             }
-            Text("听页 · 书籍保存在本机").font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+            Text("听页 · 书籍保存在本机").font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
         }
         .navigationTitle("设置").navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $settingsRoute) { route in
@@ -666,7 +665,7 @@ private struct SettingsDirectoryView: View {
         }
         .sheet(isPresented: $showingImportHub, onDismiss: {
             model.releaseFileImportPresentation(importHubToken)
-        }) { ImportHubView().environmentObject(model).tint(Theme.clayDeep) }
+        }) { ImportHubView().environmentObject(model).tint(appTheme.accent) }
 
     }
 

@@ -3,6 +3,7 @@ import SwiftUI
 /// TXT 分章规则：自定义正则、章节最大字数、预览命中的标题。
 /// 只影响之后导入或在书籍详情里「重新分章」的 TXT，不会改动其他书籍。
 struct TxtRulesView: View {
+    @Environment(\.appTheme) private var appTheme
     @AppStorage(TxtChapterRules.activeKey) private var active = ""
     @AppStorage(TxtChapterRules.maxLengthKey) private var maxLength = TxtChapterRules.defaultMaxLength
     @State private var rules = TxtChapterRules.rules
@@ -51,11 +52,11 @@ struct TxtRulesView: View {
                             .font(.system(.body, design: .monospaced))
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                             .padding(Theme.space3)
-                            .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusField))
-                            .overlay { RoundedRectangle(cornerRadius: Theme.radiusField).strokeBorder(Theme.lineField, lineWidth: Theme.hairline) }
+                            .background(appTheme.surfaceSunken, in: RoundedRectangle(cornerRadius: appTheme.radiusField))
+                            .overlay { RoundedRectangle(cornerRadius: appTheme.radiusField).strokeBorder(appTheme.lineField, lineWidth: Theme.hairline) }
                             .accessibilityIdentifier("txt.draft")
                         if !draft.isEmpty && draftRegex == nil {
-                            SealBadge(text: "正则表达式无效。", color: Theme.danger, background: Theme.dangerSoft)
+                            SealBadge(text: "正则表达式无效。", color: appTheme.danger, background: appTheme.dangerSoft)
                         }
                         HairlineRow {
                             HStack {
@@ -69,7 +70,7 @@ struct TxtRulesView: View {
                                 ForEach(TxtChapterRules.presets, id: \.pattern) { preset in
                                     Button(preset.name) { add(preset.pattern, use: false) }
                                 }
-                            }.foregroundStyle(Theme.clayDeep)
+                            }.foregroundStyle(appTheme.accent)
                         }
                     }
                 }
@@ -84,7 +85,7 @@ struct TxtRulesView: View {
                         ForEach(Array(previewTitles.enumerated()), id: \.offset) { index, title in
                             HairlineRow {
                                 HStack(spacing: Theme.space3) {
-                                    Text(String(format: "%02d", index + 1)).font(Theme.sans(15)).foregroundStyle(Theme.ink3).monospacedDigit()
+                                    Text(String(format: "%02d", index + 1)).font(Theme.sans(15)).foregroundStyle(appTheme.ink3).monospacedDigit()
                                     Text(title).font(Theme.serif(17)).lineLimit(1)
                                 }
                             }
@@ -94,7 +95,7 @@ struct TxtRulesView: View {
             } header: { Text("预览（\(previewTitles.count) 章）") }
             .listRowBackground(Color.clear).listRowSeparator(.hidden)
         }
-        .tint(Theme.clayDeep).foregroundStyle(Theme.ink)
+        .tint(appTheme.accent).foregroundStyle(appTheme.ink)
         .editorialList().paperBackground()
         .navigationTitle("TXT 分章规则").navigationBarTitleDisplayMode(.inline)
     }
@@ -105,9 +106,9 @@ struct TxtRulesView: View {
                 HairlineRow(showsDivider: false) {
                     HStack {
                         Text(name).font(pattern.isEmpty ? .body : .system(.footnote, design: .monospaced))
-                            .foregroundStyle(Theme.ink).lineLimit(2)
+                            .foregroundStyle(appTheme.ink).lineLimit(2)
                         Spacer()
-                        if selected { ThemeIcon(symbol: Icon.checkmark, size: 18).foregroundStyle(Theme.clayDeep) }
+                        if selected { ThemeIcon(symbol: Icon.checkmark, size: 18).foregroundStyle(appTheme.accent) }
                     }
                     .frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
                 }

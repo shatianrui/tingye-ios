@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 空间整理：分项统计书库、语音缓存、封面索引与临时文件的占用，并可分别清理；附书库索引修复。
 struct StorageView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @State private var usage: [StorageUsage.Item] = []
     @State private var scanning = false
@@ -39,7 +40,7 @@ struct StorageView: View {
                                 Text(item.kind.title)
                                 Spacer()
                                 Text("清理").font(Theme.sans(15))
-                            }.foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
+                            }.foregroundStyle(appTheme.danger).frame(minHeight: Theme.iconButtonSize)
                         }
                         .disabled(item.bytes == 0)
                         .accessibilityIdentifier("storage.clear.\(item.kind.rawValue)")
@@ -47,7 +48,7 @@ struct StorageView: View {
                 }
                 HairlineRow(showsDivider: false) {
                     Button("清理全部缓存") { confirmAll = true }
-                        .foregroundStyle(Theme.danger).frame(minHeight: Theme.iconButtonSize)
+                        .foregroundStyle(appTheme.danger).frame(minHeight: Theme.iconButtonSize)
                         .accessibilityIdentifier("storage.clearAll")
                 }
             }
@@ -74,11 +75,11 @@ struct StorageView: View {
         return VStack(alignment: .leading, spacing: Theme.space3) {
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    Rectangle().fill(Theme.clay).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
-                    Rectangle().fill(Theme.surface2).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
-                    Rectangle().fill(Theme.line).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
+                    Rectangle().fill(appTheme.accent).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
+                    Rectangle().fill(appTheme.surface2).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
+                    Rectangle().fill(appTheme.line).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
                 }.clipShape(Capsule())
-            }.frame(height: Theme.progressHeight).background(Theme.line, in: Capsule()).accessibilityHidden(true)
+            }.frame(height: Theme.progressHeight).background(appTheme.line, in: Capsule()).accessibilityHidden(true)
             // Text names and values accompany all three segments; color is never the only key.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Theme.space4) { usageLegend(books: books, cache: cache, other: other) }
@@ -89,15 +90,15 @@ struct StorageView: View {
 
     private func usageLegend(books: Int64, cache: Int64, other: Int64) -> some View {
         Group {
-            legend("书籍 · " + StorageUsage.format(books), color: Theme.clay)
-            legend("缓存 · " + StorageUsage.format(cache), color: Theme.surface2)
-            legend("其他 · " + StorageUsage.format(other), color: Theme.line)
-        }.font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+            legend("书籍 · " + StorageUsage.format(books), color: appTheme.accent)
+            legend("缓存 · " + StorageUsage.format(cache), color: appTheme.surface2)
+            legend("其他 · " + StorageUsage.format(other), color: appTheme.line)
+        }.font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3)
     }
 
     private func legend(_ title: String, color: Color) -> some View {
         HStack(spacing: Theme.space1) {
-            RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(color)
+            RoundedRectangle(cornerRadius: appTheme.radiusSmall).fill(color)
                 .frame(width: Theme.space2, height: Theme.space2).accessibilityHidden(true)
             Text(title)
         }

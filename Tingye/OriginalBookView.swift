@@ -285,16 +285,17 @@ private final class OriginalReaderWebView: WKWebView {
 }
 
 struct OriginalBookView: UIViewRepresentable {
+    @Environment(\.appTheme) private var appTheme
     let html: String
     let css: String
     let book: Book
     let chapter: Int
     /// 正文颜色跟随阅读页纸色；背景透明，露出阅读页自己的纸色。
-    var foreground: Color = Theme.ink
+    var foreground: Color? = nil
     /// 阅读页纸色，用于修正书籍样式里低对比的文字颜色。
     var paper: Color = ReaderPaper.xuan
     /// 只用于阅读交互（链接、选区）；出版物的图片与版面保持原样。
-    var accent: Color = Theme.accent
+    var accent: Color? = nil
     var preferences: ReaderPreferences = .init()
     var highlight: NSRange? = nil
     /// 当前读到的字（章内 UTF-16 偏移，即 `SpeechPlayer.followPublisher`）：长句跨页时读到哪页翻到哪页。
@@ -355,7 +356,8 @@ struct OriginalBookView: UIViewRepresentable {
         coordinator.onToggleChrome = onToggleChrome; coordinator.onManualPage = onManualPage; coordinator.onEdgeTurn = onEdgeTurn
         coordinator.onPositionChange = onPositionChange
         coordinator.requestPosition(readingPosition, revision: positionRevision)
-        let color = UIColor(foreground).resolvedColor(with: view.traitCollection).cssHex
+        let accent = accent ?? appTheme.accent
+        let color = UIColor(foreground ?? appTheme.ink).resolvedColor(with: view.traitCollection).cssHex
         let paperHex = UIColor(paper).resolvedColor(with: view.traitCollection).cssHex
         let accentHex = UIColor(accent).resolvedColor(with: view.traitCollection).cssHex
         view.tintColor = UIColor(accent)

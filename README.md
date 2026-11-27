@@ -2,6 +2,12 @@
 
 纯 Swift / SwiftUI 本地阅读应用，听书作为辅助能力，最低 iOS 17。
 
+## 界面主题
+
+在「我的 → 设置 → 外观」切换燕麦书房、苔庭、蓝调夜航与银盐档案，选择会跨启动保存。每套主题均有日间与夜间色板，可使用主题默认、跟随系统或手动指定明暗。书库仍可单独选择列表或网格，阅读排版的纸色和字体仍独立保存。
+
+主题应用到书库与详情、文字／EPUB／PDF／漫画阅读工具、播放与声音设置、摘记和专注、统计、导入和远程书源、WiFi 上传网页、备份恢复、隐私和应用锁。系统文件选择、分享、身份验证与音频输出使用原生界面。真实封面与原书插图使用原色。
+
 当前开发版本为 **1.26.0（143）· Anthropic-inspired 全界面重设计（未发布、未完成 iOS 验收）**；版本号以 `Tingye.xcodeproj/project.pbxproj` 的 `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` 为准，本文件其他版本数字均为各历史版本的发布记录。
 
 以下为历史签名上传记录（不是本次重设计的构建或验证结果）：**1.24.0（123）· 悬浮阅读菜单**。iOS / iPadOS 与 Mac Catalyst 均已收到 `Upload succeeded` / `EXPORT SUCCEEDED`，退出码 0。iOS TestFlight 已显示 **1.24.0 Build 123** 与「安装」（54.2 MB），确认当前测试账号可安装；Mac TestFlight 已显示 **1.24.0 Build 123** 与「更新」（60.6 MB），确认当前测试账号可更新。详见[123 发布证据](docs/testflight-123.json)和[发布历史](docs/RELEASE_HISTORY.md)。

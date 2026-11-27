@@ -287,6 +287,7 @@ final class ReaderDocument: ObservableObject {
 private struct UncheckedBox<T>: @unchecked Sendable { let value: T }
 
 struct ReaderView: View {
+    @Environment(\.appTheme) private var appTheme
     @AppStorage(GeneralSettings.hideHomeIndicatorKey) private var hideHomeIndicator = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -354,7 +355,6 @@ struct ReaderView: View {
     @AppStorage("reader.doublePage") private var automaticDouble = true
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
-    @AppStorage("app.appearance") private var appearance = "system"
     @AppStorage("study.paperAlwaysLight") private var paperAlwaysLight = false
     /// 自动翻页间隔（秒），0 为关闭；只在本次阅读有效
     @State private var autoTurn = 0
@@ -374,10 +374,10 @@ struct ReaderView: View {
     private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
     /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
     private var isDarkPaper: Bool { prefs.kind.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight).isDark }
-    /// 无底顶栏叠在阅读纸上，强调字随纸面解析；实体面板使用 App 的 Theme 色。
+    /// 正文内的书签和高亮继续跟随纸色。
     private var readerAccent: Color { prefs.kind.color(\.accent) }
-    /// chrome 浮层实体面：浅纸用白、深纸用炭黑（Theme.surface 深色值），不再用旧海军蓝。
-    private var readerPanelPaper: Color { Theme.surface }
+    /// 工具与弹层使用应用主题。
+    private var readerPanelPaper: Color { appTheme.surface }
     private var chapters: [Chapter] { document.chapters }
     private var current: Chapter { chapters[min(max(0, chapter), chapters.count - 1)] }
     private var sentences: [Sentence] { document.sentences(chapter) }
@@ -423,7 +423,7 @@ struct ReaderView: View {
     var body: some View {
         let showsListeningStrip = active && (!chrome || selection != nil)
         ZStack(alignment: .bottom) {
-            (showsPDFPages ? Theme.bg : prefs.background).ignoresSafeArea()
+            (showsPDFPages ? appTheme.bg : prefs.background).ignoresSafeArea()
             GeometryReader { geometry in
                 // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
@@ -450,7 +450,7 @@ struct ReaderView: View {
                                     .padding(.horizontal, 12).frame(minHeight: 44)
                                     .background(readerPanelPaper, in: Capsule())
                             }
-                            .buttonStyle(.plain).foregroundStyle(Theme.ink3)
+                            .buttonStyle(.plain).foregroundStyle(appTheme.ink3)
                         }
                         if !(chrome && selection == nil) && showsListeningStrip {
                             listeningStrip
@@ -504,7 +504,6 @@ struct ReaderView: View {
         // 工具显隐只改变覆盖层，不改变系统安全区策略。
         .persistentSystemOverlays(hideHomeIndicator ? .hidden : .automatic)
         .keepScreenAwake()
-        .background(WindowAppearance(style: prefs.kind.dark ? .dark : UIUserInterfaceStyle(appearance: appearance), restore: UIUserInterfaceStyle(appearance: appearance)))
         .animation(.snappy(duration: 0.25), value: chrome)
         .animation(Theme.smoothSpring, value: active)
         .animation(.snappy(duration: 0.2), value: following)
@@ -599,7 +598,7 @@ struct ReaderView: View {
                     .presentationDetents(value == .contents ? [.medium, .large] : [.large])
                     .presentationDragIndicator(.visible)
                 }
-            }.environmentObject(model).tint(Theme.accent)
+            }.environmentObject(model).tint(appTheme.accent)
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .confirmationDialog("结束这次听书？", isPresented: $endingListening, titleVisibility: .visible) {
@@ -610,7 +609,7 @@ struct ReaderView: View {
             FocusStartView(entry: entry, bookID: book.id, bookTitle: book.title, chapter: chapter, chapterTitle: current.title) {
                 focusPresented = false; dismiss()
             }
-            .environmentObject(model).tint(Theme.accent)
+            .environmentObject(model).tint(appTheme.accent)
         }
         .sheet(isPresented: $finishPresented) {
             if let entry {
@@ -619,7 +618,7 @@ struct ReaderView: View {
                     dismiss()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { model.open(next) }
                 }, onCloseBook: { finishPresented = false; dismiss() })
-                .environmentObject(model).tint(Theme.accent)
+                .environmentObject(model).tint(appTheme.accent)
             }
         }
     }
@@ -741,12 +740,12 @@ struct ReaderView: View {
                 .accessibilityIdentifier("reader.back")
             VStack(alignment: .leading, spacing: Theme.space1) {
                 Text(chapterHeading)
-                    .font(Theme.serif(17, relativeTo: .headline))
-                    .foregroundStyle(prefs.foreground)
+                    .font(appTheme.display(17, relativeTo: .headline))
+                    .foregroundStyle(appTheme.ink)
                     .lineLimit(2)
                 Text(chapterSubheading)
                     .font(.caption2)
-                    .foregroundStyle(prefs.secondary)
+                    .foregroundStyle(appTheme.ink2)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -758,9 +757,9 @@ struct ReaderView: View {
                 model.bookmark(book.id, chapter: chapter, position: sentencePosition, excerpt: sentences.indices.contains(sentencePosition) ? sentences[sentencePosition].text : String(current.text.prefix(80)))
             } label: {
                 barIcon(Icon.bookmark(marked))
-                    .foregroundStyle(marked ? readerAccent : prefs.foreground)
+                    .foregroundStyle(marked ? appTheme.accent : appTheme.ink)
                     .id(marked)
-                    .transition(marked ? .movingParts.pop(readerAccent) : .identity)
+                    .transition(marked ? .movingParts.pop(appTheme.accent) : .identity)
                     .animation(.easeOut(duration: 0.25), value: marked)
             }
             .accessibilityLabel(marked ? "移除当前位置的书签" : "为当前位置添加书签")
@@ -768,11 +767,13 @@ struct ReaderView: View {
             .accessibilityIdentifier("reader.bookmark")
         }
         .buttonStyle(.plain)
-        .foregroundStyle(prefs.foreground)
+        .foregroundStyle(appTheme.ink)
         .padding(.horizontal, Theme.insetCompact)
         .padding(.vertical, Theme.space2)
         .frame(maxWidth: 760)
         .padding(.top, Theme.space1)
+        .background(appTheme.surface.ignoresSafeArea(edges: .top))
+        .overlay(alignment: .bottom) { Rectangle().fill(appTheme.line).frame(height: Theme.hairline).allowsHitTesting(false) }
     }
 
     private func barIcon(_ name: String) -> some View {
@@ -801,13 +802,13 @@ struct ReaderView: View {
                     Text("\(chapter + 1) / \(chapters.count)").monospacedDigit()
                         .accessibilityIdentifier("reader.currentChapter")
                 }
-                .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                .font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
                 if chapters.count > 1 {
-                    ChapterScrubber(chapter: chapter, count: chapters.count, isPDF: document.isPDF, tint: Theme.ink2, onStep: { changeChapter($0) }) { value in
+                    ChapterScrubber(chapter: chapter, count: chapters.count, isPDF: document.isPDF, tint: appTheme.ink2, onStep: { changeChapter($0) }) { value in
                         following = false; jump(chapter: value, position: 0)
                     }
                 } else {
-                    Text(pageLabel).font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3).frame(minHeight: Theme.iconButtonSize)
+                    Text(pageLabel).font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3).frame(minHeight: Theme.iconButtonSize)
                 }
                 RowDivider()
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space1), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: Theme.space2) {
@@ -828,7 +829,7 @@ struct ReaderView: View {
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
     }
 
     /// 「更多」工具面板（构建 136）：原为系统 Menu，弹层底色/圆角由系统外观决定，
@@ -856,9 +857,9 @@ struct ReaderView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text(moreShowsAutoTurn ? "自动翻页" : "阅读工具")
-                    .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                    .font(Theme.serif(20)).foregroundStyle(appTheme.ink)
                     .padding(.horizontal, 16).padding(.vertical, 12).accessibilityAddTraits(.isHeader)
-                Divider().overlay(Theme.ink3.opacity(0.3))
+                Divider().overlay(appTheme.ink3.opacity(0.3))
                 if moreShowsAutoTurn { autoTurnPanelRows } else { morePanelRows }
             }
             .padding(.vertical, 8)
@@ -866,9 +867,9 @@ struct ReaderView: View {
         .frame(width: 300)
         .frame(maxHeight: 540)
         .background(readerPanelPaper)
-        .foregroundStyle(Theme.ink)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: 1) }
+        .foregroundStyle(appTheme.ink)
+        .clipShape(RoundedRectangle(cornerRadius: appTheme.radius))
+        .overlay { RoundedRectangle(cornerRadius: appTheme.radius).strokeBorder(appTheme.line, lineWidth: 1) }
     }
 
     @ViewBuilder
@@ -909,7 +910,7 @@ struct ReaderView: View {
                 ThemeIcon(symbol: Icon.back, size: 16)
                 Text("自动翻页").font(.subheadline.weight(.medium))
             }
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(appTheme.ink)
             .padding(.horizontal, 16).padding(.vertical, 6).frame(minHeight: 48).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -922,7 +923,7 @@ struct ReaderView: View {
     private func moreSectionHeader(_ title: String) -> some View {
         Text(L(title))
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.ink3)
+            .foregroundStyle(appTheme.ink3)
             .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 6)
             .accessibilityAddTraits(.isHeader)
     }
@@ -940,14 +941,14 @@ struct ReaderView: View {
                 Text(L(title)).font(.subheadline)
                 Spacer()
                 if let trailing {
-                    Text(trailing).font(.caption).foregroundStyle(Theme.ink3)
-                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink3)
+                    Text(trailing).font(.caption).foregroundStyle(appTheme.ink3)
+                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(appTheme.ink3)
                 }
                 if checkmarked {
-                    ThemeIcon(symbol: Icon.checkmark, size: 16).foregroundStyle(Theme.accent)
+                    ThemeIcon(symbol: Icon.checkmark, size: 16).foregroundStyle(appTheme.accent)
                 }
             }
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(appTheme.ink)
             .padding(.horizontal, 16).frame(minHeight: 44).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -959,7 +960,7 @@ struct ReaderView: View {
             ThemeIcon(symbol: icon, size: 21)
             Text(L(title)).font(Theme.sans(13)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.accent : Theme.ink2)
+        .foregroundStyle(selected ? appTheme.accent : appTheme.ink2)
         .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight)
         .contentShape(Rectangle())
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -1053,7 +1054,7 @@ struct ReaderView: View {
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
             .padding(Theme.space2)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
+            .background(appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.radius))
             .overlay(alignment: .top) { RowDivider() }
             .contentShape(Rectangle())
             .onTapGesture { }
@@ -1074,9 +1075,9 @@ struct ReaderView: View {
             } else { listeningStatus }
             Button { togglePlayback() } label: {
                 ZStack {
-                    Circle().fill(Theme.ink.opacity(0.07))
-                    if player.buffering { ProgressView().tint(Theme.ink) }
-                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.ink) }
+                    Circle().fill(appTheme.ink.opacity(0.07))
+                    if player.buffering { ProgressView().tint(appTheme.ink) }
+                    else { Image(systemName: Icon.playback(player.playing)).font(.system(size: 18, weight: .semibold)).foregroundStyle(appTheme.ink) }
                 }
                 .frame(width: 46, height: 46)
             }
@@ -1084,7 +1085,7 @@ struct ReaderView: View {
             .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
             .accessibilityIdentifier("reader.toggle")
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
         .padding(.horizontal, 8).padding(.vertical, 4).frame(minHeight: 52)
         .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
             if value.translation.height < -24 { sheet = .focus }
@@ -1096,7 +1097,7 @@ struct ReaderView: View {
             Text(player.buffering ? "正在准备声音…" : (player.playing ? (following ? "跟随朗读" : "辅助听书中") : "朗读已暂停"))
                 .font(.caption.weight(.medium))
             Text(player.error ?? "第 \(player.chapter + 1) 章 · \(player.rate.rateText)× · \(player.timingLabel)")
-                .font(.caption).foregroundStyle(player.error == nil ? Theme.ink2 : Theme.danger)
+                .font(.caption).foregroundStyle(player.error == nil ? appTheme.ink2 : appTheme.danger)
                 .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -1293,9 +1294,6 @@ struct ReaderView: View {
             existing: existing,
             canExtendBack: value.start > 0,
             canExtendForward: value.end + 1 < sentences.count,
-            tint: Theme.ink,
-            paper: readerPanelPaper,
-            accent: Theme.accent,
             onMark: { color, style in
                 Haptics.selection()
                 if var item = existing { item.color = color; item.style = style; model.updateHighlight(book.id, item) }
@@ -1686,6 +1684,7 @@ enum PDFContentBounds {
 }
 
 struct PDFReader: UIViewRepresentable {
+    @Environment(\.appTheme) private var appTheme
     let data: Data
     let bookID: String
     @Binding var page: Int
@@ -1707,7 +1706,7 @@ struct PDFReader: UIViewRepresentable {
         view.autoScales = false
         view.displayMode = .singlePageContinuous; view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        view.backgroundColor = UIColor(Theme.bg)
+        view.backgroundColor = UIColor(appTheme.bg)
         let doubleTap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         view.addGestureRecognizer(doubleTap)
@@ -1724,7 +1723,7 @@ struct PDFReader: UIViewRepresentable {
     }
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
-        view.backgroundColor = UIColor(Theme.bg)
+        view.backgroundColor = UIColor(appTheme.bg)
         context.coordinator.applyInitialScale(to: view)
         if let doc = view.document, let target = doc.page(at: page), view.currentPage !== target { view.go(to: target) }
     }
@@ -1825,6 +1824,7 @@ enum ReaderSearch {
 }
 
 struct ContentsView: View {
+    @Environment(\.appTheme) private var appTheme
     let book: Book
     let chapters: [Chapter]
     let currentChapter: Int
@@ -1852,7 +1852,7 @@ struct ContentsView: View {
                     if let hits {
                         if !hits.isEmpty {
                             Text(hits.count >= 200 ? "显示前 200 处匹配，可输入更完整的词句缩小范围。" : "找到 \(hits.count) 处匹配")
-                                .font(.caption).foregroundStyle(Theme.ink2)
+                                .font(.caption).foregroundStyle(appTheme.ink2)
                                 .accessibilityIdentifier("reader.searchResultCount")
                                 .listRowBackground(Color.clear)
                         }
@@ -1887,17 +1887,17 @@ struct ContentsView: View {
                     } else if mode == 3 {
                         NotesList(entryID: book.id, chapterTitle: { chapters.indices.contains($0) ? chapters[$0].title : "第 \($0 + 1) 章" }) { note in openTarget(.init(note)) }
                     } else if mode == 1 {
-                        if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
+                        if bookmarks.isEmpty { Text("在阅读页顶部轻点书签图标，为当前页留下记号。").font(.subheadline).foregroundStyle(appTheme.ink2).listRowBackground(Color.clear) }
                         ForEach(bookmarks.sorted { ($0.chapter, $0.position) < ($1.chapter, $1.position) }) { bookmark in
                             // 构建 142：跳转用锚点解析后的目标；下方移除仍用存储原坐标匹配切换。
                             HStack(spacing: 10) {
                                 Button { openTarget(.init(bookmark)) } label: {
                                     VStack(alignment: .leading, spacing: 7) {
                                         Text(chapters.indices.contains(bookmark.chapter) ? chapters[bookmark.chapter].title : "第 \(bookmark.chapter + 1) 章")
-                                            .font(.body).foregroundStyle(Theme.ink)
-                                        Text(bookmark.excerpt).font(.caption).lineLimit(3).foregroundStyle(Theme.ink2)
+                                            .font(.body).foregroundStyle(appTheme.ink)
+                                        Text(bookmark.excerpt).font(.caption).lineLimit(3).foregroundStyle(appTheme.ink2)
                                         Label("回到此处", systemImage: Icon.jumpHere)
-                                            .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.accent)
+                                            .font(.system(size: 11, weight: .medium)).foregroundStyle(appTheme.accent)
                                     }
                                     .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading).contentShape(Rectangle())
                                 }
@@ -1911,11 +1911,11 @@ struct ContentsView: View {
                                 }
                                 .accessibilityLabel("书签的更多操作")
                             }
-                            .padding(.vertical, 6).listRowBackground(Theme.surface)
+                            .padding(.vertical, 6).listRowBackground(appTheme.surface)
                         }
                     } else {
                         let refs = imageRefs
-                        if refs.isEmpty { Text("本章没有可显示的插图。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
+                        if refs.isEmpty { Text("本章没有可显示的插图。").font(.subheadline).foregroundStyle(appTheme.ink2).listRowBackground(Color.clear) }
                         ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref) }
                     }
                 }
@@ -1955,19 +1955,19 @@ struct ContentsView: View {
     private func chapterRow(index: Int, chapter: Chapter, snippet: String?, matchOffset: Int?) -> some View {
         Button { open(index, chapter, matchOffset: matchOffset) } label: {
             HStack(spacing: 12) {
-                Text(String(format: "%02d", index + 1)).font(.caption.weight(index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink3).frame(minWidth: 26, alignment: .leading)
+                Text(String(format: "%02d", index + 1)).font(.caption.weight(index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? appTheme.accent : appTheme.ink3).frame(minWidth: 26, alignment: .leading)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(chapter.title).font(Theme.serif(17)).foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink)
-                    if let snippet, !snippet.isEmpty { Text(snippet).font(.caption).lineLimit(2).foregroundStyle(Theme.ink2) }
+                    Text(chapter.title).font(Theme.serif(17)).foregroundStyle(index == currentChapter ? appTheme.accent : appTheme.ink)
+                    if let snippet, !snippet.isEmpty { Text(snippet).font(.caption).lineLimit(2).foregroundStyle(appTheme.ink2) }
                 }
                 Spacer()
-                if index == listeningChapter { Image(systemName: Icon.listening).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.accent).accessibilityLabel("正在朗读") }
+                if index == listeningChapter { Image(systemName: Icon.listening).font(.system(size: 12, weight: .semibold)).foregroundStyle(appTheme.accent).accessibilityLabel("正在朗读") }
                 if index == currentChapter {
                     SealDot(text: "在读")
                 }
             }
             .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius))
+            .background(index == currentChapter ? appTheme.accentSoft : appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radius))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -2000,6 +2000,7 @@ struct ContentsView: View {
 
 /// 阅读定位：箭头与滑杆都只改变阅读位置。触摸松手提交，辅助功能直接调整即时提交。
 struct ChapterScrubber: View {
+    @Environment(\.appTheme) private var appTheme
     let chapter: Int
     let count: Int
     let isPDF: Bool
@@ -2021,7 +2022,7 @@ struct ChapterScrubber: View {
                 Spacer()
                 Text("\(count)").monospacedDigit()
             }
-            .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+            .font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
             HStack {
                 Button { onStep(-1) } label: { stepLabel(Icon.back, "上一" + unit) }
                     .buttonStyle(ChapterStepButtonStyle(normal: tint))
@@ -2053,7 +2054,7 @@ struct ChapterScrubber: View {
             ZStack(alignment: .leading) {
                 ProgressLine(value: width > 0 ? knobCenter / width : 0, height: Theme.ruleHeavy * 2)
                     .accessibilityHidden(true)
-                Circle().fill(Theme.ink).frame(width: Theme.radius, height: Theme.radius).offset(x: knobCenter - 9)
+                Circle().fill(appTheme.accent).frame(width: 18, height: 18).offset(x: knobCenter - 9)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -2104,22 +2105,24 @@ struct ChapterScrubber: View {
 /// 上一章/下一章按钮：常态用传入的墨色，按下时整体转主题强调色（前景由样式统一施加，
 /// 标签内部不再单独着色，否则显式色会压过样式）。
 private struct ChapterStepButtonStyle: ButtonStyle {
+    @Environment(\.appTheme) private var appTheme
     let normal: Color
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(configuration.isPressed ? Theme.accent : normal)
+            .foregroundStyle(configuration.isPressed ? appTheme.accent : normal)
     }
 }
 
 /// 目录「插图」中的一行：滚动到时才在后台解码，并缩成列表宽度的缩略图，避免整章原图同时进内存。
 private struct IllustrationRow: View {
+    @Environment(\.appTheme) private var appTheme
     let book: Book
     let ref: String
     @State private var image: UIImage?
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFit().clipShape(Rectangle()) }
-            else { Rectangle().fill(Theme.surface2).aspectRatio(16 / 10, contentMode: .fit) }
+            else { Rectangle().fill(appTheme.surface2).aspectRatio(16 / 10, contentMode: .fit) }
         }
         .accessibilityLabel("本章插图")
         .task(id: ref) {
@@ -2136,6 +2139,7 @@ private struct IllustrationRow: View {
 /// 字样：第一屏放常用项（字号、字体、纸色、翻页方式），其余收进「更多排版」。
 /// 在阅读页以半高 sheet 打开，正文实时预览；从设置进入时显示示例文字。
 struct ReadingPreferencesView: View {
+    @Environment(\.appTheme) private var appTheme
     var showsPreview = true
     @Environment(\.dismiss) var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -2159,7 +2163,7 @@ struct ReadingPreferencesView: View {
                         .foregroundStyle(ReaderPreferences(paper: paper).foreground)
                         .padding(Theme.cardInset)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: appTheme.heroRadius))
                         .accessibilityLabel("排版预览")
                 }
 
@@ -2182,7 +2186,7 @@ struct ReadingPreferencesView: View {
                         HStack {
                             Text("行距").font(Theme.sans(15))
                             Spacer()
-                            Text("\(Int(spacing))").font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            Text("\(Int(spacing))").font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3)
                         }
                         ReaderPreferenceSlider(value: $spacing, in: 2...28, step: 1).accessibilityLabel("行距")
                     }
@@ -2191,7 +2195,7 @@ struct ReadingPreferencesView: View {
                 PaperCard {
                 VStack(alignment: .leading, spacing: Theme.space2) {
                     HStack {
-                        Text("字体").font(.caption).foregroundStyle(Theme.ink3)
+                        Text("字体").font(.caption).foregroundStyle(appTheme.ink3)
                         Spacer()
                         NavigationLink { MyFontsView() } label: {
                             Text(font.hasPrefix("custom:") ? (FontLibrary.fonts.first { "custom:" + $0.postScript == font }?.name ?? "我的字体") : "我的字体")
@@ -2209,7 +2213,7 @@ struct ReadingPreferencesView: View {
                 PaperCard {
                 VStack(alignment: .leading, spacing: Theme.space2) {
                     HStack {
-                        Text("纸色").font(.caption).foregroundStyle(Theme.ink3)
+                        Text("纸色").font(.caption).foregroundStyle(appTheme.ink3)
                         Spacer()
                         Menu {
                             Picker("全部纸色", selection: $paper) {
@@ -2228,12 +2232,12 @@ struct ReadingPreferencesView: View {
                         ForEach(mainPapers) { item in
                             Button { Haptics.selection(); paper = item.rawValue } label: {
                                 VStack(spacing: Theme.space2) {
-                                    RoundedRectangle(cornerRadius: Theme.radiusField)
+                                    RoundedRectangle(cornerRadius: appTheme.radiusField)
                                         .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
                                         .frame(maxWidth: .infinity).frame(height: 44)
                                         .overlay {
-                                            RoundedRectangle(cornerRadius: Theme.radiusField)
-                                                .strokeBorder(paper == item.rawValue ? Theme.ink : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
+                                            RoundedRectangle(cornerRadius: appTheme.radiusField)
+                                                .strokeBorder(paper == item.rawValue ? appTheme.ink : appTheme.line, lineWidth: paper == item.rawValue ? 2 : 1)
                                         }
                                         .overlay {
                                             if paper == item.rawValue {
@@ -2241,7 +2245,7 @@ struct ReadingPreferencesView: View {
                                                     .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
                                             }
                                         }
-                                    Text(item.name).font(.caption2).foregroundStyle(Theme.ink3)
+                                    Text(item.name).font(.caption2).foregroundStyle(appTheme.ink3)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
@@ -2258,7 +2262,7 @@ struct ReadingPreferencesView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("浅纸常亮").font(.body.weight(.medium))
                         Text("深色外观下，纸色也保持日间值")
-                            .font(.caption).foregroundStyle(Theme.ink3)
+                            .font(.caption).foregroundStyle(appTheme.ink3)
                     }
                 }
                 }
@@ -2281,15 +2285,15 @@ struct ReadingPreferencesView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("更多排版").font(.body.weight(.medium))
                             Text("行距、段距、页边距与简繁转换")
-                                .font(.caption).foregroundStyle(Theme.ink3)
+                                .font(.caption).foregroundStyle(appTheme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         ThemeIcon(symbol: Icon.disclosure, size: 18)
                     }
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(appTheme.ink)
                     .padding(Theme.space4)
                     .frame(minHeight: 64)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+                    .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.heroRadius))
                 }
                 .buttonStyle(.plain)
             }
@@ -2297,15 +2301,15 @@ struct ReadingPreferencesView: View {
             .frame(maxWidth: 620).frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
-        .background(Theme.bg)
-        .tint(Theme.accent)
+        .background(appTheme.bg)
+        .tint(appTheme.accent)
         .navigationTitle("阅读排版").navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("完成") { dismiss() }
                 .buttonStyle(PrimaryButtonStyle(height: 50))
                 .padding(.horizontal, Theme.space5).padding(.vertical, Theme.space3)
                 .frame(maxWidth: 620).frame(maxWidth: .infinity)
-                .background(Theme.bg)
+                .background(appTheme.bg)
         }
     }
 
@@ -2325,7 +2329,7 @@ struct ReadingPreferencesView: View {
     private func stepButton(_ text: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(text).font(.body.weight(.medium))
-                .foregroundStyle(Theme.ink).frame(width: 44, height: 44).contentShape(Rectangle())
+                .foregroundStyle(appTheme.ink).frame(width: 44, height: 44).contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityLabel(label)
     }
@@ -2333,6 +2337,7 @@ struct ReadingPreferencesView: View {
 
 /// 原生 Slider 仍接收输入；ProgressLine 只绘制轨道，滑块周围留出原生命中位置。
 struct ReaderPreferenceSlider: View {
+    @Environment(\.appTheme) private var appTheme
     @Binding var value: Double
     let bounds: ClosedRange<Double>
     var step: Double = 1
@@ -2341,13 +2346,13 @@ struct ReaderPreferenceSlider: View {
     }
     var body: some View {
         Slider(value: $value, in: bounds, step: step)
-            .tint(Theme.ink2)
+            .tint(appTheme.ink2)
             .overlay {
                 GeometryReader { geometry in
                     let fraction = min(1, max(0, (value - bounds.lowerBound) / (bounds.upperBound - bounds.lowerBound)))
                     let thumb = Theme.space6
                     let center = thumb / 2 + (geometry.size.width - thumb) * fraction
-                    ProgressLine(value: fraction, tint: Theme.ink2)
+                    ProgressLine(value: fraction, tint: appTheme.ink2)
                         .mask {
                             HStack(spacing: 0) {
                                 Rectangle().frame(width: max(0, center - thumb / 2))
@@ -2364,6 +2369,7 @@ struct ReaderPreferenceSlider: View {
 
 /// 不常用的排版项：行距、段距、边距、缩进、对齐、双页、恢复默认。
 private struct MoreTypographyView: View {
+    @Environment(\.appTheme) private var appTheme
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
     @AppStorage("reader.font") private var font = "system"
@@ -2384,7 +2390,7 @@ private struct MoreTypographyView: View {
                     HStack {
                         Text("字间距")
                         Spacer()
-                        Text(letterSpacing.formatted(.number.precision(.fractionLength(0...1)))).font(.system(size: 13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                        Text(letterSpacing.formatted(.number.precision(.fractionLength(0...1)))).font(.system(size: 13)).monospacedDigit().foregroundStyle(appTheme.ink3)
                     }
                     ReaderPreferenceSlider(value: $letterSpacing, in: -1...6, step: 0.5).accessibilityLabel("字间距")
                 }
@@ -2399,7 +2405,7 @@ private struct MoreTypographyView: View {
                     Toggle(isOn: $doublePage) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("宽屏自动双页")
-                            Text("iPad 或横屏时并排显示两页").font(.caption).foregroundStyle(Theme.ink3)
+                            Text("iPad 或横屏时并排显示两页").font(.caption).foregroundStyle(appTheme.ink3)
                         }
                     }
                 }
@@ -2419,7 +2425,7 @@ private struct MoreTypographyView: View {
             }
         }
         .editorialList()
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle("更多排版").navigationBarTitleDisplayMode(.inline)
     }
     private func adjustment(_ name: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
@@ -2427,16 +2433,9 @@ private struct MoreTypographyView: View {
             HStack {
                 Text(name)
                 Spacer()
-                Text("\(Int(value.wrappedValue))").font(.system(size: 13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                Text("\(Int(value.wrappedValue))").font(.system(size: 13)).monospacedDigit().foregroundStyle(appTheme.ink3)
             }
             ReaderPreferenceSlider(value: value, in: range, step: 1).accessibilityLabel(name)
         }
-    }
-}
-
-private extension View {
-    /// 阅读工具采用实体圆角表面，深浅取决于正文纸色，而非系统材质。
-    func readerPaperPanel(paper: Color, ink: Color) -> some View {
-        self.background(paper, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
     }
 }

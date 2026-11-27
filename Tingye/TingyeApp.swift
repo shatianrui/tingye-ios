@@ -15,19 +15,12 @@ struct TingyeApp: App {
         #endif
         return AppModel()
     }()
-    init() {
-        FontLibrary.registerAll()
-        let navigation = UINavigationBarAppearance()
-        navigation.configureWithOpaqueBackground()
-        navigation.backgroundColor = UIColor(Theme.bg)
-        navigation.shadowColor = UIColor(Theme.line)
-        navigation.titleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
-        navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
-        UINavigationBar.appearance().standardAppearance = navigation
-        UINavigationBar.appearance().scrollEdgeAppearance = navigation
-        UINavigationBar.appearance().compactAppearance = navigation
-    }
-    @AppStorage("app.appearance") private var appearanceMode = "system"
+    init() { FontLibrary.registerAll() }
+
+    @AppStorage(AppTheme.storageKey) private var themePreference = AppTheme.defaultTheme.rawValue
+    @AppStorage(AppTheme.appearanceKey) private var appearanceMode = AppTheme.defaultAppearance
+    private var appTheme: AppTheme { AppTheme(storedValue: themePreference) }
+
     var body: some Scene {
         WindowGroup {
             StudyRootView()
@@ -35,9 +28,14 @@ struct TingyeApp: App {
                 .modifier(UIReviewAppearance())
                 #endif
                 .environmentObject(model)
-                .tint(Theme.clayDeep)
+                .foregroundStyle(appTheme.ink)
+                .tint(appTheme.accent)
                 .paperBackground()
-                .background(WindowAppearance(style: UIUserInterfaceStyle(appearance: appearanceMode)))
+                .environment(\.appTheme, appTheme)
+                .background(WindowAppearance(style: appTheme.windowStyle(for: appearanceMode), tint: UIColor(appTheme.accent)))
+                .onChange(of: appTheme, initial: true) { _, theme in
+                    model.player.updateArtworkTheme(theme)
+                }
                 .onOpenURL { url in
                     model.beginImport([url])
                 }
@@ -63,10 +61,11 @@ enum UIReview {
             // 仅自动化临时书库：写入可修改的初值。启动参数域会锁住 @AppStorage，无法测试用户切换。
             UserDefaults.standard.set("paper", forKey: "reader.paper")
             UserDefaults.standard.set("list", forKey: "shelf.layout")
+            UserDefaults.standard.removeObject(forKey: AppTheme.storageKey)
             let args = ProcessInfo.processInfo.arguments
             if let i = args.firstIndex(of: "-ui-appearance"), args.indices.contains(i + 1),
-               ["system", "light", "dark"].contains(args[i + 1]) {
-                UserDefaults.standard.set(args[i + 1], forKey: "app.appearance")
+               ["theme", "system", "light", "dark"].contains(args[i + 1]) {
+                UserDefaults.standard.set(args[i + 1], forKey: AppTheme.appearanceKey)
             }
         }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ui-review-" + UUID().uuidString)
@@ -200,6 +199,7 @@ enum StudyRoute: Hashable { case me }
 /// 阅读器经现有 fullScreenCover 打开；启动时自动打开上次在读的书（阅读器即首页）。
 /// 「我的」的统计、书摘与设置经书库页顶部工具栏入口进入 StatsView(ji: true)，不丢任何内容。
 struct StudyRootView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var navigationHidden = false
@@ -221,16 +221,16 @@ struct StudyRootView: View {
                     .safeAreaInset(edge: .top, spacing: 0) {
                         HStack(spacing: Theme.space2) {
                             HStack(spacing: 6) {
-                                Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                                Text("TINGYE · COVER ROOM")
+                                Rectangle().fill(appTheme.accent).frame(width: 7, height: 7).accessibilityHidden(true)
+                                Text("TINGYE")
                                     .font(Theme.masthead).tracking(Theme.mastheadTracking)
-                                    .foregroundStyle(Theme.ink3)
+                                    .foregroundStyle(appTheme.ink3)
                             }
                             .accessibilityHidden(true)
                             Spacer()
                             NavigationLink(value: StudyRoute.me) {
                                 Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(appTheme.ink)
                                     .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
                                     .contentShape(Rectangle())
                             }
@@ -239,11 +239,11 @@ struct StudyRootView: View {
                             .accessibilityIdentifier("study.openProfile")
                         }
                         .padding(.horizontal, Theme.inset)
-                        .background(Theme.bg)
+                        .background(appTheme.bg)
                     }
-                    .toolbarBackground(Theme.bg, for: .navigationBar)
+                    .toolbarBackground(appTheme.bg, for: .navigationBar)
             }
-            .background(Theme.bg)
+            .background(appTheme.bg)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
             // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
             if !navigationHidden {
@@ -304,7 +304,7 @@ struct StudyRootView: View {
                 RoutedReaderView(book: book)
             }
                 .environmentObject(model)
-                .tint(Theme.clayDeep)
+                .tint(appTheme.accent)
         }
         .sheet(isPresented: $model.showingPlayer, onDismiss: {
             model.releaseFileImportPresentation(playerImportToken)
@@ -406,35 +406,34 @@ private struct UIReviewAppearance: ViewModifier {
 }
 #endif
 
-/// 直接设定窗口外观。SwiftUI 的 preferredColorScheme 从 .dark 改回 nil 后不会恢复系统外观，深色纸切回浅色纸会停在深色。
+/// 将选中的明暗模式和主题强调色传给同一窗口中的系统界面。
 struct WindowAppearance: UIViewRepresentable {
     let style: UIUserInterfaceStyle
-    /// 视图离开窗口时恢复的外观，如阅读页关闭后回到 App 外观；nil 表示不恢复。
-    var restore: UIUserInterfaceStyle? = nil
+    let tint: UIColor
     func makeUIView(context: Context) -> Probe { Probe() }
-    func updateUIView(_ view: Probe, context: Context) { view.restore = restore; view.style = style }
+    func updateUIView(_ view: Probe, context: Context) {
+        view.tint = tint
+        view.style = style
+        view.apply()
+    }
     final class Probe: UIView {
-        var restore: UIUserInterfaceStyle?
-        var style = UIUserInterfaceStyle.unspecified { didSet { if style != oldValue { apply() } } }
+        var style = UIUserInterfaceStyle.unspecified
+        var tint: UIColor?
         override init(frame: CGRect) { super.init(frame: frame); isUserInteractionEnabled = false; isHidden = true }
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
         override func didMoveToWindow() { super.didMoveToWindow(); apply() }
-        override func willMove(toWindow newWindow: UIWindow?) {
-            super.willMove(toWindow: newWindow)
-            if newWindow == nil, let restore { window?.overrideUserInterfaceStyle = restore }
+        func apply() {
+            if window?.overrideUserInterfaceStyle != style { window?.overrideUserInterfaceStyle = style }
+            if let tint { window?.tintColor = tint }
         }
-        private func apply() { window?.overrideUserInterfaceStyle = style }
     }
-}
-
-extension UIUserInterfaceStyle {
-    init(appearance: String) { self = appearance == "dark" ? .dark : appearance == "light" ? .light : .unspecified }
 }
 
 // MARK: - 迷你播放器（底部导航上方）
 
 /// 迷你播放器以中性样式保留「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
 struct MiniPlayer: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -449,16 +448,16 @@ struct MiniPlayer: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(book.title)
                                     .font(Theme.serif(17))
-                                    .foregroundStyle(Theme.ink)
+                                    .foregroundStyle(appTheme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
                                     .font(.caption2)
                                     .monospacedDigit()
-                                    .foregroundStyle(Theme.ink2)
+                                    .foregroundStyle(appTheme.ink2)
                                     .lineLimit(1)
                             }
                             Spacer(minLength: 0)
-                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(Theme.ink3)
+                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(appTheme.ink3)
                                 .accessibilityHidden(true)
                         }
                         .frame(minHeight: 44).contentShape(Rectangle())
@@ -470,10 +469,10 @@ struct MiniPlayer: View {
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
                             ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink)
+                                .foregroundStyle(appTheme.ink)
                                 .frame(width: 34, height: 34)
-                                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+                                .background(appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: appTheme.buttonRadius, style: .continuous).strokeBorder(appTheme.line, lineWidth: Theme.hairline) }
                                 .contentShape(Rectangle())
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
@@ -486,14 +485,14 @@ struct MiniPlayer: View {
                     Button { Haptics.light(); player.toggle() } label: {
                         Group {
                             if player.buffering {
-                                ProgressView().controlSize(.small).tint(Theme.onClay)
+                                ProgressView().controlSize(.small).tint(appTheme.onAccent)
                             } else {
                                 ThemeIcon(symbol: Icon.playback(player.playing), size: 15)
                             }
                         }
-                        .foregroundStyle(Theme.onClay)
+                        .foregroundStyle(appTheme.onAccent)
                         .frame(width: 34, height: 34)
-                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .background(appTheme.accent, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius, style: .continuous))
                         .contentShape(Rectangle())
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
@@ -509,10 +508,10 @@ struct MiniPlayer: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, Theme.space2)
-            .background(Theme.surface)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.ink).frame(height: 1.5).accessibilityHidden(true) }
+            .background(appTheme.surface)
+            .overlay(alignment: .top) { Rectangle().fill(appTheme.ink).frame(height: 1.5).accessibilityHidden(true) }
             .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 2.5)
+                ProgressBar(value: player.progress, track: appTheme.surface2, tint: appTheme.accent, height: 2.5)
                     .padding(.horizontal, Theme.space4)
                     .accessibilityHidden(true)
             }
@@ -527,6 +526,7 @@ struct MiniPlayer: View {
 
 /// 不阻断操作的成功反馈；导入失败在逐项结果页处理，删除/覆盖仍保留原确认流程。
 private struct FeedbackOverlay: ViewModifier {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject private var model: AppModel
     @State private var showingResults = false
     @State private var importResultsToken = UUID()
@@ -534,11 +534,11 @@ private struct FeedbackOverlay: ViewModifier {
         content.safeAreaInset(edge: .top, spacing: 0) {
             if let message = model.message {
                 EmptyState(title: "操作未完成", detail: message, state: .error)
-                    .background(Theme.bg)
+                    .background(appTheme.bg)
             } else if let notice = model.notice {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top, spacing: Theme.space2) {
-                        Text(L(notice.text)).font(.subheadline).foregroundStyle(Theme.ink)
+                        Text(L(notice.text)).font(.subheadline).foregroundStyle(appTheme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Theme.space3)
                         Button { model.notice = nil } label: {
                             ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)
@@ -552,12 +552,12 @@ private struct FeedbackOverlay: ViewModifier {
                 }
                 .padding(.horizontal, Theme.space4)
                 .frame(maxWidth: 760).frame(maxWidth: .infinity)
-                .background(Theme.surface)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: 4).accessibilityHidden(true) }
+                .background(appTheme.surface)
+                .overlay(alignment: .leading) { Rectangle().fill(appTheme.accent).frame(width: 4).accessibilityHidden(true) }
                 .overlay(alignment: .bottom) { RowDivider() }
             } else if model.busy {
                 EmptyState(title: model.activity, detail: "", state: .loading)
-                    .background(Theme.bg)
+                    .background(appTheme.bg)
             }
         }
         .onChange(of: showingResults) { _, shown in
@@ -569,7 +569,7 @@ private struct FeedbackOverlay: ViewModifier {
         .sheet(isPresented: $showingResults, onDismiss: {
             model.releaseFileImportPresentation(importResultsToken)
         }) {
-            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.clayDeep)
+            NavigationStack { ImportResultsView() }.environmentObject(model).tint(appTheme.accent)
         }
     }
 }
@@ -607,13 +607,14 @@ extension View {
 /// 系统 AirPlay 路由选择按钮。
 /// 内层按钮的系统标签会随语言变成 AirPlay 或「隔空播放」，测试和旁白都认固定标识。
 struct AirPlayButton: UIViewRepresentable {
+    @Environment(\.appTheme) private var appTheme
     func makeUIView(context: Context) -> AVRoutePickerView {
         let view = RoutePickerView()
-        view.activeTintColor = UIColor(Theme.clayDeep)
-        view.tintColor = UIColor(Theme.ink)
         return view
     }
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
+        uiView.activeTintColor = UIColor(appTheme.accent)
+        uiView.tintColor = UIColor(appTheme.ink)
         (uiView as? RoutePickerView)?.markRouteButton()
     }
 }

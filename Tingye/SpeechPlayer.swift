@@ -898,6 +898,15 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     // MARK: - 锁屏 / 控制中心「正在播放」
 
     private var artwork: (id: String, value: MPMediaItemArtwork)?
+    private var artworkTheme = AppTheme.defaultTheme
+
+    func updateArtworkTheme(_ theme: AppTheme) {
+        guard artworkTheme != theme else { return }
+        artworkTheme = theme
+        artwork = nil
+        if MPNowPlayingInfoCenter.default().nowPlayingInfo != nil { updateNowPlaying() }
+    }
+
     private var lengths: (chapter: Int, count: Int, prefix: [Int])?
     /// 朗读没有真实时长：按每秒约 4.5 字（随语速缩放）估算，供锁屏进度条显示与拖动。
     private var charactersPerSecond: Double { 4.5 * Double(max(0.5, options.rate)) }
@@ -917,21 +926,23 @@ final class SpeechPlayer: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     private func artwork(for book: Book) -> MPMediaItemArtwork {
         if let artwork, artwork.id == book.id { return artwork.value }
-        let image = book.coverData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 600, height: 600)) ?? Self.typographicCover(book)
+        let image = book.coverData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 600, height: 600)) ?? typographicCover(book)
         let value = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
         artwork = (book.id, value); return value
     }
     /// 没有封面的书：书封色块 + 书名首字，与书架上的文字封面一致。
-    private static func typographicCover(_ book: Book) -> UIImage {
+    private func typographicCover(_ book: Book) -> UIImage {
         let size = CGSize(width: 600, height: 600)
         return UIGraphicsImageRenderer(size: size).image { context in
             // Media artwork is cached independently from the current window appearance.
-            let traits = UITraitCollection(userInterfaceStyle: .light)
-            Theme.coverUIColor(book.color).resolvedColor(with: traits).setFill()
+            let traits = UITraitCollection(userInterfaceStyle: artworkTheme.windowStyle(for: AppTheme.defaultAppearance))
+            artworkTheme.coverUIColor(book.color).resolvedColor(with: traits).setFill()
             context.fill(CGRect(origin: .zero, size: size))
             let glyph = String(book.title.prefix(1)) as NSString
-            let font = UIFont(name: Theme.serifName, size: 260) ?? .systemFont(ofSize: 260, weight: .semibold)
-            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor(Theme.coverForeground(book.color)).resolvedColor(with: traits)]
+            let font = artworkTheme.usesSerifHeadings
+                ? UIFont(name: Theme.serifName, size: 260) ?? .systemFont(ofSize: 260)
+                : .systemFont(ofSize: 260, weight: .semibold)
+            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor(artworkTheme.ink).resolvedColor(with: traits)]
             let bounds = glyph.size(withAttributes: attributes)
             glyph.draw(at: CGPoint(x: (size.width - bounds.width) / 2, y: (size.height - bounds.height) / 2), withAttributes: attributes)
         }

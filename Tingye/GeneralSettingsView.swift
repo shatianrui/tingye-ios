@@ -79,6 +79,7 @@ struct GeneralSettingsView: View {
 
 /// D 单元设置构图：仅组合 A 单元的 Masthead / PaperCard / HairlineRow。
 struct SettingsPage<Content: View>: View {
+    @Environment(\.appTheme) private var appTheme
     let title: String
     var detail: String? = nil
     @ViewBuilder var content: Content
@@ -91,11 +92,14 @@ struct SettingsPage<Content: View>: View {
             .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space5)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
-        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.accent)
+        .paperBackground().foregroundStyle(appTheme.ink).tint(appTheme.accent)
+        .toolbarBackground(appTheme.bg, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 }
 
 struct SettingsGroup<Content: View>: View {
+    @Environment(\.appTheme) private var appTheme
     var title: String? = nil
     var footer: String? = nil
     @ViewBuilder var content: Content
@@ -104,7 +108,7 @@ struct SettingsGroup<Content: View>: View {
             if let title { SectionHeader(title: title) }
             PaperCard { VStack(alignment: .leading, spacing: 0) { content } }
             if let footer {
-                Text(L(footer)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                Text(L(footer)).font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

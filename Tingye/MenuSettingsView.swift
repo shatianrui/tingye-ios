@@ -23,6 +23,7 @@ enum SelectionTool: String, CaseIterable, Hashable, Identifiable {
 
 /// 菜单：自定义选中文字面板的分组顺序与显示。
 struct MenuSettingsView: View {
+    @Environment(\.appTheme) private var appTheme
     @State private var order = SelectionTool.ordered()
     @State private var hidden = Set(UserDefaults.standard.stringArray(forKey: SelectionTool.hiddenKey) ?? [])
 
@@ -40,15 +41,15 @@ struct MenuSettingsView: View {
                                 save()
                             })) {
                                 HStack(spacing: Theme.space3) {
-                                    Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.clayDeep).monospacedDigit()
+                                    Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(appTheme.accent).monospacedDigit()
                                     Text(tool.rawValue)
                                     if tool == SelectionTool.visible(order: order, hidden: hidden).first {
-                                        Text("默认").font(.caption2.weight(.medium)).foregroundStyle(Theme.clayDeep)
-                                            .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1).background(Theme.claySoft, in: Capsule())
+                                        Text("默认").font(.caption2.weight(.medium)).foregroundStyle(appTheme.accent)
+                                            .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1).background(appTheme.accentSoft, in: Capsule())
                                     }
                                 }
                             }
-                            .tint(Theme.accent)
+                            .tint(appTheme.accent)
                             .accessibilityIdentifier("menu.tool.\(tool.rawValue)")
                         }
                     }.listRowSeparator(.hidden).listRowBackground(Color.clear)
@@ -67,7 +68,7 @@ struct MenuSettingsView: View {
         }
         .environment(\.editMode, .constant(.active))
         .editorialList()
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle("菜单")
         .navigationBarTitleDisplayMode(.inline)
     }

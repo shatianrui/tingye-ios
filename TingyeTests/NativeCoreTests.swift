@@ -5,62 +5,49 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// 校验放映厅色板的日夜外观、提高对比度外观及输入框透明度。
-    @MainActor func testV31PaletteResolvesToSpecifiedColors() {
-        let tokens: [(String, Color, UInt32, UInt32)] = [
-            ("bg", Theme.bg, 0xF8F6FB, 0x181827),
-            ("surface", Theme.surface, 0xFFFFFF, 0x232340),
-            ("surface2", Theme.surface2, 0xEEEAF4, 0x302F49),
-            ("surfaceSunken", Theme.surfaceSunken, 0xF2EFF6, 0x1E1E32),
-            ("ink", Theme.ink, 0x232340, 0xFAF7FF),
-            ("ink2", Theme.ink2, 0x423F59, 0xDED9EA),
-            ("ink3", Theme.ink3, 0x59566D, 0xBFBBCE),
-            ("ink4", Theme.ink4, 0x655F76, 0xAAA4BB),
-            ("line", Theme.line, 0xD5CFDF, 0x49475F),
-            ("clay", Theme.clay, 0xFFDF97, 0xFFDF97),
-            ("accent", Theme.accent, 0x232340, 0xFFDF97),
-            ("clayDeep", Theme.clayDeep, 0x232340, 0xFFDF97),
-            ("accentSoft", Theme.accentSoft, 0xF7EBDD, 0x393344),
-            ("claySoft", Theme.claySoft, 0xF7EBDD, 0x393344),
-            ("onClay", Theme.onClay, 0x232340, 0x232340),
-            ("danger", Theme.danger, 0x9E2A2B, 0xF4A6A3),
-            ("dangerSoft", Theme.dangerSoft, 0xF9EAE8, 0x362020),
-            ("focus", Theme.focus, 0x232340, 0xFFDF97),
-            ("onInk", Theme.onInk, 0xF8F6FB, 0x181827)
-        ]
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            for contrast in [UIAccessibilityContrast.normal, .high] {
-                let traits = UITraitCollection(traitsFrom: [
-                    UITraitCollection(userInterfaceStyle: style),
-                    UITraitCollection(accessibilityContrast: contrast)
-                ])
-                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x232340, 0xFAF7FF)
-                for (name, color, light, dark) in tokens + [field] {
-                    let hex = style == .dark ? dark : light
-                    let expected = [CGFloat((hex >> 16) & 255) / 255,
-                                    CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255]
-                    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-                    XCTAssertTrue(UIColor(color).resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a), name)
-                    for (actual, expected) in zip([r, g, b], expected) {
-                        XCTAssertEqual(actual, expected, accuracy: 0.0001, "\(name), \(style), \(contrast)")
-                    }
-                    let alpha: CGFloat = name == "lineField" ? (style == .dark ? 0.16 : 0.14) : 1
-                    XCTAssertEqual(a, alpha, accuracy: 0.0001, name)
-                }
+    @MainActor func testAppThemeSelectionAndAppearanceCompatibility() {
+        XCTAssertEqual(AppTheme.allCases.map(\.rawValue), ["oat", "moss", "night", "silver"])
+        XCTAssertEqual(AppTheme(storedValue: "unrecognized"), .oat)
+        XCTAssertEqual(AppTheme.night.windowStyle(for: AppTheme.defaultAppearance), .dark)
+        XCTAssertEqual(AppTheme.oat.windowStyle(for: AppTheme.defaultAppearance), .light)
+
+        for theme in AppTheme.allCases {
+            XCTAssertEqual(AppTheme(storedValue: theme.rawValue), theme)
+            XCTAssertEqual(theme.windowStyle(for: "system"), .unspecified)
+            XCTAssertEqual(theme.windowStyle(for: "light"), .light)
+            XCTAssertEqual(theme.windowStyle(for: "dark"), .dark)
+
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let palette = theme.palette(dark: style == .dark)
+                let normal = UITraitCollection(userInterfaceStyle: style)
+                let high = UITraitCollection(traitsFrom: [normal, UITraitCollection(accessibilityContrast: .high)])
+                XCTAssertEqual(UIColor(theme.bg).resolvedColor(with: normal), UIColor(hex: palette.bg))
+                XCTAssertEqual(UIColor(theme.accent).resolvedColor(with: normal), UIColor(hex: palette.accent))
+                XCTAssertEqual(UIColor(theme.line).resolvedColor(with: normal), UIColor(hex: palette.line))
+                XCTAssertEqual(UIColor(theme.line).resolvedColor(with: high), UIColor(hex: palette.muted))
             }
         }
+        XCTAssertEqual(Set(AppTheme.allCases.map { $0.palette(dark: false).bg }).count, 4)
+        XCTAssertEqual(Set(AppTheme.allCases.map { $0.palette(dark: true).bg }).count, 4)
     }
 
-    @MainActor func testFocusTextContrastInBothAppearances() {
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
-                (Theme.accent, Theme.bg), (Theme.onClay, Theme.clay), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
-                (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
-                (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
-            for (text, background) in pairs {
-                XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5,
-                    "Text \(UIColor(text).resolvedColor(with: traits)) on \(UIColor(background).resolvedColor(with: traits)), appearance \(style)")
+    @MainActor func testAppThemeTextHasAccessibleContrastInBothAppearances() {
+        for theme in AppTheme.allCases {
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                let pairs: [(Color, Color)] = [
+                    (theme.ink, theme.bg), (theme.ink, theme.surface), (theme.ink2, theme.bg),
+                    (theme.ink2, theme.surface), (theme.ink3, theme.surface2), (theme.ink3, theme.hero),
+                    (theme.ink, theme.readingHighlight), (theme.accent, theme.bg), (theme.accent, theme.surface),
+                    (theme.accent, theme.accentSoft), (theme.onAccent, theme.accent), (theme.onInk, theme.ink),
+                    (theme.danger, theme.bg), (theme.danger, theme.surface), (theme.danger, theme.dangerSoft)
+                ]
+                for (text, background) in pairs {
+                    let foreground = UIColor(text).resolvedColor(with: traits)
+                    let backdrop = UIColor(background).resolvedColor(with: traits)
+                    XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: backdrop), 4.5,
+                                                "\(theme.rawValue) \(style): \(foreground) on \(backdrop)")
+                }
             }
         }
     }
@@ -242,11 +229,14 @@ final class NativeCoreTests: XCTestCase {
     }
 
     @MainActor func testEveryCoverAndImageBackdropHasReadableSmallText() {
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            for name in ["green", "red", "vermilion", "purple", "blue", "ink", "gold", "cream", "unknown"] {
-                let foreground = UIColor(Theme.coverForeground(name)).resolvedColor(with: traits)
-                XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: Theme.coverUIColor(name).resolvedColor(with: traits)), 4.5, name)
+        for theme in AppTheme.allCases {
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                for name in ["green", "red", "vermilion", "purple", "blue", "ink", "gold", "cream", "unknown"] {
+                    let foreground = UIColor(theme.ink).resolvedColor(with: traits)
+                    let background = theme.coverUIColor(name).resolvedColor(with: traits)
+                    XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: background), 4.5, "\(theme.rawValue) \(name)")
+                }
             }
         }
         for color in [UIColor.white, .yellow, .green, .red, .black, UIColor(hex: 0xFAF0E8)] {

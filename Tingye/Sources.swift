@@ -91,6 +91,7 @@ enum ImportableFile {
 }
 
 struct SourcesView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var sources = SourceStore.load()
@@ -116,7 +117,7 @@ struct SourcesView: View {
                         .buttonStyle(SecondaryButtonStyle()).disabled(model.busy)
                         .accessibilityIdentifier("sources.importBatch")
                         Text("普通导入选择一本即开始；多本书请使用批量导入。")
-                        .font(.footnote).foregroundStyle(Theme.ink2)
+                        .font(.footnote).foregroundStyle(appTheme.ink2)
                     }
                 }
                 NavigationLink(value: "wifi-transfer") {
@@ -142,7 +143,7 @@ struct SourcesView: View {
                                     Button { editing = source } label: { Label { Text("编辑连接") } icon: { ThemeIcon(symbol: Icon.edit) } }
                                     Button(role: .destructive) { removing = source } label: { Label { Text("移除连接") } icon: { ThemeIcon(symbol: Icon.delete) } }
                                 } label: {
-                                    ThemeIcon(symbol: Icon.more, size: 20).foregroundStyle(Theme.ink2)
+                                    ThemeIcon(symbol: Icon.more, size: 20).foregroundStyle(appTheme.ink2)
                                     .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize).contentShape(Rectangle())
                                 }
                                 .accessibilityLabel("管理书库：\(source.name)")
@@ -173,7 +174,7 @@ struct SourcesView: View {
                 }
                 .buttonStyle(.plain)
                 Text("支持 EPUB、TXT、MOBI、AZW3、PDF、DOCX、Markdown、CBZ、CBT 等格式。")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).foregroundStyle(appTheme.ink2)
                 if let report = model.importReport {
                     NavigationLink { ImportResultsView() } label: {
                         SourceActionRow(icon: Icon.importFile, title: "最近导入结果", subtitle: report.summary)
@@ -181,7 +182,7 @@ struct SourcesView: View {
                 }
                 if !sources.isEmpty {
                     Text("连接只保存在这台设备。移除连接不会删除服务器文件或已导入的书籍。")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .font(.caption).foregroundStyle(appTheme.ink2)
                 }
             }
             .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space6)
@@ -228,6 +229,7 @@ struct SourcesView: View {
 
 /// 导入面板：书库页头「＋」打开，本机文件、电脑传书与远程书库收进同一个 sheet。
 struct ImportHubView: View {
+    @Environment(\.appTheme) private var appTheme
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
@@ -240,13 +242,14 @@ struct ImportHubView: View {
                 }
             }
         }
-        .tint(Theme.accent)
+        .tint(appTheme.accent)
         .feedbackOverlay()
         .respectReducedMotion()
     }
 }
 
 private struct SourceActionRow: View {
+    @Environment(\.appTheme) private var appTheme
     let icon: String
     let title: String
     let subtitle: String
@@ -258,20 +261,21 @@ private struct SourceActionRow: View {
     }
     private var content: some View {
         HStack(spacing: Theme.space4) {
-            ThemeIcon(symbol: icon).foregroundStyle(Theme.ink2)
+            ThemeIcon(symbol: icon).foregroundStyle(appTheme.ink2)
             VStack(alignment: .leading, spacing: Theme.space1) {
-                Text(L(title)).font(Theme.serif(20)).foregroundStyle(Theme.ink)
-                Text(L(subtitle)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                Text(L(title)).font(Theme.serif(20)).foregroundStyle(appTheme.ink)
+                Text(L(subtitle)).font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
             }
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            if disclosure { ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4) }
+            if disclosure { ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(appTheme.ink4) }
         }
         .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
     }
 }
 
 private struct SourceEditor: View {
+    @Environment(\.appTheme) private var appTheme
     @State var source: RemoteSource
     let onSave: (RemoteSource, String) -> Void
     @Environment(\.dismiss) var dismiss
@@ -308,12 +312,12 @@ private struct SourceEditor: View {
                         }
                     }
                     Text(source.kind == .smb ? "填写 smb:// 加 NAS 或电脑的局域网地址，共享文件夹在连接后选择。不填用户名则以访客登录。" : source.kind == .webdav ? "填写完整的 http:// 或 https:// 地址。坚果云请使用第三方应用管理中生成的应用密码。" : "填写完整的 http:// 或 https:// 书目地址。多数 OPDS 服务无需登录，开启登录的书库请填写账号。")
-                        .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                        .font(.caption).foregroundStyle(appTheme.ink2).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
                 .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
             }
-            .background(Theme.bg)
+            .background(appTheme.bg)
             .navigationTitle(["webdav": "连接 WebDAV", "smb": "连接 SMB", "opds": "连接 OPDS"][source.kind.rawValue] ?? "连接书库")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
@@ -329,7 +333,7 @@ private struct SourceEditor: View {
                     .buttonStyle(PrimaryButtonStyle()).disabled(!validAddress)
                 }
                 .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
-                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
+                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(appTheme.bg)
             }
             .onAppear { password = source.password }
         }
@@ -339,11 +343,11 @@ private struct SourceEditor: View {
     }
     private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
-            Text(L(title)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-            content().font(Theme.sans(16)).foregroundStyle(Theme.ink)
+            Text(L(title)).font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
+            content().font(Theme.sans(16)).foregroundStyle(appTheme.ink)
                 .padding(.horizontal, Theme.space3).frame(minHeight: Theme.rowMinHeight)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusField))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radiusField).strokeBorder(Theme.lineField, lineWidth: Theme.rule) }
+                .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radiusField))
+                .overlay { RoundedRectangle(cornerRadius: appTheme.radiusField).strokeBorder(appTheme.lineField, lineWidth: Theme.rule) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -376,6 +380,7 @@ extension AppModel {
 // MARK: - WebDAV
 
 struct WebDAVBrowser: View {
+    @Environment(\.appTheme) private var appTheme
     let source: RemoteSource
     let path: String
     @EnvironmentObject var model: AppModel
@@ -391,13 +396,13 @@ struct WebDAVBrowser: View {
             Section {
                 VStack(alignment: .leading, spacing: Theme.space2) {
                     Text(loading ? "WebDAV · 正在连接" : error == nil ? "WebDAV · 已连接" : "WebDAV · 连接失败")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .font(.caption).foregroundStyle(appTheme.ink2)
                     Text(path.isEmpty ? source.name : path.removingPercentEncoding ?? path)
-                        .font(.subheadline).foregroundStyle(Theme.ink)
+                        .font(.subheadline).foregroundStyle(appTheme.ink)
                         .lineLimit(2)
                 }.padding(.vertical, Theme.space1)
             }
-            .listRowBackground(Theme.surface2)
+            .listRowBackground(appTheme.surface2)
             if let error {
                 Section {
                     EditorialNotice(title: "连接暂时未完成", detail: error, kind: .failure)
@@ -422,9 +427,9 @@ struct WebDAVBrowser: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
+        .tint(appTheme.accent)
         .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle(path.isEmpty ? source.name : (path as NSString).lastPathComponent.removingPercentEncoding ?? path)
         .navigationBarTitleDisplayMode(.large)
         .toolbar(.hidden, for: .tabBar)
@@ -529,6 +534,7 @@ enum WebDAV {
 // MARK: - OPDS
 
 struct OPDSBrowser: View {
+    @Environment(\.appTheme) private var appTheme
     let source: RemoteSource
     let url: URL?
     let title: String
@@ -578,7 +584,7 @@ struct OPDSBrowser: View {
                 }
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 if let next = feed.next {
-                    NavigationLink { OPDSBrowser(source: source, url: next, title: title) } label: { Label { Text("下一页") } icon: { ThemeIcon(symbol: Icon.nextDirection) }.foregroundStyle(Theme.accent) }
+                    NavigationLink { OPDSBrowser(source: source, url: next, title: title) } label: { Label { Text("下一页") } icon: { ThemeIcon(symbol: Icon.nextDirection) }.foregroundStyle(appTheme.accent) }
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 }
             }
@@ -588,9 +594,9 @@ struct OPDSBrowser: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
+        .tint(appTheme.accent)
         .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -612,16 +618,16 @@ struct OPDSBrowser: View {
                 // 缩略书封沿用 44×63pt 排版尺寸，不用于间距或圆角。
                 AsyncImage(url: entry.thumbnail) { image in image.resizable().scaledToFill() } placeholder: { CoverView(title: entry.title, color: "gray", width: 44) }
                 .frame(width: 44, height: 63)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.coverRadius(44), style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: appTheme.coverRadius(44), style: .continuous))
                 VStack(alignment: .leading, spacing: Theme.space2) {
-                    Text(entry.title).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(2)
-                    if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(Theme.ink3).lineLimit(1) }
+                    Text(entry.title).font(Theme.serif(17, relativeTo: .headline)).foregroundStyle(appTheme.ink).lineLimit(2)
+                    if !entry.author.isEmpty { Text(entry.author).font(.caption).foregroundStyle(appTheme.ink3).lineLimit(1) }
                     SealBadge(text: acquisition.fileExtension.uppercased())
                 }
                 Spacer()
                 Label { Text("导入") } icon: { ThemeIcon(symbol: Icon.downloadFile) }
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(appTheme.accent)
                 .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
             }
             .padding(.vertical, Theme.space2)
@@ -741,6 +747,8 @@ struct OPDSFeed: Sendable {
 // MARK: - WiFi 传书
 
 struct WiFiTransferView: View {
+    @Environment(\.appTheme) private var appTheme
+    @AppStorage(AppTheme.appearanceKey) private var appearance = AppTheme.defaultAppearance
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var server = WiFiTransferServer()
@@ -751,17 +759,17 @@ struct WiFiTransferView: View {
                 Masthead(title: "从电脑传书", subtitle: "手机与电脑连接同一 WiFi，保持此页开启。", kicker: "无线传输", titleSize: 28)
                 PaperCard {
                     VStack(alignment: .leading, spacing: Theme.space4) {
-                        ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.ink2)
+                        ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(appTheme.ink2)
                         Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
-                        .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                        .font(Theme.serif(20)).foregroundStyle(appTheme.ink)
                         if let address = server.address {
-                            Text("在电脑浏览器打开").font(.caption).foregroundStyle(Theme.ink2)
+                            Text("在电脑浏览器打开").font(.caption).foregroundStyle(appTheme.ink2)
                             Text(address).font(.subheadline.weight(.medium)).monospacedDigit()
                             .lineLimit(2).truncationMode(.middle).textSelection(.enabled)
-                            .foregroundStyle(Theme.ink)
+                            .foregroundStyle(appTheme.ink)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             Text("完整链接包含本次传书凭证")
-                            .font(.caption).foregroundStyle(Theme.ink2)
+                            .font(.caption).foregroundStyle(appTheme.ink2)
                             Button {
                                 UIPasteboard.general.string = address
                                 copiedAddress = true
@@ -771,7 +779,7 @@ struct WiFiTransferView: View {
                             .accessibilityHint("复制后可发送到准备传书的设备")
                         } else if let error = server.error {
                             EditorialNotice(title: "传书服务未能启动", detail: error, kind: .failure)
-                            Button("重新连接") { copiedAddress = false; server.stop(); server.start() }
+                            Button("重新连接") { copiedAddress = false; server.stop(); server.start(theme: appTheme, appearance: appearance) }
                             .buttonStyle(SecondaryButtonStyle())
                         } else {
                             ProgressView("正在启动传书服务…").font(.subheadline)
@@ -781,34 +789,34 @@ struct WiFiTransferView: View {
                 }
 
                 HStack(spacing: Theme.space3) {
-                    ThemeIcon(symbol: Icon.downloadFile, size: 24).foregroundStyle(Theme.ink).accessibilityHidden(true)
+                    ThemeIcon(symbol: Icon.downloadFile, size: 24).foregroundStyle(appTheme.ink).accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: Theme.space1) {
-                        Text("本次接收").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
-                        Text("文件会自动加入书架").font(.caption).foregroundStyle(Theme.ink2)
+                        Text("本次接收").font(.subheadline.weight(.medium)).foregroundStyle(appTheme.ink)
+                        Text("文件会自动加入书架").font(.caption).foregroundStyle(appTheme.ink2)
                     }
                     Spacer(minLength: Theme.space2)
                     Text("\(server.received.filter { $0.hasPrefix("✓") }.count) 本")
-                        .font(.caption).foregroundStyle(Theme.accent).monospacedDigit()
+                        .font(.caption).foregroundStyle(appTheme.accent).monospacedDigit()
                 }
                 .padding(.vertical, Theme.space3)
                 .overlay(alignment: .bottom) { RowDivider() }
                 if server.received.isEmpty {
                     Text("还没有收到文件。\n从电脑选择文件，接收后会自动加入书库。")
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .font(.caption).foregroundStyle(appTheme.ink2)
                         .padding(.vertical, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     VStack(alignment: .leading, spacing: Theme.space2) {
                         ForEach(Array(server.received.reversed().enumerated()), id: \.offset) { _, line in
                             HairlineRow {
                                 Text(line).font(Theme.sans(13))
-                                .foregroundStyle(line.hasPrefix("✗") ? Theme.danger : Theme.ink2)
+                                .foregroundStyle(line.hasPrefix("✗") ? appTheme.danger : appTheme.ink2)
                                 .padding(.vertical, Theme.space3).frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
                 }
                 Text("传书时请停留在此页，屏幕会保持常亮。离开后服务立即关闭；文件大小不限。")
-                    .font(.caption).foregroundStyle(Theme.ink2).fixedSize(horizontal: false, vertical: true)
+                    .font(.caption).foregroundStyle(appTheme.ink2).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, Theme.inset).padding(.top, Theme.space3).padding(.bottom, Theme.space5)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
@@ -824,9 +832,9 @@ struct WiFiTransferView: View {
                 Button("结束传书") { finishTransfer(goToShelf: false) }.buttonStyle(SecondaryButtonStyle())
             }
             .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
-            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
+            .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(appTheme.bg)
         }
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
             server.onFile = { url in
@@ -837,7 +845,7 @@ struct WiFiTransferView: View {
                     return "✗ " + url.lastPathComponent + "：" + error.localizedDescription
                 }
             }
-            server.start()
+            server.start(theme: appTheme, appearance: appearance)
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -862,6 +870,7 @@ final class WiFiTransferServer: ObservableObject {
     @Published private(set) var received: [String] = []
     var onFile: ((URL) async -> String)?
     private var listener: NWListener?
+    private var uploadPage = ""
     private let queue = DispatchQueue(label: "tingye.wifi-transfer")
     /// 本次服务的访问口令（去掉易混淆字符，便于手输）。
     private(set) var token = ""
@@ -871,9 +880,10 @@ final class WiFiTransferServer: ObservableObject {
         return String((0..<length).map { _ in alphabet.randomElement()! })
     }
 
-    func start() {
+    func start(theme: AppTheme, appearance: String) {
         guard listener == nil else { return }
         error = nil
+        uploadPage = TransferConnection.page(theme: theme, appearance: appearance)
         token = Self.makeToken()
         do {
             let parameters = NWParameters.tcp
@@ -912,7 +922,7 @@ final class WiFiTransferServer: ObservableObject {
     }
 
     private func accept(_ connection: NWConnection) {
-        let session = TransferConnection(connection: connection, queue: queue, token: token) { [weak self] url in
+        let session = TransferConnection(connection: connection, queue: queue, token: token, page: uploadPage) { [weak self] url in
             guard let self else { return "" }
             let line = await self.onFile?(url) ?? ""
             self.received.append(line)
@@ -963,6 +973,7 @@ private final class TransferConnection: @unchecked Sendable {
     let connection: NWConnection
     let queue: DispatchQueue
     let token: String
+    let page: String
     let onFile: @MainActor (URL) async -> String
     private var header = Data()
     private var file: FileHandle?
@@ -970,8 +981,8 @@ private final class TransferConnection: @unchecked Sendable {
     private var remaining = 0
     private var retain: TransferConnection?
 
-    init(connection: NWConnection, queue: DispatchQueue, token: String, onFile: @escaping @MainActor (URL) async -> String) {
-        self.connection = connection; self.queue = queue; self.token = token; self.onFile = onFile
+    init(connection: NWConnection, queue: DispatchQueue, token: String, page: String, onFile: @escaping @MainActor (URL) async -> String) {
+        self.connection = connection; self.queue = queue; self.token = token; self.page = page; self.onFile = onFile
     }
 
 
@@ -1016,7 +1027,7 @@ private final class TransferConnection: @unchecked Sendable {
         if route == .forbidden {
             respond(403, type: "text/plain; charset=utf-8", body: Data("地址不完整。请在浏览器中输入手机传书页上显示的完整地址（含末尾口令）。".utf8))
         } else if method == "GET", route == .page {
-            respond(200, type: "text/html; charset=utf-8", body: Data(Self.page.utf8))
+            respond(200, type: "text/html; charset=utf-8", body: Data(page.utf8))
         } else if method == "POST", route == .upload {
             let length = Int(headers["content-length"] ?? "") ?? 0
             let rawName = headers["x-file-name"].flatMap { $0.removingPercentEncoding } ?? "upload.txt"
@@ -1063,39 +1074,59 @@ private final class TransferConnection: @unchecked Sendable {
         connection.send(content: Data(head.utf8) + body, completion: .contentProcessed { [weak self] _ in self?.connection.cancel() })
     }
 
-    static let page = """
+    nonisolated static func page(theme: AppTheme, appearance: String) -> String {
+        let style = theme.windowStyle(for: appearance)
+        let dark = style == .dark
+        let radius = Int(theme.radius)
+        let buttonRadius = Int(theme.buttonRadius)
+        func variables(dark: Bool) -> String {
+            let p = theme.palette(dark: dark)
+            func hex(_ value: UInt32) -> String { String(format: "#%06X", value) }
+            let values = [
+                ("bg", p.bg), ("card", p.surface), ("ink", p.ink), ("ink3", p.muted),
+                ("accent", p.accent), ("on-accent", p.onAccent), ("soft", p.soft),
+                ("danger", p.danger), ("line", p.line)
+            ]
+            return values.map { "--\($0.0):\(hex($0.1));" }.joined()
+        }
+        let baseTheme = ":root{color-scheme:\(dark ? "dark" : "light");\(variables(dark: dark))--radius:\(radius)px;--button-radius:\(buttonRadius)px}"
+        let systemTheme = style == .unspecified
+            ? "@media (prefers-color-scheme:dark){:root{color-scheme:dark;\(variables(dark: true))}}" : ""
+        let serif = theme.usesSerifHeadings ? "\"Noto Serif SC\",\"Songti SC\",\"STSong\",serif" : "system-ui,sans-serif"
+        return """
     <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>听页 · WiFi 传书</title>
     <style>
-    :root{color-scheme:light dark;--bg:#F8F6FB;--card:#FFFFFF;--ink:#232340;--ink3:#59566D;--accent:#232340;--marker:#FFDF97;--soft:#F7EBDD;--danger:#9E2A2B;--line:#D5CFDF}
-    @media (prefers-color-scheme:dark){:root{--bg:#181827;--card:#232340;--ink:#FAF7FF;--ink3:#BFBBCE;--accent:#FFDF97;--soft:#393344;--danger:#F4A6A3;--line:#49475F}}
+    \(baseTheme)
+    \(systemTheme)
+    :root{--heading:\(serif)}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px "Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:48px}
     main{max-width:1000px;margin:0 auto}
-    header{background:#232340;color:#FAF7FF;border-radius:16px;padding:24px;margin-bottom:24px}header .eyebrow{color:var(--marker)}header .intro{color:#DED9EA}
+    header{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:24px}
     .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;margin:0 0 16px;display:flex;align-items:center;gap:8px}
-    .eyebrow::before{content:"";width:8px;height:8px;background:var(--marker);display:inline-block}
-    h1{font:400 clamp(30px,4vw,46px)/1.35 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 14px}
+    .eyebrow::before{content:"";width:8px;height:8px;background:var(--accent);display:inline-block}
+    h1{font:400 clamp(30px,4vw,46px)/1.35 var(--heading);margin:0 0 14px}
     p{color:var(--ink3);margin:0;line-height:1.7}.intro{margin-bottom:4px}
     .steps{padding:0 0 0 22px;margin:0 0 28px;color:var(--ink3)}.steps li{display:list-item;background:none;border:0;min-height:0;padding:4px 0;margin:0;font-size:15px}.steps li::before{display:none}
-    #drop{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:40px 24px;text-align:center;box-shadow:3px 3px 0 rgba(20,20,19,.06);transition:.2s}
+    #drop{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:40px 24px;text-align:center;box-shadow:3px 3px 0 rgba(20,20,19,.06);transition:.2s}
     #drop.over{border-color:var(--accent);background:var(--soft)}
-    h2{font:400 26px/1.5 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 12px}.formats{font-size:12px;letter-spacing:.05em}
-    button{min-height:48px;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:4px;padding:12px 24px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer}
+    h2{font:400 26px/1.5 var(--heading);margin:0 0 12px}.formats{font-size:12px;letter-spacing:.05em}
+    button{min-height:48px;background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);border-radius:var(--button-radius);padding:12px 24px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer}
     button:focus-visible,#drop:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
     button:disabled{opacity:.45;cursor:default}#choose{min-width:240px;margin-top:18px}
     button.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);margin:0;min-height:44px}
-    .queue-title{font:400 20px/1.4 "Noto Serif SC","Songti SC",serif;border-bottom:1px solid var(--line);padding-bottom:12px;margin:28px 0 18px}
+    .queue-title{font:400 20px/1.4 var(--heading);border-bottom:1px solid var(--line);padding-bottom:12px;margin:28px 0 18px}
     ul{list-style:none;padding:0;margin:0}
-    #list li{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:24px;min-height:64px;font-size:15px}
+    #list li{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:24px;min-height:64px;font-size:15px}
     li>div{min-width:0;overflow-wrap:anywhere}li>div:first-of-type{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,1fr);align-items:center;gap:24px}
     .result{flex-basis:18%;max-width:34%;text-align:right;font-size:12px;color:var(--accent)}.result span{display:block;overflow-wrap:anywhere}.result button{margin-top:8px;padding:6px 12px}
     #clear{margin-top:16px}.footnote{font-size:12px;margin-top:24px}
     .ok{color:var(--accent);font-weight:600}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:0;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0}
-    @media(prefers-contrast:more){:root{--line:#595853}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
+    @media(prefers-contrast:more){:root{--line:var(--ink3)}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
     @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
     @media(max-width:600px){body{padding:28px 20px}h1{font-size:28px}#drop{padding:28px 16px}#choose{min-width:0;width:100%}#list li{gap:12px;padding:16px 12px}li>div:first-of-type{display:block}.bar{margin-top:10px}.result{flex-basis:30%;max-width:45%}.steps li{padding-right:8px}}
     </style></head><body><main>
-    <header><div class="eyebrow">TINGYE · 封面放映厅 / 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
+    <header><div class="eyebrow">TINGYE · 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
     <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
     <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · CBT · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
     <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
@@ -1115,4 +1146,5 @@ private final class TransferConnection: @unchecked Sendable {
     x.onerror=()=>fail('连接中断，请确认手机仍在传书页');x.ontimeout=()=>fail('传输超时，请检查手机是否已收到后再重试');x.send(f)})}
     </script></body></html>
     """
+    }
 }

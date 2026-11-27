@@ -153,6 +153,7 @@ final class FocusSessionStore: ObservableObject {
 // MARK: - 开始页 / 进行中 / 小结（同一 sheet 内按状态切换）
 
 struct FocusStartView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: FocusSessionStore = .shared
@@ -205,20 +206,20 @@ struct FocusStartView: View {
         VStack(alignment: .leading, spacing: Theme.space5) {
             timerFace(seconds: Double(effectiveMinutes * 60), progress: 0)
             VStack(alignment: .leading, spacing: Theme.space2) {
-                Text(bookTitle).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(Theme.ink3)
+                Text(bookTitle).font(Theme.serif(20, relativeTo: .title3)).foregroundStyle(appTheme.ink3)
                 Text(chapterTitle.isEmpty ? "第 \(chapter + 1) 章" : "第 \(chapter + 1) 章 · \(chapterTitle)")
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).foregroundStyle(appTheme.ink2)
             }
             SectionTitle(title: "专注时长")
             SegmentedBar(options: [0, 1, 2], selection: mode,
                          title: { ["25 分钟", "45 分钟", "自定义"][$0] }, onSelect: { mode = $0 })
             if mode == 2 {
                 Stepper(value: $customMinutes, in: 10...90, step: 5) {
-                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).foregroundStyle(Theme.ink)
+                    Text("自定义 \(customMinutes) 分钟").font(.subheadline).foregroundStyle(appTheme.ink)
                 }
             }
             Text("专注期间照常计入阅读统计，不会重复计。")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(appTheme.ink2)
             ClayButton("开始专注") {
                 Haptics.light()
                 savedTarget = effectiveMinutes
@@ -231,7 +232,7 @@ struct FocusStartView: View {
 
     private var runningSection: some View {
         VStack(alignment: .leading, spacing: Theme.space5) {
-            Label("正在专注", systemImage: Icon.sleepTimer).font(.headline).foregroundStyle(Theme.clayDeep)
+            Label("正在专注", systemImage: Icon.sleepTimer).font(.headline).foregroundStyle(appTheme.accent)
             TimelineView(.periodic(from: .now, by: 15)) { context in
                 timerFace(seconds: store.remaining(at: context.date),
                           progress: 1 - store.remaining(at: context.date) / Double(max(1, store.targetMinutes) * 60))
@@ -239,7 +240,7 @@ struct FocusStartView: View {
                     .onChange(of: context.date) { _, _ in store.completeIfDue(currentChapter: chapter) }
             }
             Text("目标 \(store.targetMinutes) 分钟 · 从第 \(store.chapterAtStart + 1) 章开始")
-                .font(.caption).foregroundStyle(Theme.ink2)
+                .font(.caption).foregroundStyle(appTheme.ink2)
             Button {
                 store.finish(currentChapter: chapter)
             } label: { Text("结束专注") }
@@ -248,7 +249,7 @@ struct FocusStartView: View {
             Button { store.abandon(); dismiss() } label: {
                 Text("放弃这次专注").frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
             }
-            .buttonStyle(.plain).font(.caption).foregroundStyle(Theme.ink2)
+            .buttonStyle(.plain).font(.caption).foregroundStyle(appTheme.ink2)
         }
     }
 
@@ -256,25 +257,25 @@ struct FocusStartView: View {
         VStack(alignment: .leading, spacing: Theme.space5) {
             EmptyState(title: "正在专注另一本书", detail: "结束或放弃上一场专注后，就可以为这本书开始新的会话。")
             Text("一次只开一个专注会话。结束它之后，才能为这本书开始新的专注。")
-                .font(.subheadline).foregroundStyle(Theme.ink2)
+                .font(.subheadline).foregroundStyle(appTheme.ink2)
             Button { store.finish(currentChapter: store.chapterAtEnd) } label: { Text("结束那次专注") }
                 .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
             Button { store.abandon(); } label: {
                 Text("放弃那次专注").frame(minHeight: Theme.iconButtonSize).contentShape(Rectangle())
             }
-            .buttonStyle(.plain).font(.caption).foregroundStyle(Theme.ink2)
+            .buttonStyle(.plain).font(.caption).foregroundStyle(appTheme.ink2)
         }
     }
 
     /// The existing store has no pause state. This face only presents elapsed progress.
     private func timerFace(seconds: Double, progress: Double) -> some View {
         ZStack {
-            Circle().stroke(Theme.line, lineWidth: Theme.progressHeight)
+            Circle().stroke(appTheme.line, lineWidth: Theme.progressHeight)
             Circle().trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(Theme.clay, style: StrokeStyle(lineWidth: Theme.progressHeight + 1, lineCap: .square))
+                .stroke(appTheme.accent, style: StrokeStyle(lineWidth: Theme.progressHeight + 1, lineCap: .square))
                 .rotationEffect(.degrees(-90))
             Text(StatsView.clock(seconds)).font(Theme.serif(54, relativeTo: .largeTitle))
-                .monospacedDigit().foregroundStyle(Theme.ink)
+                .monospacedDigit().foregroundStyle(appTheme.ink)
                 .padding(Theme.space5).minimumScaleFactor(0.6).lineLimit(1)
         }
         // Diagram diameter, not container spacing; scales down on compact devices.
@@ -292,6 +293,7 @@ struct FocusStartView: View {
 // MARK: - 结束小结
 
 struct FocusSummaryView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @ObservedObject var store: FocusSessionStore
     let entry: ShelfEntry?
@@ -319,10 +321,10 @@ struct FocusSummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space5) {
             VStack(alignment: .leading, spacing: Theme.space2) {
-                Label("专注完成", systemImage: Icon.checkmark).font(.headline).foregroundStyle(Theme.clayDeep)
-                Text(minutesText).font(Theme.serif(54, relativeTo: .largeTitle)).monospacedDigit().foregroundStyle(Theme.ink)
+                Label("专注完成", systemImage: Icon.checkmark).font(.headline).foregroundStyle(appTheme.accent)
+                Text(minutesText).font(Theme.serif(54, relativeTo: .largeTitle)).monospacedDigit().foregroundStyle(appTheme.ink)
                 Text("读到第 \(store.chapterAtEnd + 1) 章" + (newHighlights.map { " · 新增 \($0) 条摘记" } ?? ""))
-                    .font(.caption).foregroundStyle(Theme.ink2)
+                    .font(.caption).foregroundStyle(appTheme.ink2)
             }
             VStack(alignment: .leading, spacing: Theme.space3) {
                 Text("今日一句").font(.caption2.weight(.medium))
@@ -330,8 +332,8 @@ struct FocusSummaryView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.leading, Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.progressHeight) }
-            .foregroundStyle(Theme.ink)
+            .overlay(alignment: .leading) { Rectangle().fill(appTheme.accent).frame(width: Theme.progressHeight) }
+            .foregroundStyle(appTheme.ink)
             Button { store.dismissSummary(); onContinue() } label: { Text("继续读") }
                 .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
                 .accessibilityIdentifier("focus.summary.continue")

@@ -204,6 +204,7 @@ enum PrivacyLock {
 
 /// 应用锁：开启后，启动或从后台回来时先验证身份再显示书库。
 struct AppLockGate: ViewModifier {
+    @Environment(\.appTheme) private var appTheme
     @AppStorage("privacy.appLock") private var enabled = false
     @Environment(\.scenePhase) private var phase
     @State private var locked = true
@@ -213,14 +214,14 @@ struct AppLockGate: ViewModifier {
             content.accessibilityHidden(enabled && locked)
                 if enabled && locked {
                     ZStack {
-                        Theme.bg.ignoresSafeArea()
+                        appTheme.bg.ignoresSafeArea()
                         VStack(spacing: Theme.space4) {
-                            ThemeIcon(symbol: Icon.lock(true), size: 40).foregroundStyle(Theme.ink2)
+                            ThemeIcon(symbol: Icon.lock(true), size: 40).foregroundStyle(appTheme.ink2)
                             EmptyState(title: "听页已上锁", detail: "验证身份，回到你的私人书房。",
                                        state: checking ? .loading : .empty)
                             PrimaryButton("用\(PrivacyLock.biometryName)解锁") { Task { await unlock() } }
                                 .frame(maxWidth: 300).disabled(checking)
-                            if checking { Text("正在验证…").font(Theme.sans(13)).foregroundStyle(Theme.ink3) }
+                            if checking { Text("正在验证…").font(Theme.sans(13)).foregroundStyle(appTheme.ink3) }
                         }.padding(Theme.inset)
                     }
                     .transition(.opacity)

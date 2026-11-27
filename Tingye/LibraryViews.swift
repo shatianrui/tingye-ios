@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 
 /// 纸面上的书封、清晰的书籍信息与阅读进度。
 struct BookDetailView: View {
+    @Environment(\.appTheme) private var appTheme
     let entryID: String
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
@@ -76,7 +77,7 @@ struct BookDetailView: View {
                         if let entry { PaperCard { introSection(entry) } }
                     }.padding(Theme.inset)
                 }
-                .background(Theme.bg)
+                .background(appTheme.bg)
                 .navigationTitle("关于这本书")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("完成") { showingIntro = false } } }
@@ -99,15 +100,15 @@ struct BookDetailView: View {
             CoverView(title: entry.title, color: entry.color, author: entry.author, image: model.covers[entry.id], width: 104)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Theme.space3) {
-                Text(entry.title).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(Theme.ink)
+                Text(entry.title).font(Theme.serif(28, relativeTo: .title)).foregroundStyle(appTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("\(entry.author.isEmpty ? "佚名" : entry.author) · \(entry.format) · \(max(1, entry.chapterCount)) \(chapterUnit(entry))")
-                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3)
                 Text(entry.local ? (entry.started ? (entry.readFraction >= 0.995 ? "已读完" : "阅读中 · " + entry.percentText) : "待读") : "iCloud 藏书")
-                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.clayDeep)
+                    .font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.accent)
                 if entry.local && entry.started {
                     Text("读至第 \(entry.progress.chapter + 1) \(chapterUnit(entry))")
-                        .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                        .font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3)
                         .accessibilityIdentifier("detail.readingProgress")
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -153,7 +154,7 @@ struct BookDetailView: View {
                 if !entry.isComic {
                     Button { Haptics.light(); model.listen(entryID) } label: {
                         Label { Text(model.player.book?.id == entryID && model.player.playing ? "打开听书" : "听这本书") } icon: { ThemeIcon(symbol: Icon.listen) }
-                            .font(Theme.sans(15)).foregroundStyle(Theme.ink)
+                            .font(Theme.sans(15)).foregroundStyle(appTheme.ink)
                             .frame(maxWidth: .infinity, minHeight: Theme.iconButtonSize)
                             .contentShape(Rectangle())
                     }
@@ -175,10 +176,10 @@ struct BookDetailView: View {
                     Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
                         .font(.subheadline)
                         .lineSpacing(6)
-                        .foregroundStyle(Theme.ink2)
+                        .foregroundStyle(appTheme.ink2)
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
-                    if intro != nil { Text("全文 →").font(.footnote.weight(.medium)).foregroundStyle(Theme.ink) }
+                    if intro != nil { Text("全文 →").font(.footnote.weight(.medium)).foregroundStyle(appTheme.ink) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -193,7 +194,7 @@ struct BookDetailView: View {
             Text(intro ?? (entry.local ? "这本书未提供简介。" : "还原到本机后可查看简介与目录。"))
                 .font(.body)
                 .lineSpacing(7)
-                .foregroundStyle(Theme.ink2)
+                .foregroundStyle(appTheme.ink2)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, Theme.space1)
@@ -224,17 +225,17 @@ struct BookDetailView: View {
                                 HairlineRow {
                                     HStack(alignment: .center, spacing: Theme.space3) {
                                         if entry.started && index == entry.progress.chapter {
-                                            Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: Theme.space3)
+                                            Capsule().fill(appTheme.accent).frame(width: Theme.ruleHeavy, height: Theme.space3)
                                             .accessibilityHidden(true)
                                         }
                                         Text(String(format: "%02d", index + 1))
-                                        .font(.caption).monospacedDigit().foregroundStyle(Theme.ink2)
+                                        .font(.caption).monospacedDigit().foregroundStyle(appTheme.ink2)
                                         VStack(alignment: .leading, spacing: Theme.space1) {
                                             Text(chapterTitles[index]).font(Theme.serif(17))
-                                            .foregroundStyle(entry.started && index == entry.progress.chapter ? Theme.clayDeep : Theme.ink).multilineTextAlignment(.leading)
+                                            .foregroundStyle(entry.started && index == entry.progress.chapter ? appTheme.accent : appTheme.ink).multilineTextAlignment(.leading)
                                             .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                                             if entry.started && index == entry.progress.chapter {
-                                                Text("读到这里").font(.caption2).foregroundStyle(Theme.accent)
+                                                Text("读到这里").font(.caption2).foregroundStyle(appTheme.accent)
                                             }
                                         }
                                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -250,13 +251,13 @@ struct BookDetailView: View {
                         }
                     }
                 } else if loadingPreview {
-                    Text("正在载入目录预览…").font(.caption).foregroundStyle(Theme.ink2)
+                    Text("正在载入目录预览…").font(.caption).foregroundStyle(appTheme.ink2)
                 }
                 NavigationLink {
                     List { EditorialIntro(title: "书摘与笔记", detail: "保留原文，也留住当时的想法。")
                         NotesList(entryID: entryID) { note in model.open(entry, target: .init(note)) } }
                         .editorialList()
-                        .background(Theme.bg)
+                        .background(appTheme.bg)
                         .navigationTitle("书摘与笔记")
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar(.visible, for: .navigationBar)
@@ -277,16 +278,16 @@ struct BookDetailView: View {
                         ForEach(entry.bookmarks.sorted { $0.date > $1.date }) { bookmark in
                             Button { model.open(entry, target: .init(bookmark)) } label: {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("第 \(bookmark.chapter + 1) \(chapterUnit(entry))").font(.caption).foregroundStyle(Theme.accent)
+                                    Text("第 \(bookmark.chapter + 1) \(chapterUnit(entry))").font(.caption).foregroundStyle(appTheme.accent)
                                     Text(bookmark.excerpt.isEmpty ? "回到这个阅读位置" : bookmark.excerpt)
-                                        .font(.body).foregroundStyle(Theme.ink).lineLimit(3)
+                                        .font(.body).foregroundStyle(appTheme.ink).lineLimit(3)
                                 }
                                 .padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .buttonStyle(.plain).listRowBackground(Theme.surface)
+                            .buttonStyle(.plain).listRowBackground(appTheme.surface)
                         }
                     }
-                    .editorialList().background(Theme.bg)
+                    .editorialList().background(appTheme.bg)
                     .navigationTitle("阅读书签").navigationBarTitleDisplayMode(.inline)
                     .toolbar(.visible, for: .navigationBar).toolbar(.hidden, for: .tabBar)
                     .preference(key: LibraryNavigationHiddenKey.self, value: true)
@@ -355,6 +356,7 @@ struct BookDetailView: View {
 extension Book: Hashable { func hash(into hasher: inout Hasher) { hasher.combine(id) } }
 
 struct ChapterManagerView: View {
+    @Environment(\.appTheme) private var appTheme
     let book: Book
     @EnvironmentObject var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -373,11 +375,11 @@ struct ChapterManagerView: View {
                 .listRowBackground(Color.clear).listRowSeparator(.hidden)
             Section {
                 VStack(alignment: .leading, spacing: Theme.space3) {
-                    Text(book.title).font(Theme.serif(20, relativeTo: .title2)).foregroundStyle(Theme.ink)
+                    Text(book.title).font(Theme.serif(20, relativeTo: .title2)).foregroundStyle(appTheme.ink)
                     Text("共 \(chapters.count) 章 · 已读 \(read.count) 章")
-                        .font(.caption).foregroundStyle(Theme.ink3)
+                        .font(.caption).foregroundStyle(appTheme.ink3)
                     Text(selecting ? "轻点章节进行选择，再在底部标记阅读状态。" : "轻点章节开始阅读，或选择「听此章」。")
-                        .font(.subheadline).foregroundStyle(Theme.ink2)
+                        .font(.subheadline).foregroundStyle(appTheme.ink2)
                 }
                 .padding(.vertical, Theme.space3)
                 .listRowBackground(Color.clear)
@@ -395,9 +397,9 @@ struct ChapterManagerView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
+        .tint(appTheme.accent)
         .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle(selecting ? "选择章节" : "目录")
         .toolbar(.visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
@@ -416,7 +418,7 @@ struct ChapterManagerView: View {
             if selecting {
                 VStack(spacing: Theme.space3) {
                     HStack {
-                        Text("已选 \(selected.count) 章").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink)
+                        Text("已选 \(selected.count) 章").font(.subheadline.weight(.medium)).foregroundStyle(appTheme.ink)
                         Spacer()
                         Button(allVisibleSelected ? "取消当前全选" : query.isEmpty ? "全选章节" : "全选搜索结果") {
                             if allVisibleSelected { selected.subtract(visibleIndices) } else { selected.formUnion(visibleIndices) }
@@ -451,18 +453,18 @@ struct ChapterManagerView: View {
             } label: {
                 HStack(spacing: Theme.space3) {
                     if !selecting && isCurrent(index) {
-                        Capsule().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: Theme.space3)
+                        Capsule().fill(appTheme.accent).frame(width: Theme.ruleHeavy, height: Theme.space3)
                             .accessibilityHidden(true)
                     }
                     if selecting {
                         ThemeIcon(symbol: Icon.selection(selected.contains(index)))
-                            .font(.system(size: 22)).foregroundStyle(selected.contains(index) ? Theme.ink : Theme.ink3)
+                            .font(.system(size: 22)).foregroundStyle(selected.contains(index) ? appTheme.ink : appTheme.ink3)
                             .frame(width: 28)
                     }
                     VStack(alignment: .leading, spacing: Theme.space1) {
-                        Text(chapter.title).font(Theme.serif(17)).foregroundStyle(isCurrent(index) ? Theme.clayDeep : Theme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 2)
+                        Text(chapter.title).font(Theme.serif(17)).foregroundStyle(isCurrent(index) ? appTheme.accent : appTheme.ink).lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                         Text((isCurrent(index) ? "读到这里 · " : "") + "\(read.contains(index) ? "已读" : "未读") · 共 \(chapter.text.count) 字")
-                            .font(.caption).foregroundStyle(read.contains(index) ? Theme.accent : Theme.ink3)
+                            .font(.caption).foregroundStyle(read.contains(index) ? appTheme.accent : appTheme.ink3)
                     }
                     Spacer(minLength: 0)
                 }
@@ -474,7 +476,7 @@ struct ChapterManagerView: View {
             if !selecting {
                 Button { listen(chapter: index) } label: {
                     Label { Text("听此章") } icon: { ThemeIcon(symbol: Icon.listen) }
-                        .font(.caption).foregroundStyle(Theme.ink2)
+                        .font(.caption).foregroundStyle(appTheme.ink2)
                         .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
                         .contentShape(Rectangle())
                 }
@@ -535,8 +537,8 @@ func settingsDestinationView(_ route: SettingsDestination) -> some View {
 }
 
 struct ProfileView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
-    @AppStorage("app.appearance") private var appearance = "system"
     @AppStorage("voice.provider") private var provider = "system"
     @AppStorage(ProgressSync.enabledKey) private var syncProgress = true
     @AppStorage("privacy.appLock") private var appLock = false
@@ -549,7 +551,6 @@ struct ProfileView: View {
     private var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "" }
     private var build: String { Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "" }
     private var providerName: String { VoiceOptions.providerName(provider) }
-    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
     var body: some View {
         settingsList
             .navigationTitle("隐私与关于")
@@ -587,7 +588,7 @@ struct ProfileView: View {
                 HairlineRow {
                     Toggle(isOn: $appLock) {
                         EditorialRow(title: "应用锁", detail: "打开时使用\(PrivacyLock.biometryName)验证", symbol: Icon.lock(appLock), disclosure: false)
-                    }.tint(Theme.accent)
+                    }.tint(appTheme.accent)
                 }
                 Button {
                     if model.hiddenUnlocked { model.hiddenUnlocked = false } else { Task { await model.unlockHidden() } }
@@ -603,7 +604,7 @@ struct ProfileView: View {
                     HStack {
                         Text("版本").font(Theme.sans(16))
                         Spacer()
-                        Text(version + " (" + build + ")").font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                        Text(version + " (" + build + ")").font(Theme.sans(13)).monospacedDigit().foregroundStyle(appTheme.ink3)
                     }
                 }
                 settingsLink(.licenses, icon: Icon.license, title: "开源组件与字体许可")
@@ -618,10 +619,10 @@ struct ProfileView: View {
         Button { settingsRoute = route } label: {
             HairlineRow {
                 HStack(spacing: Theme.space3) {
-                    ThemeIcon(symbol: icon, size: 20).foregroundStyle(Theme.ink2)
-                    Text(L(title)).font(Theme.sans(16)).foregroundStyle(Theme.clayDeep)
+                    ThemeIcon(symbol: icon, size: 20).foregroundStyle(appTheme.ink2)
+                    Text(L(title)).font(Theme.sans(16)).foregroundStyle(appTheme.accent)
                     Spacer()
-                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(Theme.ink4)
+                    ThemeIcon(symbol: Icon.disclosure, size: 13).foregroundStyle(appTheme.ink4)
                 }
             }
         }.buttonStyle(.plain)
@@ -654,94 +655,96 @@ struct ProfileView: View {
 
 // MARK: - 外观 / 关于
 
-/// 外观选择页:跟随系统、日间、夜间。WindowAppearance 在 TingyeApp 中读取同一键并应用。
 struct AppearanceView: View {
-    @AppStorage("app.appearance") private var appearance = "system"
+    @Environment(\.appTheme) private var appTheme
+    @AppStorage(AppTheme.storageKey) private var themePreference = AppTheme.defaultTheme.rawValue
+    @AppStorage(AppTheme.appearanceKey) private var appearance = AppTheme.defaultAppearance
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: "封面放映厅", subtitle: "选择界面的明暗外观。书籍封面保留原色。", kicker: "外观主题", titleSize: 28)
-                VStack(spacing: Theme.space3) {
-                    appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "浅紫灰背景，深靛色文字")
-                    appearanceOption("dark", title: "夜间", subtitle: "午夜靛蓝背景，暖金色标记")
+        SettingsPage(title: "外观", detail: "选择一套贯穿书库、阅读工具、听书与设置的界面主题。") {
+            SettingsGroup(title: "应用主题") {
+                ForEach(AppTheme.allCases) { theme in
+                    themeOption(theme)
                 }
-                Text("正文的纸色可在「阅读排版」中单独选择。")
-                    .font(.caption)
-                    .foregroundStyle(Theme.ink3)
-                    .padding(.horizontal, Theme.space1)
             }
-            .padding(.horizontal, Theme.inset)
-            .padding(.vertical, Theme.space5)
-            .frame(maxWidth: 600)
-            .frame(maxWidth: .infinity)
+            SettingsGroup(title: "明暗模式", footer: "正文的纸色可在「阅读排版」中单独选择。") {
+                appearanceOption("theme", title: "主题默认", symbol: Icon.appearance)
+                appearanceOption("system", title: "跟随系统", symbol: "iphone")
+                appearanceOption("light", title: "日间", symbol: "sun.max")
+                appearanceOption("dark", title: "夜间", symbol: "moon")
+            }
         }
-        .paperBackground()
         .navigationTitle("外观")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func appearanceOption(_ value: String, title: String, subtitle: String) -> some View {
+    private func themeOption(_ theme: AppTheme) -> some View {
+        let selected = appTheme == theme
+        return Button {
+            Haptics.selection()
+            themePreference = theme.rawValue
+        } label: {
+            HStack(spacing: Theme.space3) {
+                themePreview(theme)
+                VStack(alignment: .leading, spacing: Theme.space1) {
+                    Text(L(theme.title)).font(.headline).foregroundStyle(appTheme.ink)
+                    Text(L(theme.detail)).font(.caption).foregroundStyle(appTheme.ink2)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                selectionMark(selected)
+            }
+            .padding(.vertical, Theme.space2)
+            .frame(minHeight: Theme.rowMinHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressButtonStyle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("theme.\(theme.rawValue)")
+    }
+
+    private func themePreview(_ theme: AppTheme) -> some View {
+        let palette = theme.palette(dark: theme.prefersDark)
+        let shape = RoundedRectangle(cornerRadius: theme.radiusSmall)
+        return VStack(alignment: .leading, spacing: 4) {
+            RoundedRectangle(cornerRadius: 1).fill(Color(hex: palette.accent)).frame(width: 12, height: 3)
+            Rectangle().fill(Color(hex: palette.ink)).frame(width: 24, height: 2)
+            RoundedRectangle(cornerRadius: theme.radiusSmall)
+                .fill(Color(hex: palette.soft)).frame(width: 30, height: 12)
+        }
+        .frame(width: 53, height: 44)
+        .background(Color(hex: palette.bg), in: shape)
+        .overlay { shape.strokeBorder(Color(hex: palette.line), lineWidth: Theme.hairline) }
+        .accessibilityHidden(true)
+    }
+
+    private func appearanceOption(_ value: String, title: String, symbol: String) -> some View {
         let selected = appearance == value
         return Button {
             Haptics.selection()
-            withAnimation(Theme.pressSpring) { appearance = value }
+            appearance = value
         } label: {
-            PaperCard {
-                HairlineRow(showsDivider: false) {
-                    HStack(spacing: Theme.space4) {
-                        appearancePreview(value)
-                        VStack(alignment: .leading, spacing: Theme.space2) {
-                            Text(L(title))
-                                .font(.headline)
-                                .foregroundStyle(Theme.ink)
-                            Text(L(subtitle))
-                                .font(.caption)
-                                .foregroundStyle(Theme.ink3)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        ThemeIcon(symbol: Icon.selection(selected), size: 22)
-                            .foregroundStyle(selected ? Theme.ink : Theme.line)
-                    }
-                }
+            HStack {
+                EditorialRow(title: title, symbol: symbol, disclosure: false)
+                selectionMark(selected)
             }
-            .contentShape(RoundedRectangle(cornerRadius: Theme.radius))
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PressButtonStyle(scale: 0.99))
+        .buttonStyle(PressButtonStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("appearance.\(value)")
     }
 
-    private func appearancePreview(_ value: String) -> some View {
-        let dark = value == "dark"
-        return VStack(alignment: .leading, spacing: Theme.space2) {
-            HStack(spacing: 4) {
-                Rectangle().fill(Theme.clay).frame(width: 8, height: 6)
-                Rectangle().fill(Theme.ink).frame(width: 32, height: 2)
-            }
-            RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(Theme.onMarker).frame(height: Theme.space5)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.marker).frame(width: 11, height: 16)
-                }
-            Rectangle().fill(Theme.ink3).frame(width: 40, height: Theme.progressHeight)
-            Rectangle().fill(Theme.line).frame(height: Theme.progressHeight)
-        }
-        .padding(Theme.space3).frame(width: 74, height: 98)
-        .background(Theme.bg)
-        .overlay(alignment: .trailing) {
-            if value == "system" {
-                Rectangle().fill(Theme.ink).frame(width: 30)
-                    .overlay { ThemeIcon(symbol: Icon.nightBadge, size: 14).foregroundStyle(Theme.bg) }
-            }
-        }
-        .overlay(Rectangle().strokeBorder(Theme.line, lineWidth: Theme.rule))
-        .environment(\.colorScheme, dark ? .dark : .light)
-        .accessibilityHidden(true)
+    private func selectionMark(_ selected: Bool) -> some View {
+        ThemeIcon(symbol: Icon.selection(selected), size: 21)
+            .foregroundStyle(selected ? appTheme.accent : appTheme.ink3)
+            .accessibilityHidden(true)
     }
 }
 
 /// 开源字体许可页:展示应用内嵌字体的 OFL 授权文本。
 struct FontLicenseView: View {
+    @Environment(\.appTheme) private var appTheme
     private let fonts: [(name: String, resource: String)] = [("思源宋体 Noto Serif CJK", "Noto-OFL"), ("霞鹜文楷 LXGW WenKai", "LXGW-OFL")]
     private let components: [(name: String, license: String, url: String)] = [
         ("Readium Swift Toolkit 3.11.1", "BSD-3-Clause", "https://github.com/readium/swift-toolkit/blob/3.11.1/LICENSE"),
@@ -774,8 +777,8 @@ struct FontLicenseView: View {
                 ForEach(components, id: \.name) { component in
                     HairlineRow {
                         VStack(alignment: .leading, spacing: Theme.space1) {
-                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(Theme.clayDeep)
-                            Text(component.license).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(appTheme.accent)
+                            Text(component.license).font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
                         }.padding(.vertical, Theme.space2)
                     }
                 }
@@ -785,8 +788,8 @@ struct FontLicenseView: View {
                 DisclosureGroup("依赖解析中的可选组件与构建工具") {
                     ForEach(resolvedTools, id: \.name) { component in
                         VStack(alignment: .leading, spacing: Theme.space1) {
-                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(Theme.clayDeep)
-                            Text(component.license).font(.caption).foregroundStyle(Theme.ink2)
+                            Link(component.name, destination: URL(string: component.url)!).foregroundStyle(appTheme.accent)
+                            Text(component.license).font(.caption).foregroundStyle(appTheme.ink2)
                         }
                     }
                 }
@@ -797,16 +800,16 @@ struct FontLicenseView: View {
                         SectionTitle(text: font.name)
                         Text(license(font.resource))
                             .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(Theme.ink2)
+                            .foregroundStyle(appTheme.ink2)
                             .textSelection(.enabled)
                             .padding(Theme.space4)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+                            .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radiusSmall, style: .continuous))
                     }
                 }
                 Text("两款字体均以 SIL Open Font License 1.1 授权,可自由用于阅读与嵌入。")
                     .font(.footnote)
-                    .foregroundStyle(Theme.ink3)
+                    .foregroundStyle(appTheme.ink3)
             }
             .padding(.horizontal, Theme.inset)
             .padding(.vertical, Theme.space4)
@@ -815,7 +818,7 @@ struct FontLicenseView: View {
             .frame(maxWidth: .infinity)
         }
         .paperBackground()
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
         .navigationTitle("开源组件与字体许可")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -827,6 +830,7 @@ struct FontLicenseView: View {
 
 /// 隐私政策页:本地文本,不跳转外部。
 struct PrivacyPolicyView: View {
+    @Environment(\.appTheme) private var appTheme
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.space3) {
@@ -843,7 +847,7 @@ struct PrivacyPolicyView: View {
             .frame(maxWidth: .infinity)
         }
         .paperBackground()
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
         .navigationTitle("隐私政策")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -851,7 +855,7 @@ struct PrivacyPolicyView: View {
         PaperCard {
             VStack(alignment: .leading, spacing: Theme.space2) {
                 SectionTitle(text: title)
-                Text(body).font(.subheadline).lineSpacing(4).foregroundStyle(Theme.ink2)
+                Text(body).font(.subheadline).lineSpacing(4).foregroundStyle(appTheme.ink2)
             }
         }
     }

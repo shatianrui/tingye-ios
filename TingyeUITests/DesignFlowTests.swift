@@ -894,6 +894,25 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
     }
 
+    func testFourThemesSwitchInPlaceAndPersistAcrossLaunch() {
+        let app = launch("appearance", appearance: "theme")
+        XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["theme.oat"].isSelected)
+        for theme in ["moss", "night", "silver", "oat", "night"] {
+            let option = app.buttons["theme.\(theme)"]
+            reveal(option, in: app)
+            option.tap()
+            waitForReadingCondition({ option.isSelected }, "切换主题后应原地更新选择")
+            XCTAssertTrue(app.navigationBars["外观"].exists)
+        }
+
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-ui-reset-preferences" }
+        app.launch()
+        XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["theme.night"].isSelected)
+    }
+
     func testMarginAppearanceKeepsReadingTypographyIndependent() {
         let app = launch("stats")
         let settings = app.buttons["profile.settings"]
@@ -905,6 +924,7 @@ final class DesignFlowTests: XCTestCase {
         appearance.tap()
         XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 5))
         waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")
+        reveal(app.buttons["appearance.dark"], in: app)
         app.buttons["appearance.dark"].tap()
         waitForReadingCondition({ app.buttons["appearance.dark"].isSelected }, "深色外观选择应在界面更新后生效")
         screenshot(app, "听页-夜间外观选择")
@@ -925,6 +945,7 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
         reveal(appearance, in: app)
         appearance.tap()
+        reveal(app.buttons["appearance.light"], in: app)
         app.buttons["appearance.light"].tap()
         waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")
         app.navigationBars["外观"].buttons.firstMatch.tap()

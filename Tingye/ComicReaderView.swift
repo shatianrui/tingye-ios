@@ -5,6 +5,7 @@ import Pow
 /// 漫画模式（参照 PureLibro）：左→右翻页、右→左（日漫）、上下条漫三种；轻点中间显示工具栏，双击放大。
 /// 每页对应一个章节，进度按页保存，与书籍的「章 + 句」进度、iCloud 同步一致。
 struct ComicReaderView: View {
+    @Environment(\.appTheme) private var appTheme
     let book: Book
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
@@ -74,7 +75,7 @@ struct ComicReaderView: View {
                     VStack(alignment: .leading, spacing: Theme.space1) {
                         Text(book.title).font(Theme.serif(20, relativeTo: .headline)).lineLimit(2)
                         Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            .font(Theme.serif(17)).monospacedDigit().foregroundStyle(appTheme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -83,10 +84,10 @@ struct ComicReaderView: View {
                         model.bookmark(book.id, chapter: page, position: 0, excerpt: "第 \(page + 1) 页")
                     } label: {
                         ThemeIcon(symbol: Icon.bookmark(marked), size: 24)
-                            .foregroundStyle(marked ? Theme.accent : Theme.ink)
+                            .foregroundStyle(marked ? appTheme.accent : appTheme.ink)
                             .frame(width: 44, height: 44).contentShape(Rectangle())
                             .id(marked)
-                            .transition(marked ? .movingParts.pop(Theme.accent) : .identity)
+                            .transition(marked ? .movingParts.pop(appTheme.accent) : .identity)
                             .animation(.easeOut(duration: 0.25), value: marked)
                     }
                     .buttonStyle(.plain)
@@ -102,8 +103,8 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(Theme.space3)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: appTheme.radius).strokeBorder(appTheme.line, lineWidth: Theme.rule) }
                 Spacer(minLength: 8)
                 ScrollView {
                     VStack(spacing: Theme.space1) {
@@ -112,7 +113,7 @@ struct ComicReaderView: View {
                             Spacer()
                             Text("\(Int(scrubbing ?? Double(page)) + 1) / \(count) 页").monospacedDigit()
                         }
-                        .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(Theme.ink3)
+                        .scaledFont(12, weight: .regular, relativeTo: .caption).foregroundStyle(appTheme.ink3)
                         .padding(.horizontal, Theme.space2).padding(.top, Theme.space3)
                         HStack(spacing: Theme.space3) {
                             pageStep(-1, "上一页", Icon.back)
@@ -120,7 +121,7 @@ struct ComicReaderView: View {
                                 Slider(value: Binding(get: { scrubbing ?? Double(page) }, set: { scrubbing = $0 }), in: 0...Double(count - 1), step: 1) { editing in
                                     if !editing, let value = scrubbing { goToPage(Int(value)); scrubbing = nil }
                                 }
-                                .tint(Theme.ink2)
+                                .tint(appTheme.ink2)
                                 .overlay {
                                     GeometryReader { geometry in
                                         let fraction = (scrubbing ?? Double(page)) / Double(max(1, count - 1))
@@ -157,11 +158,11 @@ struct ComicReaderView: View {
                         }
                         .buttonStyle(.plain)
                         Text("双指缩放 · 双击适应屏幕")
-                            .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, Theme.space2)
+                            .font(.caption2).foregroundStyle(appTheme.ink3).padding(.vertical, Theme.space2)
                     }
                     .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                    .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.radius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: appTheme.radius).strokeBorder(appTheme.line, lineWidth: Theme.rule) }
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
@@ -169,7 +170,7 @@ struct ComicReaderView: View {
             .frame(maxWidth: 760)
             .padding(.horizontal, Theme.space5)
             .padding(.vertical, Theme.space3)
-            .foregroundStyle(Theme.ink)
+            .foregroundStyle(appTheme.ink)
             .opacity(chrome ? 1 : 0)
             .allowsHitTesting(chrome)
             .accessibilityHidden(!chrome)
@@ -199,11 +200,11 @@ struct ComicReaderView: View {
             ThemeIcon(symbol: icon, size: 24)
             Text(L(title)).font(.footnote).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
+        .foregroundStyle(selected ? appTheme.accent : appTheme.ink2)
         .frame(maxWidth: .infinity, minHeight: 58)
         .padding(.vertical, Theme.space1)
-        .background(selected ? Theme.claySoft : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
-        .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+        .background(selected ? appTheme.accentSoft : appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius))
+        .overlay { RoundedRectangle(cornerRadius: appTheme.buttonRadius).strokeBorder(appTheme.line, lineWidth: Theme.hairline) }
         .contentShape(Rectangle())
     }
     private func pageStep(_ delta: Int, _ title: String, _ icon: String) -> some View {
@@ -231,7 +232,7 @@ struct ComicReaderView: View {
                         .accessibilityLabel("页面类型").listRowBackground(Color.clear)
                     if onlyBookmarks && directoryPages.isEmpty {
                         Text("还没有书签。阅读时轻点顶部的书签图标，保存当前页。")
-                            .font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear)
+                            .font(.subheadline).foregroundStyle(appTheme.ink2).listRowBackground(Color.clear)
                     }
                     ForEach(directoryPages, id: \.self) { index in
                         Button { goToPage(index); showingPages = false } label: {
@@ -240,10 +241,10 @@ struct ComicReaderView: View {
                                 ComicPage(book: book, index: index, fit: .thumbnail)
                                     .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
                                 Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
-                                    .foregroundStyle(index == page ? Theme.clayDeep : Theme.ink3).frame(width: 36)
-                                Text("第 \(index + 1) 页").font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink)
+                                    .foregroundStyle(index == page ? appTheme.accent : appTheme.ink3).frame(width: 36)
+                                Text("第 \(index + 1) 页").font(Theme.serif(17)).monospacedDigit().foregroundStyle(appTheme.ink)
                                 Spacer()
-                                if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
+                                if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(appTheme.accent) }
                                 if index == page { SealDot(text: "在读") }
                             }
                             .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
@@ -259,7 +260,7 @@ struct ComicReaderView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .tint(Theme.clayDeep).presentationDetents([.medium, .large])
+        .tint(appTheme.accent).presentationDetents([.medium, .large])
     }
     private var modeLabel: String {
         switch mode {
@@ -273,6 +274,7 @@ struct ComicReaderView: View {
 
 /// 一页漫画：后台按屏幕尺寸降采样解码，避免几十张原图同时占满内存；双击放大 / 还原。
 private struct ComicPage: View {
+    @Environment(\.appTheme) private var appTheme
     enum Fit { case page, width, thumbnail }
     private static let cache: NSCache<NSString, UIImage> = {
         let c = NSCache<NSString, UIImage>()
@@ -302,9 +304,9 @@ private struct ComicPage: View {
                     Image(systemName: Icon.warning).font(.title2).accessibilityHidden(true)
                     Text("这一页暂时无法显示").font(.subheadline)
                     Text("可以返回书库，通过修复原书补齐图片。").font(.footnote)
-                }.foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
+                }.foregroundStyle(appTheme.ink2).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
             } else {
-                ProgressView("正在加载图片…").tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
+                ProgressView("正在加载图片…").tint(appTheme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
             }
         }
         .animation(.easeOut(duration: 0.3), value: image != nil)

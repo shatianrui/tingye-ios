@@ -111,6 +111,7 @@ final class ReadiumReaderSession: ObservableObject {
 }
 
 struct ReadiumReaderView: View {
+    @Environment(\.appTheme) private var appTheme
     let book: Book
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -170,7 +171,7 @@ struct ReadiumReaderView: View {
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
     @AppStorage("study.paperAlwaysLight") private var alwaysLight = false
-    @AppStorage("app.appearance") private var appearance = "system"
+    @AppStorage(AppTheme.appearanceKey) private var appearance = AppTheme.defaultAppearance
     private enum Sheet: String, Identifiable { case contents, preferences, player, annotation, note, search; var id: String { rawValue } }
     @State private var contentsMode = 0
     private var entry: ShelfEntry? { model.entries.first { $0.id == book.id } }
@@ -179,7 +180,10 @@ struct ReadiumReaderView: View {
               paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified,
               letterSpacing: letterSpacing, convert: convert)
     }
-    private var darkAppearance: Bool { appearance == "dark" || (appearance == "system" && colorScheme == .dark) }
+    private var darkAppearance: Bool {
+        let style = appTheme.windowStyle(for: appearance)
+        return style == .dark || (style == .unspecified && colorScheme == .dark)
+    }
     private var palette: ReaderPaper.Palette { prefs.kind.resolve(darkAppearance: darkAppearance, alwaysLight: alwaysLight) }
     private var counts: [Int] {
         if let counts = entry?.sentenceCounts, counts.count == book.chapters.count { return counts }
@@ -222,7 +226,7 @@ struct ReadiumReaderView: View {
                     ProgressView().controlSize(.large)
                     Text("正在打开 EPUB…").font(.headline)
                     Text("正在准备原书与阅读位置").font(.subheadline)
-                }.padding(24).background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 12))
+                }.padding(24).glassCard()
                 .accessibilityElement(children: .combine)
             }
             if let error = session.error {
@@ -231,11 +235,11 @@ struct ReadiumReaderView: View {
                     Text("EPUB 打开失败").font(.title3.weight(.semibold))
                     Text(error).font(.callout).multilineTextAlignment(.center)
                     Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
-                        .font(.footnote).foregroundStyle(Color(hex: palette.secondary))
+                        .font(.footnote).foregroundStyle(appTheme.ink2)
                     Button("重试") { persist(); ready = false; retry = UUID() }.buttonStyle(.borderedProminent)
                 }
                 .padding(24).frame(maxWidth: 500)
-                .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 18))
+                .foregroundStyle(appTheme.ink).glassCard()
                 .padding(20)
             }
         }
@@ -311,7 +315,7 @@ struct ReadiumReaderView: View {
                         ReadingPreferencesView(showsPreview: false)
                             .safeAreaInset(edge: .bottom) {
                                 Text("EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。")
-                                    .font(.footnote).foregroundStyle(Theme.ink3).padding(12).frame(maxWidth: .infinity).background(Theme.bg)
+                                    .font(.footnote).foregroundStyle(appTheme.ink3).padding(12).frame(maxWidth: .infinity).background(appTheme.bg)
                             }
                     }
                 case .contents: NavigationStack { contentsView }
@@ -334,7 +338,7 @@ struct ReadiumReaderView: View {
                     }
                 }
             }
-            .environmentObject(model).tint(Theme.accent)
+            .environmentObject(model).tint(appTheme.accent)
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
     }
@@ -344,8 +348,8 @@ struct ReadiumReaderView: View {
                 .accessibilityLabel("返回").accessibilityIdentifier("reader.back")
             VStack(alignment: .leading, spacing: Theme.space1) {
                 Text(title).accessibilityIdentifier("reader.currentTitle")
-                    .font(Theme.serif(17, relativeTo: .headline)).lineLimit(2)
-                Text(book.title).font(Theme.sans(13)).foregroundStyle(Color(hex: palette.secondary)).lineLimit(1)
+                    .font(appTheme.display(17, relativeTo: .headline)).lineLimit(2)
+                Text(book.title).font(Theme.sans(13)).foregroundStyle(appTheme.ink2).lineLimit(1)
             }.frame(maxWidth: .infinity, alignment: .leading)
             Button {
                 let text = book.chapters.indices.contains(chapter) ? Sentence.split(book.chapters[chapter].text).dropFirst(position).first?.text ?? "" : ""
@@ -354,14 +358,16 @@ struct ReadiumReaderView: View {
             } label: {
                 let marked = entry?.bookmarks.contains(where: { $0.chapter == chapter && $0.position == position }) == true
                 ThemeIcon(symbol: Icon.bookmark(marked))
-                    .foregroundStyle(marked ? Color(hex: palette.accent) : Color(hex: palette.foreground))
+                    .foregroundStyle(marked ? appTheme.accent : appTheme.ink)
                     .frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize)
             }.disabled(!ready || !mappedChapter).accessibilityLabel("书签").accessibilityIdentifier("reader.bookmark")
         }
-        .foregroundStyle(Color(hex: palette.foreground))
+        .foregroundStyle(appTheme.ink)
         .buttonStyle(.plain)
         .padding(.horizontal, Theme.insetCompact).padding(.vertical, Theme.space2)
         .frame(maxWidth: 760)
+        .background(appTheme.surface.ignoresSafeArea(edges: .top))
+        .overlay(alignment: .bottom) { Rectangle().fill(appTheme.line).frame(height: Theme.hairline).allowsHitTesting(false) }
     }
     private var bottomBar: some View {
         SheetChrome(title: title, onClose: { chrome = false }, showsHeader: false) {
@@ -372,8 +378,8 @@ struct ReadiumReaderView: View {
                         Spacer()
                         Text("\(chapter + 1) / \(book.chapters.count)").monospacedDigit()
                     }
-                    .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
-                    ChapterScrubber(chapter: chapter, count: book.chapters.count, isPDF: false, tint: Theme.ink2,
+                    .font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
+                    ChapterScrubber(chapter: chapter, count: book.chapters.count, isPDF: false, tint: appTheme.ink2,
                                     onStep: { jumpTo(chapter: chapter + $0, position: 0) },
                                     onCommit: { jumpTo(chapter: $0, position: 0) })
                 }
@@ -388,8 +394,8 @@ struct ReadiumReaderView: View {
             }
             .frame(maxWidth: 720).frame(maxWidth: .infinity)
         }
-        .background(Theme.surface.ignoresSafeArea(edges: .bottom))
-        .foregroundStyle(Theme.ink)
+        .background(appTheme.surface.ignoresSafeArea(edges: .bottom))
+        .foregroundStyle(appTheme.ink)
     }
     @ViewBuilder private var bottomActions: some View {
         chromeButton("目录", symbol: Icon.contents, selected: sheet == .contents) { sheet = .contents }.accessibilityIdentifier("reader.contents")
@@ -422,7 +428,7 @@ struct ReadiumReaderView: View {
                 ThemeIcon(symbol: symbol, size: 21)
                 Text(title).font(Theme.sans(13)).fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
+            .foregroundStyle(selected ? appTheme.accent : appTheme.ink2)
             .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight)
             .padding(.horizontal, Theme.space1)
             .contentShape(Rectangle())
@@ -447,19 +453,19 @@ struct ReadiumReaderView: View {
                     } label: {
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
                             Text(item.link.title ?? item.link.href).font(Theme.serif(17))
-                                .foregroundStyle(current ? Theme.clayDeep : Theme.ink)
+                                .foregroundStyle(current ? appTheme.accent : appTheme.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: Theme.space2)
                             if current { SealDot(text: "在读") }
                         }.padding(.leading, CGFloat(min(item.depth, 8)) * Theme.space3).padding(.vertical, Theme.space2).frame(minHeight: Theme.rowMinHeight)
                     }
-                    .listRowBackground(current ? Theme.claySoft : Theme.surface)
+                    .listRowBackground(current ? appTheme.accentSoft : appTheme.surface)
                 }
             } else {
                 ForEach(book.chapters.indices, id: \.self) { index in
                     Button { jumpTo(chapter: index, position: 0); sheet = nil } label: {
                         HStack {
-                            Text(book.chapters[index].title).font(Theme.serif(17)).foregroundStyle(index == chapter ? Theme.clayDeep : Theme.ink)
+                            Text(book.chapters[index].title).font(Theme.serif(17)).foregroundStyle(index == chapter ? appTheme.accent : appTheme.ink)
                             Spacer()
                             if index == chapter { SealDot(text: "在读") }
                         }.frame(minHeight: Theme.rowMinHeight)
@@ -645,8 +651,7 @@ struct ReadiumReaderView: View {
     @ViewBuilder private var annotationPanel: some View {
         if let draft {
             SelectionPanel(text: draft.text, existing: entry?.notes.first { $0.id == draft.id },
-                           canExtendBack: false, canExtendForward: false, tint: Theme.ink,
-                           paper: Theme.surface, accent: Theme.clayDeep,
+                           canExtendBack: false, canExtendForward: false,
                            onMark: { color, style in var changed = draft; changed.color = color; changed.style = style; saveAnnotation(changed) },
                            onRemove: { model.removeHighlight(book.id, id: draft.id); sheet = nil },
                            onNote: { sheet = .note },

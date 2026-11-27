@@ -6,6 +6,7 @@ import SwiftUI
 /// 删划线走 `removeHighlight`（确认文案沿用 NotesList），删书签走 `bookmark` 切换，
 /// 回到原文走 `open(_:chapter:position:)`。导出在本视图内组装 Markdown，补章节与日期。
 struct NotesUnifiedView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @State private var query = ""
     @State private var selectedKind: Item.Kind?
@@ -108,10 +109,10 @@ struct NotesUnifiedView: View {
                 } header: {
                     HStack(spacing: Theme.space2) {
                         BookCoverView(title: group.entry.title, color: group.entry.color, image: model.covers[group.entry.id], width: 24)
-                        Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(Theme.ink).textCase(nil)
-                        SealBadge(text: "\(group.items.count) 条", color: Theme.ink3, background: Theme.surface2)
+                        Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(appTheme.ink).textCase(nil)
+                        SealBadge(text: "\(group.items.count) 条", color: appTheme.ink3, background: appTheme.surface2)
                         Spacer()
-                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.link).frame(minHeight: Theme.iconButtonSize) }
+                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(appTheme.link).frame(minHeight: Theme.iconButtonSize) }
                             .accessibilityLabel("导出《\(group.entry.title)》摘记")
                     }
                 }
@@ -120,7 +121,7 @@ struct NotesUnifiedView: View {
         .navigationTitle("书摘与笔记").navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: "搜索划线、笔记与书签")
         .editorialList()
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .confirmationDialog("删除这条标注？", isPresented: Binding(get: { removingHighlight != nil }, set: { if !$0 { removingHighlight = nil } }), titleVisibility: .visible) {
             Button("删除标注与附带笔记", role: .destructive) {
                 if let highlight = removingHighlight, let entryID = removingHighlightEntryID {
@@ -148,22 +149,22 @@ struct NotesUnifiedView: View {
                     HStack(alignment: .top, spacing: Theme.space3) {
                         Rectangle().fill(
                             item.highlight.map { Color(uiColor: ReaderMark.uiColor($0.color)) }
-                            ?? (item.kind == .bookmark ? Theme.line : Theme.clay)
+                            ?? (item.kind == .bookmark ? appTheme.line : appTheme.accent)
                         )
                         .frame(width: item.kind == .bookmark ? 2 : 3.5)
                         VStack(alignment: .leading, spacing: Theme.space2) {
                             Label(item.kind.rawValue, systemImage: item.kind == .bookmark ? "bookmark" : (item.kind == .note ? "pencil" : "highlighter"))
-                                .font(.caption.weight(.medium)).foregroundStyle(Theme.ink3)
+                                .font(.caption.weight(.medium)).foregroundStyle(appTheme.ink3)
                             Text(item.text).font(Theme.serif(17, relativeTo: .body))
-                                .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
+                                .lineSpacing(6).foregroundStyle(appTheme.ink).lineLimit(5)
                             if let noteText = item.noteText {
-                                Text(noteText).font(Theme.sans(15)).foregroundStyle(Theme.ink2)
+                                Text(noteText).font(Theme.sans(15)).foregroundStyle(appTheme.ink2)
                                     .padding(Theme.space2).frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                                    .background(appTheme.surfaceSunken, in: RoundedRectangle(cornerRadius: appTheme.radiusSmall))
                             }
                             (Text(entry.title) + Text(" · 第 \(item.chapter + 1) 章 · ")
                              + Text(item.date.formatted(date: .abbreviated, time: .shortened)).monospacedDigit())
-                                .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                                .font(Theme.sans(13)).foregroundStyle(appTheme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -174,12 +175,12 @@ struct NotesUnifiedView: View {
                     HStack(spacing: Theme.space3) {
                         Button { model.open(entry, target: item.target) } label: {
                             Label("回到原文", systemImage: Icon.read).frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.link)
+                        }.foregroundStyle(appTheme.link)
                         Spacer(minLength: 0)
                         Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
                             Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete)
                                 .frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.danger)
+                        }.foregroundStyle(appTheme.danger)
                     }
                     .font(Theme.sans(13)).buttonStyle(.borderless)
                 }

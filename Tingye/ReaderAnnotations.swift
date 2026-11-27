@@ -96,13 +96,11 @@ struct ReaderSelection: Equatable {
 
 /// 长按正文后的圆角选段面板；保留颜色、样式与动作的可配置顺序。
 struct SelectionPanel: View {
+    @Environment(\.appTheme) private var appTheme
     let text: String
     let existing: Highlight?
     let canExtendBack: Bool
     let canExtendForward: Bool
-    let tint: Color
-    var paper: Color = Theme.surface
-    var accent: Color = Theme.accent
     let onMark: (_ color: String, _ style: String) -> Void
     let onRemove: () -> Void
     let onNote: () -> Void
@@ -146,7 +144,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
-                Text("选段与标注").font(Theme.serif(20)).accessibilityAddTraits(.isHeader)
+                Text("选段与标注").font(appTheme.display(20, relativeTo: .title3)).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -167,7 +165,7 @@ struct SelectionPanel: View {
             Text(text)
                 .font(Theme.serif(18, relativeTo: .body)).lineLimit(4).lineSpacing(7)
                 .padding(Theme.space4).frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius))
+                .background(appTheme.surfaceSunken, in: RoundedRectangle(cornerRadius: appTheme.radius))
             SegmentedBar(options: tools, selection: tool, title: { $0.rawValue }, onSelect: { tool = $0 })
             Group {
                 switch tool {
@@ -175,10 +173,10 @@ struct SelectionPanel: View {
                 case .note:
                     VStack(alignment: .leading, spacing: Theme.space3) {
                         if let note = existing?.note, !note.isEmpty {
-                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(Theme.ink3)
+                            Text(note).font(.subheadline).lineLimit(3).foregroundStyle(appTheme.ink3)
                         } else {
                             Text("给这段文字，留一点自己的想法。")
-                                .font(.subheadline).foregroundStyle(Theme.ink3)
+                                .font(.subheadline).foregroundStyle(appTheme.ink3)
                         }
                         action(existing?.note == nil ? "写笔记" : "编辑笔记", Icon.note, onNote, prominent: true)
                     }
@@ -190,7 +188,7 @@ struct SelectionPanel: View {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                                    .background(appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius))
                             }
                             .buttonStyle(.plain)
                         }
@@ -199,12 +197,12 @@ struct SelectionPanel: View {
                 }
             }
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(appTheme.ink)
         .padding(.horizontal, Theme.space4)
         .padding(.top, Theme.space2)
         .padding(.bottom, Theme.space4)
         .frame(maxWidth: 520)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .background(appTheme.surface, in: RoundedRectangle(cornerRadius: appTheme.heroRadius, style: .continuous))
         .floatingPanel()
     }
 
@@ -219,11 +217,17 @@ struct SelectionPanel: View {
                         VStack(spacing: 4) {
                             Circle().fill(Color(uiColor: UIColor(hex: item.hex)))
                                 .frame(width: 24, height: 24)
-                                .overlay { if chosenColor == item.key { Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold)).foregroundStyle(.white) } }
+                                .overlay {
+                                    if chosenColor == item.key {
+                                        let swatch = UIColor(hex: item.hex)
+                                        Image(systemName: Icon.checkmark).font(.system(size: 11, weight: .bold))
+                                            .foregroundStyle(swatch.contrastRatio(with: .white) >= 4.5 ? Color.white : Color.black)
+                                    }
+                                }
                             Text(item.name).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(chosenColor == item.key ? accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                        .background(chosenColor == item.key ? appTheme.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(item.name)色标注")
@@ -237,9 +241,9 @@ struct SelectionPanel: View {
                         lastStyle = style
                     } label: {
                         Label(title, systemImage: icon).font(.caption.weight(.medium))
-                            .foregroundStyle(chosenStyle == style ? accent : tint)
+                            .foregroundStyle(chosenStyle == style ? appTheme.accent : appTheme.ink)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
+                            .background(chosenStyle == style ? appTheme.accent.opacity(0.14) : appTheme.ink.opacity(0.05), in: Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
@@ -248,7 +252,7 @@ struct SelectionPanel: View {
             action(existing == nil ? "添加标注" : "保存标注", Icon.checkmark, { onMark(chosenColor, chosenStyle) }, prominent: true)
             if existing != nil {
                 Button("删除这条标注…") { removing = true }
-                    .font(.caption).foregroundStyle(Theme.danger)
+                    .font(.caption).foregroundStyle(appTheme.danger)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .buttonStyle(.plain)
             }
@@ -262,9 +266,9 @@ struct SelectionPanel: View {
                 Text(L(title))
             }
                 .font(.body.weight(.medium))
-                .foregroundStyle(prominent ? Theme.bg : Theme.ink)
+                .foregroundStyle(prominent ? appTheme.bg : appTheme.ink)
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? Theme.ink : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                .background(prominent ? appTheme.ink : appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.buttonRadius))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -274,6 +278,7 @@ struct SelectionPanel: View {
 // MARK: - 笔记编辑
 
 struct NoteEditor: View {
+    @Environment(\.appTheme) private var appTheme
     let quote: String
     @State var text: String
     let onSave: (String) -> Void
@@ -284,22 +289,22 @@ struct NoteEditor: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     EditorialIntro(title: "把想法留在这里", detail: "原文与笔记分别保存，随时可以修改笔记。")
-                    Text("选中的原文").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink2)
+                    Text("选中的原文").font(.caption.weight(.semibold)).foregroundStyle(appTheme.ink2)
                     Text(quote)
                         .font(Theme.serif(19, relativeTo: .body))
-                        .foregroundStyle(Theme.ink).lineSpacing(8)
+                        .foregroundStyle(appTheme.ink).lineSpacing(8)
                         .fixedSize(horizontal: false, vertical: true).padding(20)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
-                    Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
+                        .background(appTheme.warm, in: RoundedRectangle(cornerRadius: appTheme.heroRadius))
+                    Text("我的想法").font(.caption).foregroundStyle(appTheme.ink3)
                     TextEditor(text: $text)
-                        .font(.body).foregroundStyle(Theme.ink)
+                        .font(.body).foregroundStyle(appTheme.ink)
                         .focused($focused)
                         .scrollContentBackground(.hidden)
                         .padding(10).frame(minHeight: 180)
-                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
+                        .background(appTheme.surface2, in: RoundedRectangle(cornerRadius: appTheme.radius))
                         .overlay(alignment: .topLeading) {
-                            if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
+                            if text.isEmpty { Text("写一点你的想法").foregroundStyle(appTheme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
                         }
                         .accessibilityLabel("我的想法")
                     Button("保存笔记", action: save).buttonStyle(PrimaryButtonStyle(height: 50))
@@ -309,7 +314,7 @@ struct NoteEditor: View {
                 .frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.bg)
+            .background(appTheme.bg)
             .navigationTitle("笔记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -318,7 +323,7 @@ struct NoteEditor: View {
             }
             .onAppear { focused = true }
         }
-        .tint(Theme.accent)
+        .tint(appTheme.accent)
         .presentationDetents([.large])
     }
     private func save() { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
@@ -329,6 +334,7 @@ struct NoteEditor: View {
 
 /// 一本书的划线与笔记，按章节顺序；轻点跳到原文。
 struct NotesList: View {
+    @Environment(\.appTheme) private var appTheme
     let entryID: String
     var chapterTitle: (Int) -> String = { "第 \($0 + 1) 章" }
     var query = ""
@@ -355,7 +361,7 @@ struct NotesList: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Button { onJump(note) } label: { NoteRow(note: note, chapter: chapterTitle(note.chapter)) }
                         .buttonStyle(.plain)
-                    if unresolvedIDs.contains(note.id) { Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(Theme.ink3) }
+                    if unresolvedIDs.contains(note.id) { Text("尚未定位 · 原文与笔记已保留").font(.caption).foregroundStyle(appTheme.ink3) }
                     (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 14))) {
                         Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read).frame(minHeight: 44) }
                         Button { editing = note } label: { Label(note.note == nil ? "写笔记" : "编辑笔记", systemImage: Icon.note).frame(minHeight: 44) }
@@ -374,15 +380,15 @@ struct NotesList: View {
                         } label: { Label("更多", systemImage: Icon.more).frame(minHeight: 44) }
                     }
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(appTheme.accent)
                     .frame(minHeight: 44)
                     .buttonStyle(.borderless)
                 }
                 .padding(.vertical, 10)
-                .listRowBackground(Theme.surface)
+                .listRowBackground(appTheme.surface)
                 .swipeActions(allowsFullSwipe: false) {
                     Button(role: .destructive) { removing = note } label: { Label("删除", systemImage: Icon.delete) }
-                    Button { editing = note } label: { Label("笔记", systemImage: Icon.note) }.tint(Theme.accent)
+                    Button { editing = note } label: { Label("笔记", systemImage: Icon.note) }.tint(appTheme.accent)
                 }
                 .contextMenu {
                     Button { onJump(note) } label: { Label("回到原文", systemImage: Icon.read) }
@@ -409,6 +415,7 @@ struct NotesList: View {
 }
 
 struct NoteRow: View {
+    @Environment(\.appTheme) private var appTheme
     let note: Highlight
     let chapter: String
     var body: some View {
@@ -420,22 +427,22 @@ struct NoteRow: View {
                 Text(note.date.formatted(date: .abbreviated, time: .omitted))
             }
             .font(.caption2)
-            .foregroundStyle(Theme.ink3)
+            .foregroundStyle(appTheme.ink3)
             Text(note.text)
                 .font(Theme.serif(17, relativeTo: .body))
                 .lineSpacing(6)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(appTheme.ink)
                 .lineLimit(5)
                 .padding(.leading, 11)
                 .overlay(alignment: .leading) { RoundedRectangle(cornerRadius: 1.5).fill(ReaderMark.color(note.color)).frame(width: 2.5) }
             if let text = note.note {
                 Text(text)
                     .font(.subheadline)
-                    .foregroundStyle(Theme.ink2)
+                    .foregroundStyle(appTheme.ink2)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                    .background(appTheme.accentSoft, in: RoundedRectangle(cornerRadius: appTheme.radiusSmall))
                     .padding(.top, 2)
             }
         }
@@ -446,6 +453,7 @@ struct NoteRow: View {
 
 /// 全部书摘：按书分组（「设置」→ 阅读资料）。
 struct AllNotesView: View {
+    @Environment(\.appTheme) private var appTheme
     @EnvironmentObject var model: AppModel
     @State private var query = ""
     private var books: [ShelfEntry] { model.visibleEntries.filter { !$0.notes.isEmpty } }
@@ -465,10 +473,10 @@ struct AllNotesView: View {
                     } header: {
                         HStack(spacing: 8) {
                             BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 24)
-                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
-                            SealBadge(text: "\(notes.count) 条", color: Theme.gold, background: Theme.goldSoft)
+                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(appTheme.ink).textCase(nil)
+                            SealBadge(text: "\(notes.count) 条", color: appTheme.gold, background: appTheme.goldSoft)
                             Spacer()
-                            ShareLink(item: Self.markdown(entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }
+                            ShareLink(item: Self.markdown(entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(appTheme.accent).frame(minHeight: 44) }
                                 .accessibilityLabel("导出《\(entry.title)》书摘")
                         }
                     }
@@ -478,7 +486,7 @@ struct AllNotesView: View {
         .navigationTitle("书摘与笔记")
         .searchable(text: $query, prompt: "搜索划线与笔记")
         .scrollContentBackground(.hidden)
-        .background(Theme.bg)
+        .background(appTheme.bg)
     }
     /// 导出为 Markdown 文本
     static func markdown(_ entry: ShelfEntry) -> String {

@@ -73,6 +73,7 @@ final class SMBConnection: ObservableObject {
 }
 
 struct SMBBrowser: View {
+    @Environment(\.appTheme) private var appTheme
     let source: RemoteSource
     /// nil 表示列出全部共享。
     let share: String?
@@ -131,9 +132,9 @@ struct SMBBrowser: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
+        .tint(appTheme.accent)
         .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
+        .background(appTheme.bg)
         .navigationTitle(share == nil ? source.name : (path.isEmpty ? share! : (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
