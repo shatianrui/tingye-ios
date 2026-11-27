@@ -228,7 +228,7 @@ struct StudyRootView: View {
                     .navigationDestination(for: StudyRoute.self) { _ in
                         StatsView(ji: true, onBack: { path = [] })
                     }
-                    .toolbarBackground(clear ? AnyShapeStyle(.systemChromeMaterial) : AnyShapeStyle(Theme.bg), for: .navigationBar)
+                    .toolbarBackground(clear ? AnyShapeStyle(.bar) : AnyShapeStyle(Theme.bg), for: .navigationBar)
             }
             .background(Theme.groupedCanvas)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
