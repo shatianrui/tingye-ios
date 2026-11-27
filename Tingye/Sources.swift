@@ -260,7 +260,7 @@ private struct SourceActionRow: View {
         HStack(spacing: Theme.space4) {
             ThemeIcon(symbol: icon).foregroundStyle(Theme.ink2)
             VStack(alignment: .leading, spacing: Theme.space1) {
-                Text(L(title)).font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                Text(L(title)).font(Theme.heading(20, relativeTo: .headline, weight: .semibold)).foregroundStyle(Theme.ink)
                 Text(L(subtitle)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -753,7 +753,7 @@ struct WiFiTransferView: View {
                     VStack(alignment: .leading, spacing: Theme.space4) {
                         ThemeIcon(symbol: Icon.wifi, size: 40).foregroundStyle(Theme.ink2)
                         Text(server.address == nil ? "连接同一 WiFi" : "等待电脑连接")
-                        .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                        .font(Theme.heading(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
                         if let address = server.address {
                             Text("在电脑浏览器打开").font(.caption).foregroundStyle(Theme.ink2)
                             Text(address).font(.subheadline.weight(.medium)).monospacedDigit()
@@ -767,7 +767,7 @@ struct WiFiTransferView: View {
                                 copiedAddress = true
                                 Haptics.light()
                             } label: { Text(copiedAddress ? "地址已复制" : "复制完整地址") }
-                            .buttonStyle(PrimaryButtonStyle())
+                            .buttonStyle(SecondaryButtonStyle(emphasized: true))
                             .accessibilityHint("复制后可发送到准备传书的设备")
                         } else if let error = server.error {
                             EditorialNotice(title: "传书服务未能启动", detail: error, kind: .failure)
@@ -1016,7 +1016,7 @@ private final class TransferConnection: @unchecked Sendable {
         if route == .forbidden {
             respond(403, type: "text/plain; charset=utf-8", body: Data("地址不完整。请在浏览器中输入手机传书页上显示的完整地址（含末尾口令）。".utf8))
         } else if method == "GET", route == .page {
-            respond(200, type: "text/html; charset=utf-8", body: Data(Self.page.utf8))
+            respond(200, type: "text/html; charset=utf-8", body: Data(Self.renderPage(for: AppThemeDirection.current).utf8))
         } else if method == "POST", route == .upload {
             let length = Int(headers["content-length"] ?? "") ?? 0
             let rawName = headers["x-file-name"].flatMap { $0.removingPercentEncoding } ?? "upload.txt"
@@ -1063,56 +1063,80 @@ private final class TransferConnection: @unchecked Sendable {
         connection.send(content: Data(head.utf8) + body, completion: .contentProcessed { [weak self] _ in self?.connection.cancel() })
     }
 
-    static let page = """
-    <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>听页 · WiFi 传书</title>
-    <style>
-    :root{color-scheme:light dark;--bg:#F8F6FB;--card:#FFFFFF;--ink:#232340;--ink3:#59566D;--accent:#232340;--marker:#FFDF97;--soft:#F7EBDD;--danger:#9E2A2B;--line:#D5CFDF}
-    @media (prefers-color-scheme:dark){:root{--bg:#181827;--card:#232340;--ink:#FAF7FF;--ink3:#BFBBCE;--accent:#FFDF97;--soft:#393344;--danger:#F4A6A3;--line:#49475F}}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px "Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:48px}
-    main{max-width:1000px;margin:0 auto}
-    header{background:#232340;color:#FAF7FF;border-radius:16px;padding:24px;margin-bottom:24px}header .eyebrow{color:var(--marker)}header .intro{color:#DED9EA}
-    .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;margin:0 0 16px;display:flex;align-items:center;gap:8px}
-    .eyebrow::before{content:"";width:8px;height:8px;background:var(--marker);display:inline-block}
-    h1{font:400 clamp(30px,4vw,46px)/1.35 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 14px}
-    p{color:var(--ink3);margin:0;line-height:1.7}.intro{margin-bottom:4px}
-    .steps{padding:0 0 0 22px;margin:0 0 28px;color:var(--ink3)}.steps li{display:list-item;background:none;border:0;min-height:0;padding:4px 0;margin:0;font-size:15px}.steps li::before{display:none}
-    #drop{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:40px 24px;text-align:center;box-shadow:3px 3px 0 rgba(20,20,19,.06);transition:.2s}
-    #drop.over{border-color:var(--accent);background:var(--soft)}
-    h2{font:400 26px/1.5 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 12px}.formats{font-size:12px;letter-spacing:.05em}
-    button{min-height:48px;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:4px;padding:12px 24px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer}
-    button:focus-visible,#drop:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
-    button:disabled{opacity:.45;cursor:default}#choose{min-width:240px;margin-top:18px}
-    button.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);margin:0;min-height:44px}
-    .queue-title{font:400 20px/1.4 "Noto Serif SC","Songti SC",serif;border-bottom:1px solid var(--line);padding-bottom:12px;margin:28px 0 18px}
-    ul{list-style:none;padding:0;margin:0}
-    #list li{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:24px;min-height:64px;font-size:15px}
-    li>div{min-width:0;overflow-wrap:anywhere}li>div:first-of-type{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,1fr);align-items:center;gap:24px}
-    .result{flex-basis:18%;max-width:34%;text-align:right;font-size:12px;color:var(--accent)}.result span{display:block;overflow-wrap:anywhere}.result button{margin-top:8px;padding:6px 12px}
-    #clear{margin-top:16px}.footnote{font-size:12px;margin-top:24px}
-    .ok{color:var(--accent);font-weight:600}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:0;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0}
-    @media(prefers-contrast:more){:root{--line:#595853}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
-    @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-    @media(max-width:600px){body{padding:28px 20px}h1{font-size:28px}#drop{padding:28px 16px}#choose{min-width:0;width:100%}#list li{gap:12px;padding:16px 12px}li>div:first-of-type{display:block}.bar{margin-top:10px}.result{flex-basis:30%;max-width:45%}.steps li{padding-right:8px}}
-    </style></head><body><main>
-    <header><div class="eyebrow">TINGYE · 封面放映厅 / 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
-    <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
-    <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · CBT · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
-    <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
-    <script>
-    const drop=document.getElementById('drop'),list=document.getElementById('list'),pick=document.getElementById('pick'),clear=document.getElementById('clear');
-    const queue=[];let active=false;
-    document.getElementById('choose').onclick=()=>pick.click();
-    drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');
-    drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');send([...e.dataTransfer.files])};pick.onchange=()=>{send([...pick.files]);pick.value=''};
-    clear.onclick=()=>{list.querySelectorAll('li[data-done="true"]').forEach(li=>li.remove());clear.hidden=true};
-    function send(files){for(const f of files){const li=document.createElement('li');li.innerHTML='<div style="flex:1"><div></div><div class="bar"><i></i></div></div><div class="result"><span>等待传输</span><button class="secondary" type="button" hidden>重试</button></div>';li.querySelector('div div').textContent=f.name;list.append(li);const retry=li.querySelector('button');retry.onclick=()=>{retry.hidden=true;li.querySelector('span').textContent='等待重试';queue.push([f,li]);drain()};queue.push([f,li])}drain()}
-    async function drain(){if(active)return;active=true;while(queue.length){const [f,li]=queue.shift();await up(f,li)}active=false}
-    function up(f,li){return new Promise(r=>{const x=new XMLHttpRequest(),status=li.querySelector('span'),retry=li.querySelector('button');status.textContent='传输中';status.className='';li.querySelector('i').style.width='0%';x.open('POST',location.pathname.replace(/\\/$/,'')+'/upload');x.timeout=180000;x.setRequestHeader('X-File-Name',encodeURIComponent(f.name));
-    const fail=message=>{status.textContent=message;status.className='err';retry.hidden=false;r()};
-    x.upload.onprogress=e=>{if(e.lengthComputable){li.querySelector('i').style.width=(e.loaded/e.total*100)+'%';if(e.loaded===e.total)status.textContent='正在加入书架'}};
-    x.onload=()=>{if(x.status===200){status.textContent='已加入书架';status.className='ok';li.dataset.done='true';clear.hidden=false;r()}else fail(x.responseText||'传输失败')};
-    x.onerror=()=>fail('连接中断，请确认手机仍在传书页');x.ontimeout=()=>fail('传输超时，请检查手机是否已收到后再重试');x.send(f)})}
-    </script></body></html>
-    """
+    static func renderPage(for direction: AppThemeDirection) -> String {
+        let lightVars: String
+        let darkVars: String
+        let radiusPx: Int
+        let btnRadiusPx: Int
+        switch direction {
+        case .warmPaper:
+            lightVars = "--bg:#FAF9F5;--card:#FFFFFF;--ink:#141413;--ink3:#595853;--accent:#A6482B;--clay:#D97757;--on-clay:#141413;--soft:#F8ECE6;--danger:#9E2A2B;--line:#E6E3D9"
+            darkVars = "--bg:#141413;--card:#1C1B19;--ink:#FAF9F5;--ink3:#ABA89E;--accent:#ECA085;--clay:#D97757;--on-clay:#141413;--soft:#2E201B;--danger:#F4A6A3;--line:#2E2C29"
+            radiusPx = 18; btnRadiusPx = 14
+        case .nightInkGold:
+            lightVars = "--bg:#F4EFE4;--card:#FFFBF3;--ink:#1A1712;--ink3:#5C564C;--accent:#7A5C16;--clay:#C4A24A;--on-clay:#1A1712;--soft:#F3E6C4;--danger:#9E2A2B;--line:#DDD6C7"
+            darkVars = "--bg:#12110E;--card:#1C1A16;--ink:#F3EDE0;--ink3:#A89F8A;--accent:#E8CC7A;--clay:#C4A24A;--on-clay:#12110E;--soft:#2A2418;--danger:#F4A6A3;--line:#3A362E"
+            radiusPx = 12; btnRadiusPx = 10
+        case .editorial:
+            lightVars = "--bg:#F3F0E8;--card:#FFFDF8;--ink:#1C1B19;--ink3:#5A5852;--accent:#8F2D2A;--clay:#8F2D2A;--on-clay:#FFFDF8;--soft:#F3E6E4;--danger:#9E2A2B;--line:#D4D0C6"
+            darkVars = "--bg:#141311;--card:#1E1D1A;--ink:#F4F0E6;--ink3:#A8A49A;--accent:#E8A09A;--clay:#C65E58;--on-clay:#141311;--soft:#2E1C1B;--danger:#F4A6A3;--line:#3A3832"
+            radiusPx = 4; btnRadiusPx = 3
+        case .systemClear:
+            lightVars = "--bg:#FFFFFF;--card:#F2F2F7;--ink:#000000;--ink3:#3A3A3C;--accent:#0B63CE;--clay:#0B63CE;--on-clay:#FFFFFF;--soft:#E8F1FC;--danger:#D70015;--line:#C6C6C8"
+            darkVars = "--bg:#000000;--card:#1C1C1E;--ink:#FFFFFF;--ink3:#C7C7CC;--accent:#64D2FF;--clay:#0A6CE2;--on-clay:#FFFFFF;--soft:#1A2A3D;--danger:#FF6961;--line:#38383A"
+            radiusPx = 12; btnRadiusPx = 10
+        }
+        return """
+        <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>听页 · WiFi 传书</title>
+        <style>
+        :root{color-scheme:light dark;\(lightVars);--radius:\(radiusPx)px;--btn-radius:\(btnRadiusPx)px}
+        @media (prefers-color-scheme:dark){:root{\(darkVars)}}
+        *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px "Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:48px}
+        main{max-width:1000px;margin:0 auto}
+        header{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:24px}header .intro{color:var(--ink3)}
+        .eyebrow{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.14em;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+        .eyebrow::before{content:"";width:8px;height:8px;background:var(--clay);display:inline-block}
+        h1{font:400 clamp(30px,4vw,46px)/1.35 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 14px}
+        p{color:var(--ink3);margin:0;line-height:1.7}.intro{margin-bottom:4px}
+        .steps{padding:0 0 0 22px;margin:0 0 28px;color:var(--ink3)}.steps li{display:list-item;background:none;border:0;min-height:0;padding:4px 0;margin:0;font-size:15px}.steps li::before{display:none}
+        #drop{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:40px 24px;text-align:center;transition:.2s}
+        #drop.over{border-color:var(--accent);background:var(--soft)}
+        h2{font:400 26px/1.5 "Noto Serif SC","Songti SC","STSong",serif;margin:0 0 12px}.formats{font-size:12px;letter-spacing:.05em}
+        button{min-height:48px;background:var(--clay);color:var(--on-clay);border:1px solid transparent;border-radius:var(--btn-radius);padding:12px 24px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.4;cursor:pointer}
+        button:focus-visible,#drop:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+        button:disabled{opacity:.45;cursor:default}#choose{min-width:240px;margin-top:18px}
+        button.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);margin:0;min-height:44px}
+        .queue-title{font:400 20px/1.4 "Noto Serif SC","Songti SC",serif;border-bottom:1px solid var(--line);padding-bottom:12px;margin:28px 0 18px}
+        ul{list-style:none;padding:0;margin:0}
+        #list li{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:24px;min-height:64px;font-size:15px}
+        li>div{min-width:0;overflow-wrap:anywhere}li>div:first-of-type{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(100px,1fr);align-items:center;gap:24px}
+        .result{flex-basis:18%;max-width:34%;text-align:right;font-size:12px;color:var(--accent)}.result span{display:block;overflow-wrap:anywhere}.result button{margin-top:8px;padding:6px 12px}
+        #clear{margin-top:16px}.footnote{font-size:12px;margin-top:24px}
+        .ok{color:var(--accent);font-weight:600}.err{color:var(--danger)}.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}.bar i{display:block;height:100%;background:var(--clay);width:0}
+        @media(prefers-contrast:more){:root{--line:#595853}#drop,#list li{border-width:2px}button:focus-visible{outline-width:4px}}
+        @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+        @media(max-width:600px){body{padding:28px 20px}h1{font-size:28px}#drop{padding:28px 16px}#choose{min-width:0;width:100%}#list li{gap:12px;padding:16px 12px}li>div:first-of-type{display:block}.bar{margin-top:10px}.result{flex-basis:30%;max-width:45%}.steps li{padding-right:8px}}
+        </style></head><body><main>
+        <header><div class="eyebrow">TINGYE · 无线传书</div><h1>把想读的书，带到身边。</h1><p class="intro">从电脑选书，回到手机开始阅读。</p></header>
+        <ol class="steps" aria-label="传书步骤"><li>手机与电脑连接同一 WiFi</li><li>选择文件，或拖入下方区域</li><li>等待“已加入书架”，再离开手机传书页</li></ol>
+        <div id="drop"><h2>拖动书籍到这里</h2><p class="formats">EPUB · TXT · PDF · MOBI · AZW3 · CBZ · CBT · ZIP</p><button type="button" id="choose">选择文件并发送</button><input id="pick" type="file" multiple hidden></div>
+        <h3 class="queue-title">传输队列</h3><ul id="list" aria-live="polite" aria-label="传书进度"></ul><button type="button" id="clear" class="secondary" hidden>清除已完成记录</button><p class="footnote">失败文件可单独重试 · 清除记录只移除已完成项<br>也支持 DOCX、Markdown、HTML 和听页备份。文件大小不限。</p></main>
+        <script>
+        const drop=document.getElementById('drop'),list=document.getElementById('list'),pick=document.getElementById('pick'),clear=document.getElementById('clear');
+        const queue=[];let active=false;
+        document.getElementById('choose').onclick=()=>pick.click();
+        drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');
+        drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');send([...e.dataTransfer.files])};pick.onchange=()=>{send([...pick.files]);pick.value=''};
+        clear.onclick=()=>{list.querySelectorAll('li[data-done="true"]').forEach(li=>li.remove());clear.hidden=true};
+        function send(files){for(const f of files){const li=document.createElement('li');li.innerHTML='<div style="flex:1"><div></div><div class="bar"><i></i></div></div><div class="result"><span>等待传输</span><button class="secondary" type="button" hidden>重试</button></div>';li.querySelector('div div').textContent=f.name;list.append(li);const retry=li.querySelector('button');retry.onclick=()=>{retry.hidden=true;li.querySelector('span').textContent='等待重试';queue.push([f,li]);drain()};queue.push([f,li])}drain()}
+        async function drain(){if(active)return;active=true;while(queue.length){const [f,li]=queue.shift();await up(f,li)}active=false}
+        function up(f,li){return new Promise(r=>{const x=new XMLHttpRequest(),status=li.querySelector('span'),retry=li.querySelector('button');status.textContent='传输中';status.className='';li.querySelector('i').style.width='0%';x.open('POST',location.pathname.replace(/\\/$/,'')+'/upload');x.timeout=180000;x.setRequestHeader('X-File-Name',encodeURIComponent(f.name));
+        const fail=message=>{status.textContent=message;status.className='err';retry.hidden=false;r()};
+        x.upload.onprogress=e=>{if(e.lengthComputable){li.querySelector('i').style.width=(e.loaded/e.total*100)+'%';if(e.loaded===e.total)status.textContent='正在加入书架'}};
+        x.onload=()=>{if(x.status===200){status.textContent='已加入书架';status.className='ok';li.dataset.done='true';clear.hidden=false;r()}else fail(x.responseText||'传输失败')};
+        x.onerror=()=>fail('连接中断，请确认手机仍在传书页');x.ontimeout=()=>fail('传输超时，请检查手机是否已收到后再重试');x.send(f)})}
+        </script></body></html>
+        """
+    }
 }

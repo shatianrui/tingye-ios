@@ -1,13 +1,14 @@
 import SwiftUI
 import AVFoundation
 
-/// 正在听：深靛封面区与独立跟读卡；句序号与定位始终真实。
+/// 正在听：书封标题区与独立跟读卡跟随当前主题方向；句序号与定位始终真实。
 /// 矮屏并排显示书封与标题。大字号或更矮窗口可整页滚动，播放控制固定。
 struct PlayerView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.themeDirection) private var themeDirection
     @State private var showingCover = false
     @ObservedObject var player: SpeechPlayer
     /// 从阅读页打开时，「看原文」只需收起；从迷你播放器打开时要翻开这本书。
@@ -100,11 +101,12 @@ struct PlayerView: View {
             Button("取消", role: .cancel) {}
         } message: { Text("阅读进度会保留，随时可以继续。") }
         .sheet(isPresented: $settings) {
-            NavigationStack { VoiceSettingsView() }.environmentObject(model).tint(Theme.accent)
+            NavigationStack { VoiceSettingsView() }.environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent)
         }
         .sheet(isPresented: $chaptersSheet) {
             if let book = player.book {
                 NavigationStack { ChapterListView(book: book, player: player).environmentObject(model) }
+                    .environment(\.themeDirection, themeDirection)
                     .tint(Theme.accent)
                     .presentationDetents([.medium, .large])
             }
@@ -179,7 +181,7 @@ struct PlayerView: View {
             HStack {
                 Button { dismiss() } label: {
                     HStack(spacing: Theme.space2) {
-                        Text("正在听").font(Theme.serif(28, relativeTo: .title))
+                        Text("正在听").font(Theme.heading(28, relativeTo: .title))
                         ThemeIcon(symbol: Icon.collapse, size: 20)
                     }
                     .frame(minHeight: 44).contentShape(Rectangle())
@@ -232,10 +234,13 @@ struct PlayerView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)
-            .padding(Theme.space2)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+            .padding(Theme.space3)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous)
+                    .strokeBorder(themeDirection == .systemClear ? Theme.line.opacity(0.45) : Theme.line, lineWidth: Theme.hairline)
+            }
             .foregroundStyle(Theme.ink)
-            .environment(\.colorScheme, .dark)
 
         }
         .foregroundStyle(content)
@@ -820,7 +825,7 @@ struct VoiceSettingsView: View {
                 Text(provider == "system" ? "离线可用" : "云端合成")
                     .font(.caption).foregroundStyle(Theme.accent)
             }
-            Text(VoiceOptions.providerName(provider)).font(Theme.serif(20, relativeTo: .title3))
+            Text(VoiceOptions.providerName(provider)).font(Theme.heading(20, relativeTo: .title3))
                 .foregroundStyle(Theme.ink)
             Text(provider == "system" ? "使用这台设备的声音，无需密钥。" : currentVoiceSubtitle)
                 .font(.caption).foregroundStyle(Theme.ink2)

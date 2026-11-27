@@ -77,8 +77,8 @@ struct StorageView: View {
                     Rectangle().fill(Theme.clay).frame(width: geometry.size.width * CGFloat(books) / CGFloat(total))
                     Rectangle().fill(Theme.surface2).frame(width: geometry.size.width * CGFloat(cache) / CGFloat(total))
                     Rectangle().fill(Theme.line).frame(width: geometry.size.width * CGFloat(other) / CGFloat(total))
-                }.clipShape(Capsule())
-            }.frame(height: Theme.progressHeight).background(Theme.line, in: Capsule()).accessibilityHidden(true)
+                }.clipShape(RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous))
+            }.frame(height: Theme.progressHeight).background(Theme.line, in: RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous)).accessibilityHidden(true)
             // Text names and values accompany all three segments; color is never the only key.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Theme.space4) { usageLegend(books: books, cache: cache, other: other) }

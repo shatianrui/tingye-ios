@@ -8,6 +8,7 @@ struct ShelfView: View {
     var group: String? = nil
     @EnvironmentObject var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.themeDirection) private var themeDirection
     @State private var projectedID: String?
     @State private var query = ""
     @State private var filter = "全部"
@@ -160,10 +161,10 @@ struct ShelfView: View {
         }
         .sheet(isPresented: $showingSources, onDismiss: {
             model.releaseFileImportPresentation(importHubToken)
-        }) { ImportHubView().environmentObject(model).tint(Theme.accent) }
+        }) { ImportHubView().environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent) }
         .sheet(isPresented: $showingImportResults, onDismiss: {
             model.releaseFileImportPresentation(importResultsToken)
-        }) { NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.accent) }
+        }) { NavigationStack { ImportResultsView() }.environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent) }
 
     }
 
@@ -181,6 +182,8 @@ struct ShelfView: View {
                 }
             }
             .environmentObject(model)
+            .environment(\.themeDirection, themeDirection)
+            .tint(Theme.accent)
             .presentationDetents([.medium, .large])
         }
     }
@@ -316,21 +319,31 @@ struct ShelfView: View {
         let preferred = projectedID ?? model.lastReadingBook?.id
         let index = books.firstIndex { $0.id == preferred } ?? 0
         let entry = books[index]
-        let gold = Theme.clay
-        return VStack(spacing: 8) {
-            Text("封面放映厅 · \(index + 1) / \(books.count)").font(.caption.monospacedDigit()).foregroundStyle(gold)
+        let cardCorner = Theme.coverRadius(112)
+        return VStack(spacing: Theme.space3) {
+            Text("在读选书 · \(index + 1) / \(books.count)")
+                .mastheadStyle(color: Theme.accent)
+                .monospacedDigit()
             ZStack {
-                RoundedRectangle(cornerRadius: 4).fill(Color(red: 0.74, green: 0.72, blue: 0.90)).frame(width: 112, height: 146).rotationEffect(.degrees(-9)).offset(x: -8)
-                RoundedRectangle(cornerRadius: 4).fill(Color(red: 0.52, green: 0.49, blue: 0.65)).frame(width: 112, height: 146).rotationEffect(.degrees(7)).offset(x: 8)
+                RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
+                    .fill(Theme.surface2)
+                    .overlay { RoundedRectangle(cornerRadius: cardCorner, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+                    .frame(width: 112, height: 146)
+                    .rotationEffect(.degrees(-8))
+                    .offset(x: -10)
+                    .accessibilityHidden(true)
+                RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
+                    .fill(Theme.accentSoft)
+                    .overlay { RoundedRectangle(cornerRadius: cardCorner, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+                    .frame(width: 112, height: 146)
+                    .rotationEffect(.degrees(6))
+                    .offset(x: 10)
+                    .accessibilityHidden(true)
                 TabView(selection: Binding(get: { entry.id }, set: { projectedID = $0 })) {
                     ForEach(books, id: \.id) { book in
-                        Group {
-                            if let image = model.covers[book.id] {
-                                Image(uiImage: image).resizable().scaledToFit()
-                            } else {
-                                BookCoverView(title: book.title, color: book.color, image: nil, width: 114)
-                            }
-                        }.frame(maxWidth: .infinity, maxHeight: .infinity).tag(book.id)
+                        BookCoverView(title: book.title, color: book.color, author: book.author, image: model.covers[book.id], width: 114)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .tag(book.id)
                     }
                 }.tabViewStyle(.page(indexDisplayMode: .never)).accessibilityHidden(true)
                 HStack {
@@ -338,33 +351,72 @@ struct ShelfView: View {
                     Spacer()
                     reelArrow("下一本", "chevron.right", enabled: index + 1 < books.count) { projectedID = books[index + 1].id }
                 }
-            }.frame(height: 156)
-            Text(entry.title).font(.title3.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("study.heroTitle")
-            Text(entry.author.isEmpty ? "作者未注明" : entry.author).font(.subheadline)
-            if entry.started && entry.chapterCount > 0 {
-                Text("第 \(min(max(1, entry.progress.chapter + 1), entry.chapterCount)) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
-                    .font(.caption).accessibilityIdentifier("study.heroChapter")
+            }.frame(height: 162)
+            VStack(spacing: Theme.space1) {
+                Text(entry.title)
+                    .font(Theme.serif(22, relativeTo: .title3))
+                    .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("study.heroTitle")
+                Text(entry.author.isEmpty ? "作者未注明" : entry.author)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink2)
+                if entry.started && entry.chapterCount > 0 {
+                    Text("第 \(min(max(1, entry.progress.chapter + 1), entry.chapterCount)) / \(entry.chapterCount) \(entry.isComic ? "页" : "章")")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(Theme.ink3)
+                        .accessibilityIdentifier("study.heroChapter")
+                }
             }
             adaptiveRow {
                 Button { Haptics.light(); model.open(entry) } label: {
-                    Text(entry.started ? "继续阅读" : "开始阅读").font(.headline).padding(.horizontal, 18)
-                        .frame(minHeight: 44).foregroundStyle(.black).background(gold, in: Capsule())
+                    Text(entry.started ? "继续阅读" : "开始阅读")
+                        .font(Theme.sans(15, weight: .semibold))
+                        .padding(.horizontal, Theme.space5)
+                        .frame(maxWidth: .infinity, minHeight: 46)
+                        .foregroundStyle(Theme.onClay)
+                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 }.accessibilityIdentifier("study.heroContinue")
-                Button("开始专注") {
+                Button {
                     if !entry.isComic { UserDefaults.standard.set(entry.id, forKey: "study.openFocus.bookID") }
                     Haptics.light(); model.open(entry)
-                }.frame(minHeight: 44).accessibilityIdentifier("study.heroFocus")
+                } label: {
+                    Text("开始专注")
+                        .font(Theme.sans(15, weight: .medium))
+                        .padding(.horizontal, Theme.space4)
+                        .frame(maxWidth: .infinity, minHeight: 46)
+                        .foregroundStyle(Theme.ink)
+                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                                .strokeBorder(Theme.line, lineWidth: Theme.rule)
+                        }
+                }.accessibilityIdentifier("study.heroFocus")
             }
         }
-        .buttonStyle(.plain).multilineTextAlignment(.center).foregroundStyle(.white)
-        .padding(12).frame(maxWidth: .infinity)
-        .background(Theme.onClay, in: RoundedRectangle(cornerRadius: 16))
+        .buttonStyle(.plain)
+        .multilineTextAlignment(.center)
+        .foregroundStyle(Theme.ink)
+        .padding(Theme.cardInset)
+        .frame(maxWidth: .infinity)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous)
+                .strokeBorder(themeDirection == .systemClear ? Theme.line.opacity(0.45) : Theme.line, lineWidth: Theme.rule)
+        }
+        .softCardShadow()
     }
 
     private func reelArrow(_ label: String, _ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).frame(width: 44, height: 44).contentShape(Rectangle()) }
-            .disabled(!enabled).opacity(enabled ? 1 : 0.3).accessibilityLabel(label)
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Theme.ink2)
+                .frame(width: 44, height: 44)
+                .background(Theme.surface2.opacity(0.85), in: RoundedRectangle(cornerRadius: Theme.buttonRadiusSmall, style: .continuous))
+                .contentShape(Rectangle())
+        }
+        .disabled(!enabled).opacity(enabled ? 1 : 0.3).accessibilityLabel(label)
     }
 
     @ViewBuilder
@@ -404,9 +456,10 @@ struct ShelfView: View {
     private var addBooksMenu: some View {
         Button { searching = false; showingSources = true } label: {
             Label { Text("添书") } icon: { ThemeIcon(symbol: Icon.add) }
-                .font(Theme.sans(15, weight: .medium)).foregroundStyle(Theme.onInk)
-                .padding(.horizontal, Theme.space4).frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
-                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .font(Theme.sans(15, weight: .medium)).foregroundStyle(Theme.ink)
+                .padding(.horizontal, Theme.space4).frame(minWidth: Theme.iconButtonSize, minHeight: Theme.rowMinHeight)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.rule) }
                 .contentShape(RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -467,7 +520,7 @@ struct ShelfView: View {
         if editing {
             adaptiveRow {
                 VStack(alignment: .leading, spacing: Theme.space1) {
-                    Text("已选择 \(selection.count) 本书").font(Theme.serif(20)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
+                    Text("已选择 \(selection.count) 本书").font(Theme.heading(20)).foregroundStyle(Theme.ink).accessibilityAddTraits(.isHeader)
                     Text(summary).font(.caption).foregroundStyle(Theme.ink3)
                 }
                 Spacer(minLength: Theme.space2)
@@ -723,7 +776,7 @@ struct ShelfView: View {
                         ForEach(savedSearches.split(separator: "\n").map(String.init), id: \.self) { term in
                             Button { query = term; searchFocused = false } label: {
                                 Text(term).font(.caption).foregroundStyle(Theme.ink2).padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
-                                    .background(Theme.surface2, in: Capsule())
+                                    .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous))
                             }.buttonStyle(.plain)
                         }
                     }
@@ -1343,7 +1396,7 @@ struct ImportResultsView: View {
                                     HStack(alignment: .top, spacing: Theme.space3) {
                                         resultIcon(item)
                                         VStack(alignment: .leading, spacing: Theme.space1) {
-                                            Text(item.name).font(Theme.serif(17)).foregroundStyle(Theme.ink)
+                                            Text(item.name).font(Theme.heading(17, relativeTo: .body, weight: .medium)).foregroundStyle(Theme.ink)
                                                 .fixedSize(horizontal: false, vertical: true)
                                             resultDescription(item)
                                         }.frame(maxWidth: .infinity, alignment: .leading)

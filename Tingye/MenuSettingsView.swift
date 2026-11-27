@@ -44,7 +44,7 @@ struct MenuSettingsView: View {
                                     Text(tool.rawValue)
                                     if tool == SelectionTool.visible(order: order, hidden: hidden).first {
                                         Text("默认").font(.caption2.weight(.medium)).foregroundStyle(Theme.clayDeep)
-                                            .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1).background(Theme.claySoft, in: Capsule())
+                                            .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1).background(Theme.claySoft, in: RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous))
                                     }
                                 }
                             }

@@ -122,44 +122,45 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 摘句分享海报固定为放映厅深色，不随接收者的系统外观变化。
+/// 摘句分享海报跟随当前界面主题方向的代币与外观，保证清晰可读。
 struct QuoteShareCard: View {
     let text: String
     let title: String
     var author = ""
     var chapter = ""
     var body: some View {
+        let palette = ThemePalette.palette(for: AppThemeDirection.current)
+        let metrics = ThemeMetrics.metrics(for: AppThemeDirection.current)
         VStack(alignment: .leading, spacing: 26) {
             HStack {
-                Label("听页 · 封面放映厅", systemImage: "film")
-                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.marker)
+                Label("听页 · 读书摘句", systemImage: Icon.quote)
+                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(palette.accent)
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
-                    .font(.system(size: 16)).monospacedDigit().foregroundStyle(Theme.ink3)
+                    .font(.system(size: 16)).monospacedDigit().foregroundStyle(palette.ink3)
             }
-            Rectangle().fill(Theme.line).frame(height: 1)
+            Rectangle().fill(palette.line).frame(height: 1)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Rectangle().fill(Theme.marker).frame(width: 56, height: 4)
+                Rectangle().fill(palette.clay).frame(width: 56, height: 4)
                 Text("《\(title)》").font(Theme.serifBold(26))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Theme.ink3)
+                    Text(byline).font(.system(size: 18)).foregroundStyle(palette.ink3)
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Theme.line).frame(height: 1)
-            Text("TINGYE · SCREENING ROOM").font(.system(size: 14, weight: .semibold)).tracking(2.5)
-                .foregroundStyle(Theme.marker)
+            Rectangle().fill(palette.line).frame(height: 1)
+            Text("TINGYE · READING NOTES").font(.system(size: 14, weight: .semibold)).tracking(metrics.mastheadTracking)
+                .foregroundStyle(palette.accent)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .foregroundStyle(Theme.ink)
-        .background(Theme.bg)
-        .environment(\.colorScheme, .dark)
+        .foregroundStyle(palette.ink)
+        .background(palette.bg)
     }
 
     /// 渲染为分享图；失败返回 nil（调用方退回纯文字分享）。

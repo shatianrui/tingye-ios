@@ -174,7 +174,7 @@ struct BookFinishView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Button { onOpenNext(next) } label: { Text("开始下一本") }
-                    .buttonStyle(PrimaryButtonStyle(height: Theme.buttonHeight))
+                    .buttonStyle(SecondaryButtonStyle(height: Theme.buttonHeight, emphasized: true))
                     .accessibilityIdentifier("finish.next.open")
             }
         } else {

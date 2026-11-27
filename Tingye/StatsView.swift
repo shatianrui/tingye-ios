@@ -364,7 +364,7 @@ struct StatsView: View {
         let fraction = min(1, today / Double(max(1, goalMinutes) * 60))
         return VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
-                Text("每日目标").font(Theme.serif(20, relativeTo: .title3))
+                Text("每日目标").font(Theme.heading(20, relativeTo: .title3))
                 Spacer()
                 Button("修改") { editGoal() }.font(.caption).frame(minHeight: Theme.iconButtonSize)
             }
@@ -507,7 +507,7 @@ struct StatsView: View {
         if period == .day || period == .week {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("逐次记录").font(Theme.serif(20, relativeTo: .title3))
+                    Text("逐次记录").font(Theme.heading(20, relativeTo: .title3))
                     Spacer()
                     Button("查看日历") { showingCalendar = true }
                         .font(.caption).frame(minHeight: Theme.iconButtonSize)
@@ -614,11 +614,16 @@ struct StatsView: View {
 private struct SettingsDirectoryView: View {
     @EnvironmentObject var model: AppModel
     @AppStorage("app.appearance") private var appearance = "system"
+    @AppStorage(AppThemeDirection.storageKey) private var uiDirectionRaw = AppThemeDirection.warmPaper.rawValue
     @State private var settingsRoute: SettingsDestination?
     @State private var showingImportHub = false
     @State private var importHubToken = UUID()
 
-    private var appearanceName: String { ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统" }
+    private var appearanceName: String {
+        let direction = (AppThemeDirection(rawValue: uiDirectionRaw) ?? .warmPaper).title
+        let mode = ["system": "跟随系统", "light": "日间", "dark": "夜间"][appearance] ?? "跟随系统"
+        return "\(direction) · \(mode)"
+    }
 
     var body: some View {
         SettingsPage(title: "设置", detail: "阅读、声音与数据，各有自己的位置。") {

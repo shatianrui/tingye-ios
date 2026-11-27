@@ -654,31 +654,141 @@ struct ProfileView: View {
 
 // MARK: - 外观 / 关于
 
-/// 外观选择页:跟随系统、日间、夜间。WindowAppearance 在 TingyeApp 中读取同一键并应用。
+/// 外观选择页：四套界面风格（独立色板与尺度实时预览）+ 明暗模式（跟随系统、日间、夜间）。
 struct AppearanceView: View {
     @AppStorage("app.appearance") private var appearance = "system"
+    @AppStorage(AppThemeDirection.storageKey) private var uiDirectionRaw = AppThemeDirection.warmPaper.rawValue
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var currentDirection: AppThemeDirection {
+        AppThemeDirection(rawValue: uiDirectionRaw) ?? .warmPaper
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: "封面放映厅", subtitle: "选择界面的明暗外观。书籍封面保留原色。", kicker: "外观主题", titleSize: 28)
-                VStack(spacing: Theme.space3) {
-                    appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "浅紫灰背景，深靛色文字")
-                    appearanceOption("dark", title: "夜间", subtitle: "午夜靛蓝背景，暖金色标记")
+                Masthead(title: "界面与外观", subtitle: "选择全应用视觉方向与明暗模式。阅读正文的七种纸色保持独立。", kicker: "外观设置", titleSize: 28)
+
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    SectionHeader(title: "界面风格")
+                    let columns = typeSize.isAccessibilitySize
+                        ? [GridItem(.flexible())]
+                        : [GridItem(.flexible(), spacing: Theme.space3), GridItem(.flexible(), spacing: Theme.space3)]
+                    LazyVGrid(columns: columns, spacing: Theme.space3) {
+                        ForEach(AppThemeDirection.allCases) { direction in
+                            directionOption(direction)
+                        }
+                    }
                 }
-                Text("正文的纸色可在「阅读排版」中单独选择。")
+
+                VStack(alignment: .leading, spacing: Theme.space3) {
+                    SectionHeader(title: "明暗模式")
+                    VStack(spacing: Theme.space2) {
+                        appearanceOption("system", title: "跟随系统", subtitle: "随设备浅色与深色外观自动切换")
+                        appearanceOption("light", title: "日间", subtitle: "浅色界面外观，适合明亮环境")
+                        appearanceOption("dark", title: "夜间", subtitle: "深色界面外观，降低夜间眩光")
+                    }
+                }
+
+                Text("正文的七种阅读纸色可在「阅读排版」中单独选择，不受界面风格影响。")
                     .font(.caption)
                     .foregroundStyle(Theme.ink3)
                     .padding(.horizontal, Theme.space1)
             }
             .padding(.horizontal, Theme.inset)
-            .padding(.vertical, Theme.space5)
-            .frame(maxWidth: 600)
+            .padding(.vertical, Theme.space4)
+            .frame(maxWidth: 620)
             .frame(maxWidth: .infinity)
         }
         .paperBackground()
         .navigationTitle("外观")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func directionOption(_ direction: AppThemeDirection) -> some View {
+        let selected = currentDirection == direction
+        let palette = ThemePalette.palette(for: direction)
+        let metrics = ThemeMetrics.metrics(for: direction)
+        return Button {
+            Haptics.selection()
+            withAnimation(Theme.pressSpring) { uiDirectionRaw = direction.rawValue }
+        } label: {
+            VStack(alignment: .leading, spacing: Theme.space2) {
+                directionPreview(palette: palette, metrics: metrics)
+                HStack(alignment: .center, spacing: Theme.space2) {
+                    Text(L(direction.title))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 0)
+                    ThemeIcon(symbol: Icon.selection(selected), size: 19)
+                        .foregroundStyle(selected ? Theme.clayDeep : Theme.line)
+                }
+                Text(L(direction.subtitle))
+                    .font(.caption2)
+                    .foregroundStyle(Theme.ink3)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Theme.space3)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                    .strokeBorder(selected ? Theme.clay : Theme.line, lineWidth: selected ? Theme.ruleMedium : Theme.rule)
+            }
+            .softCardShadow()
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        }
+        .buttonStyle(PressButtonStyle(scale: 0.99))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier(direction.accessibilityID)
+    }
+
+    /// 严格使用目标方向自身的 ThemePalette.palette(for:) 与 ThemeMetrics.metrics(for:) 绘制微缩预览。
+    private func directionPreview(palette: ThemePalette, metrics: ThemeMetrics) -> some View {
+        let outerRadius = min(14, max(2, metrics.radius * 0.72))
+        let innerRadius = min(10, max(2, metrics.radius * 0.52))
+        let ctaRadius = min(8, max(2, metrics.buttonRadius * 0.6))
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                if metrics.direction != .systemClear {
+                    Rectangle().fill(palette.clay).frame(width: 5, height: 5)
+                }
+                RoundedRectangle(cornerRadius: 1).fill(palette.accent).frame(width: 24, height: 3)
+                Spacer(minLength: 0)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                RoundedRectangle(cornerRadius: 1.5).fill(palette.ink).frame(width: 52, height: 4)
+                RoundedRectangle(cornerRadius: 1).fill(palette.ink3).frame(width: 36, height: 3)
+                HStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: ctaRadius, style: .continuous)
+                        .fill(palette.clay)
+                        .frame(width: 34, height: 12)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 1).fill(palette.onClay).frame(width: 16, height: 2.5)
+                        }
+                    RoundedRectangle(cornerRadius: ctaRadius, style: .continuous)
+                        .fill(palette.accentSoft)
+                        .frame(width: 20, height: 12)
+                    Spacer(minLength: 0)
+                }
+            }
+            .padding(7)
+            .background(palette.surface, in: RoundedRectangle(cornerRadius: innerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: innerRadius, style: .continuous)
+                    .strokeBorder(palette.line, lineWidth: metrics.hairline)
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity)
+        .background(palette.bg, in: RoundedRectangle(cornerRadius: outerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: outerRadius, style: .continuous)
+                .strokeBorder(palette.line, lineWidth: metrics.rule)
+        }
+        .accessibilityHidden(true)
     }
 
     private func appearanceOption(_ value: String, title: String, subtitle: String) -> some View {
@@ -687,25 +797,25 @@ struct AppearanceView: View {
             Haptics.selection()
             withAnimation(Theme.pressSpring) { appearance = value }
         } label: {
-            PaperCard {
+            PaperCard(padding: Theme.space3) {
                 HairlineRow(showsDivider: false) {
-                    HStack(spacing: Theme.space4) {
+                    HStack(spacing: Theme.space3) {
                         appearancePreview(value)
-                        VStack(alignment: .leading, spacing: Theme.space2) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(L(title))
-                                .font(.headline)
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Theme.ink)
                             Text(L(subtitle))
                                 .font(.caption)
                                 .foregroundStyle(Theme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        ThemeIcon(symbol: Icon.selection(selected), size: 22)
-                            .foregroundStyle(selected ? Theme.ink : Theme.line)
+                        ThemeIcon(symbol: Icon.selection(selected), size: 21)
+                            .foregroundStyle(selected ? Theme.clayDeep : Theme.line)
                     }
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: Theme.radius))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         }
         .buttonStyle(PressButtonStyle(scale: 0.99))
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -714,27 +824,37 @@ struct AppearanceView: View {
 
     private func appearancePreview(_ value: String) -> some View {
         let dark = value == "dark"
-        return VStack(alignment: .leading, spacing: Theme.space2) {
+        let palette = ThemePalette.palette(for: currentDirection)
+        let metrics = ThemeMetrics.metrics(for: currentDirection)
+        let corner = min(10, max(2, metrics.radius * 0.55))
+        return VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 4) {
-                Rectangle().fill(Theme.clay).frame(width: 8, height: 6)
-                Rectangle().fill(Theme.ink).frame(width: 32, height: 2)
+                Rectangle().fill(palette.clay).frame(width: 7, height: 5)
+                Rectangle().fill(palette.ink).frame(width: 26, height: 2)
             }
-            RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(Theme.onMarker).frame(height: Theme.space5)
+            RoundedRectangle(cornerRadius: min(6, max(2, metrics.buttonRadius * 0.5)), style: .continuous)
+                .fill(palette.clay)
+                .frame(height: 14)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.marker).frame(width: 11, height: 16)
+                    RoundedRectangle(cornerRadius: 1).fill(palette.onClay).frame(width: 18, height: 2.5)
                 }
-            Rectangle().fill(Theme.ink3).frame(width: 40, height: Theme.progressHeight)
-            Rectangle().fill(Theme.line).frame(height: Theme.progressHeight)
+            Rectangle().fill(palette.ink3).frame(width: 34, height: 2.5)
+            Rectangle().fill(palette.line).frame(height: metrics.hairline)
         }
-        .padding(Theme.space3).frame(width: 74, height: 98)
-        .background(Theme.bg)
+        .padding(8).frame(width: 64, height: 64)
+        .background(palette.bg, in: RoundedRectangle(cornerRadius: corner, style: .continuous))
         .overlay(alignment: .trailing) {
             if value == "system" {
-                Rectangle().fill(Theme.ink).frame(width: 30)
-                    .overlay { ThemeIcon(symbol: Icon.nightBadge, size: 14).foregroundStyle(Theme.bg) }
+                UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 0, bottomTrailingRadius: corner, topTrailingRadius: corner, style: .continuous)
+                    .fill(palette.ink)
+                    .frame(width: 24)
+                    .overlay { ThemeIcon(symbol: Icon.nightBadge, size: 12).foregroundStyle(palette.bg) }
             }
         }
-        .overlay(Rectangle().strokeBorder(Theme.line, lineWidth: Theme.rule))
+        .overlay {
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .strokeBorder(palette.line, lineWidth: metrics.rule)
+        }
         .environment(\.colorScheme, dark ? .dark : .light)
         .accessibilityHidden(true)
     }

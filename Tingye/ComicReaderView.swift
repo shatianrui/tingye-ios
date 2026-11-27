@@ -11,6 +11,7 @@ struct ComicReaderView: View {
     @Environment(\.scenePhase) var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.themeDirection) private var themeDirection
     /// 每部漫画单独记住阅读方式；没设置过的用「漫画默认阅读方式」。
     @State private var mode: String
     init(book: Book) {
@@ -74,7 +75,7 @@ struct ComicReaderView: View {
                     VStack(alignment: .leading, spacing: Theme.space1) {
                         Text(book.title).font(Theme.serif(20, relativeTo: .headline)).lineLimit(2)
                         Text("\(page + 1) / \(count) 页 · \(modeLabel)")
-                            .font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            .font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     // 与文字阅读页一致：书签放顶栏，底栏只放打开面板与切换方式
@@ -102,8 +103,7 @@ struct ComicReaderView: View {
                     .accessibilityLabel("更多漫画操作")
                 }
                 .padding(Theme.space3)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                .floatingPanel(cornerRadius: Theme.radius)
                 Spacer(minLength: 8)
                 ScrollView {
                     VStack(spacing: Theme.space1) {
@@ -160,8 +160,7 @@ struct ComicReaderView: View {
                             .font(.caption2).foregroundStyle(Theme.ink3).padding(.vertical, Theme.space2)
                     }
                     .padding(.horizontal, Theme.space3).padding(.bottom, Theme.space2)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                    .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: Theme.rule) }
+                    .floatingPanel(cornerRadius: Theme.radius)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .frame(maxHeight: typeSize.isAccessibilitySize ? 320 : 220)
@@ -174,7 +173,6 @@ struct ComicReaderView: View {
             .allowsHitTesting(chrome)
             .accessibilityHidden(!chrome)
         }
-        .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(!chrome)
         .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: chrome)
@@ -241,7 +239,7 @@ struct ComicReaderView: View {
                                     .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
                                 Text(String(format: "%02d", index + 1)).font(.system(size: 13, weight: .medium).monospacedDigit())
                                     .foregroundStyle(index == page ? Theme.clayDeep : Theme.ink3).frame(width: 36)
-                                Text("第 \(index + 1) 页").font(Theme.serif(17)).monospacedDigit().foregroundStyle(Theme.ink)
+                                Text("第 \(index + 1) 页").font(Theme.heading(17, relativeTo: .body, weight: .medium)).monospacedDigit().foregroundStyle(Theme.ink)
                                 Spacer()
                                 if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
                                 if index == page { SealDot(text: "在读") }
@@ -258,7 +256,7 @@ struct ComicReaderView: View {
                 .onAppear { proxy.scrollTo(page, anchor: .center) }
             }
         }
-        .preferredColorScheme(.dark)
+        .environment(\.themeDirection, themeDirection)
         .tint(Theme.clayDeep).presentationDetents([.medium, .large])
     }
     private var modeLabel: String {
@@ -302,9 +300,9 @@ private struct ComicPage: View {
                     Image(systemName: Icon.warning).font(.title2).accessibilityHidden(true)
                     Text("这一页暂时无法显示").font(.subheadline)
                     Text("可以返回书库，通过修复原书补齐图片。").font(.footnote)
-                }.foregroundStyle(Theme.ink2).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
+                }.foregroundStyle(Color(white: 0.84)).padding(16).frame(maxWidth: .infinity, minHeight: fit == .width ? 200 : nil)
             } else {
-                ProgressView("正在加载图片…").tint(Theme.accent).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
+                ProgressView("正在加载图片…").foregroundStyle(Color(white: 0.84)).tint(Theme.clay).frame(maxWidth: .infinity, minHeight: fit == .width ? 400 : nil, maxHeight: fit == .width ? nil : .infinity)
             }
         }
         .animation(.easeOut(duration: 0.3), value: image != nil)

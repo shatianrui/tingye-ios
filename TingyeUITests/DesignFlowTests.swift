@@ -904,7 +904,17 @@ final class DesignFlowTests: XCTestCase {
         reveal(appearance, in: app)
         appearance.tap()
         XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 5))
+        // 默认界面风格为暖纸，四向选项均存在且切换立即生效、保留当前导航栈
+        for id in ["theme.warmPaper", "theme.nightInkGold", "theme.editorial", "theme.systemClear"] {
+            XCTAssertTrue(app.buttons[id].exists, "外观页应提供风格选项 \(id)")
+        }
+        waitForReadingCondition({ app.buttons["theme.warmPaper"].isSelected }, "默认界面风格应为暖纸")
+        app.buttons["theme.editorial"].tap()
+        waitForReadingCondition({ app.buttons["theme.editorial"].isSelected }, "切换杂志编辑风格应立即更新选中态")
+        XCTAssertTrue(app.navigationBars["外观"].exists, "切换界面风格不应销毁当前导航栈")
+        reveal(app.buttons["appearance.light"], in: app)
         waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")
+        reveal(app.buttons["appearance.dark"], in: app)
         app.buttons["appearance.dark"].tap()
         waitForReadingCondition({ app.buttons["appearance.dark"].isSelected }, "深色外观选择应在界面更新后生效")
         screenshot(app, "听页-夜间外观选择")
@@ -915,7 +925,7 @@ final class DesignFlowTests: XCTestCase {
         reading.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
         reveal(app.buttons["系统字体"], in: app)
-        XCTAssertTrue(app.buttons["系统字体"].isSelected, "外观切换不能改变正文的独立字体偏好")
+        XCTAssertTrue(app.buttons["系统字体"].isSelected, "界面风格与外观切换不能改变正文的独立字体偏好")
         screenshot(app, "听页-夜间阅读排版")
         let paper = app.buttons["旧书"]
         revealAboveDone(paper, in: app)
@@ -925,6 +935,10 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
         reveal(appearance, in: app)
         appearance.tap()
+        reveal(app.buttons["theme.systemClear"], in: app)
+        app.buttons["theme.systemClear"].tap()
+        waitForReadingCondition({ app.buttons["theme.systemClear"].isSelected }, "切换清透系统风格应立即生效")
+        reveal(app.buttons["appearance.light"], in: app)
         app.buttons["appearance.light"].tap()
         waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")
         app.navigationBars["外观"].buttons.firstMatch.tap()
@@ -933,7 +947,7 @@ final class DesignFlowTests: XCTestCase {
         reading.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
         revealAboveDone(app.buttons["旧书"], in: app)
-        XCTAssertTrue(app.buttons["旧书"].isSelected, "全局外观切换不能重置独立选择的纸色")
+        XCTAssertTrue(app.buttons["旧书"].isSelected, "全局风格与外观切换不能重置独立选择的纸色")
     }
 
     func testOriginalReaderKeepsTypographyAndContentsReachable() {

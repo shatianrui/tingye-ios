@@ -17,17 +17,11 @@ struct TingyeApp: App {
     }()
     init() {
         FontLibrary.registerAll()
-        let navigation = UINavigationBarAppearance()
-        navigation.configureWithOpaqueBackground()
-        navigation.backgroundColor = UIColor(Theme.bg)
-        navigation.shadowColor = UIColor(Theme.line)
-        navigation.titleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
-        navigation.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.ink)]
-        UINavigationBar.appearance().standardAppearance = navigation
-        UINavigationBar.appearance().scrollEdgeAppearance = navigation
-        UINavigationBar.appearance().compactAppearance = navigation
+        Theme.applyUIKitAppearance()
     }
     @AppStorage("app.appearance") private var appearanceMode = "system"
+    @AppStorage(AppThemeDirection.storageKey) private var uiDirectionRaw = AppThemeDirection.warmPaper.rawValue
+    private var uiDirection: AppThemeDirection { AppThemeDirection(rawValue: uiDirectionRaw) ?? .warmPaper }
     var body: some Scene {
         WindowGroup {
             StudyRootView()
@@ -35,9 +29,21 @@ struct TingyeApp: App {
                 .modifier(UIReviewAppearance())
                 #endif
                 .environmentObject(model)
+                .environment(\.themeDirection, uiDirection)
                 .tint(Theme.clayDeep)
                 .paperBackground()
                 .background(WindowAppearance(style: UIUserInterfaceStyle(appearance: appearanceMode)))
+                .onAppear {
+                    Theme.applyUIKitAppearance(for: uiDirection)
+                }
+                .onChange(of: uiDirectionRaw) { _, raw in
+                    let direction = AppThemeDirection(rawValue: raw) ?? .warmPaper
+                    Theme.applyUIKitAppearance(for: direction)
+                    model.objectWillChange.send()
+                }
+                .onChange(of: appearanceMode) { _, _ in
+                    Theme.applyUIKitAppearance(for: uiDirection)
+                }
                 .onOpenURL { url in
                     model.beginImport([url])
                 }
@@ -67,6 +73,12 @@ enum UIReview {
             if let i = args.firstIndex(of: "-ui-appearance"), args.indices.contains(i + 1),
                ["system", "light", "dark"].contains(args[i + 1]) {
                 UserDefaults.standard.set(args[i + 1], forKey: "app.appearance")
+            }
+            if let i = args.firstIndex(of: "-ui-direction"), args.indices.contains(i + 1),
+               AppThemeDirection(rawValue: args[i + 1]) != nil {
+                UserDefaults.standard.set(args[i + 1], forKey: AppThemeDirection.storageKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: AppThemeDirection.storageKey)
             }
         }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ui-review-" + UUID().uuidString)
@@ -202,12 +214,14 @@ enum StudyRoute: Hashable { case me }
 struct StudyRootView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.themeDirection) private var themeDirection
     @State private var navigationHidden = false
     @State private var path: [StudyRoute] = []
     @State private var readerImportToken = UUID()
     @State private var playerImportToken = UUID()
 
     var body: some View {
+        let clear = themeDirection == .systemClear
         VStack(spacing: 0) {
             NavigationStack(path: $path) {
                 ShelfView()
@@ -221,8 +235,10 @@ struct StudyRootView: View {
                     .safeAreaInset(edge: .top, spacing: 0) {
                         HStack(spacing: Theme.space2) {
                             HStack(spacing: 6) {
-                                Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                                Text("TINGYE · COVER ROOM")
+                                if !clear {
+                                    Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                                }
+                                Text(clear ? "听页" : "TINGYE · 听页")
                                     .font(Theme.masthead).tracking(Theme.mastheadTracking)
                                     .foregroundStyle(Theme.ink3)
                             }
@@ -239,9 +255,9 @@ struct StudyRootView: View {
                             .accessibilityIdentifier("study.openProfile")
                         }
                         .padding(.horizontal, Theme.inset)
-                        .background(Theme.bg)
+                        .background(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.bg))
                     }
-                    .toolbarBackground(Theme.bg, for: .navigationBar)
+                    .toolbarBackground(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.bg), for: .navigationBar)
             }
             .background(Theme.bg)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
@@ -304,6 +320,7 @@ struct StudyRootView: View {
                 RoutedReaderView(book: book)
             }
                 .environmentObject(model)
+                .environment(\.themeDirection, themeDirection)
                 .tint(Theme.clayDeep)
         }
         .sheet(isPresented: $model.showingPlayer, onDismiss: {
@@ -311,6 +328,7 @@ struct StudyRootView: View {
         }) {
             PlayerView(player: model.player)
                 .environmentObject(model)
+                .environment(\.themeDirection, themeDirection)
         }
         .alert("操作未完成", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
             Button("关闭", role: .cancel) { model.message = nil }
@@ -438,8 +456,11 @@ struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.themeDirection) private var themeDirection
     private var layout: AnyLayout { typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4)) }
     var body: some View {
+        let clear = themeDirection == .systemClear
+        let editorial = themeDirection == .editorial
         if let book = player.book {
             VStack(spacing: 0) {
                 layout {
@@ -509,8 +530,13 @@ struct MiniPlayer: View {
                 .frame(maxWidth: .infinity)
             }
             .padding(.vertical, Theme.space2)
-            .background(Theme.surface)
-            .overlay(alignment: .top) { Rectangle().fill(Theme.ink).frame(height: 1.5).accessibilityHidden(true) }
+            .background(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.surface))
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(editorial ? Theme.ink : Theme.line)
+                    .frame(height: editorial ? Theme.ruleMedium : Theme.hairline)
+                    .accessibilityHidden(true)
+            }
             .overlay(alignment: .bottom) {
                 ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 2.5)
                     .padding(.horizontal, Theme.space4)
@@ -614,6 +640,8 @@ struct AirPlayButton: UIViewRepresentable {
         return view
     }
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
+        uiView.activeTintColor = UIColor(Theme.clayDeep)
+        uiView.tintColor = UIColor(Theme.ink)
         (uiView as? RoutePickerView)?.markRouteButton()
     }
 }

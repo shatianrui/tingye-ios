@@ -146,7 +146,7 @@ struct SelectionPanel: View {
     private var panelContent: some View {
         VStack(alignment: .leading, spacing: Theme.space3) {
             HStack {
-                Text("选段与标注").font(Theme.serif(20)).accessibilityAddTraits(.isHeader)
+                Text("选段与标注").font(Theme.heading(20)).accessibilityAddTraits(.isHeader)
                 Spacer()
                 Menu {
                     Button { onExtend(-1) } label: { Label("向前多选一句", systemImage: Icon.extendBack) }
@@ -239,7 +239,7 @@ struct SelectionPanel: View {
                         Label(title, systemImage: icon).font(.caption.weight(.medium))
                             .foregroundStyle(chosenStyle == style ? accent : tint)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: Capsule())
+                            .background(chosenStyle == style ? accent.opacity(0.14) : tint.opacity(0.05), in: RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(chosenStyle == style ? .isSelected : [])
@@ -262,9 +262,9 @@ struct SelectionPanel: View {
                 Text(L(title))
             }
                 .font(.body.weight(.medium))
-                .foregroundStyle(prominent ? Theme.bg : Theme.ink)
+                .foregroundStyle(prominent ? Theme.onClay : Theme.ink)
                 .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? Theme.ink : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                .background(prominent ? Theme.clay : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

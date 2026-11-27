@@ -5,64 +5,247 @@ import CoreText
 @testable import Tingye
 
 final class NativeCoreTests: XCTestCase {
-    /// 校验放映厅色板的日夜外观、提高对比度外观及输入框透明度。
+    /// 校验四套主题方向在日夜外观、提高对比度回退、输入框透明度及独立预览色板下的精确解析。
     @MainActor func testV31PaletteResolvesToSpecifiedColors() {
-        let tokens: [(String, Color, UInt32, UInt32)] = [
-            ("bg", Theme.bg, 0xF8F6FB, 0x181827),
-            ("surface", Theme.surface, 0xFFFFFF, 0x232340),
-            ("surface2", Theme.surface2, 0xEEEAF4, 0x302F49),
-            ("surfaceSunken", Theme.surfaceSunken, 0xF2EFF6, 0x1E1E32),
-            ("ink", Theme.ink, 0x232340, 0xFAF7FF),
-            ("ink2", Theme.ink2, 0x423F59, 0xDED9EA),
-            ("ink3", Theme.ink3, 0x59566D, 0xBFBBCE),
-            ("ink4", Theme.ink4, 0x655F76, 0xAAA4BB),
-            ("line", Theme.line, 0xD5CFDF, 0x49475F),
-            ("clay", Theme.clay, 0xFFDF97, 0xFFDF97),
-            ("accent", Theme.accent, 0x232340, 0xFFDF97),
-            ("clayDeep", Theme.clayDeep, 0x232340, 0xFFDF97),
-            ("accentSoft", Theme.accentSoft, 0xF7EBDD, 0x393344),
-            ("claySoft", Theme.claySoft, 0xF7EBDD, 0x393344),
-            ("onClay", Theme.onClay, 0x232340, 0x232340),
-            ("danger", Theme.danger, 0x9E2A2B, 0xF4A6A3),
-            ("dangerSoft", Theme.dangerSoft, 0xF9EAE8, 0x362020),
-            ("focus", Theme.focus, 0x232340, 0xFFDF97),
-            ("onInk", Theme.onInk, 0xF8F6FB, 0x181827)
+        let defaults = UserDefaults.standard
+        let savedDirection = defaults.object(forKey: AppThemeDirection.storageKey)
+        defer {
+            if let savedDirection { defaults.set(savedDirection, forKey: AppThemeDirection.storageKey) }
+            else { defaults.removeObject(forKey: AppThemeDirection.storageKey) }
+        }
+
+        struct HexSpec {
+            let direction: AppThemeDirection
+            let bg: (UInt32, UInt32)
+            let surface: (UInt32, UInt32)
+            let surface2: (UInt32, UInt32)
+            let surfaceSunken: (UInt32, UInt32)
+            let ink: (UInt32, UInt32)
+            let ink2: (UInt32, UInt32)
+            let ink3: (UInt32, UInt32)
+            let ink4: (UInt32, UInt32)
+            let line: (UInt32, UInt32)
+            let accent: (UInt32, UInt32)
+            let accentSoft: (UInt32, UInt32)
+            let clay: (UInt32, UInt32)
+            let onClay: (UInt32, UInt32)
+            let danger: (UInt32, UInt32)
+            let dangerSoft: (UInt32, UInt32)
+        }
+
+        let hexSpecs: [HexSpec] = [
+            HexSpec(
+                direction: .warmPaper,
+                bg: (0xFAF9F5, 0x141413), surface: (0xFFFFFF, 0x1C1B19),
+                surface2: (0xF0EEE6, 0x262522), surfaceSunken: (0xF3F1E9, 0x181715),
+                ink: (0x141413, 0xFAF9F5), ink2: (0x3D3D3A, 0xD5D3CA),
+                ink3: (0x595853, 0xABA89E), ink4: (0x87867F, 0x78756C),
+                line: (0xE6E3D9, 0x2E2C29), accent: (0xA6482B, 0xECA085),
+                accentSoft: (0xF8ECE6, 0x2E201B), clay: (0xD97757, 0xD97757),
+                onClay: (0x141413, 0x141413), danger: (0x9E2A2B, 0xF4A6A3),
+                dangerSoft: (0xF9EAE8, 0x362020)
+            ),
+            HexSpec(
+                direction: .nightInkGold,
+                bg: (0xF4EFE4, 0x12110E), surface: (0xFFFBF3, 0x1C1A16),
+                surface2: (0xEAE3D4, 0x26231E), surfaceSunken: (0xEDE7DA, 0x0E0D0B),
+                ink: (0x1A1712, 0xF3EDE0), ink2: (0x3F3A32, 0xD4CCB8),
+                ink3: (0x5C564C, 0xA89F8A), ink4: (0x7A7368, 0x7A7364),
+                line: (0xDDD6C7, 0x3A362E), accent: (0x7A5C16, 0xE8CC7A),
+                accentSoft: (0xF3E6C4, 0x2A2418), clay: (0xC4A24A, 0xC4A24A),
+                onClay: (0x1A1712, 0x12110E), danger: (0x9E2A2B, 0xF4A6A3),
+                dangerSoft: (0xF9EAE8, 0x362020)
+            ),
+            HexSpec(
+                direction: .editorial,
+                bg: (0xF3F0E8, 0x141311), surface: (0xFFFDF8, 0x1E1D1A),
+                surface2: (0xE8E4DA, 0x2A2925), surfaceSunken: (0xECE9E1, 0x10100E),
+                ink: (0x1C1B19, 0xF4F0E6), ink2: (0x3A3935, 0xD4D0C4),
+                ink3: (0x5A5852, 0xA8A49A), ink4: (0x7A7872, 0x7C786E),
+                line: (0xD4D0C6, 0x3A3832), accent: (0x8F2D2A, 0xE8A09A),
+                accentSoft: (0xF3E6E4, 0x2E1C1B), clay: (0x8F2D2A, 0xC65E58),
+                onClay: (0xFFFDF8, 0x141311), danger: (0x9E2A2B, 0xF4A6A3),
+                dangerSoft: (0xF9EAE8, 0x362020)
+            ),
+        ]
+
+        func assertRGBA(_ color: Color, hex: UInt32, alpha expectedAlpha: CGFloat = 1, traits: UITraitCollection, label: String) {
+            let expected = [CGFloat((hex >> 16) & 255) / 255,
+                            CGFloat((hex >> 8) & 255) / 255,
+                            CGFloat(hex & 255) / 255]
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            XCTAssertTrue(UIColor(color).resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a), label)
+            for (actual, target) in zip([r, g, b], expected) {
+                XCTAssertEqual(actual, target, accuracy: 0.0001, label)
+            }
+            XCTAssertEqual(a, expectedAlpha, accuracy: 0.0001, label)
+        }
+
+        for spec in hexSpecs {
+            defaults.set(spec.direction.rawValue, forKey: AppThemeDirection.storageKey)
+            let tokens: [(String, Color, UInt32, UInt32)] = [
+                ("bg", Theme.bg, spec.bg.0, spec.bg.1),
+                ("surface", Theme.surface, spec.surface.0, spec.surface.1),
+                ("surface2", Theme.surface2, spec.surface2.0, spec.surface2.1),
+                ("surfaceSunken", Theme.surfaceSunken, spec.surfaceSunken.0, spec.surfaceSunken.1),
+                ("ink", Theme.ink, spec.ink.0, spec.ink.1),
+                ("ink2", Theme.ink2, spec.ink2.0, spec.ink2.1),
+                ("ink3", Theme.ink3, spec.ink3.0, spec.ink3.1),
+                ("ink4", Theme.ink4, spec.ink4.0, spec.ink4.1),
+                ("line", Theme.line, spec.line.0, spec.line.1),
+                ("clay", Theme.clay, spec.clay.0, spec.clay.1),
+                ("accent", Theme.accent, spec.accent.0, spec.accent.1),
+                ("clayDeep", Theme.clayDeep, spec.accent.0, spec.accent.1),
+                ("accentSoft", Theme.accentSoft, spec.accentSoft.0, spec.accentSoft.1),
+                ("claySoft", Theme.claySoft, spec.accentSoft.0, spec.accentSoft.1),
+                ("onClay", Theme.onClay, spec.onClay.0, spec.onClay.1),
+                ("danger", Theme.danger, spec.danger.0, spec.danger.1),
+                ("dangerSoft", Theme.dangerSoft, spec.dangerSoft.0, spec.dangerSoft.1),
+                ("focus", Theme.focus, spec.clay.0, spec.clay.1),
+                ("onInk", Theme.onInk, spec.bg.0, spec.bg.1),
+            ]
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                for contrast in [UIAccessibilityContrast.normal, .high] {
+                    let traits = UITraitCollection(traitsFrom: [
+                        UITraitCollection(userInterfaceStyle: style),
+                        UITraitCollection(accessibilityContrast: contrast),
+                    ])
+                    for (name, color, light, dark) in tokens {
+                        let hex = style == .dark ? dark : light
+                        assertRGBA(color, hex: hex, traits: traits, label: "\(spec.direction.rawValue).\(name), \(style), \(contrast)")
+                    }
+                    let fieldHex = style == .dark ? spec.ink.1 : spec.ink.0
+                    let fieldAlpha: CGFloat = style == .dark ? 0.16 : 0.14
+                    assertRGBA(Theme.lineField, hex: fieldHex, alpha: fieldAlpha, traits: traits,
+                               label: "\(spec.direction.rawValue).lineField, \(style), \(contrast)")
+                }
+            }
+        }
+
+        // 清透系统（systemClear）：系统语义色与 AA 安全显式色校验
+        defaults.set(AppThemeDirection.systemClear.rawValue, forKey: AppThemeDirection.storageKey)
+        let semanticPairs: [(String, Color, UIColor)] = [
+            ("bg", Theme.bg, .systemBackground),
+            ("surface", Theme.surface, .secondarySystemBackground),
+            ("surface2", Theme.surface2, .tertiarySystemBackground),
+            ("surfaceSunken", Theme.surfaceSunken, .systemGroupedBackground),
+            ("ink", Theme.ink, .label),
+            ("ink2", Theme.ink2, .secondaryLabel),
+            ("ink4", Theme.ink4, .tertiaryLabel),
+            ("line", Theme.line, .separator),
+        ]
+        let explicitSystemClear: [(String, Color, UInt32, UInt32)] = [
+            ("ink3", Theme.ink3, 0x3A3A3C, 0xC7C7CC),
+            ("accent", Theme.accent, 0x0B63CE, 0x64D2FF),
+            ("clayDeep", Theme.clayDeep, 0x0B63CE, 0x64D2FF),
+            ("accentSoft", Theme.accentSoft, 0xE8F1FC, 0x1A2A3D),
+            ("clay", Theme.clay, 0x0B63CE, 0x0A6CE2),
+            ("onClay", Theme.onClay, 0xFFFFFF, 0xFFFFFF),
+            ("danger", Theme.danger, 0xD70015, 0xFF6961),
+            ("dangerSoft", Theme.dangerSoft, 0xFDECEC, 0x3A1C1C),
         ]
         for style in [UIUserInterfaceStyle.light, .dark] {
-            for contrast in [UIAccessibilityContrast.normal, .high] {
-                let traits = UITraitCollection(traitsFrom: [
-                    UITraitCollection(userInterfaceStyle: style),
-                    UITraitCollection(accessibilityContrast: contrast)
-                ])
-                let field: (String, Color, UInt32, UInt32) = ("lineField", Theme.lineField, 0x232340, 0xFAF7FF)
-                for (name, color, light, dark) in tokens + [field] {
-                    let hex = style == .dark ? dark : light
-                    let expected = [CGFloat((hex >> 16) & 255) / 255,
-                                    CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255]
-                    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-                    XCTAssertTrue(UIColor(color).resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a), name)
-                    for (actual, expected) in zip([r, g, b], expected) {
-                        XCTAssertEqual(actual, expected, accuracy: 0.0001, "\(name), \(style), \(contrast)")
-                    }
-                    let alpha: CGFloat = name == "lineField" ? (style == .dark ? 0.16 : 0.14) : 1
-                    XCTAssertEqual(a, alpha, accuracy: 0.0001, name)
-                }
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            for (name, actualColor, uiSemantic) in semanticPairs {
+                var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+                var er: CGFloat = 0, eg: CGFloat = 0, eb: CGFloat = 0, ea: CGFloat = 0
+                XCTAssertTrue(UIColor(actualColor).resolvedColor(with: traits).getRed(&ar, green: &ag, blue: &ab, alpha: &aa), name)
+                XCTAssertTrue(uiSemantic.resolvedColor(with: traits).getRed(&er, green: &eg, blue: &eb, alpha: &ea), name)
+                XCTAssertEqual(ar, er, accuracy: 0.001, "systemClear.\(name) red \(style)")
+                XCTAssertEqual(ag, eg, accuracy: 0.001, "systemClear.\(name) green \(style)")
+                XCTAssertEqual(ab, eb, accuracy: 0.001, "systemClear.\(name) blue \(style)")
+                XCTAssertEqual(aa, ea, accuracy: 0.001, "systemClear.\(name) alpha \(style)")
+            }
+            for (name, color, light, dark) in explicitSystemClear {
+                assertRGBA(color, hex: style == .dark ? dark : light, traits: traits, label: "systemClear.\(name) \(style)")
             }
         }
     }
 
     @MainActor func testFocusTextContrastInBothAppearances() {
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            let pairs: [(Color, Color)] = [(Theme.ink, Theme.bg), (Theme.ink2, Theme.bg), (Theme.ink3, Theme.bg),
-                (Theme.accent, Theme.bg), (Theme.onClay, Theme.clay), (Theme.ink, Theme.readingHighlight), (Theme.ink3, Theme.surface2),
-                (Theme.accent, Theme.accentSoft), (Theme.onInk, Theme.ink), (Theme.ink2, Theme.surface), (Theme.ink3, Theme.surface),
-                (Theme.heroInk, Theme.hero), (Theme.ink2, Theme.hero), (Theme.accent, Theme.hero), (Theme.onMarker, Theme.marker)]
-            for (text, background) in pairs {
-                XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: UIColor(background).resolvedColor(with: traits)), 4.5,
-                    "Text \(UIColor(text).resolvedColor(with: traits)) on \(UIColor(background).resolvedColor(with: traits)), appearance \(style)")
+        let defaults = UserDefaults.standard
+        let savedDirection = defaults.object(forKey: AppThemeDirection.storageKey)
+        defer {
+            if let savedDirection { defaults.set(savedDirection, forKey: AppThemeDirection.storageKey) }
+            else { defaults.removeObject(forKey: AppThemeDirection.storageKey) }
+        }
+        for direction in AppThemeDirection.allCases {
+            defaults.set(direction.rawValue, forKey: AppThemeDirection.storageKey)
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                let pairs: [(String, Color, Color)] = [
+                    ("ink/bg", Theme.ink, Theme.bg),
+                    ("ink2/bg", Theme.ink2, Theme.bg),
+                    ("ink3/bg", Theme.ink3, Theme.bg),
+                    ("accent/bg", Theme.accent, Theme.bg),
+                    ("onClay/clay", Theme.onClay, Theme.clay),
+                    ("ink/readingHighlight", Theme.ink, Theme.readingHighlight),
+                    ("ink3/surface2", Theme.ink3, Theme.surface2),
+                    ("accent/accentSoft", Theme.accent, Theme.accentSoft),
+                    ("onInk/ink", Theme.onInk, Theme.ink),
+                    ("ink2/surface", Theme.ink2, Theme.surface),
+                    ("ink3/surface", Theme.ink3, Theme.surface),
+                    ("heroInk/hero", Theme.heroInk, Theme.hero),
+                    ("ink2/hero", Theme.ink2, Theme.hero),
+                    ("accent/hero", Theme.accent, Theme.hero),
+                    ("onMarker/marker", Theme.onMarker, Theme.marker),
+                ]
+                for (label, text, background) in pairs {
+                    let fg = UIColor(text).resolvedColor(with: traits)
+                    let bg = UIColor(background).resolvedColor(with: traits)
+                    XCTAssertGreaterThanOrEqual(
+                        fg.contrastRatio(with: bg), 4.5,
+                        "\(direction.rawValue) \(label): \(fg) on \(bg), appearance \(style)"
+                    )
+                }
             }
         }
+    }
+
+    @MainActor func testSwitchingThemeDirectionUpdatesColorsAndMetrics() {
+        let defaults = UserDefaults.standard
+        let savedDirection = defaults.object(forKey: AppThemeDirection.storageKey)
+        defer {
+            if let savedDirection { defaults.set(savedDirection, forKey: AppThemeDirection.storageKey) }
+            else { defaults.removeObject(forKey: AppThemeDirection.storageKey) }
+        }
+
+        // 未设置时默认回退到 warmPaper
+        defaults.removeObject(forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(AppThemeDirection.current, .warmPaper)
+        XCTAssertEqual(Theme.radius, 18)
+        XCTAssertEqual(Theme.heroRadius, 26)
+        XCTAssertEqual(Theme.inset, 24)
+
+        let light = UITraitCollection(userInterfaceStyle: .light)
+        let warmBg = UIColor(Theme.bg).resolvedColor(with: light)
+
+        // 切换到 editorial：圆角变硬朗（4pt），边距变宽（32pt），背景色改变
+        defaults.set(AppThemeDirection.editorial.rawValue, forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(AppThemeDirection.current, .editorial)
+        XCTAssertEqual(Theme.radius, 4)
+        XCTAssertEqual(Theme.heroRadius, 6)
+        XCTAssertEqual(Theme.buttonRadius, 3)
+        XCTAssertEqual(Theme.radiusPill, 4)
+        XCTAssertEqual(Theme.inset, 32)
+        let editorialBg = UIColor(Theme.bg).resolvedColor(with: light)
+        XCTAssertNotEqual(warmBg, editorialBg)
+
+        // 即使当前生效为 editorial，独立查询 warmPaper 预览色板与尺度仍保持暖纸原值
+        XCTAssertEqual(ThemeMetrics.metrics(for: .warmPaper).radius, 18)
+        XCTAssertEqual(UIColor(ThemePalette.palette(for: .warmPaper).bg).resolvedColor(with: light), warmBg)
+
+        // 切换到 nightInkGold 与 systemClear
+        defaults.set(AppThemeDirection.nightInkGold.rawValue, forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(Theme.radius, 12)
+        XCTAssertEqual(Theme.heroRadius, 18)
+        XCTAssertNotEqual(UIColor(Theme.bg).resolvedColor(with: light), editorialBg)
+
+        defaults.set(AppThemeDirection.systemClear.rawValue, forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(Theme.radius, 12)
+        XCTAssertEqual(Theme.heroRadius, 16)
+        XCTAssertEqual(Theme.inset, 20)
+        XCTAssertTrue(Theme.currentMetrics.usesMaterialChrome)
     }
 
     func testSMBAddressParsing() {
@@ -242,11 +425,20 @@ final class NativeCoreTests: XCTestCase {
     }
 
     @MainActor func testEveryCoverAndImageBackdropHasReadableSmallText() {
-        for style in [UIUserInterfaceStyle.light, .dark] {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            for name in ["green", "red", "vermilion", "purple", "blue", "ink", "gold", "cream", "unknown"] {
-                let foreground = UIColor(Theme.coverForeground(name)).resolvedColor(with: traits)
-                XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: Theme.coverUIColor(name).resolvedColor(with: traits)), 4.5, name)
+        let defaults = UserDefaults.standard
+        let savedDirection = defaults.object(forKey: AppThemeDirection.storageKey)
+        defer {
+            if let savedDirection { defaults.set(savedDirection, forKey: AppThemeDirection.storageKey) }
+            else { defaults.removeObject(forKey: AppThemeDirection.storageKey) }
+        }
+        for direction in AppThemeDirection.allCases {
+            defaults.set(direction.rawValue, forKey: AppThemeDirection.storageKey)
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                for name in ["green", "red", "vermilion", "purple", "blue", "ink", "gold", "cream", "unknown"] {
+                    let foreground = UIColor(Theme.coverForeground(name)).resolvedColor(with: traits)
+                    XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: Theme.coverUIColor(name).resolvedColor(with: traits)), 4.5, "\(direction.rawValue).\(name)")
+                }
             }
         }
         for color in [UIColor.white, .yellow, .green, .red, .black, UIColor(hex: 0xFAF0E8)] {

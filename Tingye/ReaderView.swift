@@ -290,6 +290,7 @@ struct ReaderView: View {
     @AppStorage(GeneralSettings.hideHomeIndicatorKey) private var hideHomeIndicator = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.themeDirection) private var themeDirection
     @State private var measuredStripHeight: CGFloat = 52
     @State private var measuredToolsHeight: CGFloat = 240
     @State private var measuredTopBarHeight: CGFloat = 76
@@ -448,7 +449,7 @@ struct ReaderView: View {
                                 Label("自动翻页 · 每 \(autoTurn) 秒 · 轻点停止", systemImage: Icon.autoTurn)
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 12).frame(minHeight: 44)
-                                    .background(readerPanelPaper, in: Capsule())
+                                    .floatingPanel(cornerRadius: Theme.radiusPill)
                             }
                             .buttonStyle(.plain).foregroundStyle(Theme.ink3)
                         }
@@ -599,7 +600,7 @@ struct ReaderView: View {
                     .presentationDetents(value == .contents ? [.medium, .large] : [.large])
                     .presentationDragIndicator(.visible)
                 }
-            }.environmentObject(model).tint(Theme.accent)
+            }.environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent)
         }
         .sheet(item: $shareItem) { ShareSheet(items: [$0.url]) }
         .confirmationDialog("结束这次听书？", isPresented: $endingListening, titleVisibility: .visible) {
@@ -610,7 +611,7 @@ struct ReaderView: View {
             FocusStartView(entry: entry, bookID: book.id, bookTitle: book.title, chapter: chapter, chapterTitle: current.title) {
                 focusPresented = false; dismiss()
             }
-            .environmentObject(model).tint(Theme.accent)
+            .environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent)
         }
         .sheet(isPresented: $finishPresented) {
             if let entry {
@@ -619,7 +620,7 @@ struct ReaderView: View {
                     dismiss()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { model.open(next) }
                 }, onCloseBook: { finishPresented = false; dismiss() })
-                .environmentObject(model).tint(Theme.accent)
+                .environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent)
             }
         }
     }
@@ -856,7 +857,7 @@ struct ReaderView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text(moreShowsAutoTurn ? "自动翻页" : "阅读工具")
-                    .font(Theme.serif(20)).foregroundStyle(Theme.ink)
+                    .font(Theme.heading(20)).foregroundStyle(Theme.ink)
                     .padding(.horizontal, 16).padding(.vertical, 12).accessibilityAddTraits(.isHeader)
                 Divider().overlay(Theme.ink3.opacity(0.3))
                 if moreShowsAutoTurn { autoTurnPanelRows } else { morePanelRows }
@@ -865,10 +866,8 @@ struct ReaderView: View {
         }
         .frame(width: 300)
         .frame(maxHeight: 540)
-        .background(readerPanelPaper)
+        .floatingPanel(cornerRadius: Theme.radius)
         .foregroundStyle(Theme.ink)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-        .overlay { RoundedRectangle(cornerRadius: Theme.radius).strokeBorder(Theme.line, lineWidth: 1) }
     }
 
     @ViewBuilder
@@ -2053,7 +2052,7 @@ struct ChapterScrubber: View {
             ZStack(alignment: .leading) {
                 ProgressLine(value: width > 0 ? knobCenter / width : 0, height: Theme.ruleHeavy * 2)
                     .accessibilityHidden(true)
-                Circle().fill(Theme.ink).frame(width: Theme.radius, height: Theme.radius).offset(x: knobCenter - 9)
+                Circle().fill(Theme.ink).frame(width: 18, height: 18).offset(x: knobCenter - 9)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())

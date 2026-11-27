@@ -117,6 +117,7 @@ struct ReadiumReaderView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.themeDirection) private var themeDirection
     @StateObject private var session = ReadiumReaderSession()
     @State private var chapter = 0
     @State private var position = 0
@@ -222,20 +223,22 @@ struct ReadiumReaderView: View {
                     ProgressView().controlSize(.large)
                     Text("正在打开 EPUB…").font(.headline)
                     Text("正在准备原书与阅读位置").font(.subheadline)
-                }.padding(24).background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 12))
+                }.padding(24).floatingPanel(cornerRadius: Theme.radius)
+                .foregroundStyle(Theme.ink)
                 .accessibilityElement(children: .combine)
             }
             if let error = session.error {
                 VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle").font(.title2).accessibilityHidden(true)
-                    Text("EPUB 打开失败").font(.title3.weight(.semibold))
+                    Image(systemName: "exclamationmark.triangle").font(.title2).foregroundStyle(Theme.danger).accessibilityHidden(true)
+                    Text("EPUB 打开失败").font(Theme.heading(20))
                     Text(error).font(.callout).multilineTextAlignment(.center)
                     Text("阅读位置和摘记已保留。可重试，或返回书架通过修书补齐文件。")
-                        .font(.footnote).foregroundStyle(Color(hex: palette.secondary))
-                    Button("重试") { persist(); ready = false; retry = UUID() }.buttonStyle(.borderedProminent)
+                        .font(.footnote).foregroundStyle(Theme.ink3)
+                    PrimaryButton("重试") { persist(); ready = false; retry = UUID() }
                 }
-                .padding(24).frame(maxWidth: 500)
-                .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: 18))
+                .foregroundStyle(Theme.ink)
+                .padding(Theme.cardInset).frame(maxWidth: 500)
+                .floatingPanel(cornerRadius: Theme.radius)
                 .padding(20)
             }
         }
@@ -334,7 +337,7 @@ struct ReadiumReaderView: View {
                     }
                 }
             }
-            .environmentObject(model).tint(Theme.accent)
+            .environmentObject(model).environment(\.themeDirection, themeDirection).tint(Theme.accent)
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
     }
@@ -388,7 +391,12 @@ struct ReadiumReaderView: View {
             }
             .frame(maxWidth: 720).frame(maxWidth: .infinity)
         }
-        .background(Theme.surface.ignoresSafeArea(edges: .bottom))
+        .background {
+            Rectangle()
+                .fill(themeDirection == .systemClear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.surface))
+                .padding(.top, Theme.heroRadius)
+                .ignoresSafeArea(edges: .bottom)
+        }
         .foregroundStyle(Theme.ink)
     }
     @ViewBuilder private var bottomActions: some View {
