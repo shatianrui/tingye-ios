@@ -1507,7 +1507,7 @@ struct EditorialIntro: View {
     var eyebrow: String? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.space2) {
-            MarqueeLights()
+            Rectangle().fill(appTheme.line).frame(height: Theme.hairline).accessibilityHidden(true)
             if let eyebrow {
                 HStack(spacing: 6) {
                     Rectangle().fill(appTheme.accent).frame(width: 7, height: 7).accessibilityHidden(true)
