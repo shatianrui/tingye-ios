@@ -901,7 +901,7 @@ struct ReaderView: View {
         moreRow(Icon.share, "导出备份") { shareBook() }
     }
 
-    /// 自动翻页子页：与主列表同一容器，选项行以陶土对勾标记当前值，选定后关面板。
+    /// 自动翻页子页：与主列表同一容器，选项行以主题强调色对勾标记当前值，选定后关面板。
     @ViewBuilder
     private var autoTurnPanelRows: some View {
         Button { moreShowsAutoTurn = false } label: {
@@ -959,7 +959,7 @@ struct ReaderView: View {
             ThemeIcon(symbol: icon, size: 21)
             Text(L(title)).font(Theme.sans(13)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(selected ? Theme.clayDeep : Theme.ink2)
+        .foregroundStyle(selected ? Theme.accent : Theme.ink2)
         .frame(maxWidth: .infinity, minHeight: Theme.rowMinHeight)
         .contentShape(Rectangle())
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -1295,7 +1295,7 @@ struct ReaderView: View {
             canExtendForward: value.end + 1 < sentences.count,
             tint: Theme.ink,
             paper: readerPanelPaper,
-            accent: Theme.clayDeep,
+            accent: Theme.accent,
             onMark: { color, style in
                 Haptics.selection()
                 if var item = existing { item.color = color; item.style = style; model.updateHighlight(book.id, item) }
@@ -1957,7 +1957,7 @@ struct ContentsView: View {
             HStack(spacing: 12) {
                 Text(String(format: "%02d", index + 1)).font(.caption.weight(index == currentChapter ? .semibold : .regular)).monospacedDigit().foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink3).frame(minWidth: 26, alignment: .leading)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(chapter.title).font(Theme.serif(17)).foregroundStyle(index == currentChapter ? Theme.clayDeep : Theme.ink)
+                    Text(chapter.title).font(Theme.serif(17)).foregroundStyle(index == currentChapter ? Theme.accent : Theme.ink)
                     if let snippet, !snippet.isEmpty { Text(snippet).font(.caption).lineLimit(2).foregroundStyle(Theme.ink2) }
                 }
                 Spacer()
@@ -2003,7 +2003,7 @@ struct ChapterScrubber: View {
     let chapter: Int
     let count: Int
     let isPDF: Bool
-    /// 上一章/下一章的常态前景（纸面墨色）；滑杆绘制已改走 Theme 陶土令牌，不再用此色。
+    /// 上一章/下一章的常态前景（纸面墨色）；滑杆绘制已改走 Theme 主题强调色令牌，不再用此色。
     let tint: Color
     let onStep: (Int) -> Void
     let onCommit: (Int) -> Void
@@ -2101,7 +2101,7 @@ struct ChapterScrubber: View {
     }
 }
 
-/// 上一章/下一章按钮：常态用传入的墨色，按下时整体转陶土强调（前景由样式统一施加，
+/// 上一章/下一章按钮：常态用传入的墨色，按下时整体转主题强调色（前景由样式统一施加，
 /// 标签内部不再单独着色，否则显式色会压过样式）。
 private struct ChapterStepButtonStyle: ButtonStyle {
     let normal: Color

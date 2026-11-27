@@ -122,7 +122,7 @@ struct DailyQuote: Equatable, Sendable {
 
 // MARK: - 摘句卡片（分享图）
 
-/// 刊式摘句卡：Anthropic 象牙白 `#FAF9F5`、浓墨双线报头、官方陶土题条 `#D97757`。导出为图片分享，始终使用日间配色。
+/// 摘句分享海报固定为放映厅深色，不随接收者的系统外观变化。
 struct QuoteShareCard: View {
     let text: String
     let title: String
@@ -130,47 +130,36 @@ struct QuoteShareCard: View {
     var chapter = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
-            VStack(spacing: 4) {
-                Rectangle().fill(Color(hex: 0x141413)).frame(height: 3)
-                Rectangle().fill(Color(hex: 0xD8D4C8)).frame(height: 1)
-            }
-            HStack(alignment: .firstTextBaseline) {
-                HStack(spacing: 10) {
-                    Rectangle().fill(Color(hex: 0xD97757)).frame(width: 14, height: 14)
-                    Text("听页 · 刊选摘句").font(.system(size: 18, weight: .semibold)).tracking(2)
-                }
+            HStack {
+                Label("听页 · 封面放映厅", systemImage: "film")
+                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.marker)
                 Spacer()
                 Text(Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits)))
-                    .font(.system(size: 16)).monospacedDigit()
-            }.foregroundStyle(Color(hex: 0x595853))
-            Rectangle().fill(Color(hex: 0xD97757)).frame(width: 56, height: 4)
+                    .font(.system(size: 16)).monospacedDigit().foregroundStyle(Theme.ink3)
+            }
+            Rectangle().fill(Theme.line).frame(height: 1)
             Text(text)
                 .font(Theme.serifBold(quoteSize)).lineSpacing(quoteSize * 0.4)
-                .foregroundStyle(Color(hex: 0x141413))
                 .fixedSize(horizontal: false, vertical: true).padding(.vertical, 36)
             VStack(alignment: .leading, spacing: 10) {
-                Text("《\(title)》").font(Theme.serifBold(26)).foregroundStyle(Color(hex: 0x141413))
+                Rectangle().fill(Theme.marker).frame(width: 56, height: 4)
+                Text("《\(title)》").font(Theme.serifBold(26))
                 let byline = [author, chapter].filter { !$0.isEmpty }.joined(separator: " · ")
                 if !byline.isEmpty {
-                    Text(byline).font(.system(size: 18)).foregroundStyle(Color(hex: 0x595853))
+                    Text(byline).font(.system(size: 18)).foregroundStyle(Theme.ink3)
                 }
             }
             Spacer(minLength: 48)
-            Rectangle().fill(Color(hex: 0xD8D4C8)).frame(height: 1.5)
-            HStack {
-                Text("留一点时间，给喜欢的文字。")
-                    .font(Theme.serif(18)).foregroundStyle(Color(hex: 0x595853))
-                Spacer()
-                Text("TINGYE · FOLIO")
-                    .font(.system(size: 14, weight: .semibold)).tracking(2.5)
-                    .foregroundStyle(Color(hex: 0xA6482B))
-            }
+            Rectangle().fill(Theme.line).frame(height: 1)
+            Text("TINGYE · SCREENING ROOM").font(.system(size: 14, weight: .semibold)).tracking(2.5)
+                .foregroundStyle(Theme.marker)
         }
         .padding(64)
         .frame(width: 900, alignment: .leading)
         .frame(minHeight: 1125, alignment: .top)
-        .background(Color(hex: 0xFAF9F5))
-        .environment(\.colorScheme, .light)
+        .foregroundStyle(Theme.ink)
+        .background(Theme.bg)
+        .environment(\.colorScheme, .dark)
     }
 
     /// 渲染为分享图；失败返回 nil（调用方退回纯文字分享）。

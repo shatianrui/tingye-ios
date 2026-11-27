@@ -111,7 +111,7 @@ struct NotesUnifiedView: View {
                         Text(group.entry.title).font(Theme.serif(17)).foregroundStyle(Theme.ink).textCase(nil)
                         SealBadge(text: "\(group.items.count) 条", color: Theme.ink3, background: Theme.surface2)
                         Spacer()
-                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.clayDeep).frame(minHeight: Theme.iconButtonSize) }
+                        ShareLink(item: Self.markdown(group.entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.link).frame(minHeight: Theme.iconButtonSize) }
                             .accessibilityLabel("导出《\(group.entry.title)》摘记")
                     }
                 }
@@ -152,7 +152,8 @@ struct NotesUnifiedView: View {
                         )
                         .frame(width: item.kind == .bookmark ? 2 : 3.5)
                         VStack(alignment: .leading, spacing: Theme.space2) {
-                            SealBadge(text: item.kind.rawValue, color: Theme.ink3, background: Theme.surface2)
+                            Label(item.kind.rawValue, systemImage: item.kind == .bookmark ? "bookmark" : (item.kind == .note ? "pencil" : "highlighter"))
+                                .font(.caption.weight(.medium)).foregroundStyle(Theme.ink3)
                             Text(item.text).font(Theme.serif(17, relativeTo: .body))
                                 .lineSpacing(6).foregroundStyle(Theme.ink).lineLimit(5)
                             if let noteText = item.noteText {
@@ -173,7 +174,7 @@ struct NotesUnifiedView: View {
                     HStack(spacing: Theme.space3) {
                         Button { model.open(entry, target: item.target) } label: {
                             Label("回到原文", systemImage: Icon.read).frame(minHeight: Theme.iconButtonSize)
-                        }.foregroundStyle(Theme.clayDeep)
+                        }.foregroundStyle(Theme.link)
                         Spacer(minLength: 0)
                         Button(role: .destructive) { beginRemoval(item, entry: entry) } label: {
                             Label(item.kind == .bookmark ? "移除书签" : "删除标注…", systemImage: Icon.delete)

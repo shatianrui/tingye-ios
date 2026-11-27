@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 阅读日历：按月查看每天的阅读 / 听书时长，陶土淡底表示读日，达到每日目标的日子加粗下划线。
+/// 阅读日历：按月查看每天的阅读 / 听书时长，强调色淡底表示读日，达到每日目标的日子加粗下划线。
 struct ReadingCalendarView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss

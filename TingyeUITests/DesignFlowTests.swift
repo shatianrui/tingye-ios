@@ -470,6 +470,23 @@ final class DesignFlowTests: XCTestCase {
         screenshot(app, "书房-夜间书架")
     }
 
+    func testCoverRoomChangesSelectionWithoutOpeningReader() {
+        let app = launch("shelf")
+        let title = app.staticTexts["study.heroTitle"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        let original = title.label
+        let next = app.buttons["下一本"], previous = app.buttons["上一本"]
+        let forward = next.isEnabled
+        let change = forward ? next : previous
+        reveal(change, in: app)
+        change.tap()
+        waitForReadingCondition({ title.exists && title.label != original }, "切换封面应更新当前书名，而不直接进入阅读器")
+        XCTAssertTrue(app.buttons["study.heroContinue"].exists)
+        (forward ? previous : next).tap()
+        waitForReadingCondition({ title.label == original }, "返回原封面应恢复原书名")
+        screenshot(app, "cover-room-shelf")
+    }
+
     func testShelfOrganizeAndDetailsAreExplicit() {
         let app = launch("shelf")
         let organize = app.buttons["shelf.organize"]

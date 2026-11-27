@@ -918,7 +918,7 @@ struct ICloudBackupView: View {
                             Text("自动同步阅读进度").font(Theme.sans(16))
                             Text("只同步章节与句子位置，不上传书籍").font(Theme.sans(13)).foregroundStyle(Theme.ink3)
                         }
-                    }.tint(Theme.clay)
+                    }.tint(Theme.accent)
                 }
             }
             ProgressSyncStatusRows(sync: model.sync, enabled: syncProgress)

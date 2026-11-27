@@ -587,7 +587,7 @@ struct ProfileView: View {
                 HairlineRow {
                     Toggle(isOn: $appLock) {
                         EditorialRow(title: "应用锁", detail: "打开时使用\(PrivacyLock.biometryName)验证", symbol: Icon.lock(appLock), disclosure: false)
-                    }.tint(Theme.clay)
+                    }.tint(Theme.accent)
                 }
                 Button {
                     if model.hiddenUnlocked { model.hiddenUnlocked = false } else { Task { await model.unlockHidden() } }
@@ -660,11 +660,11 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: "让听页，更合你的习惯。", subtitle: "象牙暖纸、炭墨正文与陶土印记。选择适合此刻的界面。", kicker: "外观主题", titleSize: 28)
+                Masthead(title: "封面放映厅", subtitle: "选择界面的明暗外观。书籍封面保留原色。", kicker: "外观主题", titleSize: 28)
                 VStack(spacing: Theme.space3) {
                     appearanceOption("system", title: "跟随系统", subtitle: "随设备外观自动切换")
-                    appearanceOption("light", title: "日间", subtitle: "冷灰纸面、墨色文字与窗蓝标记")
-                    appearanceOption("dark", title: "夜间", subtitle: "深窗色背景，安静地读入夜里")
+                    appearanceOption("light", title: "日间", subtitle: "浅紫灰背景，深靛色文字")
+                    appearanceOption("dark", title: "夜间", subtitle: "午夜靛蓝背景，暖金色标记")
                 }
                 Text("正文的纸色可在「阅读排版」中单独选择。")
                     .font(.caption)
@@ -719,11 +719,10 @@ struct AppearanceView: View {
                 Rectangle().fill(Theme.clay).frame(width: 8, height: 6)
                 Rectangle().fill(Theme.ink).frame(width: 32, height: 2)
             }
-            Rectangle().fill(Theme.surface).frame(height: Theme.space5)
-                .overlay(alignment: .leading) {
-                    Rectangle().fill(Theme.clay).frame(width: 3).padding(.vertical, 3)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall).fill(Theme.onMarker).frame(height: Theme.space5)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 2).fill(Theme.marker).frame(width: 11, height: 16)
                 }
-                .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
             Rectangle().fill(Theme.ink3).frame(width: 40, height: Theme.progressHeight)
             Rectangle().fill(Theme.line).frame(height: Theme.progressHeight)
         }

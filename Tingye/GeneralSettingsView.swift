@@ -91,7 +91,7 @@ struct SettingsPage<Content: View>: View {
             .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space5)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
-        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.clay)
+        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.accent)
     }
 }
 
