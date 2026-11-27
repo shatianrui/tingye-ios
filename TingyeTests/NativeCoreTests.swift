@@ -1054,17 +1054,40 @@ final class NativeCoreTests: XCTestCase {
         XCTAssertTrue(Samples.books.allSatisfy(\.sample))
     }
     @MainActor func testSpeechHighlightUsesUTF16AndKeepsSourceUnchanged() {
+        func assertResolvedRGBAEqual(_ actual: Any?, _ expected: UIColor, file: StaticString = #filePath, line: UInt = #line) {
+            guard let actualColor = actual as? UIColor else {
+                XCTFail("Expected UIColor, got \(String(describing: actual))", file: file, line: line)
+                return
+            }
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+                var er: CGFloat = 0, eg: CGFloat = 0, eb: CGFloat = 0, ea: CGFloat = 0
+                XCTAssertTrue(actualColor.resolvedColor(with: traits).getRed(&ar, green: &ag, blue: &ab, alpha: &aa), file: file, line: line)
+                XCTAssertTrue(expected.resolvedColor(with: traits).getRed(&er, green: &eg, blue: &eb, alpha: &ea), file: file, line: line)
+                XCTAssertEqual(ar, er, accuracy: 0.0001, file: file, line: line)
+                XCTAssertEqual(ag, eg, accuracy: 0.0001, file: file, line: line)
+                XCTAssertEqual(ab, eb, accuracy: 0.0001, file: file, line: line)
+                XCTAssertEqual(aa, ea, accuracy: 0.0001, file: file, line: line)
+            }
+        }
+
         let chapter = Chapter(title: "正文", text: "山📖。清风徐来，水波不兴。")
         let source = NativeTypesetter.attributed(chapter, preferences: .init())
         let sentences = Sentence.split(chapter.text)
         let word = (chapter.text as NSString).range(of: "水波")
         let result = SpeechHighlight.apply(to: source, sentence: sentences[1].range)
+        let expectedWash = UIColor(Theme.wash)
         XCTAssertEqual(result.string, source.string)
         XCTAssertNil(source.attribute(.backgroundColor, at: word.location, effectiveRange: nil))
-        XCTAssertEqual(result.attribute(.backgroundColor, at: word.location, effectiveRange: nil) as? UIColor, UIColor(Theme.wash))
+        assertResolvedRGBAEqual(result.attribute(.backgroundColor, at: word.location, effectiveRange: nil), expectedWash)
         for offset in sentences[1].range.location..<NSMaxRange(sentences[1].range) {
-            XCTAssertEqual(result.attribute(.backgroundColor, at: offset, effectiveRange: nil) as? UIColor, UIColor(Theme.wash))
-            XCTAssertEqual(result.attribute(.foregroundColor, at: offset, effectiveRange: nil) as? UIColor, source.attribute(.foregroundColor, at: offset, effectiveRange: nil) as? UIColor)
+            assertResolvedRGBAEqual(result.attribute(.backgroundColor, at: offset, effectiveRange: nil), expectedWash)
+            let sourceForeground = source.attribute(.foregroundColor, at: offset, effectiveRange: nil) as? UIColor
+            XCTAssertNotNil(sourceForeground)
+            if let sourceForeground {
+                assertResolvedRGBAEqual(result.attribute(.foregroundColor, at: offset, effectiveRange: nil), sourceForeground)
+            }
         }
         XCTAssertNil(result.attribute(.backgroundColor, at: 0, effectiveRange: nil))
         let invalid = SpeechHighlight.apply(to: source, sentence: NSRange(location: 9999, length: 30))
