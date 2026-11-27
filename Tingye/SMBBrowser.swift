@@ -96,44 +96,49 @@ struct SMBBrowser: View {
 
     var body: some View {
         List {
-            Masthead(title: "局域网书库", subtitle: "选择共享文件夹，浏览后将需要的书导入本机。", titleSize: 28)
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             if let error {
                 Section {
                     EditorialNotice(title: "无法读取共享书库", detail: error, kind: .failure)
-                    Button("重新加载") { Task { await load() } }.disabled(loading)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                    Button("重新加载") { Task { await load() } }
+                        .disabled(loading)
+                        .listRowBackground(Theme.groupedCard)
                 }
             }
             if share == nil {
-                ForEach(shares, id: \.self) { name in
-                    NavigationLink { SMBBrowser(source: source, share: name, path: "", connection: connection) } label: {
-                        HairlineRow(title: name, symbol: Icon.folder)
+                if !shares.isEmpty {
+                    Section("共享文件夹") {
+                        ForEach(shares, id: \.self) { name in
+                            NavigationLink { SMBBrowser(source: source, share: name, path: "", connection: connection) } label: {
+                                EditorialRow(title: name, symbol: Icon.folder, disclosure: false)
+                            }
+                        }
+                        .listRowBackground(Theme.groupedCard)
                     }
                 }
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
-            } else {
-                ForEach(shownFiles) { item in
-                    if item.isFolder {
-                        NavigationLink { SMBBrowser(source: source, share: share, path: join(item.name), connection: connection) } label: { row(item) }
-                    } else {
-                        Button { download(item) } label: { row(item) }
-                            .disabled(!ImportableFile.accepts(item.name) || model.busy)
+            } else if !shownFiles.isEmpty {
+                Section(path.isEmpty ? (share ?? "") : path) {
+                    ForEach(shownFiles) { item in
+                        if item.isFolder {
+                            NavigationLink { SMBBrowser(source: source, share: share, path: join(item.name), connection: connection) } label: { row(item) }
+                        } else {
+                            Button { download(item) } label: { row(item) }
+                                .buttonStyle(.plain)
+                                .disabled(!ImportableFile.accepts(item.name) || model.busy)
+                        }
                     }
+                    .listRowBackground(Theme.groupedCard)
                 }
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
         }
         .overlay {
-            if loading { EmptyState(title: "局域网书库", detail: "选择共享文件夹，浏览后将需要的书导入本机。", state: .loading) }
+            if loading { EmptyState(title: "正在连接局域网书库…", detail: source.name, state: .loading) }
             else if error == nil && (share == nil ? shares.isEmpty : shownFiles.isEmpty) {
-                EmptyState(title: share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), detail: "")
+                EmptyState(title: share == nil ? "没有可用的共享" : (query.isEmpty ? "空文件夹" : "未找到匹配文件"), detail: "", symbol: query.isEmpty ? Icon.folder : Icon.search)
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .tint(Theme.clayDeep)
-        .environment(\.defaultMinListRowHeight, Theme.rowMinHeight)
-        .background(Theme.bg)
+        .editorialList()
         .navigationTitle(share == nil ? source.name : (path.isEmpty ? share! : (path as NSString).lastPathComponent))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
@@ -147,10 +152,13 @@ struct SMBBrowser: View {
 
     private func row(_ item: SMBEntry) -> some View {
         let importable = ImportableFile.accepts(item.name)
-        return HairlineRow(title: item.name,
+        return EditorialRow(
+            title: item.name,
             detail: item.isFolder ? "文件夹" : ByteCountFormatter.string(fromByteCount: Int64(item.size), countStyle: .file),
-            value: item.isFolder ? nil : (importable ? "导入" : "不支持此格式"),
-            symbol: item.isFolder ? Icon.folder : Icon.document)
+            value: item.isFolder ? nil : (importable ? "导入" : "不支持"),
+            symbol: item.isFolder ? Icon.folder : Icon.document,
+            disclosure: false
+        )
     }
 
     private func load() async {

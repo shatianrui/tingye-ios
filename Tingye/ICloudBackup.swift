@@ -869,7 +869,7 @@ struct ICloudBackupView: View {
     var body: some View {
         SettingsPage(title: "安心保管你的书", detail: "原书、进度与摘记一起备份；阅读进度可独立同步。") {
             if localBookCount == 0 {
-                EmptyState(title: "还没有本机书籍可备份", detail: "先导入书籍，或从已有备份恢复。")
+                EmptyState(title: "还没有本机书籍可备份", detail: "先导入书籍，或从已有备份恢复。", symbol: Icon.cloud)
             }
             if model.restoringLibrary {
                 EmptyState(title: "正在恢复书库", detail: "恢复完成前暂时不能修改书库，请保持应用开启。", state: .loading)
@@ -940,7 +940,8 @@ struct ICloudBackupView: View {
                 .disabled(model.busy || localBookCount == 0)
                 .accessibilityIdentifier("icloud.backup")
                 .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
-                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity).background(Theme.bg)
+                .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
+                .barMaterialBackground()
         }
         .sheet(item: $export) { ShareSheet(items: [$0.url]) }
         .fileImporter(isPresented: $importingRestore, allowedContentTypes: [UTType.json, .data], allowsMultipleSelection: false) { result in

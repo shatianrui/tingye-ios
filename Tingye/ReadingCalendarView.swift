@@ -5,27 +5,39 @@ struct ReadingCalendarView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.themeDirection) private var themeDirection
     @AppStorage("goal.dailyMinutes") private var goalMinutes = 30
     @State private var month = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
     @State private var selected = Calendar.current.startOfDay(for: Date())
     private var calendar: Calendar { var c = Calendar.current; c.firstWeekday = 2; return c }
 
     var body: some View {
+        let clear = themeDirection == .systemClear
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.space5) {
-                    Masthead(title: "阅读日历", subtitle: "选择一天，看看那天读过的书。", titleSize: 28)
-                    header
-                    ScrollView(.horizontal) {
-                        VStack(spacing: Theme.space3) { weekdayRow; grid }.frame(minWidth: 332)
-                    }.paperPanel(inset: Theme.space3)
+                VStack(alignment: .leading, spacing: Theme.space4) {
+                    if !clear {
+                        Masthead(title: "阅读日历", subtitle: "选择一天，看看那天读过的书。", rule: false, titleSize: 26)
+                    }
+                    VStack(spacing: Theme.space3) {
+                        header
+                        weekdayRow
+                        grid
+                    }
+                    .padding(Theme.cardInset)
+                    .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                            .strokeBorder(clear ? Theme.line.opacity(0.22) : Theme.line, lineWidth: Theme.hairline)
+                    }
                     dayDetail
                     monthSummary
                 }
-                .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space4)
+                .padding(.horizontal, Theme.insetCompact).padding(.vertical, Theme.space4)
                 .frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
-            .paperBackground()
+            .groupedBackground()
+            .sheetSurface()
             .navigationTitle("阅读日历")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
@@ -34,14 +46,14 @@ struct ReadingCalendarView: View {
 
     private var header: some View {
         HStack {
-            Button { shift(-1) } label: { ThemeIcon(symbol: Icon.back, size: 18).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
+            Button { shift(-1) } label: { ThemeIcon(symbol: Icon.back, size: 17).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
                 .accessibilityLabel("上个月")
             Spacer()
             Text(month.formatted(.dateTime.year().month(.wide).locale(Locale.app)))
-                .font(Theme.serif(24, relativeTo: .title2))
+                .font(Theme.heading(20, relativeTo: .title3))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
-            Button { shift(1) } label: { ThemeIcon(symbol: Icon.disclosure, size: 18).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
+            Button { shift(1) } label: { ThemeIcon(symbol: Icon.disclosure, size: 17).frame(width: Theme.iconButtonSize, height: Theme.iconButtonSize) }
                 .accessibilityLabel("下个月")
                 .disabled(isCurrentMonth).opacity(isCurrentMonth ? 0.3 : 1)
         }
@@ -51,37 +63,58 @@ struct ReadingCalendarView: View {
     private var weekdayRow: some View {
         HStack(spacing: 0) {
             ForEach(Self.weekdaySymbols(calendar), id: \.self) { day in
-                Text(day).font(Theme.sans(13)).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
+                Text(day).font(.caption.weight(.medium)).foregroundStyle(Theme.ink3).frame(maxWidth: .infinity)
             }
         }
         .accessibilityHidden(true)
     }
 
     private var grid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+        let clear = themeDirection == .systemClear
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: clear ? 4 : 0), count: 7), spacing: clear ? 4 : 0) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                if let date { dayCell(date) } else { Color.clear.frame(height: Theme.space7).overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) } }
+                if let date {
+                    dayCell(date)
+                } else {
+                    Color.clear
+                        .frame(height: 44)
+                        .overlay {
+                            if !clear { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+                        }
+                }
             }
         }
     }
 
     private func dayCell(_ date: Date) -> some View {
+        let clear = themeDirection == .systemClear
         let minutes = Self.minutes(model.readingSeconds, on: date)
         let isSelected = calendar.isDate(date, inSameDayAs: selected)
         let future = date > Date()
         let today = calendar.isDateInToday(date)
         return Button { selected = date } label: {
-            VStack(spacing: Theme.space1) {
+            VStack(spacing: 4) {
                 Text("\(calendar.component(.day, from: date))")
-                    .font(Theme.sans(15)).monospacedDigit()
-                Rectangle().fill(minutes >= goalMinutes ? Theme.ink : .clear).frame(width: Theme.space3, height: Theme.ruleMedium)
+                    .font(.subheadline.weight(today || isSelected ? .semibold : .regular)).monospacedDigit()
+                Capsule()
+                    .fill(minutes >= goalMinutes ? (clear ? Theme.accent : Theme.ink) : .clear)
+                    .frame(width: 12, height: 2.5)
             }
-            .foregroundStyle(future ? Theme.ink4 : Theme.ink)
-            .frame(maxWidth: .infinity, minHeight: Theme.space7)
-            .background(minutes > 0 ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-            .overlay { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-            .overlay { if today { Circle().strokeBorder(Theme.clay, lineWidth: Theme.rule).padding(Theme.space1) } }
-            .overlay { if isSelected { RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.ink2, lineWidth: Theme.rule) } }
+            .foregroundStyle(future ? Theme.ink4 : (isSelected && clear ? Theme.accent : Theme.ink))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(minutes > 0 ? Theme.claySoft : .clear, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            .overlay {
+                if !clear { Rectangle().strokeBorder(Theme.line, lineWidth: Theme.hairline) }
+            }
+            .overlay {
+                if today {
+                    RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                        .strokeBorder(Theme.clay, lineWidth: 1.5)
+                } else if isSelected {
+                    RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                        .strokeBorder(clear ? Theme.accent : Theme.ink2, lineWidth: 1.5)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -91,35 +124,46 @@ struct ReadingCalendarView: View {
     }
 
     private var dayDetail: some View {
+        let clear = themeDirection == .systemClear
         let minutes = Self.minutes(model.readingSeconds, on: selected)
         let sessions = model.visibleSessions.filter { calendar.isDate($0.start, inSameDayAs: selected) }
         let books = Dictionary(grouping: sessions, by: \.title).map { ($0.key, $0.value.reduce(0) { $0 + $1.seconds }) }.sorted { $0.1 > $1.1 }
         return VStack(alignment: .leading, spacing: Theme.space2) {
             Text(selected.formatted(.dateTime.month().day().weekday(.wide).locale(Locale.app)))
-                .font(Theme.sans(13)).tracking(0.6).foregroundStyle(Theme.clayDeep)
+                .font(.footnote.weight(.semibold)).foregroundStyle(Theme.clayDeep)
             HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
-                Text("\(minutes)").font(Theme.serif(40, relativeTo: .largeTitle)).monospacedDigit()
+                Text("\(minutes)").font(Theme.display(34, relativeTo: .largeTitle)).monospacedDigit()
                 Text("分钟").font(.subheadline).foregroundStyle(Theme.ink2)
                 Spacer()
-                if minutes >= goalMinutes { Text("达成目标").font(Theme.sans(13)).foregroundStyle(Theme.clayDeep) }
+                if minutes >= goalMinutes { SealBadge(text: "达成目标") }
             }
             if books.isEmpty && minutes == 0 {
-                EmptyState(title: "这一天还没有阅读记录。", detail: "选择一天，看看那天读过的书。")
+                Text("这一天还没有阅读记录。")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink2)
+                    .padding(.top, 4)
             }
-            ForEach(books, id: \.0) { title, seconds in
-                HairlineRow {
+            ForEach(Array(books.enumerated()), id: \.element.0) { index, pair in
+                HairlineRow(showsDivider: index < books.count - 1) {
                     HStack {
-                        Text(title.isEmpty ? "未命名" : "《\(title)》").font(Theme.serif(17)).lineLimit(1)
+                        Text(pair.0.isEmpty ? "未命名" : "《\(pair.0)》").font(clear ? .subheadline.weight(.medium) : Theme.serif(17)).lineLimit(1)
                         Spacer()
-                        Text("\(max(1, Int(seconds / 60))) 分").font(.footnote).monospacedDigit().foregroundStyle(Theme.ink2)
+                        Text("\(max(1, Int(pair.1 / 60))) 分钟").font(.footnote).monospacedDigit().foregroundStyle(Theme.ink2)
                     }
                 }
             }
+        }
+        .padding(Theme.cardInset)
+        .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                .strokeBorder(clear ? Theme.line.opacity(0.22) : Theme.line, lineWidth: Theme.hairline)
         }
         .foregroundStyle(Theme.ink)
     }
 
     private var monthSummary: some View {
+        let clear = themeDirection == .systemClear
         let monthDays = days.compactMap { $0 }
         let read = monthDays.filter { Self.minutes(model.readingSeconds, on: $0) >= 1 }.count
         let reached = monthDays.filter { Self.minutes(model.readingSeconds, on: $0) >= goalMinutes }.count
@@ -128,7 +172,13 @@ struct ReadingCalendarView: View {
             summary("\(read)", "阅读天数")
             summary("\(reached)", "达标天数")
             summary("\(total)", "本月分钟")
-        }.paperPanel()
+        }
+        .padding(Theme.cardInset)
+        .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                .strokeBorder(clear ? Theme.line.opacity(0.22) : Theme.line, lineWidth: Theme.hairline)
+        }
     }
 
     private func summary(_ value: String, _ label: String) -> some View {

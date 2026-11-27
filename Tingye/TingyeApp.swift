@@ -20,8 +20,8 @@ struct TingyeApp: App {
         Theme.applyUIKitAppearance()
     }
     @AppStorage("app.appearance") private var appearanceMode = "system"
-    @AppStorage(AppThemeDirection.storageKey) private var uiDirectionRaw = AppThemeDirection.warmPaper.rawValue
-    private var uiDirection: AppThemeDirection { AppThemeDirection(rawValue: uiDirectionRaw) ?? .warmPaper }
+    @AppStorage(AppThemeDirection.storageKey) private var uiDirectionRaw = AppThemeDirection.systemClear.rawValue
+    private var uiDirection: AppThemeDirection { AppThemeDirection(rawValue: uiDirectionRaw) ?? .systemClear }
     var body: some Scene {
         WindowGroup {
             StudyRootView()
@@ -37,7 +37,7 @@ struct TingyeApp: App {
                     Theme.applyUIKitAppearance(for: uiDirection)
                 }
                 .onChange(of: uiDirectionRaw) { _, raw in
-                    let direction = AppThemeDirection(rawValue: raw) ?? .warmPaper
+                    let direction = AppThemeDirection(rawValue: raw) ?? .systemClear
                     Theme.applyUIKitAppearance(for: direction)
                     model.objectWillChange.send()
                 }
@@ -226,40 +226,11 @@ struct StudyRootView: View {
             NavigationStack(path: $path) {
                 ShelfView()
                     .navigationDestination(for: StudyRoute.self) { _ in
-                        // ji 版自带隐藏导航栏、无系统返回箭头，故传入返回动作：
-                        // 页眉返回按钮清空编程式导航路径，回到书库根页面。
                         StatsView(ji: true, onBack: { path = [] })
                     }
-                    // ShelfView 在根目录隐藏系统导航栏，故入口放在页面顶部安全区工具栏：
-                    // 图标按钮 push 到「我的」（统计 / 书摘 / 设置目录均在 StatsView 内可达）。
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        HStack(spacing: Theme.space2) {
-                            HStack(spacing: 6) {
-                                if !clear {
-                                    Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                                }
-                                Text(clear ? "听页" : "TINGYE · 听页")
-                                    .font(Theme.masthead).tracking(Theme.mastheadTracking)
-                                    .foregroundStyle(Theme.ink3)
-                            }
-                            .accessibilityHidden(true)
-                            Spacer()
-                            NavigationLink(value: StudyRoute.me) {
-                                Label("我的", systemImage: Icon.profile)
-                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
-                                    .padding(.horizontal, Theme.space3).frame(minHeight: Theme.iconButtonSize)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PressButtonStyle(scale: 0.92))
-                            .accessibilityLabel("我的")
-                            .accessibilityIdentifier("study.openProfile")
-                        }
-                        .padding(.horizontal, Theme.inset)
-                        .background(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.bg))
-                    }
-                    .toolbarBackground(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.bg), for: .navigationBar)
+                    .toolbarBackground(clear ? AnyShapeStyle(.systemChromeMaterial) : AnyShapeStyle(Theme.bg), for: .navigationBar)
             }
-            .background(Theme.bg)
+            .background(Theme.groupedCanvas)
             // 迷你播放器与现行一致挂在根结构下方；ShelfView 整理 / 搜索时经
             // LibraryNavigationHiddenKey 隐藏，与旧底栏的隐藏行为一致。
             if !navigationHidden {
@@ -267,7 +238,7 @@ struct StudyRootView: View {
             }
         }
         .disabled(model.restoringLibrary)
-        .paperBackground()
+        .groupedBackground()
         .onPreferenceChange(LibraryNavigationHiddenKey.self) { navigationHidden = $0 }
         // 启动停在书库，由读者选择续读或换书。
         .onChange(of: scenePhase) { _, phase in
@@ -451,13 +422,13 @@ extension UIUserInterfaceStyle {
 
 // MARK: - 迷你播放器（底部导航上方）
 
-/// 迷你播放器以中性样式保留「展开」与「播放 / 暂停」；跳句、设置和结束统一在完整听书页。
+/// 迷你播放器：清透系统采用原生材料底栏、清晰字阶与充足触控热区；跳句、设置和结束统一在完整听书页。
 struct MiniPlayer: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var player: SpeechPlayer
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.themeDirection) private var themeDirection
-    private var layout: AnyLayout { typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4)) }
+    private var layout: AnyLayout { typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 6)) }
     var body: some View {
         let clear = themeDirection == .systemClear
         let editorial = themeDirection == .editorial
@@ -466,23 +437,23 @@ struct MiniPlayer: View {
                 layout {
                     Button { model.showingPlayer = true } label: {
                         HStack(spacing: 12) {
-                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 24)
-                            VStack(alignment: .leading, spacing: 1) {
+                            BookCoverView(title: book.title, color: book.color, image: model.covers[book.id], width: 32)
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(book.title)
-                                    .font(Theme.serif(17))
+                                    .font(clear ? .subheadline.weight(.semibold) : Theme.serif(16))
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                                 Text(subtitle)
-                                    .font(.caption2)
+                                    .font(.caption)
                                     .monospacedDigit()
                                     .foregroundStyle(Theme.ink2)
                                     .lineLimit(1)
                             }
-                            Spacer(minLength: 0)
-                            ThemeIcon(symbol: Icon.expandUp, size: 18).foregroundStyle(Theme.ink3)
+                            Spacer(minLength: 4)
+                            ThemeIcon(symbol: Icon.expandUp, size: 15).foregroundStyle(Theme.ink3)
                                 .accessibilityHidden(true)
                         }
-                        .frame(minHeight: 44).contentShape(Rectangle())
+                        .frame(minHeight: 48).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("展开听书页：\(book.title)，\(subtitle)")
@@ -491,11 +462,18 @@ struct MiniPlayer: View {
                     if let entry = model.entries.first(where: { $0.id == book.id }) {
                         Button { Haptics.light(); model.open(entry, chapter: player.chapter, position: player.position) } label: {
                             ThemeIcon(symbol: Icon.listening, size: 16)
-                                .foregroundStyle(Theme.ink)
+                                .foregroundStyle(clear ? Theme.accent : Theme.ink)
                                 .frame(width: 34, height: 34)
-                                .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                                .overlay { RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous).strokeBorder(Theme.line, lineWidth: Theme.hairline) }
-                                .contentShape(Rectangle())
+                                .background(
+                                    clear ? Color(uiColor: .tertiarySystemFill) : Theme.surface2,
+                                    in: RoundedRectangle(cornerRadius: clear ? 17 : Theme.buttonRadius, style: .continuous)
+                                )
+                                .overlay {
+                                    if !clear {
+                                        RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+                                            .strokeBorder(Theme.line, lineWidth: Theme.hairline)
+                                    }
+                                }
                                 .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(Rectangle())
                         }
@@ -514,8 +492,7 @@ struct MiniPlayer: View {
                         }
                         .foregroundStyle(Theme.onClay)
                         .frame(width: 34, height: 34)
-                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
-                        .contentShape(Rectangle())
+                        .background(Theme.clay, in: RoundedRectangle(cornerRadius: clear ? 17 : Theme.buttonRadius, style: .continuous))
                         .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                     }
@@ -523,24 +500,22 @@ struct MiniPlayer: View {
                     .accessibilityLabel(player.playing ? "暂停朗读" : "继续朗读")
                     .accessibilityIdentifier("miniPlayer.toggle")
                 }
-                .padding(.leading, Theme.inset - 4)
-                .padding(.trailing, Theme.inset - 8)
+                .padding(.leading, Theme.insetCompact)
+                .padding(.trailing, Theme.insetCompact - 4)
                 .padding(.vertical, 4)
-                .frame(maxWidth: 560)
+                .frame(maxWidth: Theme.pageWidth)
                 .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, Theme.space2)
-            .background(clear ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Theme.surface))
+            .padding(.bottom, 2)
+            .background(clear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.surface))
             .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(editorial ? Theme.ink : Theme.line)
-                    .frame(height: editorial ? Theme.ruleMedium : Theme.hairline)
-                    .accessibilityHidden(true)
-            }
-            .overlay(alignment: .bottom) {
-                ProgressBar(value: player.progress, track: Theme.surface2, tint: Theme.clay, height: 2.5)
-                    .padding(.horizontal, Theme.space4)
-                    .accessibilityHidden(true)
+                ProgressBar(
+                    value: player.progress,
+                    track: editorial ? Theme.ink.opacity(0.18) : Theme.line.opacity(clear ? 0.35 : 0.7),
+                    tint: Theme.clay,
+                    height: editorial ? Theme.ruleMedium : 2.0
+                )
+                .accessibilityHidden(true)
             }
         }
     }
@@ -554,36 +529,45 @@ struct MiniPlayer: View {
 /// 不阻断操作的成功反馈；导入失败在逐项结果页处理，删除/覆盖仍保留原确认流程。
 private struct FeedbackOverlay: ViewModifier {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.themeDirection) private var themeDirection
     @State private var showingResults = false
     @State private var importResultsToken = UUID()
     func body(content: Content) -> some View {
+        let clear = themeDirection == .systemClear
         content.safeAreaInset(edge: .top, spacing: 0) {
             if let message = model.message {
                 EmptyState(title: "操作未完成", detail: message, state: .error)
-                    .background(Theme.bg)
+                    .background(clear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.bg))
             } else if let notice = model.notice {
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .top, spacing: Theme.space2) {
+                    HStack(alignment: .center, spacing: Theme.space2) {
+                        Image(systemName: Icon.info)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.accent)
+                            .accessibilityHidden(true)
                         Text(L(notice.text)).font(.subheadline).foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, Theme.space3)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
                         Button { model.notice = nil } label: {
-                            ThemeIcon(symbol: Icon.close).frame(width: 44, height: 44)
+                            ThemeIcon(symbol: Icon.close, size: 16).foregroundStyle(Theme.ink2).frame(width: 44, height: 44)
                         }.accessibilityLabel("关闭提示")
                     }
                     if notice.importResults {
+                        RowDivider()
                         Button("查看逐项结果") { model.notice = nil; showingResults = true }
-                            .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.accent)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .accessibilityIdentifier("import.results")
                     }
                 }
                 .padding(.horizontal, Theme.space4)
-                .frame(maxWidth: 760).frame(maxWidth: .infinity)
-                .background(Theme.surface)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: 4).accessibilityHidden(true) }
-                .overlay(alignment: .bottom) { RowDivider() }
+                .frame(maxWidth: Theme.pageWidth)
+                .floatingPanel(cornerRadius: Theme.radius)
+                .padding(.horizontal, Theme.insetCompact)
+                .padding(.top, 6)
             } else if model.busy {
                 EmptyState(title: model.activity, detail: "", state: .loading)
-                    .background(Theme.bg)
+                    .background(clear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.bg))
             }
         }
         .onChange(of: showingResults) { _, shown in
@@ -595,7 +579,10 @@ private struct FeedbackOverlay: ViewModifier {
         .sheet(isPresented: $showingResults, onDismiss: {
             model.releaseFileImportPresentation(importResultsToken)
         }) {
-            NavigationStack { ImportResultsView() }.environmentObject(model).tint(Theme.clayDeep)
+            NavigationStack { ImportResultsView() }
+                .environmentObject(model)
+                .environment(\.themeDirection, themeDirection)
+                .tint(Theme.clayDeep)
         }
     }
 }

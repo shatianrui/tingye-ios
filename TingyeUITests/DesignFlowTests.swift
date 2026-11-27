@@ -434,7 +434,7 @@ final class DesignFlowTests: XCTestCase {
         preferences.tap()
         XCTAssertTrue(app.navigationBars["阅读排版"].waitForExistence(timeout: 5))
         let font = app.buttons["系统字体"]
-        let panel = app.scrollViews.containing(.staticText, identifier: "让这一页更舒服").firstMatch
+        let panel = app.scrollViews["reader.preferencesScroll"]
         revealInScrollView(font, in: panel, "阅读排版面板中的系统字体应可点按")
         XCTAssertTrue(font.isSelected)
         app.buttons["完成"].tap()
@@ -879,11 +879,10 @@ final class DesignFlowTests: XCTestCase {
         let app = launch("stats")
         let settings = app.buttons["profile.settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
-        // 「我的」在新结构里不用系统导航栏：StatsView(ji) 自绘页眉（构建 135 起 ji 版隐藏系统导航栏、
-        // 无系统返回箭头），目的地标志是页眉的「我的」标题与它专属的返回按钮 study.profileBack，
-        // app.navigationBars["我的"] 在此结构下不存在，原断言落点错误。
+        // 「我的」改为原生大标题导航栏：顶栏承载返回书房（study.profileBack）与设置入口（profile.settings）。
+        XCTAssertTrue(app.navigationBars["我的"].exists, "「我的」应使用原生系统导航栏")
         XCTAssertTrue(app.staticTexts["我的"].exists, "当前目的地应是「我的」（旧页签已删除）")
-        XCTAssertTrue(app.buttons["study.profileBack"].exists, "「我的」页眉应带返回书库的按钮")
+        XCTAssertTrue(app.buttons["study.profileBack"].exists, "「我的」导航栏应带返回书房的按钮")
         let statistics = app.buttons["profile.stats"]
         XCTAssertTrue(statistics.isHittable)
         statistics.tap()
@@ -904,11 +903,12 @@ final class DesignFlowTests: XCTestCase {
         reveal(appearance, in: app)
         appearance.tap()
         XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 5))
-        // 默认界面风格为暖纸，四向选项均存在且切换立即生效、保留当前导航栈
+        // 默认界面风格为清透系统，四向选项均存在且切换立即生效、保留当前导航栈
         for id in ["theme.warmPaper", "theme.nightInkGold", "theme.editorial", "theme.systemClear"] {
             XCTAssertTrue(app.buttons[id].exists, "外观页应提供风格选项 \(id)")
         }
-        waitForReadingCondition({ app.buttons["theme.warmPaper"].isSelected }, "默认界面风格应为暖纸")
+        waitForReadingCondition({ app.buttons["theme.systemClear"].isSelected }, "默认界面风格应为清透系统")
+        reveal(app.buttons["theme.editorial"], in: app)
         app.buttons["theme.editorial"].tap()
         waitForReadingCondition({ app.buttons["theme.editorial"].isSelected }, "切换杂志编辑风格应立即更新选中态")
         XCTAssertTrue(app.navigationBars["外观"].exists, "切换界面风格不应销毁当前导航栈")
@@ -935,9 +935,12 @@ final class DesignFlowTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["设置"].waitForExistence(timeout: 5))
         reveal(appearance, in: app)
         appearance.tap()
+        reveal(app.buttons["theme.warmPaper"], in: app)
+        app.buttons["theme.warmPaper"].tap()
+        waitForReadingCondition({ app.buttons["theme.warmPaper"].isSelected }, "切换暖纸风格应立即生效")
         reveal(app.buttons["theme.systemClear"], in: app)
         app.buttons["theme.systemClear"].tap()
-        waitForReadingCondition({ app.buttons["theme.systemClear"].isSelected }, "切换清透系统风格应立即生效")
+        waitForReadingCondition({ app.buttons["theme.systemClear"].isSelected }, "切回清透系统风格应立即生效")
         reveal(app.buttons["appearance.light"], in: app)
         app.buttons["appearance.light"].tap()
         waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")

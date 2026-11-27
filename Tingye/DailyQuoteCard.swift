@@ -18,24 +18,31 @@ struct DailyQuoteCard: View {
     }
 
     var body: some View {
+        let clear = AppThemeDirection.current == .systemClear
         if let entry = pick {
             VStack(alignment: .leading, spacing: Theme.space4) {
-                VStack(alignment: .leading, spacing: Theme.space3) {
-                    Text("今日摘句").mastheadStyle()
+                VStack(alignment: .leading, spacing: Theme.space2) {
+                    if !compact || !clear {
+                        Text("今日摘句").mastheadStyle()
+                    }
                     Group {
                         if let quote, quote.entryID == entry.id { Text(quote.text) }
                         else { Text("《\(entry.title)》").redacted(reason: quote == nil ? .placeholder : []) }
                     }
-                    .font(Theme.serif(20, relativeTo: .title3))
-                    .lineSpacing(Theme.space2)
+                    .font(Theme.serif(19, relativeTo: .title3))
+                    .lineSpacing(6)
                     .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(Theme.ink)
-                    Text("—— " + sourceLine(entry))
-                        .font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                    Text((clear ? "" : "—— ") + sourceLine(entry))
+                        .font(.caption).foregroundStyle(Theme.ink2)
                         .lineLimit(2)
                 }
-                .padding(.leading, Theme.space4)
-                .overlay(alignment: .leading) { Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy) }
+                .padding(.leading, compact && clear ? 0 : Theme.space4)
+                .overlay(alignment: .leading) {
+                    if !(compact && clear) {
+                        Rectangle().fill(Theme.clay).frame(width: clear ? 2.5 : Theme.ruleHeavy)
+                    }
+                }
                 if !compact {
                     ViewThatFits(in: .horizontal) {
                         HStack(spacing: Theme.space3) { quoteActions(entry) }

@@ -28,46 +28,44 @@ struct MenuSettingsView: View {
 
     var body: some View {
         List {
-            Masthead(title: "把常用工具放在前面", subtitle: "拖动调整顺序，开关控制显示，首个可见分组默认打开。", titleSize: 28)
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
             Section {
                 ForEach(order) { tool in
-                    PaperCard {
-                        HairlineRow(showsDivider: false) {
-                            Toggle(isOn: Binding(get: { !hidden.contains(tool.rawValue) }, set: { show in
-                                if show { hidden.remove(tool.rawValue) }
-                                else if order.count - hidden.count > 1 { hidden.insert(tool.rawValue) }
-                                save()
-                            })) {
-                                HStack(spacing: Theme.space3) {
-                                    Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1)).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.clayDeep).monospacedDigit()
-                                    Text(tool.rawValue)
-                                    if tool == SelectionTool.visible(order: order, hidden: hidden).first {
-                                        Text("默认").font(.caption2.weight(.medium)).foregroundStyle(Theme.clayDeep)
-                                            .padding(.horizontal, Theme.space2).padding(.vertical, Theme.space1).background(Theme.claySoft, in: RoundedRectangle(cornerRadius: Theme.radiusPill, style: .continuous))
-                                    }
-                                }
+                    Toggle(isOn: Binding(get: { !hidden.contains(tool.rawValue) }, set: { show in
+                        if show { hidden.remove(tool.rawValue) }
+                        else if order.count - hidden.count > 1 { hidden.insert(tool.rawValue) }
+                        save()
+                    })) {
+                        HStack(spacing: Theme.space3) {
+                            Text(String(format: "%02d", (order.firstIndex(of: tool) ?? 0) + 1))
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Theme.ink3)
+                                .monospacedDigit()
+                            Text(tool.rawValue)
+                                .foregroundStyle(Theme.ink)
+                            if tool == SelectionTool.visible(order: order, hidden: hidden).first {
+                                Text("默认")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Theme.clayDeep)
+                                    .padding(.horizontal, Theme.space2)
+                                    .padding(.vertical, Theme.space1)
+                                    .background(Theme.claySoft, in: Capsule())
                             }
-                            .tint(Theme.accent)
-                            .accessibilityIdentifier("menu.tool.\(tool.rawValue)")
                         }
-                    }.listRowSeparator(.hidden).listRowBackground(Color.clear)
+                    }
+                    .tint(Theme.accent)
+                    .accessibilityIdentifier("menu.tool.\(tool.rawValue)")
+                    .listRowBackground(Theme.groupedCard)
                 }
                 .onMove { from, to in order.move(fromOffsets: from, toOffset: to); save() }
             } header: { Text("选中文字后的面板") } footer: { Text("拖动调整顺序，排在最前且显示的分组会默认打开。至少保留一个分组。") }
-            .listRowBackground(Color.clear)
             Section {
-                PaperCard {
-                    HairlineRow(showsDivider: false) {
-                        TextButton("恢复默认") { order = SelectionTool.allCases; hidden = []; save() }
-                    }
-                }.listRowBackground(Color.clear).listRowSeparator(.hidden)
+                TextButton("恢复默认") { order = SelectionTool.allCases; hidden = []; save() }
+                    .listRowBackground(Theme.groupedCard)
             }
-            .listRowBackground(Color.clear)
         }
         .environment(\.editMode, .constant(.active))
         .editorialList()
-        .background(Theme.bg)
+        .groupedBackground()
         .navigationTitle("菜单")
         .navigationBarTitleDisplayMode(.inline)
     }

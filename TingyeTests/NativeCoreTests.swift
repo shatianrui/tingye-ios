@@ -210,15 +210,29 @@ final class NativeCoreTests: XCTestCase {
             else { defaults.removeObject(forKey: AppThemeDirection.storageKey) }
         }
 
-        // 未设置时默认回退到 warmPaper
+        // 未设置或非法值时默认回退到 systemClear（清透系统）
         defaults.removeObject(forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(AppThemeDirection.current, .systemClear)
+        XCTAssertEqual(Theme.radius, 12)
+        XCTAssertEqual(Theme.heroRadius, 16)
+        XCTAssertEqual(Theme.inset, 20)
+        XCTAssertTrue(Theme.currentMetrics.usesMaterialChrome)
+
+        defaults.set("invalid_direction", forKey: AppThemeDirection.storageKey)
+        XCTAssertEqual(AppThemeDirection.current, .systemClear)
+
+        let light = UITraitCollection(userInterfaceStyle: .light)
+        let clearBg = UIColor(Theme.bg).resolvedColor(with: light)
+
+        // 切换到 warmPaper：暖纸圆角（18pt）、边距（24pt）与纸色生效
+        defaults.set(AppThemeDirection.warmPaper.rawValue, forKey: AppThemeDirection.storageKey)
         XCTAssertEqual(AppThemeDirection.current, .warmPaper)
         XCTAssertEqual(Theme.radius, 18)
         XCTAssertEqual(Theme.heroRadius, 26)
         XCTAssertEqual(Theme.inset, 24)
-
-        let light = UITraitCollection(userInterfaceStyle: .light)
+        XCTAssertFalse(Theme.currentMetrics.usesMaterialChrome)
         let warmBg = UIColor(Theme.bg).resolvedColor(with: light)
+        XCTAssertNotEqual(clearBg, warmBg)
 
         // 切换到 editorial：圆角变硬朗（4pt），边距变宽（32pt），背景色改变
         defaults.set(AppThemeDirection.editorial.rawValue, forKey: AppThemeDirection.storageKey)

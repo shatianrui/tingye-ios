@@ -233,7 +233,6 @@ struct ComicReaderView: View {
                     }
                     ForEach(directoryPages, id: \.self) { index in
                         Button { goToPage(index); showingPages = false } label: {
-                            PaperCard(padding: Theme.space3) {
                             HStack(spacing: Theme.space3) {
                                 ComicPage(book: book, index: index, fit: .thumbnail)
                                     .frame(width: 44, height: 60).clipped().allowsHitTesting(false)
@@ -244,13 +243,16 @@ struct ComicReaderView: View {
                                 if bookmarks.contains(where: { $0.chapter == index }) { Image(systemName: Icon.bookmark(true)).font(.system(size: 13)).foregroundStyle(Theme.accent) }
                                 if index == page { SealDot(text: "在读") }
                             }
+                            .padding(.vertical, Theme.space1)
                             .frame(minHeight: Theme.rowMinHeight).contentShape(Rectangle())
-                            }
                         }
-                        .buttonStyle(.plain).listRowBackground(Color.clear).id(index)
+                        .buttonStyle(.plain)
+                        .listRowBackground(index == page ? Theme.accentSoft : Theme.sheetCard)
+                        .id(index)
                     }
                 }
                 .editorialList()
+                .sheetSurface()
                 .navigationTitle("页面目录").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { showingPages = false } } }
                 .onAppear { proxy.scrollTo(page, anchor: .center) }

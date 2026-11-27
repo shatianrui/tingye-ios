@@ -104,27 +104,24 @@ struct MyFontsView: View {
     @State private var importing = false
     var body: some View {
         List {
-            Masthead(title: "挑一款舒服的字体", subtitle: "内置字体与个人字体共用阅读偏好，原书内容不会被改写。", titleSize: 28)
-                .listRowBackground(Color.clear).listRowSeparator(.hidden)
-            Section {
-                PaperCard {
+            Section("字体预览") {
                 VStack(alignment: .leading, spacing: Theme.space3) {
-                    Label("让文字更合心意", systemImage: Icon.fonts).font(.headline).foregroundStyle(Theme.ink)
                     Text("山静似太古，日长如小年。")
                         .font(Theme.serif(22)).foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("在阅读排版中选用内置字体，也可以导入自己的字体。原文阅读与文字模式共用字体偏好。")
+                    Text("在阅读排版中选用内置字体，也可以导入自己的字体。原文阅读与文字模式共用字体偏好，原书内容不会被改写。")
                         .font(.footnote).foregroundStyle(Theme.ink2)
                 }
-                }
-            }.listRowBackground(Color.clear).listRowSeparator(.hidden)
+                .padding(.vertical, Theme.space2)
+                .listRowBackground(Theme.groupedCard)
+            }
             Section {
                 if fonts.isEmpty {
-                    EmptyState(title: "还没有个人字体", detail: "可以导入 TTF、OTF 或 TTC 文件；内置字体仍可在阅读排版中选择。")
+                    EmptyState(title: "还没有个人字体", detail: "可以导入 TTF、OTF 或 TTC 文件；内置字体仍可在阅读排版中选择。", symbol: Icon.fonts)
+                        .listRowBackground(Theme.groupedCard)
                 }
                 ForEach(fonts) { item in
                     Button { font = "custom:" + item.postScript } label: {
-                        HairlineRow {
                         HStack {
                             VStack(alignment: .leading, spacing: Theme.space1) {
                                 Text(item.name).font(.subheadline).foregroundStyle(Theme.ink3)
@@ -133,10 +130,11 @@ struct MyFontsView: View {
                             Spacer()
                             if font == "custom:" + item.postScript { ThemeIcon(symbol: Icon.checkmark, size: 18).foregroundStyle(Theme.clayDeep) }
                         }
+                        .padding(.vertical, Theme.space1)
                         .contentShape(Rectangle())
-                        }
                     }
                     .buttonStyle(.plain)
+                    .listRowBackground(Theme.groupedCard)
                     .swipeActions {
                         Button(role: .destructive) {
                             if font == "custom:" + item.postScript { font = "serif" }
@@ -144,7 +142,14 @@ struct MyFontsView: View {
                         } label: { Label("删除", systemImage: Icon.delete) }
                     }
                 }
-                Button { importing = true } label: { HairlineRow { Label("导入字体文件", systemImage: Icon.addFont).foregroundStyle(Theme.clayDeep) } }
+                Button { importing = true } label: {
+                    Label("导入字体文件", systemImage: Icon.addFont)
+                        .foregroundStyle(Theme.clayDeep)
+                        .frame(minHeight: Theme.iconButtonSize)
+                }
+                .listRowBackground(Theme.groupedCard)
+            } header: {
+                Text("个人字体")
             } footer: {
                 Text("支持 TTF、OTF、TTC。字体只保存在这台设备，只用于正文，请确认字体授权允许个人使用。左滑删除。")
             }
@@ -152,7 +157,7 @@ struct MyFontsView: View {
         .navigationTitle("我的字体")
         .navigationBarTitleDisplayMode(.inline)
         .editorialList()
-        .paperBackground()
+        .groupedBackground()
         .fileImporter(isPresented: $importing, allowedContentTypes: [.font, UTType(filenameExtension: "ttf") ?? .data, UTType(filenameExtension: "otf") ?? .data], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }
             var errors: [String] = []

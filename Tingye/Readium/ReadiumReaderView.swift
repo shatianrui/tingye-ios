@@ -314,7 +314,7 @@ struct ReadiumReaderView: View {
                         ReadingPreferencesView(showsPreview: false)
                             .safeAreaInset(edge: .bottom) {
                                 Text("EPUB 使用标准翻页。简繁转换仅作用于显示，摘记保存原文位置。")
-                                    .font(.footnote).foregroundStyle(Theme.ink3).padding(12).frame(maxWidth: .infinity).background(Theme.bg)
+                                    .font(.footnote).foregroundStyle(Theme.ink3).padding(12).frame(maxWidth: .infinity).barMaterialBackground()
                             }
                     }
                 case .contents: NavigationStack { contentsView }
@@ -365,6 +365,15 @@ struct ReadiumReaderView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, Theme.insetCompact).padding(.vertical, Theme.space2)
         .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
+        .environment(\.colorScheme, palette.isDark ? .dark : .light)
+        .background(themeDirection == .systemClear ? AnyShapeStyle(.bar) : AnyShapeStyle(Color(hex: palette.background).opacity(0.96)), ignoresSafeAreaEdges: .top)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(themeDirection == .systemClear ? Theme.line.opacity(0.35) : Color(hex: palette.secondary).opacity(0.18))
+                .frame(height: Theme.hairline)
+                .accessibilityHidden(true)
+        }
     }
     private var bottomBar: some View {
         SheetChrome(title: title, onClose: { chrome = false }, showsHeader: false) {
@@ -441,7 +450,9 @@ struct ReadiumReaderView: View {
     private var contentsView: some View {
         List {
             EditorialIntro(title: "目录与摘记", detail: book.title, eyebrow: "阅读导航")
-            Button("搜索书内文字") { following = false; sheet = .search }.accessibilityIdentifier("reader.search")
+            Button("搜索书内文字") { following = false; sheet = .search }
+                .accessibilityIdentifier("reader.search")
+                .listRowBackground(Theme.sheetCard)
             SegmentedBar(options: [0, 1, 2], selection: contentsMode,
                          title: { ["目录", "书签", "摘记"][$0] }, onSelect: { contentsMode = $0 })
                 .listRowBackground(Color.clear)
@@ -461,7 +472,7 @@ struct ReadiumReaderView: View {
                             if current { SealDot(text: "在读") }
                         }.padding(.leading, CGFloat(min(item.depth, 8)) * Theme.space3).padding(.vertical, Theme.space2).frame(minHeight: Theme.rowMinHeight)
                     }
-                    .listRowBackground(current ? Theme.claySoft : Theme.surface)
+                    .listRowBackground(current ? Theme.claySoft : Theme.sheetCard)
                 }
             } else {
                 ForEach(book.chapters.indices, id: \.self) { index in
@@ -472,7 +483,8 @@ struct ReadiumReaderView: View {
                             if index == chapter { SealDot(text: "在读") }
                         }.frame(minHeight: Theme.rowMinHeight)
                     }
-                        .disabled(session.map?.href(for: index) == nil)
+                    .disabled(session.map?.href(for: index) == nil)
+                    .listRowBackground(index == chapter ? Theme.claySoft : Theme.sheetCard)
                 }
             }
             }
@@ -482,6 +494,7 @@ struct ReadiumReaderView: View {
                 }
                 ForEach(entry?.bookmarks ?? []) { mark in
                     Button(mark.excerpt) { jumpTo(.init(mark)); sheet = nil }
+                        .listRowBackground(Theme.sheetCard)
                         .swipeActions { Button("删除", role: .destructive) { model.removeBookmark(book.id, id: mark.id) } }
                 }
             } }
@@ -490,9 +503,11 @@ struct ReadiumReaderView: View {
                     EditorialNotice(title: "部分标注尚未定位", detail: "有 \(unresolvedAnnotations.count) 条原文与笔记已保留。可稍后重试定位。")
                 }
                 NotesList(entryID: book.id, unresolvedIDs: Set(unresolvedAnnotations)) { note in jumpTo(.init(note)); sheet = nil }
+                    .listRowBackground(Theme.sheetCard)
             } }
         }
         .editorialList()
+        .sheetSurface()
         .accessibilityIdentifier("reader.epubContents")
         .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { sheet = nil } } }

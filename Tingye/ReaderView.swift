@@ -773,7 +773,16 @@ struct ReaderView: View {
         .padding(.horizontal, Theme.insetCompact)
         .padding(.vertical, Theme.space2)
         .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
         .padding(.top, Theme.space1)
+        .environment(\.colorScheme, isDarkPaper ? .dark : .light)
+        .background(themeDirection == .systemClear ? AnyShapeStyle(.bar) : AnyShapeStyle(prefs.background.opacity(0.96)), ignoresSafeAreaEdges: .top)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(themeDirection == .systemClear ? Theme.line.opacity(0.35) : prefs.secondary.opacity(0.18))
+                .frame(height: Theme.hairline)
+                .accessibilityHidden(true)
+        }
     }
 
     private func barIcon(_ name: String) -> some View {
@@ -828,6 +837,12 @@ struct ReaderView: View {
             }
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
+        }
+        .background {
+            Rectangle()
+                .fill(themeDirection == .systemClear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.surface))
+                .padding(.top, Theme.heroRadius)
+                .ignoresSafeArea(edges: .bottom)
         }
         .foregroundStyle(Theme.ink)
     }
@@ -1052,8 +1067,7 @@ struct ReaderView: View {
     private var listeningStrip: some View {
         listeningControls(showsPlayerLink: true)
             .padding(Theme.space2)
-            .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
-            .overlay(alignment: .top) { RowDivider() }
+            .floatingPanel(cornerRadius: Theme.radius)
             .contentShape(Rectangle())
             .onTapGesture { }
     }
@@ -1910,16 +1924,17 @@ struct ContentsView: View {
                                 }
                                 .accessibilityLabel("书签的更多操作")
                             }
-                            .padding(.vertical, 6).listRowBackground(Theme.surface)
+                            .padding(.vertical, 6).listRowBackground(Theme.sheetCard)
                         }
                     } else {
                         let refs = imageRefs
                         if refs.isEmpty { Text("本章没有可显示的插图。").font(.subheadline).foregroundStyle(Theme.ink2).listRowBackground(Color.clear) }
-                        ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref) }
+                        ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in IllustrationRow(book: book, ref: ref).listRowBackground(Theme.sheetCard) }
                     }
                 }
             }
             .editorialList()
+            .sheetSurface()
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("目录与摘记").navigationBarTitleDisplayMode(.inline)
             // 半高弹层里默认搜索抽屉没有有效点击区域。书内搜索改成展开的导航栏抽屉，并只用全高弹层。
@@ -1966,7 +1981,7 @@ struct ContentsView: View {
                 }
             }
             .padding(16).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-            .background(index == currentChapter ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius))
+            .background(index == currentChapter ? Theme.accentSoft : Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -2006,6 +2021,7 @@ struct ChapterScrubber: View {
     let tint: Color
     let onStep: (Int) -> Void
     let onCommit: (Int) -> Void
+    @Environment(\.themeDirection) private var themeDirection
     @State private var dragging = false
     @State private var draft: Double = 0
     @State private var originChapter = 0
@@ -2047,12 +2063,18 @@ struct ChapterScrubber: View {
             let maximum = Double(max(1, count - 1))
             let value = dragging ? draft : Double(chapter)
             let fraction = min(1, max(0, value / maximum))
+            let clear = themeDirection == .systemClear
+            let knobSize: CGFloat = clear ? 16 : 18
+            let radius = knobSize / 2
             // 滑块中心在轨道内缩一个半径行程，填充宽度正好到达滑块中心。
-            let knobCenter = 9 + fraction * max(0, width - 18)
+            let knobCenter = radius + fraction * max(0, width - knobSize)
             ZStack(alignment: .leading) {
-                ProgressLine(value: width > 0 ? knobCenter / width : 0, height: Theme.ruleHeavy * 2)
+                ProgressLine(value: width > 0 ? knobCenter / width : 0, height: clear ? 4 : Theme.ruleHeavy * 2)
                     .accessibilityHidden(true)
-                Circle().fill(Theme.ink).frame(width: 18, height: 18).offset(x: knobCenter - 9)
+                Circle()
+                    .fill(clear ? Theme.clay : Theme.ink)
+                    .frame(width: knobSize, height: knobSize)
+                    .offset(x: knobCenter - radius)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -2062,8 +2084,8 @@ struct ChapterScrubber: View {
                         if !dragging {
                             originChapter = chapter; draft = Double(chapter); invalidated = false; dragging = true
                         }
-                        let span = max(1, width - 18)
-                        let ratio = min(1, max(0, (gesture.location.x - 9) / span))
+                        let span = max(1, width - knobSize)
+                        let ratio = min(1, max(0, (gesture.location.x - radius) / span))
                         draft = ratio * maximum
                     }
                     .onEnded { _ in
@@ -2163,103 +2185,106 @@ struct ReadingPreferencesView: View {
                 }
 
                 PaperCard {
-                    VStack(spacing: Theme.space2) {
-                    HStack(spacing: Theme.space2) {
-                        Text("字号").font(.body.weight(.medium))
-                        stepButton("A−", label: "减小字号") { size = max(14, size - 1) }
-                        Spacer(minLength: 0)
-                        Text("\(Int(size))").font(.body.weight(.medium)).monospacedDigit()
-                        stepButton("A+", label: "增大字号") { size = min(34, size + 1) }
-                    }
-                    ReaderPreferenceSlider(value: $size, in: 14...34, step: 1)
-                        .accessibilityLabel("字号").accessibilityValue("\(Int(size))")
+                    VStack(spacing: Theme.space3) {
+                        VStack(spacing: Theme.space2) {
+                            HStack(spacing: Theme.space2) {
+                                Text("字号").font(.body.weight(.medium))
+                                stepButton("A−", label: "减小字号") { size = max(14, size - 1) }
+                                Spacer(minLength: 0)
+                                Text("\(Int(size))").font(.body.weight(.medium)).monospacedDigit()
+                                stepButton("A+", label: "增大字号") { size = min(34, size + 1) }
+                            }
+                            ReaderPreferenceSlider(value: $size, in: 14...34, step: 1)
+                                .accessibilityLabel("字号").accessibilityValue("\(Int(size))")
+                        }
+                        RowDivider()
+                        VStack(spacing: Theme.space2) {
+                            HStack {
+                                Text("行距").font(Theme.sans(15, weight: .medium))
+                                Spacer()
+                                Text("\(Int(spacing))").font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            }
+                            ReaderPreferenceSlider(value: $spacing, in: 2...28, step: 1).accessibilityLabel("行距")
+                        }
                     }
                 }
 
                 PaperCard {
-                    VStack(spacing: Theme.space2) {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
                         HStack {
-                            Text("行距").font(Theme.sans(15))
+                            Text("字体").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink2)
                             Spacer()
-                            Text("\(Int(spacing))").font(Theme.sans(13)).monospacedDigit().foregroundStyle(Theme.ink3)
+                            NavigationLink { MyFontsView() } label: {
+                                HStack(spacing: Theme.space1) {
+                                    Text(font.hasPrefix("custom:") ? (FontLibrary.fonts.first { "custom:" + $0.postScript == font }?.name ?? "我的字体") : "我的字体")
+                                    Image(systemName: Icon.disclosure).font(.caption2)
+                                }
+                                .font(.footnote.weight(.medium)).lineLimit(2).frame(minHeight: 44)
+                            }
                         }
-                        ReaderPreferenceSlider(value: $spacing, in: 2...28, step: 1).accessibilityLabel("行距")
+                        if dynamicTypeSize.isAccessibilitySize {
+                            VStack(spacing: Theme.space2) { fontChoices }
+                        } else {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space2), count: 3), spacing: Theme.space2) { fontChoices }
+                        }
                     }
                 }
 
                 PaperCard {
-                VStack(alignment: .leading, spacing: Theme.space2) {
-                    HStack {
-                        Text("字体").font(.caption).foregroundStyle(Theme.ink3)
-                        Spacer()
-                        NavigationLink { MyFontsView() } label: {
-                            Text(font.hasPrefix("custom:") ? (FontLibrary.fonts.first { "custom:" + $0.postScript == font }?.name ?? "我的字体") : "我的字体")
-                                .font(.caption).lineLimit(2).frame(minHeight: 44)
-                        }
-                    }
-                    if dynamicTypeSize.isAccessibilitySize {
-                        VStack(spacing: Theme.space2) { fontChoices }
-                    } else {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space2), count: 3), spacing: Theme.space2) { fontChoices }
-                    }
-                }
-
-                }
-                PaperCard {
-                VStack(alignment: .leading, spacing: Theme.space2) {
-                    HStack {
-                        Text("纸色").font(.caption).foregroundStyle(Theme.ink3)
-                        Spacer()
-                        Menu {
-                            Picker("全部纸色", selection: $paper) {
-                                ForEach(ReaderPaper.allCases) { item in Text(item.name).tag(item.rawValue) }
+                    VStack(alignment: .leading, spacing: Theme.space3) {
+                        VStack(alignment: .leading, spacing: Theme.space2) {
+                            HStack {
+                                Text("纸色").font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink2)
+                                Spacer()
+                                Menu {
+                                    Picker("全部纸色", selection: $paper) {
+                                        ForEach(ReaderPaper.allCases) { item in Text(item.name).tag(item.rawValue) }
+                                    }
+                                } label: {
+                                    HStack(spacing: Theme.space1) {
+                                        Text(ReaderPaper(rawValue: paper)?.name ?? "暖纸")
+                                        Image(systemName: Icon.collapse).font(.caption2)
+                                    }
+                                    .font(.footnote.weight(.medium)).frame(minHeight: 44)
+                                }
+                                .accessibilityLabel("全部纸色")
                             }
-                        } label: {
-                            HStack(spacing: Theme.space1) {
-                                Text(ReaderPaper(rawValue: paper)?.name ?? "暖纸")
-                                Image(systemName: Icon.collapse).font(.caption2)
-                            }
-                            .font(.caption).frame(minHeight: 44)
-                        }
-                        .accessibilityLabel("全部纸色")
-                    }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space3), count: dynamicTypeSize.isAccessibilitySize ? 3 : 5), spacing: Theme.space3) {
-                        ForEach(mainPapers) { item in
-                            Button { Haptics.selection(); paper = item.rawValue } label: {
-                                VStack(spacing: Theme.space2) {
-                                    RoundedRectangle(cornerRadius: Theme.radiusField)
-                                        .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
-                                        .frame(maxWidth: .infinity).frame(height: 44)
-                                        .overlay {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space3), count: dynamicTypeSize.isAccessibilitySize ? 3 : 5), spacing: Theme.space3) {
+                                ForEach(mainPapers) { item in
+                                    Button { Haptics.selection(); paper = item.rawValue } label: {
+                                        VStack(spacing: Theme.space2) {
                                             RoundedRectangle(cornerRadius: Theme.radiusField)
-                                                .strokeBorder(paper == item.rawValue ? Theme.ink : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
+                                                .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
+                                                .frame(maxWidth: .infinity).frame(height: 44)
+                                                .overlay {
+                                                    RoundedRectangle(cornerRadius: Theme.radiusField)
+                                                        .strokeBorder(paper == item.rawValue ? Theme.accent : Theme.line, lineWidth: paper == item.rawValue ? 2 : 1)
+                                                }
+                                                .overlay {
+                                                    if paper == item.rawValue {
+                                                        ThemeIcon(symbol: Icon.checkmark, size: 18)
+                                                            .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
+                                                    }
+                                                }
+                                            Text(item.name).font(.caption2).foregroundStyle(Theme.ink3)
+                                                .fixedSize(horizontal: false, vertical: true)
                                         }
-                                        .overlay {
-                                            if paper == item.rawValue {
-                                                ThemeIcon(symbol: Icon.checkmark, size: 18)
-                                                    .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
-                                            }
-                                        }
-                                    Text(item.name).font(.caption2).foregroundStyle(Theme.ink3)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(item.name)
+                                    .accessibilityAddTraits(paper == item.rawValue ? .isSelected : [])
                                 }
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(item.name)
-                            .accessibilityAddTraits(paper == item.rawValue ? .isSelected : [])
+                        }
+                        RowDivider()
+                        Toggle(isOn: $paperAlwaysLight) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("浅纸常亮").font(.body.weight(.medium))
+                                Text("深色外观下，纸色也保持日间值")
+                                    .font(.caption).foregroundStyle(Theme.ink3)
+                            }
                         }
                     }
-                }
-
-                }
-                PaperCard {
-                Toggle(isOn: $paperAlwaysLight) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("浅纸常亮").font(.body.weight(.medium))
-                        Text("深色外观下，纸色也保持日间值")
-                            .font(.caption).foregroundStyle(Theme.ink3)
-                    }
-                }
                 }
 
                 SegmentedBar(options: [false, true], selection: scrolling,
@@ -2276,35 +2301,40 @@ struct ReadingPreferencesView: View {
 
                 NavigationLink { MoreTypographyView() } label: {
                     HStack(spacing: Theme.space3) {
-                        ThemeIcon(symbol: Icon.moreTypography, size: 24)
+                        ThemeIcon(symbol: Icon.moreTypography, size: 22)
+                            .foregroundStyle(Theme.accent)
                         VStack(alignment: .leading, spacing: 3) {
                             Text("更多排版").font(.body.weight(.medium))
                             Text("行距、段距、页边距与简繁转换")
                                 .font(.caption).foregroundStyle(Theme.ink3)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        ThemeIcon(symbol: Icon.disclosure, size: 18)
+                        ThemeIcon(symbol: Icon.disclosure, size: 16)
+                            .foregroundStyle(Theme.ink3)
                     }
                     .foregroundStyle(Theme.ink)
-                    .padding(Theme.space4)
-                    .frame(minHeight: 64)
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
+                    .padding(Theme.cardInset)
+                    .frame(minHeight: 60)
+                    .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                    .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line.opacity(0.28), lineWidth: Theme.hairline) }
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, Theme.space5).padding(.top, Theme.space2).padding(.bottom, Theme.cardInset)
+            .padding(.horizontal, Theme.inset).padding(.top, Theme.space2).padding(.bottom, Theme.cardInset)
             .frame(maxWidth: 620).frame(maxWidth: .infinity)
         }
+        .accessibilityIdentifier("reader.preferencesScroll")
         .scrollIndicators(.hidden)
-        .background(Theme.bg)
+        .groupedBackground()
+        .sheetSurface()
         .tint(Theme.accent)
         .navigationTitle("阅读排版").navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button("完成") { dismiss() }
                 .buttonStyle(PrimaryButtonStyle(height: 50))
-                .padding(.horizontal, Theme.space5).padding(.vertical, Theme.space3)
+                .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space3)
                 .frame(maxWidth: 620).frame(maxWidth: .infinity)
-                .background(Theme.bg)
+                .barMaterialBackground()
         }
     }
 
@@ -2332,6 +2362,7 @@ struct ReadingPreferencesView: View {
 
 /// 原生 Slider 仍接收输入；ProgressLine 只绘制轨道，滑块周围留出原生命中位置。
 struct ReaderPreferenceSlider: View {
+    @Environment(\.themeDirection) private var themeDirection
     @Binding var value: Double
     let bounds: ClosedRange<Double>
     var step: Double = 1
@@ -2339,14 +2370,15 @@ struct ReaderPreferenceSlider: View {
         _value = value; self.bounds = bounds; self.step = step
     }
     var body: some View {
+        let trackTint = themeDirection == .systemClear ? Theme.clay : Theme.ink2
         Slider(value: $value, in: bounds, step: step)
-            .tint(Theme.ink2)
+            .tint(trackTint)
             .overlay {
                 GeometryReader { geometry in
                     let fraction = min(1, max(0, (value - bounds.lowerBound) / (bounds.upperBound - bounds.lowerBound)))
                     let thumb = Theme.space6
                     let center = thumb / 2 + (geometry.size.width - thumb) * fraction
-                    ProgressLine(value: fraction, tint: Theme.ink2)
+                    ProgressLine(value: fraction, tint: trackTint)
                         .mask {
                             HStack(spacing: 0) {
                                 Rectangle().frame(width: max(0, center - thumb / 2))
@@ -2393,6 +2425,7 @@ private struct MoreTypographyView: View {
                 Toggle("首行两字缩进", isOn: $indent)
                 Toggle("两端对齐", isOn: $justified)
             }
+            .listRowBackground(Theme.sheetCard)
             if !scrolling {
                 Section {
                     Toggle(isOn: $doublePage) {
@@ -2402,12 +2435,14 @@ private struct MoreTypographyView: View {
                         }
                     }
                 }
+                .listRowBackground(Theme.sheetCard)
             }
             Section {
                 SegmentedBar(options: ["none", "s2t", "t2s"], selection: convert,
                              title: { ["none": "原文", "s2t": "简→繁", "t2s": "繁→简"][$0] ?? $0 },
                              onSelect: { convert = $0 }).accessibilityLabel("简繁")
             } header: { Text("简繁转换") } footer: { Text("只改变显示，不修改书籍文件；朗读仍按原文。") }
+            .listRowBackground(Theme.sheetCard)
             Section {
                 Button("恢复护眼默认排版") {
                     size = 19; spacing = 11; paragraph = 15; margin = 24; indent = true; justified = true
@@ -2416,9 +2451,11 @@ private struct MoreTypographyView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+            .listRowBackground(Theme.sheetCard)
         }
         .editorialList()
-        .background(Theme.bg)
+        .groupedBackground()
+        .sheetSurface()
         .navigationTitle("更多排版").navigationBarTitleDisplayMode(.inline)
     }
     private func adjustment(_ name: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {

@@ -190,7 +190,7 @@ struct SelectionPanel: View {
                                 Label("分享选段", systemImage: Icon.share)
                                     .font(.subheadline.weight(.medium))
                                     .frame(maxWidth: .infinity, minHeight: 46)
-                                    .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius))
+                                    .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
@@ -204,8 +204,7 @@ struct SelectionPanel: View {
         .padding(.top, Theme.space2)
         .padding(.bottom, Theme.space4)
         .frame(maxWidth: 520)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous))
-        .floatingPanel()
+        .floatingPanel(cornerRadius: Theme.heroRadius)
     }
 
     private var markTools: some View {
@@ -263,8 +262,8 @@ struct SelectionPanel: View {
             }
                 .font(.body.weight(.medium))
                 .foregroundStyle(prominent ? Theme.onClay : Theme.ink)
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .background(prominent ? Theme.clay : Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(prominent ? Theme.clay : Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -282,34 +281,41 @@ struct NoteEditor: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    EditorialIntro(title: "把想法留在这里", detail: "原文与笔记分别保存，随时可以修改笔记。")
-                    Text("选中的原文").font(.caption.weight(.semibold)).foregroundStyle(Theme.ink2)
-                    Text(quote)
-                        .font(Theme.serif(19, relativeTo: .body))
-                        .foregroundStyle(Theme.ink).lineSpacing(8)
-                        .fixedSize(horizontal: false, vertical: true).padding(20)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.warm, in: RoundedRectangle(cornerRadius: Theme.heroRadius))
-                    Text("我的想法").font(.caption).foregroundStyle(Theme.ink3)
-                    TextEditor(text: $text)
-                        .font(.body).foregroundStyle(Theme.ink)
-                        .focused($focused)
-                        .scrollContentBackground(.hidden)
-                        .padding(10).frame(minHeight: 180)
-                        .background(Theme.surface2, in: RoundedRectangle(cornerRadius: Theme.radius))
-                        .overlay(alignment: .topLeading) {
-                            if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
-                        }
-                        .accessibilityLabel("我的想法")
-                    Button("保存笔记", action: save).buttonStyle(PrimaryButtonStyle(height: 50))
-                    Button("取消") { dismiss() }.buttonStyle(SecondaryButtonStyle(height: 50))
+                VStack(alignment: .leading, spacing: Theme.space4) {
+                    VStack(alignment: .leading, spacing: Theme.space2) {
+                        Text("选中的原文").font(.footnote.weight(.medium)).foregroundStyle(Theme.ink2)
+                        Text(quote)
+                            .font(Theme.serif(18, relativeTo: .body))
+                            .foregroundStyle(Theme.ink).lineSpacing(7)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(Theme.cardInset)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line.opacity(0.35), lineWidth: Theme.hairline) }
+                    }
+                    VStack(alignment: .leading, spacing: Theme.space2) {
+                        Text("我的想法").font(.footnote.weight(.medium)).foregroundStyle(Theme.ink2)
+                        TextEditor(text: $text)
+                            .font(.body).foregroundStyle(Theme.ink)
+                            .focused($focused)
+                            .scrollContentBackground(.hidden)
+                            .padding(10).frame(minHeight: 180)
+                            .background(Theme.sheetCard, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                            .overlay { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line.opacity(0.35), lineWidth: Theme.hairline) }
+                            .overlay(alignment: .topLeading) {
+                                if text.isEmpty { Text("写一点你的想法").foregroundStyle(Theme.ink3).padding(.horizontal, 15).padding(.vertical, 18).allowsHitTesting(false) }
+                            }
+                            .accessibilityLabel("我的想法")
+                    }
+                    Text("原文与笔记分别保存，随时可以修改。")
+                        .font(.footnote).foregroundStyle(Theme.ink3)
                 }
-                .padding(24)
+                .padding(.horizontal, Theme.inset)
+                .padding(.vertical, Theme.space4)
                 .frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.bg)
+            .groupedBackground()
             .navigationTitle("笔记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -318,6 +324,7 @@ struct NoteEditor: View {
             }
             .onAppear { focused = true }
         }
+        .sheetSurface()
         .tint(Theme.accent)
         .presentationDetents([.large])
     }
@@ -462,11 +469,12 @@ struct AllNotesView: View {
                         NotesList(entryID: entry.id, query: query) { note in
                             model.open(entry, target: .init(note))
                         }
+                        .listRowBackground(Theme.groupedCard)
                     } header: {
                         HStack(spacing: 8) {
                             BookCoverView(title: entry.title, color: entry.color, image: model.covers[entry.id], width: 24)
-                            Text(entry.title).font(.subheadline.weight(.medium)).foregroundStyle(Theme.ink).textCase(nil)
-                            SealBadge(text: "\(notes.count) 条", color: Theme.gold, background: Theme.goldSoft)
+                            Text(entry.title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink).textCase(nil)
+                            SealBadge(text: "\(notes.count) 条", color: Theme.ink3, background: Theme.surface2)
                             Spacer()
                             ShareLink(item: Self.markdown(entry)) { Label("导出", systemImage: Icon.share).font(.caption.weight(.medium)).foregroundStyle(Theme.accent).frame(minHeight: 44) }
                                 .accessibilityLabel("导出《\(entry.title)》书摘")
@@ -477,8 +485,8 @@ struct AllNotesView: View {
         }
         .navigationTitle("书摘与笔记")
         .searchable(text: $query, prompt: "搜索划线与笔记")
-        .scrollContentBackground(.hidden)
-        .background(Theme.bg)
+        .editorialList()
+        .groupedBackground()
     }
     /// 导出为 Markdown 文本
     static func markdown(_ entry: ShelfEntry) -> String {

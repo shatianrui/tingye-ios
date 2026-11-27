@@ -77,34 +77,67 @@ struct GeneralSettingsView: View {
     }
 }
 
-/// D 单元设置构图：仅组合 A 单元的 Masthead / PaperCard / HairlineRow。
+/// 设置页面容器：清透系统下页面标题交给原生导航栏，内容采用接近 insetGrouped 的分组层级；其余方向保留节制报头。
 struct SettingsPage<Content: View>: View {
+    @Environment(\.themeDirection) private var themeDirection
     let title: String
     var detail: String? = nil
     @ViewBuilder var content: Content
     var body: some View {
+        let _ = themeDirection
+        let clear = AppThemeDirection.current == .systemClear
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
-                Masthead(title: title, subtitle: detail, titleSize: 28)
+            VStack(alignment: .leading, spacing: clear ? 20 : Theme.sectionSpacing) {
+                if clear {
+                    if let detail, !detail.isEmpty {
+                        Text(L(detail))
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
+                    }
+                } else {
+                    Masthead(title: title, subtitle: detail, rule: false, titleSize: 26)
+                }
                 content
             }
-            .padding(.horizontal, Theme.inset).padding(.vertical, Theme.space5)
+            .padding(.horizontal, clear ? Theme.insetCompact : Theme.inset)
+            .padding(.top, clear ? Theme.space3 : Theme.space4)
+            .padding(.bottom, Theme.space6)
             .frame(maxWidth: Theme.pageWidth).frame(maxWidth: .infinity)
         }
-        .paperBackground().foregroundStyle(Theme.ink).tint(Theme.accent)
+        .groupedBackground().foregroundStyle(Theme.ink).tint(Theme.accent)
     }
 }
 
 struct SettingsGroup<Content: View>: View {
+    @Environment(\.themeDirection) private var themeDirection
     var title: String? = nil
     var footer: String? = nil
     @ViewBuilder var content: Content
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.space3) {
-            if let title { SectionHeader(title: title) }
-            PaperCard { VStack(alignment: .leading, spacing: 0) { content } }
+        let _ = themeDirection
+        let clear = AppThemeDirection.current == .systemClear
+        VStack(alignment: .leading, spacing: clear ? 6 : Theme.space3) {
+            if let title {
+                if clear {
+                    Text(L(title))
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Theme.ink2)
+                        .padding(.horizontal, 12)
+                        .accessibilityAddTraits(.isHeader)
+                } else {
+                    SectionHeader(title: title)
+                }
+            }
+            PaperCard(padding: clear ? 16 : Theme.cardInset) {
+                VStack(alignment: .leading, spacing: 0) { content }
+            }
             if let footer {
-                Text(L(footer)).font(Theme.sans(13)).foregroundStyle(Theme.ink3)
+                Text(L(footer))
+                    .font(clear ? .footnote : Theme.sans(13))
+                    .foregroundStyle(Theme.ink3)
+                    .padding(.horizontal, clear ? 12 : 0)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import CoreImage
 
-/// 四向可切换界面主题系统（默认暖纸）。正文七种阅读纸色（ReaderPaper）保持独立。
+/// 四向可切换界面主题系统（默认清透系统）。正文七种阅读纸色（ReaderPaper）保持独立。
 enum AppThemeDirection: String, CaseIterable, Identifiable, Sendable {
     case warmPaper      // 暖纸 Anthropic
     case nightInkGold   // 夜读墨金
@@ -16,7 +16,7 @@ enum AppThemeDirection: String, CaseIterable, Identifiable, Sendable {
     static var current: AppThemeDirection {
         guard let raw = UserDefaults.standard.string(forKey: storageKey),
               let value = AppThemeDirection(rawValue: raw) else {
-            return .warmPaper
+            return .systemClear
         }
         return value
     }
@@ -43,7 +43,7 @@ enum AppThemeDirection: String, CaseIterable, Identifiable, Sendable {
 }
 
 private struct ThemeDirectionEnvironmentKey: EnvironmentKey {
-    static let defaultValue: AppThemeDirection = .warmPaper
+    static let defaultValue: AppThemeDirection = .systemClear
 }
 
 extension EnvironmentValues {
@@ -358,6 +358,21 @@ enum Theme {
     static var surface: Color { currentPalette.surface }
     static var surface2: Color { currentPalette.surface2 }
     static var surfaceSunken: Color { currentPalette.surfaceSunken }
+    /// 分组页面画布：清透系统采用 iOS 原生 systemGroupedBackground（浅 #F2F2F7 / 深 #000000），其余方向沿用纸面 bg。
+    static var groupedCanvas: Color {
+        AppThemeDirection.current == .systemClear ? Color(uiColor: .systemGroupedBackground) : bg
+    }
+    /// 分组卡片表面：清透系统采用 iOS 原生 secondarySystemGroupedBackground（浅 #FFFFFF / 深 #1C1C1E），其余方向沿用 surface。
+    static var groupedCard: Color {
+        AppThemeDirection.current == .systemClear ? Color(uiColor: .secondarySystemGroupedBackground) : surface
+    }
+    /// Sheet 内的分组卡片表面：深色材料弹层上采用更高一阶的系统分组面（#2C2C2E），避免出现死黑硬块。
+    static var sheetCard: Color {
+        guard AppThemeDirection.current == .systemClear else { return surface }
+        return Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? .tertiarySystemGroupedBackground : .secondarySystemGroupedBackground
+        })
+    }
     static var ink: Color { currentPalette.ink }
     static var ink2: Color { currentPalette.ink2 }
     static var ink3: Color { currentPalette.ink3 }
@@ -628,15 +643,57 @@ private struct GlassCardModifier: ViewModifier {
     let cornerRadius: CGFloat?
     func body(content: Content) -> some View {
         let _ = direction
+        let clear = AppThemeDirection.current == .systemClear
         let r = cornerRadius ?? Theme.radius
         let shape = RoundedRectangle(cornerRadius: r, style: .continuous)
         content
-            .background(Theme.surface, in: shape)
+            .background(Theme.groupedCard, in: shape)
             .overlay {
                 shape.strokeBorder(
-                    AppThemeDirection.current == .systemClear ? Theme.line.opacity(0.45) : Theme.line,
-                    lineWidth: Theme.rule
+                    clear ? Theme.line.opacity(0.22) : Theme.line,
+                    lineWidth: clear ? Theme.hairline : Theme.rule
                 )
+            }
+    }
+}
+
+private struct GroupedBackgroundModifier: ViewModifier {
+    @Environment(\.themeDirection) private var direction
+    func body(content: Content) -> some View {
+        let _ = direction
+        content.background { Theme.groupedCanvas.ignoresSafeArea() }
+    }
+}
+
+private struct SheetSurfaceModifier: ViewModifier {
+    @Environment(\.themeDirection) private var direction
+    func body(content: Content) -> some View {
+        let _ = direction
+        let clear = AppThemeDirection.current == .systemClear
+        content
+            .background {
+                if clear {
+                    Color.clear
+                } else {
+                    Theme.bg.ignoresSafeArea()
+                }
+            }
+            .presentationBackground(clear ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Theme.bg))
+    }
+}
+
+private struct BarMaterialBackgroundModifier: ViewModifier {
+    @Environment(\.themeDirection) private var direction
+    func body(content: Content) -> some View {
+        let _ = direction
+        let clear = AppThemeDirection.current == .systemClear
+        content
+            .background(clear ? AnyShapeStyle(.bar) : AnyShapeStyle(Theme.bg))
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(clear ? Theme.line.opacity(0.4) : Theme.line)
+                    .frame(height: Theme.hairline)
+                    .accessibilityHidden(true)
             }
     }
 }
@@ -719,6 +776,18 @@ extension View {
 
     func paperBackground() -> some View {
         modifier(PaperBackgroundModifier())
+    }
+
+    func groupedBackground() -> some View {
+        modifier(GroupedBackgroundModifier())
+    }
+
+    func sheetSurface() -> some View {
+        modifier(SheetSurfaceModifier())
+    }
+
+    func barMaterialBackground() -> some View {
+        modifier(BarMaterialBackgroundModifier())
     }
 
     /// 跟读：强调淡底与实底竖条共同标记当前句，不只依赖颜色。
@@ -1052,8 +1121,12 @@ struct SecondaryButtonStyle: ButtonStyle {
     var emphasized = false
     func makeBody(configuration: Configuration) -> some View {
         let _ = direction
+        let clear = AppThemeDirection.current == .systemClear
         let resolvedHeight = height ?? Theme.buttonHeight
         let r = Theme.buttonRadius
+        let bgFill: Color = emphasized
+            ? Theme.accentSoft
+            : (clear ? Color(uiColor: .tertiarySystemFill) : Theme.surface)
         configuration.label
             .font(Theme.sans(15, weight: .medium))
             .fixedSize(horizontal: false, vertical: true)
@@ -1061,10 +1134,15 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, Theme.space4).padding(.vertical, Theme.space3)
             .frame(maxWidth: .infinity, minHeight: resolvedHeight)
             .foregroundStyle(emphasized ? Theme.accent : Theme.ink)
-            .background(emphasized ? Theme.accentSoft : Theme.surface, in: RoundedRectangle(cornerRadius: r, style: .continuous))
+            .background(bgFill, in: RoundedRectangle(cornerRadius: r, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .strokeBorder(emphasized ? Theme.clay : Theme.line, lineWidth: Theme.rule)
+                if !clear || emphasized {
+                    RoundedRectangle(cornerRadius: r, style: .continuous)
+                        .strokeBorder(
+                            emphasized ? (clear ? Theme.accent.opacity(0.28) : Theme.clay) : Theme.line,
+                            lineWidth: clear ? Theme.hairline : Theme.rule
+                        )
+                }
             }
             .modifier(PressFeedback(pressed: configuration.isPressed))
             .contentShape(RoundedRectangle(cornerRadius: r, style: .continuous))
@@ -1079,25 +1157,36 @@ struct GlassSkin: ViewModifier {
     func body(content: Content) -> some View { content }
 }
 
-/// 筛选签：圆角随当前方向变化，勾号提供非颜色状态通道。
+/// 筛选签：清透系统下采用轻胶囊淡底高亮，避免与单屏唯一主按钮争抢视觉重心；其余方向保留各自圆角与浓墨选中态。
 struct ChipPillStyle: ButtonStyle {
     var selected: Bool
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.themeDirection) private var direction
     func makeBody(configuration: Configuration) -> some View {
         let _ = direction
-        let shape = RoundedRectangle(cornerRadius: Theme.buttonRadius, style: .continuous)
+        let clear = AppThemeDirection.current == .systemClear
+        let radius = clear ? Theme.radiusPill : Theme.buttonRadius
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        let fg: Color = clear ? (selected ? Theme.accent : Theme.ink2) : (selected ? Theme.onInk : Theme.ink)
+        let bg: Color = clear ? (selected ? Theme.accentSoft : Theme.groupedCard) : (selected ? Theme.ink : Theme.surface)
+        let stroke: Color = clear
+            ? (selected ? Theme.accent.opacity(0.3) : Theme.line.opacity(0.32))
+            : (selected ? Theme.ink : Theme.line)
         HStack(spacing: Theme.space1) {
-            if selected { Image(systemName: Icon.checkmark).font(.system(size: 12, weight: .bold)).accessibilityHidden(true) }
+            if selected { Image(systemName: Icon.checkmark).font(.system(size: 11.5, weight: .bold)).accessibilityHidden(true) }
             configuration.label
         }
         .font(Theme.sans(14, weight: selected ? .semibold : .regular))
-        .foregroundStyle(selected ? Theme.onInk : Theme.ink)
-        .padding(.horizontal, Theme.space3)
-        .frame(minHeight: Theme.iconButtonSize)
-        .background(selected ? Theme.ink : Theme.surface, in: shape)
-        .overlay { shape.strokeBorder(selected ? Theme.ink : Theme.line, lineWidth: Theme.rule) }
-        .contentShape(shape)
+        .foregroundStyle(fg)
+        .padding(.horizontal, clear ? 14 : Theme.space3)
+        .frame(minHeight: clear ? 38 : Theme.iconButtonSize)
+        .frame(minWidth: Theme.iconButtonSize, minHeight: Theme.iconButtonSize)
+        .background {
+            shape.fill(bg)
+                .overlay { shape.strokeBorder(stroke, lineWidth: clear ? Theme.hairline : Theme.rule) }
+                .padding(.vertical, clear ? 3 : 0)
+        }
+        .contentShape(Rectangle())
         .modifier(PressFeedback(pressed: configuration.isPressed))
         .opacity(isEnabled ? 1 : Theme.disabledOpacity)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -1245,7 +1334,7 @@ struct InkRule: View {
     }
 }
 
-/// 栏目标题：清透系统收起多余装饰并使用系统文字层级；其余三套保留左侧强调竖标与宋体层级。
+/// 栏目标题：清透系统收起多余装饰并使用紧凑系统标题层级；其余三套保留左侧强调竖标与宋体层级。
 struct SectionTitle: View {
     @Environment(\.themeDirection) private var direction
     let text: String
@@ -1262,13 +1351,15 @@ struct SectionTitle: View {
         let _ = direction
         let clear = AppThemeDirection.current == .systemClear
         HStack(alignment: .firstTextBaseline, spacing: Theme.space2) {
-            if let number {
+            if let number, !clear {
                 Text(number).mastheadStyle(color: Theme.accent)
             } else if !clear {
                 Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: 14)
                     .offset(y: 1).accessibilityHidden(true)
             }
-            Text(L(text)).font(Theme.heading(20, relativeTo: .title3)).foregroundStyle(Theme.ink)
+            Text(L(text))
+                .font(clear ? .headline : Theme.heading(20, relativeTo: .title3))
+                .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if let badge { SealBadge(text: badge) }
             if rule && !clear {
@@ -1280,7 +1371,7 @@ struct SectionTitle: View {
     }
 }
 
-/// 页面报头：随当前方向切换栏线力度、眉题字距与标题字体策略。
+/// 页面报头：清透系统下彻底收起报刊栏线、印章与刊号装饰，优先配合系统导航栏展示轻量说明。
 struct PageMasthead: View {
     @Environment(\.themeDirection) private var direction
     let title: String
@@ -1291,45 +1382,45 @@ struct PageMasthead: View {
     var titleSize: CGFloat = 34
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
+    var showsTitle = true
     var body: some View {
         let _ = direction
         let active = AppThemeDirection.current
-        VStack(alignment: .leading, spacing: Theme.space2) {
-            if rule && active != .systemClear {
+        let clear = active == .systemClear
+        VStack(alignment: .leading, spacing: clear ? 6 : Theme.space2) {
+            if rule && !clear {
                 Rectangle()
                     .fill(active == .editorial ? Theme.ink : Theme.line)
                     .frame(height: active == .editorial ? Theme.ruleMedium : Theme.rule)
                     .accessibilityHidden(true)
             }
-            if kicker != nil || issue != nil || actionTitle != nil {
+            if (!clear && (kicker != nil || issue != nil)) || actionTitle != nil {
                 HStack {
-                    if let kicker {
+                    if !clear, let kicker {
                         HStack(spacing: 6) {
-                            if active != .systemClear {
-                                Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
-                            }
-                            Text(active == .systemClear ? L(kicker) : L(kicker).localUppercased)
-                                .foregroundStyle(Theme.accent)
+                            Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                            Text(L(kicker).localUppercased).foregroundStyle(Theme.accent)
                         }
                     }
                     Spacer()
-                    if let issue { Text(L(issue).localUppercased).foregroundStyle(Theme.ink2) }
+                    if !clear, let issue { Text(L(issue).localUppercased).foregroundStyle(Theme.ink2) }
                     if let actionTitle, let action { TextButton(actionTitle, action: action) }
                 }
                 .mastheadStyle()
             }
-            Text(L(title))
-                .font(Theme.heading(titleSize, relativeTo: .largeTitle, weight: .bold))
-                .lineSpacing(titleSize * 0.14)
-                .minimumScaleFactor(min(1, 24 / titleSize))
-                .foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minHeight: Theme.iconButtonSize, alignment: .leading)
-                .accessibilityAddTraits(.isHeader)
+            if showsTitle {
+                Text(L(title))
+                    .font(clear ? .system(size: min(titleSize, 26), weight: .bold) : Theme.heading(titleSize, relativeTo: .largeTitle, weight: .bold))
+                    .lineSpacing(clear ? 2 : titleSize * 0.14)
+                    .minimumScaleFactor(min(1, 24 / titleSize))
+                    .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+            }
             if let subtitle, !subtitle.isEmpty {
                 Text(L(subtitle))
-                    .font(Theme.sans(13))
-                    .foregroundStyle(Theme.ink3)
+                    .font(clear ? .subheadline : Theme.sans(13))
+                    .foregroundStyle(clear ? Theme.ink2 : Theme.ink3)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1553,7 +1644,7 @@ struct SectionHeader: View {
                 Rectangle().fill(Theme.clay).frame(width: Theme.ruleHeavy, height: 14)
                     .offset(y: 1).accessibilityHidden(true)
             }
-            Text(L(title)).font(Theme.heading(20, relativeTo: .title3))
+            Text(L(title)).font(clear ? .headline : Theme.heading(20, relativeTo: .title3))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
@@ -1765,39 +1856,63 @@ struct SheetChrome<Content: View>: View {
     }
 }
 
-/// 空态、加载、错误沿用同一标题/说明语言；所有文案与重试动作由调用方传入。
+/// 空态、加载、错误采用原生系统空状态层级：简洁图标 + 标题 + 一句说明 + 至多一个主动作。
 struct EmptyState: View {
     @Environment(\.themeDirection) private var direction
     enum State: Equatable { case empty, loading, error, success }
     let title: String
     let detail: String
     var state: State = .empty
+    var symbol: String? = nil
     var badge: String? = nil
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
+    private var resolvedSymbol: String? {
+        if let symbol { return symbol }
+        switch state {
+        case .error: return Icon.warning
+        case .success: return Icon.markRead
+        case .empty, .loading: return nil
+        }
+    }
     var body: some View {
         let _ = direction
-        VStack(spacing: Theme.space4) {
-            if state == .loading { ProgressView().tint(Theme.ink2) }
+        let clear = AppThemeDirection.current == .systemClear
+        VStack(spacing: Theme.space3) {
+            if state == .loading {
+                ProgressView().controlSize(.regular).tint(Theme.ink2)
+            } else if let icon = resolvedSymbol {
+                Image(systemName: icon)
+                    .font(.system(size: 32, weight: .regular))
+                    .foregroundStyle(state == .error ? Theme.danger : (state == .success ? Theme.accent : Theme.ink3))
+                    .accessibilityHidden(true)
+            }
             if let badge {
                 SealBadge(text: badge, color: state == .error ? Theme.danger : Theme.accent,
                           background: state == .error ? Theme.dangerSoft : Theme.accentSoft)
             }
-            if state == .error {
-                Image(systemName: Icon.warning).foregroundStyle(Theme.danger).accessibilityHidden(true)
-            }
-            Text(L(title)).font(Theme.heading(22, relativeTo: .title2)).foregroundStyle(Theme.ink)
-                .padding(state == .error ? Theme.space2 : 0)
-                .background(state == .error ? Theme.dangerSoft : .clear,
-                            in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            Text(L(title))
+                .font(clear ? .headline : Theme.heading(20, relativeTo: .title3))
+                .foregroundStyle(Theme.ink)
                 .accessibilityAddTraits(.isHeader)
-            Text(L(detail)).font(Theme.sans(14)).foregroundStyle(Theme.ink3)
-            if let actionTitle, let action { PrimaryButton(actionTitle, action: action) }
+            if !detail.isEmpty {
+                Text(L(detail))
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink2)
+                    .lineSpacing(3)
+                    .frame(maxWidth: 340)
+            }
+            if let actionTitle, let action {
+                PrimaryButton(actionTitle, action: action)
+                    .frame(maxWidth: 220)
+                    .padding(.top, Theme.space1)
+            }
         }
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
-        .padding(Theme.cardInset)
+        .padding(.horizontal, Theme.cardInset)
+        .padding(.vertical, Theme.space5)
     }
 }
 
@@ -1808,9 +1923,17 @@ struct StatBlock: View {
     var size: CGFloat = 30
     var body: some View {
         let _ = direction
-        VStack(alignment: .leading, spacing: Theme.space2) {
-            Text(value).font(Theme.display(size)).monospacedDigit().foregroundStyle(Theme.ink)
-            Text(L(label)).mastheadStyle()
+        let clear = AppThemeDirection.current == .systemClear
+        VStack(alignment: .leading, spacing: clear ? 4 : Theme.space2) {
+            Text(value)
+                .font(clear ? .system(size: (size * 0.88).rounded(), weight: .semibold, design: .rounded) : Theme.display(size))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+            if clear {
+                Text(L(label)).font(.caption).foregroundStyle(Theme.ink2)
+            } else {
+                Text(L(label)).mastheadStyle()
+            }
         }
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
@@ -1930,7 +2053,7 @@ struct ThemeIcon: View {
 
 // MARK: - Editorial interface components (never applied to publication DOM or text layout)
 
-/// Shared introduction inside the scroll content: large text can scroll out of the way.
+/// Shared introduction inside the scroll content: in systemClear, main title is owned by navigationTitle.
 struct EditorialIntro: View {
     @Environment(\.themeDirection) private var direction
     let title: String
@@ -1939,34 +2062,44 @@ struct EditorialIntro: View {
     var body: some View {
         let _ = direction
         let active = AppThemeDirection.current
-        VStack(alignment: .leading, spacing: Theme.space2) {
-            if active != .systemClear {
+        if active == .systemClear {
+            if let detail, !detail.isEmpty {
+                Text(L(detail))
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 2)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: Theme.space2) {
                 Rectangle()
                     .fill(active == .editorial ? Theme.ink : Theme.line)
                     .frame(height: active == .editorial ? Theme.ruleMedium : Theme.rule)
                     .accessibilityHidden(true)
-            }
-            if let eyebrow {
-                HStack(spacing: 6) {
-                    if active != .systemClear {
+                if let eyebrow {
+                    HStack(spacing: 6) {
                         Rectangle().fill(Theme.clay).frame(width: 7, height: 7).accessibilityHidden(true)
+                        Text(L(eyebrow).localUppercased)
+                            .mastheadStyle(color: Theme.accent).foregroundStyle(Theme.accent)
                     }
-                    Text(active == .systemClear ? L(eyebrow) : L(eyebrow).localUppercased)
-                        .mastheadStyle(color: Theme.accent).foregroundStyle(Theme.accent)
                 }
+                Text(L(title)).font(Theme.heading(26, relativeTo: .title, weight: .bold)).foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
+                if let detail {
+                    Text(L(detail)).font(Theme.sans(13)).foregroundStyle(Theme.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                InkRule().padding(.top, 4)
             }
-            Text(L(title)).font(Theme.heading(28, relativeTo: .title, weight: .bold)).foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
-            if let detail {
-                Text(L(detail)).font(Theme.sans(13)).foregroundStyle(Theme.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            InkRule().padding(.top, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 12)
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
     }
 }
 
@@ -2014,11 +2147,11 @@ struct PaperPanel: ViewModifier {
         let r = Theme.radius
         let clear = AppThemeDirection.current == .systemClear
         content.padding(inset ?? Theme.cardInset).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: r, style: .continuous))
+            .background(Theme.groupedCard, in: RoundedRectangle(cornerRadius: r, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: r, style: .continuous)
-                    .strokeBorder(clear ? Theme.line.opacity(0.45) : Theme.line,
-                                  lineWidth: contrast == .increased ? Theme.ruleMedium : Theme.rule)
+                    .strokeBorder(clear ? Theme.line.opacity(0.22) : Theme.line,
+                                  lineWidth: contrast == .increased ? Theme.ruleMedium : (clear ? Theme.hairline : Theme.rule))
             }
             .softCardShadow()
     }
@@ -2053,9 +2186,14 @@ private struct EditorialListModifier: ViewModifier {
     @Environment(\.themeDirection) private var direction
     func body(content: Content) -> some View {
         let _ = direction
-        content.listStyle(.insetGrouped).listSectionSpacing(22)
-            .scrollContentBackground(.hidden).background(Theme.bg).tint(Theme.accent)
-            .environment(\.defaultMinListRowHeight, 52)
+        let clear = AppThemeDirection.current == .systemClear
+        content
+            .listStyle(.insetGrouped)
+            .listSectionSpacing(clear ? 16 : 22)
+            .scrollContentBackground(.hidden)
+            .background(Theme.groupedCanvas)
+            .tint(Theme.accent)
+            .environment(\.defaultMinListRowHeight, clear ? 48 : 52)
     }
 }
 
