@@ -895,26 +895,27 @@ final class DesignFlowTests: XCTestCase {
     }
 
     func testFourThemesSwitchInPlaceAndPersistAcrossLaunch() {
-        let app = launch("appearance", appearance: "theme")
-        XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["theme.oat"].isSelected)
+        let app = launch("stats", appearance: "theme")
+        openAppearanceSettings(in: app)
+        let oat = app.buttons["theme.oat"]
+        waitForReadingCondition({ oat.exists && oat.isSelected }, "默认主题应为燕麦书房")
         for theme in ["moss", "night", "silver", "oat", "night"] {
             let option = app.buttons["theme.\(theme)"]
             reveal(option, in: app)
             option.tap()
-            waitForReadingCondition({ option.isSelected }, "切换主题后应原地更新选择")
+            waitForReadingCondition({ option.exists && option.isSelected }, "切换主题后应原地更新选择：\(theme)")
             XCTAssertTrue(app.navigationBars["外观"].exists)
         }
 
         app.terminate()
         app.launchArguments.removeAll { $0 == "-ui-reset-preferences" }
         app.launch()
-        XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["theme.night"].isSelected)
+        openAppearanceSettings(in: app)
+        let night = app.buttons["theme.night"]
+        waitForReadingCondition({ night.exists && night.isSelected }, "重启后应保留蓝调夜航主题")
     }
 
-    func testMarginAppearanceKeepsReadingTypographyIndependent() {
-        let app = launch("stats")
+    private func openAppearanceSettings(in app: XCUIApplication) {
         let settings = app.buttons["profile.settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
         settings.tap()
@@ -923,7 +924,15 @@ final class DesignFlowTests: XCTestCase {
         reveal(appearance, in: app)
         appearance.tap()
         XCTAssertTrue(app.navigationBars["外观"].waitForExistence(timeout: 5))
-        waitForReadingCondition({ app.buttons["appearance.light"].isSelected }, "浅色外观选择应在界面更新后生效")
+    }
+
+    func testMarginAppearanceKeepsReadingTypographyIndependent() {
+        let app = launch("stats")
+        openAppearanceSettings(in: app)
+        let appearance = app.buttons["profile.appearance"]
+        let light = app.buttons["appearance.light"]
+        reveal(light, in: app)
+        waitForReadingCondition({ light.exists && light.isSelected }, "浅色外观选择应在界面更新后生效")
         reveal(app.buttons["appearance.dark"], in: app)
         app.buttons["appearance.dark"].tap()
         waitForReadingCondition({ app.buttons["appearance.dark"].isSelected }, "深色外观选择应在界面更新后生效")
