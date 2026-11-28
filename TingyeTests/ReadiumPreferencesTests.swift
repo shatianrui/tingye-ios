@@ -15,33 +15,40 @@ final class ReadiumPreferencesTests: XCTestCase {
     }
 
     func testEveryPaperResolvesExactDayNightAndAlwaysLightColors() {
-        // v31 §7 的独立期望表；不从生产 resolve 反推期望值。
+        // 独立的期望值依次为背景、正文、页码、跟读底色、强调色。
+        let sea: [UInt32] = [0x192A3A, 0xDAE7F3, 0xA1B6CB, 0x2D445D, 0x9DC1EC]
+        let candle: [UInt32] = [0x201C19, 0xEADCCB, 0xC1AC97, 0x453326, 0xEFAD80]
         let cases: [(ReaderPaper, [UInt32], [UInt32])] = [
-            (.paper, [0xFAF9F5, 0x191817, 0x6B6960], [0x131211, 0xF5F3EC, 0x9C988E]),
-            (.mist, [0xECEDE8, 0x191817, 0x4A4741], [0x242522, 0xF5F3EC, 0x9C988E]),
-            (.ancient, [0xF2ECE0, 0x191817, 0x4A4741], [0x29231D, 0xF5F3EC, 0x9C988E]),
-            (.eink, [0xF1F0EB, 0x191817, 0x4A4741], [0x1E1C1A, 0xF5F3EC, 0x9C988E]),
-            (.white, [0xFFFFFF, 0x191817, 0x6B6960], [0x131211, 0xF5F3EC, 0x9C988E]),
-            (.blue, [0x242A2C, 0xF5F3EC, 0xC9C5BA], [0x242A2C, 0xF5F3EC, 0xC9C5BA]),
-            (.night, [0x131211, 0xF5F3EC, 0x9C988E], [0x131211, 0xF5F3EC, 0x9C988E])
+            (.paper, [0xFBF6E9, 0x30271F, 0x665849, 0xEFE2CB, 0x94553D], [0x27231D, 0xF1E9D8, 0xC9BCA8, 0x493B2C, 0xE7AF90]),
+            (.ancient, [0xF2E5CA, 0x372C20, 0x695640, 0xE5D1AB, 0x8C4D32], [0x30271C, 0xF4E6C9, 0xD1BC98, 0x51412A, 0xEBAB82]),
+            (.mist, [0xE3EEE4, 0x20362B, 0x4A6351, 0xCBDDCB, 0x386648], [0x222F28, 0xE2EFE6, 0xADC8B4, 0x374E3E, 0xA8D4AF]),
+            (.sky, [0xE4ECF7, 0x25364A, 0x50637C, 0xCDDDF2, 0x405E92], [0x222D3E, 0xE5EEF9, 0xB3C4DF, 0x344968, 0xAFC9F5]),
+            (.eink, [0xEAE7E3, 0x302D2C, 0x625958, 0xDCD6D3, 0x76534D], [0x292726, 0xEEE9E7, 0xC8BDB8, 0x443B38, 0xE3B2A9]),
+            (.blue, sea, sea),
+            (.night, candle, candle),
+            (.white, [0xFAF9F5, 0x141413, 0x615B51, 0xF4DED3, 0xA6482B], [0x26221F, 0xF4EEE7, 0xC8BDB0, 0x49342B, 0xEFA283])
         ]
+        XCTAssertEqual(cases.map { $0.0 }, ReaderPaper.allCases)
         for (paper, day, night) in cases {
             for dark in [false, true] {
                 for alwaysLight in [false, true] {
                     let expected = dark && !alwaysLight ? night : day
                     let palette = paper.resolve(darkAppearance: dark, alwaysLight: alwaysLight)
-                    XCTAssertEqual([palette.background, palette.foreground, palette.secondary], expected, paper.rawValue)
+                    XCTAssertEqual([palette.background, palette.foreground, palette.secondary, palette.highlight, palette.accent],
+                                   expected, paper.rawValue)
                     let isDark = paper == .blue || paper == .night || (dark && !alwaysLight)
                     XCTAssertEqual(palette.isDark, isDark, paper.rawValue)
-                    XCTAssertEqual(palette.highlight, isDark ? 0x2E201B : 0xF8ECE6, paper.rawValue)
-                    XCTAssertEqual(palette.accent, isDark ? 0xECA085 : 0xA6482B, paper.rawValue)
                     let bridge = mapped(.init(paper: paper.rawValue), dark: dark, alwaysLight: alwaysLight)
                     XCTAssertEqual(bridge.backgroundColor?.rawValue, Int(expected[0]))
                     XCTAssertEqual(bridge.textColor?.rawValue, Int(expected[1]))
                     XCTAssertEqual(bridge.theme, isDark ? .dark : .light)
+                    let fixed = mapped(.init(paper: paper.rawValue), dark: dark, alwaysLight: alwaysLight, fixed: true)
+                    XCTAssertEqual(fixed.backgroundColor?.rawValue, Int(expected[0]))
+                    XCTAssertNil(fixed.textColor)
                 }
             }
         }
+        XCTAssertEqual(ReaderPaper.allCases.map(\.rawValue), ["paper", "ancient", "mist", "sky", "eink", "blue", "night", "white"])
         XCTAssertEqual(ReaderPreferences(paper: "unknown").kind, .paper)
     }
 

@@ -59,7 +59,8 @@ enum UIReview {
         guard isolated else { return nil }
         if ProcessInfo.processInfo.arguments.contains("-ui-reset-preferences") {
             // 仅自动化临时书库：写入可修改的初值。启动参数域会锁住 @AppStorage，无法测试用户切换。
-            UserDefaults.standard.set("paper", forKey: "reader.paper")
+            UserDefaults.standard.set(ReaderPaper.defaultPaper.rawValue, forKey: ReaderPaper.storageKey)
+            UserDefaults.standard.set(false, forKey: ReaderPaper.alwaysLightKey)
             UserDefaults.standard.set("list", forKey: "shelf.layout")
             UserDefaults.standard.removeObject(forKey: AppTheme.storageKey)
             let args = ProcessInfo.processInfo.arguments

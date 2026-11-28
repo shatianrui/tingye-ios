@@ -205,7 +205,7 @@ final class NativeCoreTests: XCTestCase {
             for paper in ReaderPaper.allCases {
                 let prefs = ReaderPreferences(paper: paper.rawValue)
                 let background = UIColor(prefs.background).resolvedColor(with: traits)
-                for text in [prefs.foreground, prefs.secondary] {
+                for text in [prefs.foreground, prefs.secondary, prefs.accent] {
                     XCTAssertGreaterThanOrEqual(UIColor(text).resolvedColor(with: traits).contrastRatio(with: background), 4.5, paper.rawValue)
                 }
             }
@@ -2542,12 +2542,12 @@ extension NativeCoreTests {
 }
 
 
-// MARK: - Figma reader appearance parity
+// MARK: - 阅读纸面
 
 extension NativeCoreTests {
     @MainActor func testReaderHighlightUsesPaperAppearanceInsteadOfAppAppearance() {
         let defaults = UserDefaults.standard
-        let key = "study.paperAlwaysLight"
+        let key = ReaderPaper.alwaysLightKey
         let saved = defaults.object(forKey: key)
         defer {
             if let saved { defaults.set(saved, forKey: key) }
@@ -2559,11 +2559,9 @@ extension NativeCoreTests {
                 let traits = UITraitCollection(userInterfaceStyle: style)
                 for paper in ReaderPaper.allCases {
                     let preferences = ReaderPreferences(paper: paper.rawValue)
-                    let darkPaper = paper.dark || (style == .dark && !alwaysLight)
-
+                    let palette = paper.resolve(darkAppearance: style == .dark, alwaysLight: alwaysLight)
                     let highlight = preferences.highlight.resolvedColor(with: traits)
-                    XCTAssertEqual(highlight, UIColor(hex: darkPaper ? 0x2E201B : 0xF8ECE6),
-                                   "\(paper.rawValue) 的跟读底应随纸面解析浅陶土暖底")
+                    XCTAssertEqual(highlight, UIColor(hex: palette.highlight), paper.rawValue)
                     XCTAssertEqual(highlight.cgColor.alpha, 1, accuracy: 0.001)
                     let foreground = UIColor(preferences.foreground).resolvedColor(with: traits)
                     XCTAssertGreaterThanOrEqual(foreground.contrastRatio(with: highlight), 4.5, paper.rawValue)

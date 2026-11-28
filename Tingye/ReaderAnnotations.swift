@@ -19,6 +19,7 @@ struct ReaderMark: Equatable {
     var color: String
     /// background / underline / wavy / selection
     var kind: String
+    var selectionTint: UIColor? = nil
 
     static let palette: [(key: String, name: String, hex: UInt32)] = [
         ("yellow", "琥珀", 0xD69E3A), ("clay", "陶土", 0xA34F36), ("blue", "蓝", 0x4A6FA5), ("pink", "粉", 0xC85A53), ("purple", "紫", 0x7E629E),
@@ -33,7 +34,7 @@ struct ReaderMark: Equatable {
     }
     static func color(_ key: String) -> Color { Color(uiColor: uiColor(key)) }
 
-    var style: Style { Style(color: kind == "selection" ? UIColor(Theme.accent) : Self.uiColor(color), kind: kind) }
+    var style: Style { Style(color: selectionTint ?? Self.uiColor(color), kind: kind) }
 
     /// 把划线的句区间换成本章字符范围
     static func range(start: Int, end: Int, in sentences: [Sentence]) -> NSRange? {

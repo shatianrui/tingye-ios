@@ -161,7 +161,7 @@ struct ReadiumReaderView: View {
     @AppStorage("reader.fontSize") private var fontSize = 19.0
     @AppStorage("reader.lineSpacing") private var lineSpacing = 11.0
     @AppStorage("reader.font") private var font = "system"
-    @AppStorage("reader.paper") private var paper = "paper"
+    @AppStorage(ReaderPaper.storageKey) private var paper = ReaderPaper.defaultPaper.rawValue
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.paragraphSpacing") private var paragraphSpacing = 15.0
     @AppStorage("reader.margin") private var margin = 24.0
@@ -170,7 +170,7 @@ struct ReadiumReaderView: View {
     @AppStorage("reader.doublePage") private var doublePage = true
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
-    @AppStorage("study.paperAlwaysLight") private var alwaysLight = false
+    @AppStorage(ReaderPaper.alwaysLightKey) private var alwaysLight = false
     @AppStorage(AppTheme.appearanceKey) private var appearance = AppTheme.defaultAppearance
     private enum Sheet: String, Identifiable { case contents, preferences, player, annotation, note, search; var id: String { rawValue } }
     @State private var contentsMode = 0

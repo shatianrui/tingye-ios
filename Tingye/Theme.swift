@@ -255,7 +255,6 @@ enum Theme {
     static let kicker = masthead
 
     // Fixed fallbacks for document and system-owned renderers without a SwiftUI environment.
-    static let accent = AppTheme.defaultTheme.accent
     static let wash = AppTheme.defaultTheme.wash
 
 }
@@ -1386,61 +1385,87 @@ struct StatBlock: View {
     }
 }
 
-// MARK: - 阅读偏好（七种中性阅读纸色）
+// MARK: - 阅读纸色
 
 enum ReaderPaper: String, CaseIterable, Identifiable {
-    case paper, mist, ancient, eink, white, blue, night
+    // 已保存的键继续指向最接近的纸色；white 对应陶土暖白。
+    case paper, ancient, mist, sky, eink, blue, night, white
+
+    static let storageKey = "reader.paper"
+    static let alwaysLightKey = "study.paperAlwaysLight"
+    static let defaultPaper: Self = .paper
+
+    init(storedValue: String) { self = Self(rawValue: storedValue) ?? Self.defaultPaper }
     var id: String { rawValue }
+
     var name: String {
-        ["paper": "默认", "mist": "雾灰", "ancient": "旧书", "eink": "浅灰", "white": "纯白", "blue": "深蓝", "night": "夜读"][rawValue] ?? rawValue
+        switch self {
+        case .paper: "米宣"
+        case .ancient: "麦笺"
+        case .mist: "松雾"
+        case .sky: "云蓝"
+        case .eink: "灰陶"
+        case .blue: "海墨"
+        case .night: "烛夜"
+        case .white: "陶土纸"
+        }
     }
-    /// v31 §7：原生动态色和 Readium 快照共用同一决策。
+
     struct Palette: Equatable {
         let background: UInt32
         let foreground: UInt32
         let secondary: UInt32
+        let highlight: UInt32
+        let accent: UInt32
         let isDark: Bool
-        var highlight: UInt32 { isDark ? 0x2E201B : 0xF8ECE6 }
-        var accent: UInt32 { isDark ? 0xECA085 : 0xA6482B }
     }
-    func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
-        let night = darkAppearance && !alwaysLight
-        let values: (UInt32, UInt32, UInt32)
-        switch self {
-        case .paper: values = night ? (0x131211, 0xF5F3EC, 0x9C988E) : (0xFAF9F5, 0x191817, 0x6B6960)
-        case .mist: values = night ? (0x242522, 0xF5F3EC, 0x9C988E) : (0xECEDE8, 0x191817, 0x4A4741)
-        case .ancient: values = night ? (0x29231D, 0xF5F3EC, 0x9C988E) : (0xF2ECE0, 0x191817, 0x4A4741)
-        case .eink: values = night ? (0x1E1C1A, 0xF5F3EC, 0x9C988E) : (0xF1F0EB, 0x191817, 0x4A4741)
-        case .white: values = night ? (0x131211, 0xF5F3EC, 0x9C988E) : (0xFFFFFF, 0x191817, 0x6B6960)
-        case .blue: values = (0x242A2C, 0xF5F3EC, 0xC9C5BA)
-        case .night: values = (0x131211, 0xF5F3EC, 0x9C988E)
-        }
-        return Palette(background: values.0, foreground: values.1, secondary: values.2, isDark: dark || night)
-    }
-    func color(_ key: KeyPath<Palette, UInt32>) -> Color {
-        Color(UIColor { traits in
-            UIColor(hex: self.resolve(darkAppearance: traits.userInterfaceStyle == .dark,
-                                      alwaysLight: UserDefaults.standard.bool(forKey: "study.paperAlwaysLight"))[keyPath: key])
-        })
-    }
-    var swatch: Color { color(\.background) }
+
     var dark: Bool { self == .blue || self == .night }
-    /// 纸族动态色：随外观取日/夜成对值；「浅纸常亮」（study.paperAlwaysLight）开启时锁定日间值。
-    static func paperColor(_ light: UInt32, _ dark: UInt32) -> Color {
-        Color(UIColor { traits in
-            if UserDefaults.standard.bool(forKey: "study.paperAlwaysLight") { return UIColor(hex: light) }
-            return UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
-        })
+
+    /// 原生正文和 Readium 使用相同的纸面、文字与跟读颜色。
+    func resolve(darkAppearance: Bool, alwaysLight: Bool) -> Palette {
+        let isDark = dark || (darkAppearance && !alwaysLight)
+        let values: (background: UInt32, foreground: UInt32, secondary: UInt32, highlight: UInt32, accent: UInt32) =
+            switch (self, isDark) {
+            case (.paper, false): (0xFBF6E9, 0x30271F, 0x665849, 0xEFE2CB, 0x94553D)
+            case (.paper, true): (0x27231D, 0xF1E9D8, 0xC9BCA8, 0x493B2C, 0xE7AF90)
+            case (.ancient, false): (0xF2E5CA, 0x372C20, 0x695640, 0xE5D1AB, 0x8C4D32)
+            case (.ancient, true): (0x30271C, 0xF4E6C9, 0xD1BC98, 0x51412A, 0xEBAB82)
+            case (.mist, false): (0xE3EEE4, 0x20362B, 0x4A6351, 0xCBDDCB, 0x386648)
+            case (.mist, true): (0x222F28, 0xE2EFE6, 0xADC8B4, 0x374E3E, 0xA8D4AF)
+            case (.sky, false): (0xE4ECF7, 0x25364A, 0x50637C, 0xCDDDF2, 0x405E92)
+            case (.sky, true): (0x222D3E, 0xE5EEF9, 0xB3C4DF, 0x344968, 0xAFC9F5)
+            case (.eink, false): (0xEAE7E3, 0x302D2C, 0x625958, 0xDCD6D3, 0x76534D)
+            case (.eink, true): (0x292726, 0xEEE9E7, 0xC8BDB8, 0x443B38, 0xE3B2A9)
+            case (.blue, _): (0x192A3A, 0xDAE7F3, 0xA1B6CB, 0x2D445D, 0x9DC1EC)
+            case (.night, _): (0x201C19, 0xEADCCB, 0xC1AC97, 0x453326, 0xEFAD80)
+            case (.white, false): (0xFAF9F5, 0x141413, 0x615B51, 0xF4DED3, 0xA6482B)
+            case (.white, true): (0x26221F, 0xF4EEE7, 0xC8BDB0, 0x49342B, 0xEFA283)
+            }
+        return Palette(background: values.background, foreground: values.foreground, secondary: values.secondary,
+                       highlight: values.highlight, accent: values.accent, isDark: isDark)
     }
-    static let xuan = ReaderPaper.paper.color(\.background)
-    static let xuanSecondary = ReaderPaper.paper.color(\.secondary)
+
+    func uiColor(_ key: KeyPath<Palette, UInt32>) -> UIColor {
+        UIColor { traits in
+            let palette = resolve(darkAppearance: traits.userInterfaceStyle == .dark,
+                                  alwaysLight: UserDefaults.standard.bool(forKey: Self.alwaysLightKey))
+            return UIColor(hex: palette[keyPath: key])
+        }
+    }
+
+    func color(_ key: KeyPath<Palette, UInt32>) -> Color {
+        Color(uiColor: uiColor(key))
+    }
+
+    static let xuan = defaultPaper.color(\.background)
 }
 
 struct ReaderPreferences: Equatable {
     var fontSize: Double = 19
     var lineSpacing: Double = 11
     var font = "system"
-    var paper = "paper"
+    var paper = ReaderPaper.defaultPaper.rawValue
     var scrolling = false
     var paragraphSpacing: Double = 15
     var margin: Double = 24
@@ -1450,17 +1475,21 @@ struct ReaderPreferences: Equatable {
     var letterSpacing: Double = 0
     /// 简繁转换：none / s2t（简→繁）/ t2s（繁→简）
     var convert = "none"
-    var kind: ReaderPaper { ReaderPaper(rawValue: paper) ?? .paper }
-    var background: Color { kind.color(\.background) }
-    var foreground: Color { kind.color(\.foreground) }
-    var secondary: Color { kind.color(\.secondary) }
-    /// 跟读浅底：取纸面外观对应的高亮色，只作填充带，不作竖线。
-    var highlight: UIColor {
-        let paper = kind
-        return UIColor { traits in
-            UIColor(hex: paper.resolve(darkAppearance: traits.userInterfaceStyle == .dark,
-                                      alwaysLight: UserDefaults.standard.bool(forKey: "study.paperAlwaysLight")).highlight)
-        }
+    var resolvedPaper: ReaderPaper.Palette? = nil
+    var kind: ReaderPaper { ReaderPaper(storedValue: paper) }
+    var background: Color { paperColor(\.background) }
+    var foreground: Color { paperColor(\.foreground) }
+    var secondary: Color { paperColor(\.secondary) }
+    var accent: Color { paperColor(\.accent) }
+    var highlight: UIColor { paperUIColor(\.highlight) }
+
+    private func paperColor(_ key: KeyPath<ReaderPaper.Palette, UInt32>) -> Color {
+        Color(uiColor: paperUIColor(key))
+    }
+
+    private func paperUIColor(_ key: KeyPath<ReaderPaper.Palette, UInt32>) -> UIColor {
+        if let resolvedPaper { return UIColor(hex: resolvedPaper[keyPath: key]) }
+        return kind.uiColor(key)
     }
     /// serif 思源宋体 / kai 霞鹜文楷 / hansans 思源黑体 / xixihei 霞鹜新晰黑 / system 系统字体 / custom:<PostScript 名> 导入的字体
     var uiFont: UIFont {

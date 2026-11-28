@@ -345,7 +345,7 @@ struct ReaderView: View {
     @AppStorage("reader.fontSize") private var fontSize = 19.0
     @AppStorage("reader.lineSpacing") private var lineSpacing = 11.0
     @AppStorage("reader.font") private var font = "system"
-    @AppStorage("reader.paper") private var paper = "paper"
+    @AppStorage(ReaderPaper.storageKey) private var paper = ReaderPaper.defaultPaper.rawValue
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.pageTurn") private var pageTurn = "slide"
     @AppStorage("reader.paragraphSpacing") private var paragraphSpacing = 15.0
@@ -355,7 +355,7 @@ struct ReaderView: View {
     @AppStorage("reader.doublePage") private var automaticDouble = true
     @AppStorage("reader.letterSpacing") private var letterSpacing = 0.0
     @AppStorage("reader.convert") private var convert = "none"
-    @AppStorage("study.paperAlwaysLight") private var paperAlwaysLight = false
+    @AppStorage(ReaderPaper.alwaysLightKey) private var paperAlwaysLight = false
     /// 自动翻页间隔（秒），0 为关闭；只在本次阅读有效
     @State private var autoTurn = 0
 
@@ -371,11 +371,16 @@ struct ReaderView: View {
         UserDefaults.standard.set(enabled, forKey: "reader.pdfText." + book.id)
         if enabled { ready = false }
     }
-    private var prefs: ReaderPreferences { .init(fontSize: fontSize, lineSpacing: lineSpacing, font: font, paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing, margin: margin, indent: indent, justified: justified, letterSpacing: letterSpacing, convert: convert) }
-    /// 固定浅纸不跟随 App 的深色强调色，避免浅色控件落在浅纸上失去对比。
-    private var isDarkPaper: Bool { prefs.kind.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight).isDark }
-    /// 正文内的书签和高亮继续跟随纸色。
-    private var readerAccent: Color { prefs.kind.color(\.accent) }
+    private var prefs: ReaderPreferences {
+        var preferences = ReaderPreferences(fontSize: fontSize, lineSpacing: lineSpacing, font: font,
+                                            paper: paper, scrolling: scrolling, paragraphSpacing: paragraphSpacing,
+                                            margin: margin, indent: indent, justified: justified,
+                                            letterSpacing: letterSpacing, convert: convert)
+        preferences.resolvedPaper = preferences.kind.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight)
+        return preferences
+    }
+    private var isDarkPaper: Bool { prefs.resolvedPaper?.isDark == true }
+    private var readerAccent: Color { prefs.accent }
     /// 工具与弹层使用应用主题。
     private var readerPanelPaper: Color { appTheme.surface }
     private var chapters: [Chapter] { document.chapters }
@@ -423,14 +428,14 @@ struct ReaderView: View {
     var body: some View {
         let showsListeningStrip = active && (!chrome || selection != nil)
         ZStack(alignment: .bottom) {
-            (showsPDFPages ? appTheme.bg : prefs.background).ignoresSafeArea()
+            prefs.background.ignoresSafeArea()
             GeometryReader { geometry in
                 // 正文始终占据同一视口，悬浮工具只覆盖其上，开合不会触发重新分页。
                 let minimumReadingHeight = min(160.0, geometry.size.height * 0.35)
                 let toolsHeight = min(measuredToolsHeight, max(80, geometry.size.height - measuredTopBarHeight - minimumReadingHeight - 12))
                 Group {
                     if let pdf = document.pdf, !pdfTextMode {
-                        PDFReader(data: pdf, bookID: book.id, page: $chapter)
+                        PDFReader(data: pdf, bookID: book.id, paper: prefs.background, page: $chapter)
                             .simultaneousGesture(TapGesture().onEnded { toggleChrome() })
                             .onChange(of: chapter) { _, value in model.saveProgress(book.id, chapter: value, position: 0) }
                     } else {
@@ -1158,7 +1163,11 @@ struct ReaderView: View {
     private func scrollConvertedOffset(_ offset: Int?) -> Int? { offset.map { scrollMap?.augmentedOffset($0) ?? $0 } }
     private var scrollConvertedMarks: [ReaderMark] {
         guard let map = scrollMap else { return chapterMarks }
-        return chapterMarks.map { ReaderMark(range: map.augmentedRange($0.range), color: $0.color, kind: $0.kind) }
+        return chapterMarks.map { mark in
+            var adjusted = mark
+            adjusted.range = map.augmentedRange(mark.range)
+            return adjusted
+        }
     }
     private func scrollRestoredOffset(_ offset: Int) -> Int { scrollMap?.textOffset(offset) ?? offset }
     private func rebuild(size: CGSize) async {
@@ -1264,7 +1273,7 @@ struct ReaderView: View {
             return ReaderMark.range(start: effective.start, end: effective.end, in: sentences).map { ReaderMark(range: $0, color: item.color, kind: item.style) }
         }
         if let selection, selection.chapter == chapter, let range = ReaderMark.range(start: selection.start, end: selection.end, in: sentences) {
-            marks.append(ReaderMark(range: range, color: "", kind: "selection"))
+            marks.append(ReaderMark(range: range, color: "", kind: "selection", selectionTint: UIColor(readerAccent)))
         }
         return marks
     }
@@ -1358,11 +1367,12 @@ struct ReaderView: View {
     }
     private func toggleNightMode() {
         if isDarkPaper {
-            paper = dayPaper ?? "white"
+            if prefs.kind.dark { paper = dayPaper ?? ReaderPaper.defaultPaper.rawValue }
+            if colorScheme == .dark { paperAlwaysLight = true }
             dayPaper = nil
         } else {
             dayPaper = paper
-            paper = "night"
+            paper = ReaderPaper.night.rawValue
         }
     }
     private func shareBook() {
@@ -1684,9 +1694,9 @@ enum PDFContentBounds {
 }
 
 struct PDFReader: UIViewRepresentable {
-    @Environment(\.appTheme) private var appTheme
     let data: Data
     let bookID: String
+    let paper: Color
     @Binding var page: Int
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> PDFView {
@@ -1706,7 +1716,7 @@ struct PDFReader: UIViewRepresentable {
         view.autoScales = false
         view.displayMode = .singlePageContinuous; view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        view.backgroundColor = UIColor(appTheme.bg)
+        view.backgroundColor = UIColor(paper)
         let doubleTap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
         view.addGestureRecognizer(doubleTap)
@@ -1723,7 +1733,7 @@ struct PDFReader: UIViewRepresentable {
     }
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.parent = self
-        view.backgroundColor = UIColor(appTheme.bg)
+        view.backgroundColor = UIColor(paper)
         context.coordinator.applyInitialScale(to: view)
         if let doc = view.document, let target = doc.page(at: page), view.currentPage !== target { view.go(to: target) }
     }
@@ -2140,30 +2150,35 @@ private struct IllustrationRow: View {
 /// 在阅读页以半高 sheet 打开，正文实时预览；从设置进入时显示示例文字。
 struct ReadingPreferencesView: View {
     @Environment(\.appTheme) private var appTheme
+    @Environment(\.colorScheme) private var colorScheme
     var showsPreview = true
     @Environment(\.dismiss) var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
     @AppStorage("reader.font") private var font = "system"
-    @AppStorage("reader.paper") private var paper = "paper"
-    @AppStorage("study.paperAlwaysLight") private var paperAlwaysLight = false
+    @AppStorage(ReaderPaper.storageKey) private var paper = ReaderPaper.defaultPaper.rawValue
+    @AppStorage(ReaderPaper.alwaysLightKey) private var paperAlwaysLight = false
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.pageTurn") private var pageTurn = "slide"
-    private let mainPapers: [ReaderPaper] = [.paper, .white, .mist, .ancient, .night]
+    private var selectedPaper: ReaderPaper { ReaderPaper(storedValue: paper) }
+    private var paperColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: Theme.space2), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4)
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.space4) {
                 EditorialIntro(title: "让这一页更舒服", detail: "设置即时应用。排版与纸色始终由你的阅读偏好决定。", eyebrow: "阅读排版")
                 if showsPreview {
+                    let palette = paperPalette(selectedPaper)
                     Text("清晨，湖面还没有醒来。\n让光缓缓移过纸面。")
                         .font(Font(ReaderPreferences(fontSize: size, font: font).uiFont))
                         .lineSpacing(spacing)
-                        .foregroundStyle(ReaderPreferences(paper: paper).foreground)
+                        .foregroundStyle(Color(hex: palette.foreground))
                         .padding(Theme.cardInset)
                         .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
-                        .background(ReaderPreferences(paper: paper).background, in: RoundedRectangle(cornerRadius: appTheme.heroRadius))
+                        .background(Color(hex: palette.background), in: RoundedRectangle(cornerRadius: appTheme.heroRadius))
                         .accessibilityLabel("排版预览")
                 }
 
@@ -2217,42 +2232,19 @@ struct ReadingPreferencesView: View {
                         Spacer()
                         Menu {
                             Picker("全部纸色", selection: $paper) {
-                                ForEach(ReaderPaper.allCases) { item in Text(item.name).tag(item.rawValue) }
+                                ForEach(ReaderPaper.allCases) { item in Text(L(item.name)).tag(item.rawValue) }
                             }
                         } label: {
                             HStack(spacing: Theme.space1) {
-                                Text(ReaderPaper(rawValue: paper)?.name ?? "暖纸")
+                                Text(L(selectedPaper.name))
                                 Image(systemName: Icon.collapse).font(.caption2)
                             }
                             .font(.caption).frame(minHeight: 44)
                         }
                         .accessibilityLabel("全部纸色")
                     }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.space3), count: dynamicTypeSize.isAccessibilitySize ? 3 : 5), spacing: Theme.space3) {
-                        ForEach(mainPapers) { item in
-                            Button { Haptics.selection(); paper = item.rawValue } label: {
-                                VStack(spacing: Theme.space2) {
-                                    RoundedRectangle(cornerRadius: appTheme.radiusField)
-                                        .fill(item == .paper ? ReaderPaper.xuan : item.swatch)
-                                        .frame(maxWidth: .infinity).frame(height: 44)
-                                        .overlay {
-                                            RoundedRectangle(cornerRadius: appTheme.radiusField)
-                                                .strokeBorder(paper == item.rawValue ? appTheme.ink : appTheme.line, lineWidth: paper == item.rawValue ? 2 : 1)
-                                        }
-                                        .overlay {
-                                            if paper == item.rawValue {
-                                                ThemeIcon(symbol: Icon.checkmark, size: 18)
-                                                    .foregroundStyle(ReaderPreferences(paper: item.rawValue).foreground)
-                                            }
-                                        }
-                                    Text(item.name).font(.caption2).foregroundStyle(appTheme.ink3)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(item.name)
-                            .accessibilityAddTraits(paper == item.rawValue ? .isSelected : [])
-                        }
+                    LazyVGrid(columns: paperColumns, spacing: Theme.space3) {
+                        ForEach(ReaderPaper.allCases) { item in paperChoice(item) }
                     }
                 }
 
@@ -2311,6 +2303,47 @@ struct ReadingPreferencesView: View {
                 .frame(maxWidth: 620).frame(maxWidth: .infinity)
                 .background(appTheme.bg)
         }
+    }
+
+    private func paperPalette(_ item: ReaderPaper) -> ReaderPaper.Palette {
+        item.resolve(darkAppearance: colorScheme == .dark, alwaysLight: paperAlwaysLight)
+    }
+
+    private func paperChoice(_ item: ReaderPaper) -> some View {
+        let selected = selectedPaper == item
+        let palette = paperPalette(item)
+        let shape = RoundedRectangle(cornerRadius: appTheme.radiusField)
+        return Button {
+            Haptics.selection()
+            paper = item.rawValue
+        } label: {
+            VStack(spacing: Theme.space2) {
+                shape.fill(Color(hex: palette.background))
+                    .frame(height: Theme.iconButtonSize)
+                    .overlay { shape.strokeBorder(selected ? appTheme.ink : appTheme.line, lineWidth: selected ? 2 : 1) }
+                    .overlay(alignment: .top) {
+                        if item == .white {
+                            Capsule().fill(Color(hex: 0xD97757)).frame(width: 16, height: 2).padding(.top, 5)
+                        }
+                    }
+                    .overlay {
+                        if selected {
+                            ThemeIcon(symbol: Icon.checkmark, size: 18).foregroundStyle(Color(hex: palette.foreground))
+                        } else {
+                            Text("字").font(.caption).foregroundStyle(Color(hex: palette.foreground))
+                        }
+                    }
+                    .accessibilityHidden(true)
+                Text(L(item.name)).font(.caption).foregroundStyle(appTheme.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L(item.name))
+        .accessibilityIdentifier("reader.paper.\(item.rawValue)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder private var fontChoices: some View {
@@ -2373,7 +2406,7 @@ private struct MoreTypographyView: View {
     @AppStorage("reader.fontSize") private var size = 19.0
     @AppStorage("reader.lineSpacing") private var spacing = 11.0
     @AppStorage("reader.font") private var font = "system"
-    @AppStorage("reader.paper") private var paper = "paper"
+    @AppStorage(ReaderPaper.storageKey) private var paper = ReaderPaper.defaultPaper.rawValue
     @AppStorage("reader.scrolling") private var scrolling = false
     @AppStorage("reader.paragraphSpacing") private var paragraph = 15.0
     @AppStorage("reader.margin") private var margin = 24.0
@@ -2418,7 +2451,7 @@ private struct MoreTypographyView: View {
             Section {
                 Button("恢复护眼默认排版") {
                     size = 19; spacing = 11; paragraph = 15; margin = 24; indent = true; justified = true
-                    font = "system"; paper = "paper"; doublePage = true; scrolling = false
+                    font = "system"; paper = ReaderPaper.defaultPaper.rawValue; doublePage = true; scrolling = false
                     letterSpacing = 0; convert = "none"
                 }
                 .frame(maxWidth: .infinity)
